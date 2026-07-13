@@ -208,13 +208,10 @@ export default function EditorClient({ business, initialBlocks }: { business: an
 
           {/* Top 70% Content Area */}
           <div className="flex-1 overflow-y-auto pb-[30%] relative">
-            {/* Mockup Header */}
-            <div className="w-full bg-[var(--paper)] pt-16 pb-6 px-4 flex flex-col items-center text-center">
-              <div className="w-20 h-20 bg-[var(--coral-tint)] text-[var(--coral)] rounded-full flex items-center justify-center text-3xl font-bold mb-3">
-                {business.name.charAt(0).toUpperCase()}
-              </div>
+            {/* Compact Header */}
+            <div className="w-full bg-[var(--paper)] pt-12 pb-4 px-4 flex justify-between items-center">
               <h2 className="text-xl font-bold font-bricolage text-[var(--ink)]">{business.name}</h2>
-              <p className="text-[var(--ink-soft)] font-medium text-sm">{business.category}</p>
+              <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-xs text-slate-500 font-medium">TR</div>
             </div>
 
             {/* Blocks (True Preview) */}

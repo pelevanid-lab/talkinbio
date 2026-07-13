@@ -74,13 +74,10 @@ export default async function BusinessProfilePage({ params }: any) {
             <LanguageSwitcher />
           </div>
 
-          {/* Header */}
-          <div className="flex flex-col items-center text-center mb-10">
-            <div className="w-24 h-24 bg-[var(--coral-tint)] text-[var(--coral)] rounded-full flex items-center justify-center text-3xl font-bold mb-4 shadow-sm">
-              {business.name.charAt(0).toUpperCase()}
-            </div>
-            <h1 className="text-2xl font-bold text-[var(--ink)] font-bricolage">{business.name}</h1>
-            <p className="text-[var(--ink-soft)] font-medium">{business.category}</p>
+          {/* Top content area with just language switcher */}
+          <div className="flex justify-between items-center mb-6 px-2">
+            <h1 className="text-xl font-bold text-[var(--ink)] font-bricolage">{business.name}</h1>
+            <LanguageSwitcher />
           </div>
 
           {/* Blocks */}
