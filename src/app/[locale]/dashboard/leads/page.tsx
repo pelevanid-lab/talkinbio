@@ -16,7 +16,7 @@ export default async function LeadsDashboardPage() {
   // Fetch business of user
   const { data: business } = await supabase
     .from('businesses')
-    .select('id, name')
+    .select('id, name, username')
     .eq('owner_id', userData.user.id)
     .single();
 
@@ -46,7 +46,7 @@ export default async function LeadsDashboardPage() {
             <h1 className="text-xl font-bold text-slate-900">Talepler & Müşteriler</h1>
             <p className="text-sm text-slate-500">{business.name}</p>
           </div>
-          <a href={`/${business.id}`} className="text-sm text-blue-600 font-medium bg-blue-50 px-3 py-1.5 rounded-full hover:bg-blue-100">
+          <a href={`/${business.username}`} className="text-sm text-blue-600 font-medium bg-blue-50 px-3 py-1.5 rounded-full hover:bg-blue-100">
             Profilimi Gör
           </a>
         </div>
