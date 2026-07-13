@@ -27,21 +27,38 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     // 2. Invite User (Creates Auth User & Sends Email)
-    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(request.email);
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://talkinbio.com';
+    
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(request.email, {
+      redirectTo: `${baseUrl}/`
+    });
     
     let userId = inviteData?.user?.id;
 
     // If user already exists, inviteUserByEmail might fail or return error. 
     // Fallback: try to just create a magic link to get the user ID, or assume they exist.
-    if (inviteError && inviteError.message.includes('already registered')) {
+    const isAlreadyRegistered = inviteError && (
+      (inviteError as any).code === 'email_exists' || 
+      inviteError.message.includes('already')
+    );
+
+    if (isAlreadyRegistered) {
       const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
         type: 'magiclink',
-        email: request.email
+        email: request.email,
+        options: {
+          redirectTo: `${baseUrl}/`
+        }
       });
       userId = linkData?.user?.id;
       
       // Send magic link email so they can login
-      await supabaseAdmin.auth.signInWithOtp({ email: request.email });
+      await supabaseAdmin.auth.signInWithOtp({ 
+        email: request.email,
+        options: {
+          emailRedirectTo: `${baseUrl}/`
+        }
+      });
     } else if (inviteError) {
       throw inviteError;
     }
@@ -71,7 +88,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       contact_value: contactValues,
     }).select().single();
 
-    if (bizError) throw bizError;
+    if (bizError) {
+      if (bizError.code === '23505') {
+        console.warn('Business already exists, skipping creation for:', request.username);
+      } else {
+        throw bizError;
+      }
+    }
 
     // 4. Mark Request as Approved
     await supabaseAdmin.from('onboarding_requests').update({ status: 'approved' }).eq('id', id);
