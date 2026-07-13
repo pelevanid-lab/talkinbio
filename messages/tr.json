@@ -1,0 +1,134 @@
+{
+  "Landing": {
+    "nav": {
+      "startFree": "Ücretsiz başla"
+    },
+    "hero": {
+      "eyebrow": "Tüm sosyal medya hesaplarınız için yeni nesil",
+      "headlinePrefix": "Link in bio değil,",
+      "headlineStrike": "bak",
+      "headlineSuffix": "artık ",
+      "sub": "Ziyaretçilerin linkine tıklayınca statik bir sayfa görmesin — kurduğun işletmeyi tanıyan bir temsilciyle konuşsun. Kurulumu 10 dakika, kod yazmaya gerek yok.",
+      "startFree": "Ücretsiz başla",
+      "howItWorks": "Nasıl çalışır ↓",
+      "note": "Kredi kartı gerekmez · 10 dakikada yayında"
+    },
+    "statement": {
+      "text": "Link in bio sizce de eskimedi mi? Web formundan kalma eski düzen ile müşterilerinizi labirentlere sokmayın. İşinizi talkinbio'ya bırakın, sorsun, yönlendirsin, cevap versin."
+    },
+    "steps": {
+      "title": "Kurulumun kendisi, ajanının eğitimi.",
+      "sub": "Ayrı bir \"yapay zekayı besle\" adımı yok. Sayfanı kurarken verdiğin her cevap, aynı anda temsilcinin bilgi kaynağı oluyor.",
+      "step1": {
+        "title": "Birkaç soruya cevap ver",
+        "desc": "Ne satıyorsun, fiyatların ne, saatlerin ne — sade bir sohbet akışıyla anlatıyorsun, form doldurmuyorsun."
+      },
+      "step2": {
+        "title": "Sayfan ve temsilcin birlikte doğar",
+        "desc": "Verdiğin bilgi hem görünür bir sayfaya hem de ajanının bildiklerine dönüşür — tek kaynak, iki çıktı."
+      },
+      "step3": {
+        "title": "Linkini bio'na koy, konuşmaya bırak",
+        "desc": "Ziyaretçi soru sorar, temsilcin cevaplar, ilgilenen müşteriyi senin için not alır."
+      }
+    },
+    "features": {
+      "title": "İşini büyütmek için gereken her şey, tek sayfada.",
+      "sub": "Karmaşık bir panel değil — işiniz için gerçekten ihtiyacınız kadarı.",
+      "feat1": {
+        "title": "7/24 konuşan temsilci",
+        "desc": "Sen uyurken de müşterin soru sorabilir, temsilcin işletmeni tanıyarak cevap verir."
+      },
+      "feat2": {
+        "title": "Fotoğraf ve video",
+        "desc": "Hizmetlerini görsellerle anlat — her bloğa kendi fotoğrafını ya da kısa videonu ekle."
+      },
+      "feat3": {
+        "title": "Çoklu dil desteği",
+        "desc": "Ziyaretçi hangi dilde yazarsa temsilcin o dilde cevap verir, sen tek dilde kurarsın."
+      },
+      "feat4": {
+        "title": "Talep kutun hazır",
+        "desc": "İlgilenen her ziyaretçinin adı, iletişimi ve talebi otomatik olarak sana düşer."
+      },
+      "feat5": {
+        "title": "Tasarımla uğraşma",
+        "desc": "Tema, şablon, düzen seçmiyorsun — sayfan içeriğinden otomatik kuruluyor."
+      },
+      "feat6": {
+        "title": "Tüm sosyal medyalara hazır",
+        "desc": "Tek bir link, tek bir yerde — Instagram, WhatsApp, TikTok. Tüm platformlara uygun."
+      }
+    },
+    "audience": {
+      "title": "Sosyal medya üzerinden iş yapan herkes için.",
+      "sub": "Randevu, fiyat, müsaitlik sorularını her gün tek tek cevaplayan işletme sahiplerine.",
+      "chips": ["Kuaför & berber", "Masaj & spa", "Kişisel antrenör", "Danışmanlık", "El yapımı ürün atölyesi", "Fotoğrafçı", "Diş & estetik klinikleri"]
+    },
+    "mockup": {
+      "services": "Hizmetler",
+      "servicesDesc": "Masaj, cilt bakımı, saç",
+      "prices": "Fiyatlar",
+      "pricesDesc": "₺600'den başlayan paketler",
+      "hours": "Çalışma saatleri",
+      "hoursDesc": "Her gün 10:00 – 19:00",
+      "msg1": "Cumartesi saat 15:00 müsait mi?",
+      "msg2": "Evet, 15:00 uygun! Adını ve numaranı alabilir miyim?",
+      "typing": "yazıyor..."
+    },
+    "cta": {
+      "title": "Bio'ndaki link, bugün konuşmaya başlasın.",
+      "sub": "Kurulum 10 dakika sürer, kart bilgisi istemez.",
+      "startFree": "Ücretsiz başla",
+      "demo": "Örnek bir sayfa gör"
+    },
+    "footer": {
+      "privacy": "Gizlilik",
+      "terms": "Kullanım şartları",
+      "contact": "İletişim"
+    }
+  },
+  "RequestAccess": {
+    "step1": {
+      "title": "Erken Erişim Talebi",
+      "desc": "Öncelikle hesabınız için kullanacağımız e-posta adresinizi ve çalışma alanı adınızı girelim.",
+      "emailLabel": "Hesap E-postası",
+      "emailPlaceholder": "ornek@mail.com",
+      "nameLabel": "Çalışma Alanı (Workspace)",
+      "namePlaceholder": "Örn: X Stüdyo",
+      "categoryLabel": "Kategori / Alan",
+      "categoryPlaceholder": "Örn: Fotoğrafçı, Güzellik Uzmanı, Terapist..."
+    },
+    "step2": {
+      "title": "Nasıl İletişim Kurulacak?",
+      "desc": "Müşterileriniz sizinle sayfadan nasıl iletişime geçsin?",
+      "methodsLabel": "İletişim Yöntemleri (Birden fazla seçebilirsiniz)",
+      "methods": {
+        "whatsapp": "WhatsApp",
+        "phone": "Telefon Araması",
+        "instagram": "Instagram DM",
+        "email": "E-posta"
+      },
+      "placeholders": {
+        "whatsapp": "Örn: +90 5XX XXX XX XX",
+        "phone": "Örn: +90 5XX XXX XX XX",
+        "instagram": "Örn: @kullaniciadi",
+        "email": "Örn: iletisim@sirket.com"
+      }
+    },
+    "step3": {
+      "title": "Talebiniz Alındı!",
+      "desc": "Erken erişim talebiniz başarıyla bize ulaştı. İncelemenin ardından verdiğiniz e-posta adresine bir giriş bağlantısı (Magic Link) göndereceğiz.",
+      "homeBtn": "Ana Sayfaya Dön"
+    },
+    "nav": {
+      "prev": "Geri",
+      "next": "İleri",
+      "submit": "Talebi Gönder",
+      "submitting": "Gönderiliyor..."
+    },
+    "alerts": {
+      "error": "Bir hata oluştu. Lütfen tekrar deneyin."
+    }
+  }
+}

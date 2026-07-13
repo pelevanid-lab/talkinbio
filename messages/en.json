@@ -1,0 +1,134 @@
+{
+  "Landing": {
+    "nav": {
+      "startFree": "Start for free"
+    },
+    "hero": {
+      "eyebrow": "Next-gen for all your social media accounts",
+      "headlinePrefix": "It's not link in bio,",
+      "headlineStrike": "look",
+      "headlineSuffix": "it's now ",
+      "sub": "Don't let your visitors see a static page when they click your link — let them talk to an agent that knows your business. Setup takes 10 minutes, no code required.",
+      "startFree": "Start for free",
+      "howItWorks": "How it works ↓",
+      "note": "No credit card required · Live in 10 minutes"
+    },
+    "statement": {
+      "text": "Don't you think \"Link in bio\" is getting old? Don't trap your customers in mazes with the old web-form layout. Leave your business to talkinbio; let it ask, guide, and answer."
+    },
+    "steps": {
+      "title": "The setup itself is your agent's training.",
+      "sub": "No separate \"train the AI\" step. Every answer you give while setting up your page becomes your agent's knowledge base.",
+      "step1": {
+        "title": "Answer a few questions",
+        "desc": "What do you sell, what are your prices, your hours — you explain it in a simple chat flow, no form filling."
+      },
+      "step2": {
+        "title": "Your page and your agent are born together",
+        "desc": "The information you provide turns into both a visible page and what your agent knows — one source, two outputs."
+      },
+      "step3": {
+        "title": "Put your link in your bio, let it talk",
+        "desc": "Visitor asks a question, your agent answers, and takes note of interested customers for you."
+      }
+    },
+    "features": {
+      "title": "Everything you need to grow your business, on one page.",
+      "sub": "Not a complex panel — just exactly what you need for your business.",
+      "feat1": {
+        "title": "24/7 talking agent",
+        "desc": "Your customers can ask questions even while you sleep, your agent answers by knowing your business."
+      },
+      "feat2": {
+        "title": "Photo and video",
+        "desc": "Explain your services with visuals — add your own photo or short video to each block."
+      },
+      "feat3": {
+        "title": "Multi-language support",
+        "desc": "Your agent answers in whichever language the visitor writes, you only set it up in one language."
+      },
+      "feat4": {
+        "title": "Your inbox is ready",
+        "desc": "The name, contact, and request of every interested visitor automatically drops to you."
+      },
+      "feat5": {
+        "title": "Don't bother with design",
+        "desc": "You don't choose a theme, template, or layout — your page is automatically built from its content."
+      },
+      "feat6": {
+        "title": "Ready for all social media",
+        "desc": "One link, in one place — Instagram, WhatsApp, TikTok. Suitable for all platforms."
+      }
+    },
+    "audience": {
+      "title": "For anyone doing business on social media.",
+      "sub": "For business owners answering appointment, price, and availability questions one by one every day.",
+      "chips": ["Hairdresser & barber", "Massage & spa", "Personal trainer", "Consulting", "Handmade craft studio", "Photographer", "Dental & aesthetic clinics"]
+    },
+    "mockup": {
+      "services": "Services",
+      "servicesDesc": "Massage, skin care, hair",
+      "prices": "Prices",
+      "pricesDesc": "Packages starting from $20",
+      "hours": "Working hours",
+      "hoursDesc": "Every day 10:00 – 19:00",
+      "msg1": "Is Saturday at 15:00 available?",
+      "msg2": "Yes, 15:00 works! Can I get your name and number?",
+      "typing": "typing..."
+    },
+    "cta": {
+      "title": "Let your bio link start talking today.",
+      "sub": "Setup takes 10 minutes, no credit card required.",
+      "startFree": "Start for free",
+      "demo": "See a sample page"
+    },
+    "footer": {
+      "privacy": "Privacy",
+      "terms": "Terms of use",
+      "contact": "Contact"
+    }
+  },
+  "RequestAccess": {
+    "step1": {
+      "title": "Early Access Request",
+      "desc": "First, let's get your email address and workspace name for your account.",
+      "emailLabel": "Account Email",
+      "emailPlaceholder": "example@mail.com",
+      "nameLabel": "Workspace",
+      "namePlaceholder": "Ex: X Studio",
+      "categoryLabel": "Category / Field",
+      "categoryPlaceholder": "Ex: Photographer, Beauty Expert, Therapist..."
+    },
+    "step2": {
+      "title": "How to get in touch?",
+      "desc": "How should your customers contact you from your page?",
+      "methodsLabel": "Contact Methods (You can select multiple)",
+      "methods": {
+        "whatsapp": "WhatsApp",
+        "phone": "Phone Call",
+        "instagram": "Instagram DM",
+        "email": "Email"
+      },
+      "placeholders": {
+        "whatsapp": "Ex: +1 5XX XXX XX XX",
+        "phone": "Ex: +1 5XX XXX XX XX",
+        "instagram": "Ex: @username",
+        "email": "Ex: hello@company.com"
+      }
+    },
+    "step3": {
+      "title": "Request Received!",
+      "desc": "We have successfully received your early access request. After review, we will send a login link (Magic Link) to the email address you provided.",
+      "homeBtn": "Return to Homepage"
+    },
+    "nav": {
+      "prev": "Back",
+      "next": "Next",
+      "submit": "Submit Request",
+      "submitting": "Submitting..."
+    },
+    "alerts": {
+      "error": "An error occurred. Please try again."
+    }
+  }
+}
