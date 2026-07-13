@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Check, X } from 'lucide-react';
+import { Loader2, Check, X, Trash2, Send } from 'lucide-react';
 
 export default function AdminRequestsClient({ initialPending, initialProcessed }: { initialPending: any[], initialProcessed: any[] }) {
   const router = useRouter();
@@ -21,6 +21,35 @@ export default function AdminRequestsClient({ initialPending, initialProcessed }
       
       if (target) {
         setProcessed([{ ...target, status: action === 'approve' ? 'approved' : 'rejected' }, ...processed]);
+      }
+      
+      router.refresh();
+    } catch (err) {
+      alert("İşlem başarısız oldu.");
+      console.error(err);
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const handleProcessedAction = async (id: string, action: 'delete' | 'resend') => {
+    if (action === 'delete' && !window.confirm('Bu kaydı ve ilgili tüm kullanıcı/işletme verilerini silmek istediğinize emin misiniz?')) {
+      return;
+    }
+    
+    setLoadingId(id + action);
+    try {
+      const url = action === 'delete' 
+        ? `/api/admin/requests/${id}` 
+        : `/api/admin/requests/${id}/resend`;
+        
+      const res = await fetch(url, { method: action === 'delete' ? 'DELETE' : 'POST' });
+      if (!res.ok) throw new Error('Action failed');
+      
+      if (action === 'delete') {
+        setProcessed(processed.filter(r => r.id !== id));
+      } else {
+        alert('Giriş linki başarıyla tekrar gönderildi!');
       }
       
       router.refresh();
@@ -96,10 +125,31 @@ export default function AdminRequestsClient({ initialPending, initialProcessed }
                   <h3 className="font-medium text-slate-900">{req.name}</h3>
                   <p className="text-sm text-slate-500">{req.email}</p>
                 </div>
-                <div>
+                <div className="flex items-center gap-4">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${req.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     {req.status === 'approved' ? 'Onaylandı' : 'Reddedildi'}
                   </span>
+                  
+                  <div className="flex gap-2">
+                    {req.status === 'approved' && (
+                      <button 
+                        onClick={() => handleProcessedAction(req.id, 'resend')}
+                        disabled={loadingId !== null}
+                        title="Tekrar Link Gönder"
+                        className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition disabled:opacity-50"
+                      >
+                        {loadingId === req.id + 'resend' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => handleProcessedAction(req.id, 'delete')}
+                      disabled={loadingId !== null}
+                      title="Sil"
+                      className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition disabled:opacity-50"
+                    >
+                      {loadingId === req.id + 'delete' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
