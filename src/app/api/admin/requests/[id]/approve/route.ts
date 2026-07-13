@@ -30,7 +30,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://talkinbio.com';
     
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(request.email, {
-      redirectTo: `${baseUrl}/`
+      redirectTo: `${baseUrl}/auth/callback`
     });
     
     let userId = inviteData?.user?.id;
@@ -47,7 +47,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         type: 'magiclink',
         email: request.email,
         options: {
-          redirectTo: `${baseUrl}/`
+          redirectTo: `${baseUrl}/auth/callback`
         }
       });
       userId = linkData?.user?.id;
@@ -56,7 +56,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       await supabaseAdmin.auth.signInWithOtp({ 
         email: request.email,
         options: {
-          emailRedirectTo: `${baseUrl}/`
+          emailRedirectTo: `${baseUrl}/auth/callback`
         }
       });
     } else if (inviteError) {
