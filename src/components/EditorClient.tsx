@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Plus, Edit2, Copy, ExternalLink, RefreshCw } from 'lucide-react';
+import { Loader2, Plus, Edit2, Copy, ExternalLink, RefreshCw, Smartphone, X } from 'lucide-react';
 import BlocksRenderer from './BlocksRenderer';
 import BlockEditorModal from './BlockEditorModal';
 
@@ -10,6 +10,7 @@ export default function EditorClient({ business, initialBlocks }: { business: an
   const [blocks, setBlocks] = useState(initialBlocks);
   const [editingBlock, setEditingBlock] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
   const supabase = createClient();
 
   // 70% threshold calculation
@@ -110,8 +111,16 @@ export default function EditorClient({ business, initialBlocks }: { business: an
   return (
     <div className="flex h-[100dvh]">
       {/* Left Sidebar: Controls & Progress */}
-      <div className="w-1/3 bg-white border-r border-slate-200 p-6 flex flex-col h-full overflow-y-auto">
-        <h1 className="text-2xl font-bold font-bricolage text-[var(--ink)] mb-6">Canlı Sayfam</h1>
+      <div className="w-full md:w-1/3 bg-white border-r border-slate-200 p-6 flex flex-col h-full overflow-y-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold font-bricolage text-[var(--ink)]">Canlı Sayfam</h1>
+          <button 
+            className="md:hidden p-2 bg-[var(--coral-tint)] text-[var(--coral)] rounded-lg font-medium text-sm flex items-center"
+            onClick={() => setShowMobilePreview(true)}
+          >
+            <Smartphone className="w-4 h-4 mr-1" /> Önizleme
+          </button>
+        </div>
         
         <div className="bg-[var(--paper)] rounded-xl p-4 mb-8">
           <div className="flex justify-between items-center mb-2">
@@ -174,8 +183,19 @@ export default function EditorClient({ business, initialBlocks }: { business: an
       </div>
 
       {/* Right Area: Live Preview */}
-      <div className="w-2/3 bg-slate-100 relative flex justify-center overflow-y-auto">
-        <div className="my-10 w-full max-w-sm rounded-[3rem] border-[12px] border-slate-800 bg-[var(--paper)] shadow-2xl overflow-hidden flex flex-col relative h-[800px] shrink-0">
+      <div className={`
+        ${showMobilePreview ? 'fixed inset-0 z-[150] bg-slate-100 flex items-center pt-8' : 'hidden'} 
+        md:relative md:flex md:w-2/3 bg-slate-100 justify-center overflow-y-auto
+      `}>
+        {showMobilePreview && (
+          <button 
+            className="absolute top-4 right-4 z-[200] p-2 bg-white rounded-full shadow-lg text-slate-600 md:hidden"
+            onClick={() => setShowMobilePreview(false)}
+          >
+            <X className="w-6 h-6" />
+          </button>
+        )}
+        <div className="my-10 w-full max-w-sm rounded-[3rem] border-[12px] border-slate-800 bg-[var(--paper)] shadow-2xl overflow-hidden flex flex-col relative h-[800px] shrink-0 mx-auto">
           
           {/* Mockup Notch */}
           <div className="absolute top-0 inset-x-0 h-6 flex justify-center z-50">

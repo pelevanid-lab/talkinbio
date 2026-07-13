@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
+import MediaUploader from './MediaUploader';
 
 export default function BlockEditorModal({ 
   block, 
@@ -64,13 +65,10 @@ export default function BlockEditorModal({
             </div>
             {block.type === 'about' && (
               <div>
-                <label className="block text-sm font-medium mb-1">Görsel URL (Opsiyonel)</label>
-                <input 
-                  type="text"
-                  value={content.mediaUrl || ''} 
-                  onChange={(e) => setContent({...content, mediaUrl: e.target.value})}
-                  className="w-full p-3 border border-slate-200 rounded-lg"
-                  placeholder="https://..."
+                <label className="block text-sm font-medium mb-1">Görsel / Video</label>
+                <MediaUploader 
+                  value={content.mediaUrl || ''}
+                  onChange={(url) => setContent({...content, mediaUrl: url})}
                 />
               </div>
             )}
@@ -123,15 +121,16 @@ export default function BlockEditorModal({
                     placeholder="Fiyat (Örn: 400 TL)" 
                     className="flex-1 p-2 border border-slate-200 rounded"
                   />
-                  <input 
-                    value={item.mediaUrl || ''} 
-                    onChange={e => {
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1 text-slate-500">Hizmet Görseli / Videosu</label>
+                  <MediaUploader 
+                    value={item.mediaUrl || ''}
+                    onChange={url => {
                       const newItems = [...content.items];
-                      newItems[idx].mediaUrl = e.target.value;
+                      newItems[idx].mediaUrl = url;
                       setContent({...content, items: newItems});
                     }}
-                    placeholder="Görsel URL (Opsiyonel)" 
-                    className="flex-1 p-2 border border-slate-200 rounded"
                   />
                 </div>
               </div>
