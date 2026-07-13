@@ -11,21 +11,29 @@ export default function AuthCallbackPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleAuth = async () => {
+    // Listen for auth state changes (this is triggered when the hash is parsed)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || session) {
+        router.push('/dashboard/leads');
+      } else if (event === 'SIGNED_OUT') {
+        router.push('/login');
+      }
+    });
+
+    // Also check the current session just in case it's already there
+    const checkSession = async () => {
       try {
-        // createBrowserClient automatically parses the hash fragment and sets the session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          throw sessionError;
-        }
+        if (sessionError) throw sessionError;
 
         if (session) {
-          // Successfully logged in, redirect to dashboard
           router.push('/dashboard/leads');
         } else {
-          // No session found, redirect to login
-          router.push('/login');
+          // Only redirect to login if there is NO hash fragment.
+          // If there is a hash fragment, wait for onAuthStateChange to process it.
+          if (!window.location.hash.includes('access_token')) {
+            router.push('/login');
+          }
         }
       } catch (err: any) {
         console.error('Auth callback error:', err);
@@ -33,7 +41,11 @@ export default function AuthCallbackPage() {
       }
     };
 
-    handleAuth();
+    checkSession();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [router, supabase]);
 
   if (error) {
