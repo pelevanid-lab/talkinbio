@@ -157,12 +157,16 @@ export default function EditorClient({ business, initialBlocks }: { business: an
           <h3 className="font-medium text-[var(--ink)]">İçerik Blokları</h3>
           {blocks.length === 0 && <p className="text-sm text-slate-500">Henüz hiç blok eklemediniz.</p>}
           {blocks.map(b => (
-            <div key={b.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-slate-300 transition">
+            <div 
+              key={b.id} 
+              onClick={() => setEditingBlock(b)}
+              className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-slate-300 transition cursor-pointer group"
+            >
               <div>
-                <span className="font-medium text-sm text-[var(--ink)] block">{b.title}</span>
+                <span className="font-medium text-sm text-[var(--ink)] block group-hover:text-[var(--coral)] transition-colors">{b.title}</span>
                 <span className="text-xs text-[var(--ink-soft)] capitalize">{b.type}</span>
               </div>
-              <button onClick={() => setEditingBlock(b)} className="text-[var(--teal)] hover:bg-[var(--coral-tint)] hover:text-[var(--coral)] p-2 rounded transition">
+              <button className="text-[var(--teal)] group-hover:bg-[var(--coral-tint)] group-hover:text-[var(--coral)] p-2 rounded transition">
                 <Edit2 className="w-4 h-4" />
               </button>
             </div>
@@ -211,20 +215,9 @@ export default function EditorClient({ business, initialBlocks }: { business: an
             <p className="text-[var(--ink-soft)] font-medium text-sm">{business.category}</p>
           </div>
 
-          {/* Blocks (Click to edit) */}
+          {/* Blocks (True Preview) */}
           <div className="flex-1 overflow-y-auto px-4 pb-28 space-y-4">
-            {blocks.map(block => (
-              <div key={block.id} className="relative group cursor-pointer" onClick={() => setEditingBlock(block)}>
-                <div className="absolute inset-0 bg-[var(--coral)]/5 rounded-2xl opacity-0 group-hover:opacity-100 transition pointer-events-none z-10 flex items-center justify-center">
-                  <div className="bg-[var(--coral)] text-white px-3 py-1 rounded-full text-xs font-medium shadow-sm">
-                    Düzenle
-                  </div>
-                </div>
-                <div className="pointer-events-none">
-                  <BlocksRenderer blocks={[block]} />
-                </div>
-              </div>
-            ))}
+            <BlocksRenderer blocks={blocks} />
             {blocks.length === 0 && (
               <div className="text-center p-6 bg-white rounded-2xl shadow-sm border border-[var(--border-light)] text-[var(--muted)] text-sm">
                 Sayfanız şu an boş. Sol taraftan blok ekleyerek doldurmaya başlayın.
