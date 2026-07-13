@@ -61,8 +61,8 @@
       }
     },
     "audience": {
-      "title": "Sosyal medya üzerinden iş yapan herkes için.",
-      "sub": "Randevu, fiyat, müsaitlik sorularını her gün tek tek cevaplayan işletme sahiplerine.",
+      "title": "Sosyal medyayı profesyonelce kullanan herkes için.",
+      "sub": "Randevu, fiyat, müsaitlik sorularını ve daha fazlasını her gün tek tek cevaplamaya uğraşanlar için.",
       "chips": ["Kuaför & berber", "Masaj & spa", "Kişisel antrenör", "Danışmanlık", "El yapımı ürün atölyesi", "Fotoğrafçı", "Diş & estetik klinikleri"]
     },
     "mockup": {

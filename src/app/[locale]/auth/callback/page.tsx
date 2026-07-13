@@ -35,7 +35,7 @@ export default function AuthCallbackPage() {
         }
 
         if (session) {
-          router.push('/dashboard/leads');
+          router.push('/dashboard/editor');
         } else {
           router.push('/login');
         }

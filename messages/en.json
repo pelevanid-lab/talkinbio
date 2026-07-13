@@ -61,8 +61,8 @@
       }
     },
     "audience": {
-      "title": "For anyone doing business on social media.",
-      "sub": "For business owners answering appointment, price, and availability questions one by one every day.",
+      "title": "For everyone who uses social media professionally.",
+      "sub": "For those who struggle to answer appointments, pricing, availability questions and more one by one every day.",
       "chips": ["Hairdresser & barber", "Massage & spa", "Personal trainer", "Consulting", "Handmade craft studio", "Photographer", "Dental & aesthetic clinics"]
     },
     "mockup": {
