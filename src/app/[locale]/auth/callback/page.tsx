@@ -11,29 +11,33 @@ export default function AuthCallbackPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Listen for auth state changes (this is triggered when the hash is parsed)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' || session) {
-        router.push('/dashboard/leads');
-      } else if (event === 'SIGNED_OUT') {
-        router.push('/login');
-      }
-    });
-
-    // Also check the current session just in case it's already there
-    const checkSession = async () => {
+    const handleAuth = async () => {
       try {
+        const hash = window.location.hash;
+        if (hash && hash.includes('access_token')) {
+          const params = new URLSearchParams(hash.replace('#', ''));
+          const access_token = params.get('access_token');
+          const refresh_token = params.get('refresh_token');
+          
+          if (access_token && refresh_token) {
+            const { error: setSessionError } = await supabase.auth.setSession({ 
+              access_token, 
+              refresh_token 
+            });
+            if (setSessionError) throw setSessionError;
+          }
+        }
+
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
+        
+        if (sessionError) {
+          throw sessionError;
+        }
 
         if (session) {
           router.push('/dashboard/leads');
         } else {
-          // Only redirect to login if there is NO hash fragment.
-          // If there is a hash fragment, wait for onAuthStateChange to process it.
-          if (!window.location.hash.includes('access_token')) {
-            router.push('/login');
-          }
+          router.push('/login');
         }
       } catch (err: any) {
         console.error('Auth callback error:', err);
@@ -41,11 +45,7 @@ export default function AuthCallbackPage() {
       }
     };
 
-    checkSession();
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    handleAuth();
   }, [router, supabase]);
 
   if (error) {
