@@ -105,11 +105,11 @@ export default function MediaUploader({ value, onChange, label = "Görsel Seç v
 
       {value ? (
         // Preview State
-        <div className="relative w-full h-40 bg-slate-100 rounded-lg border border-slate-200 overflow-hidden group">
+        <div className="relative w-full bg-slate-50 rounded-lg border border-slate-200 overflow-hidden group flex items-center justify-center">
           {value.match(/\.(mp4|webm|ogg)$/i) ? (
-            <video src={value} className="w-full h-full object-cover" controls />
+            <video src={value} className="w-full max-h-64 object-contain" controls />
           ) : (
-            <img src={value} alt="Preview" className="w-full h-full object-cover" />
+            <img src={value} alt="Preview" className="w-full max-h-64 object-contain" />
           )}
           <button 
             type="button"

@@ -81,7 +81,18 @@ export default function BlocksRenderer({ blocks }: { blocks: any[] }) {
                   </div>
                 ) : (
                   <div className="text-[var(--ink-soft)] prose prose-sm max-w-none">
-                    {block.content?.text || JSON.stringify(block.content)}
+                    {block.content?.mediaUrl && (
+                      <div className="mb-4 rounded-xl overflow-hidden bg-slate-50 flex justify-center">
+                        {block.content.mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+                          <video src={block.content.mediaUrl} className="w-full max-h-80 object-contain" controls />
+                        ) : (
+                          <img src={block.content.mediaUrl} alt={block.title} className="w-full max-h-80 object-contain" />
+                        )}
+                      </div>
+                    )}
+                    <div className="whitespace-pre-wrap">
+                      {block.content?.text || (typeof block.content === 'string' ? block.content : JSON.stringify(block.content))}
+                    </div>
                   </div>
                 )}
               </div>

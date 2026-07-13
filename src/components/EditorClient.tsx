@@ -206,29 +206,50 @@ export default function EditorClient({ business, initialBlocks }: { business: an
             <div className="w-32 h-6 bg-slate-800 rounded-b-xl"></div>
           </div>
 
-          {/* Mockup Header */}
-          <div className="w-full bg-[var(--paper)] pt-16 pb-6 px-4 flex flex-col items-center text-center">
-            <div className="w-20 h-20 bg-[var(--coral-tint)] text-[var(--coral)] rounded-full flex items-center justify-center text-3xl font-bold mb-3">
-              {business.name.charAt(0).toUpperCase()}
-            </div>
-            <h2 className="text-xl font-bold font-bricolage text-[var(--ink)]">{business.name}</h2>
-            <p className="text-[var(--ink-soft)] font-medium text-sm">{business.category}</p>
-          </div>
-
-          {/* Blocks (True Preview) */}
-          <div className="flex-1 overflow-y-auto px-4 pb-28 space-y-4">
-            <BlocksRenderer blocks={blocks} />
-            {blocks.length === 0 && (
-              <div className="text-center p-6 bg-white rounded-2xl shadow-sm border border-[var(--border-light)] text-[var(--muted)] text-sm">
-                Sayfanız şu an boş. Sol taraftan blok ekleyerek doldurmaya başlayın.
+          {/* Top 70% Content Area */}
+          <div className="flex-1 overflow-y-auto pb-[30%] relative">
+            {/* Mockup Header */}
+            <div className="w-full bg-[var(--paper)] pt-16 pb-6 px-4 flex flex-col items-center text-center">
+              <div className="w-20 h-20 bg-[var(--coral-tint)] text-[var(--coral)] rounded-full flex items-center justify-center text-3xl font-bold mb-3">
+                {business.name.charAt(0).toUpperCase()}
               </div>
-            )}
+              <h2 className="text-xl font-bold font-bricolage text-[var(--ink)]">{business.name}</h2>
+              <p className="text-[var(--ink-soft)] font-medium text-sm">{business.category}</p>
+            </div>
+
+            {/* Blocks (True Preview) */}
+            <div className="px-4 pb-4 space-y-4">
+              <BlocksRenderer blocks={blocks} />
+              {blocks.length === 0 && (
+                <div className="text-center p-6 bg-white rounded-2xl shadow-sm border border-[var(--border-light)] text-[var(--muted)] text-sm">
+                  Sayfanız şu an boş. Sol taraftan blok ekleyerek doldurmaya başlayın.
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Chat Mockup */}
-          <div className="absolute bottom-0 w-full h-[100px] bg-transparent flex items-end justify-center pb-6 px-4">
-            <div className="w-full bg-white shadow-xl rounded-full h-14 flex items-center px-4 border border-[var(--border-light)]">
-              <span className="text-[var(--muted)] text-sm">Asistanınıza bir mesaj yazın...</span>
+          {/* Bottom 30% Chat Mockup */}
+          <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-transparent flex flex-col justify-end p-4 z-50 pointer-events-none">
+            <div className="w-full bg-white border border-[var(--border-light)] rounded-2xl shadow-lg p-4 flex items-center justify-between mb-4 transform transition">
+              <div className="flex items-center space-x-3 overflow-hidden">
+                <div className="w-10 h-10 bg-[var(--coral-tint)] rounded-full flex items-center justify-center text-[var(--coral)] flex-shrink-0">
+                  <div className="w-5 h-5 bg-[var(--coral)] rounded-full" />
+                </div>
+                <div className="truncate">
+                  <p className="text-xs text-[var(--teal)] font-medium mb-0.5">{business.name} Asistanı</p>
+                  <p className="text-sm text-[var(--ink)] truncate">Size nasıl yardımcı olabilirim?</p>
+                </div>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-[var(--paper)] flex items-center justify-center flex-shrink-0 text-[var(--ink-soft)]">
+                <div className="w-4 h-4 bg-[var(--ink-soft)] rounded-full" />
+              </div>
+            </div>
+            
+            <div className="w-full pl-4 pr-12 py-3.5 bg-[var(--paper)] border border-[var(--border-light)] rounded-full text-sm text-[var(--muted)] relative">
+              Asistanınıza mesaj yazın...
+              <div className="absolute right-1.5 top-1 w-10 h-10 bg-[var(--coral)] rounded-full flex items-center justify-center">
+                <div className="w-3 h-3 border-t-2 border-r-2 border-white transform rotate-45 mr-1" />
+              </div>
             </div>
           </div>
         </div>
