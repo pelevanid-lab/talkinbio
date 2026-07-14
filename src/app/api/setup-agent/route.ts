@@ -25,10 +25,10 @@ export async function POST(req: Request) {
       .eq('business_id', businessId)
       .order('order', { ascending: true });
 
-    const titles: Record<string, { about: string, services: string }> = {
-      tr: { about: 'Hakkımda', services: 'Hizmetler' },
-      en: { about: 'About', services: 'Services' },
-      ru: { about: 'Обо мне', services: 'Услуги' }
+    const titles: Record<string, { about: string, services: string, links: string }> = {
+      tr: { about: 'Hakkımda', services: 'Hizmetler', links: 'Bağlantılar' },
+      en: { about: 'About', services: 'Services', links: 'Links' },
+      ru: { about: 'Обо мне', services: 'Услуги', links: 'Ссылки' }
     };
     
     const currentLocale = (locale as string) || 'tr';
