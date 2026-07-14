@@ -139,7 +139,7 @@ export async function POST(req: Request) {
               },
               order: 1,
               is_visible: true
-            }, { onConflict: 'business_id,type' });
+            }, { onConflict: 'business_id,singleton_key' });
 
             if (error) return `Error: ${error.message}`;
             return 'Hakkında bloğu güncellendi. Lütfen sıradaki bölüme geçerek sohbete devam et.';
@@ -177,7 +177,7 @@ export async function POST(req: Request) {
               },
               order: 2,
               is_visible: true
-            }, { onConflict: 'business_id,type' });
+            }, { onConflict: 'business_id,singleton_key' });
             if (error) return `Error: ${error.message}`;
             return `Hizmetler bloğu başarıyla kaydedildi.`;
           }
@@ -206,7 +206,7 @@ export async function POST(req: Request) {
                 layoutVariant: args.layoutVariant || existing?.content?.layoutVariant || 'stacked'
               },
               order: 4
-            }, { onConflict: 'business_id,type' });
+            }, { onConflict: 'business_id,singleton_key' });
             if (error) return `Error saving links: ${error.message}`;
             return `Sosyal medya / link bloğu kaydedildi.`;
           }
@@ -243,7 +243,7 @@ export async function POST(req: Request) {
                 layoutVariant: args.layoutVariant || existing?.content?.layoutVariant || 'grid'
               },
               order: 5
-            }, { onConflict: 'business_id,type' });
+            }, { onConflict: 'business_id,singleton_key' });
             if (error) return `Error: ${error.message}`;
             return `Galeri bloğu başarıyla kaydedildi.`;
           }
@@ -289,7 +289,7 @@ export async function POST(req: Request) {
                 backgroundOverlay: args.backgroundOverlay || existing?.content?.backgroundOverlay || 'dark'
               },
               order: 6
-            }, { onConflict: 'business_id,type' });
+            }, { onConflict: 'business_id,singleton_key' });
             if (error) return `Error: ${error.message}`;
             return `Müşteri yorumları kaydedildi.`;
           }
@@ -317,7 +317,7 @@ export async function POST(req: Request) {
               title: titlesHours[currentLocale] || titlesHours['tr'],
               content: { schedule, layoutVariant: layoutVariant || 'table' },
               order: 3
-            }, { onConflict: 'business_id,type' });
+            }, { onConflict: 'business_id,singleton_key' });
             if (error) return `Error: ${error.message}`;
             return 'Çalışma saatleri kaydedildi.';
           }
@@ -344,7 +344,7 @@ export async function POST(req: Request) {
               title: titlesFaq[currentLocale] || titlesFaq['tr'],
               content: { items: newItems, layoutVariant: layoutVariant || existing?.content?.layoutVariant || 'chips' },
               order: 7
-            }, { onConflict: 'business_id,type' });
+            }, { onConflict: 'business_id,singleton_key' });
             if (error) return `Error: ${error.message}`;
             return 'SSS bloğu kaydedildi.';
           }
