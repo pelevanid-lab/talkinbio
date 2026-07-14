@@ -86,61 +86,55 @@ export async function POST(req: Request) {
             layoutVariant: z.enum(['standard', 'hero-overlay', 'split-card']).optional().describe('Tasarım tipi. hero-overlay: Tam ekran görsel ve üstüne yazı. split-card: Yan yana resim ve yazı.')
           }),
           execute: async ({ tr, en, ru, mediaUrl, layoutVariant }) => {
-            const existingAbout = blocks?.find((b: any) => b.type === 'about');
-            const newContent = existingAbout ? { ...existingAbout.content } : {};
-            newContent.tr = { ...newContent.tr, text: tr.text, title: locTitles.about };
-            newContent.en = { ...newContent.en, text: en.text, title: titles.en.about };
-            newContent.ru = { ...newContent.ru, text: ru.text, title: titles.ru.about };
-            if (mediaUrl) newContent.mediaUrl = mediaUrl;
-            if (layoutVariant) newContent.layoutVariant = layoutVariant;
-
-            if (existingAbout) {
-              await supabase.from('blocks').update({ content: newContent }).eq('id', existingAbout.id);
-            } else {
-              await supabase.from('blocks').insert({
-                business_id: businessId,
-                type: 'about',
-                title: locTitles.about,
-                content: newContent,
-                order: 1,
-                is_visible: true
-              });
-            }
+            const { error } = await supabase.from('blocks').upsert({
+              business_id: businessId,
+              type: 'about',
+              title: locTitles.about,
+              content: {
+                tr: { text: tr.text, title: locTitles.about },
+                en: { text: en.text, title: titles.en.about },
+                ru: { text: ru.text, title: titles.ru.about },
+                mediaUrl: mediaUrl || undefined,
+                layoutVariant: layoutVariant || 'standard'
+              },
+              order: 1,
+              is_visible: true
+            }, { onConflict: 'business_id,type' });
+            
+            if (error) return `Error: ${error.message}`;
             return 'Hakkında bloğu güncellendi. Lütfen sıradaki bölüme geçerek sohbete devam et.';
           }
         }),
-        addService: tool({
-          description: 'Yeni bir hizmet (service) ekler. Metinleri 3 dilde sağlamalısın.',
+        addServices: tool({
+          description: 'Yeni hizmetleri (services) ekler. Metinleri 3 dilde sağlamalısın.',
           parameters: z.object({
-            tr: z.object({ title: z.string(), description: z.string().optional() }),
-            en: z.object({ title: z.string(), description: z.string().optional() }),
-            ru: z.object({ title: z.string(), description: z.string().optional() }),
-            price: z.string().optional(),
-            mediaUrl: z.string().optional(),
-            layoutVariant: z.enum(['list', 'grid-cards']).optional().describe('Tasarım tipi. list: Alt alta, grid-cards: Yan yana kutucuklar.')
+            layoutVariant: z.enum(['list', 'grid-cards']).optional().describe('Tasarım tipi. list: Alt alta, grid-cards: Yan yana kutucuklar.'),
+            items: z.array(z.object({
+              tr: z.object({ title: z.string(), description: z.string().optional() }),
+              en: z.object({ title: z.string(), description: z.string().optional() }),
+              ru: z.object({ title: z.string(), description: z.string().optional() }),
+              price: z.string().optional(),
+              mediaUrl: z.string().optional()
+            }))
           }),
-          execute: async ({ tr, en, ru, price, mediaUrl, layoutVariant }) => {
-            const existingServices = blocks?.find((b: any) => b.type === 'services');
-            const newItem = { tr, en, ru, price, mediaUrl };
-            
-            if (existingServices) {
-              const items = existingServices.content?.items || [];
-              const updatedContent = { ...existingServices.content, items: [...items, newItem] };
-              if (layoutVariant) updatedContent.layoutVariant = layoutVariant;
-              await supabase.from('blocks').update({
-                content: updatedContent
-              }).eq('id', existingServices.id);
-            } else {
-              await supabase.from('blocks').insert({
-                business_id: businessId,
-                type: 'services',
-                title: locTitles.services,
-                content: { items: [newItem], layoutVariant: layoutVariant || 'grid-cards' },
-                order: 2,
-                is_visible: true
-              });
-            }
-            return `Hizmet eklendi. Başka eklenecek hizmet yoksa sıradaki bölüme geç.`;
+          execute: async (args) => {
+            const { data: existing } = await supabase.from('blocks').select('*').eq('business_id', businessId).eq('type', 'services').single();
+            const oldItems = existing?.content?.items || [];
+            const newItems = [...oldItems, ...args.items];
+
+            const { error } = await supabase.from('blocks').upsert({
+              business_id: businessId,
+              type: 'services',
+              title: locTitles.services,
+              content: { 
+                items: newItems, 
+                layoutVariant: args.layoutVariant || existing?.content?.layoutVariant || 'grid-cards' 
+              },
+              order: 2,
+              is_visible: true
+            }, { onConflict: 'business_id,type' });
+            if (error) return `Error: ${error.message}`;
+            return `Hizmetler bloğu başarıyla kaydedildi.`;
           }
         }),
         addLinks: tool({
@@ -152,11 +146,15 @@ export async function POST(req: Request) {
             }))
           }),
           execute: async (args) => {
+            const { data: existing } = await supabase.from('blocks').select('*').eq('business_id', businessId).eq('type', 'links').single();
+            const oldItems = existing?.content?.items || [];
+            const newItems = [...oldItems, ...args.items];
+
             const { error } = await supabase.from('blocks').upsert({
               business_id: businessId,
               type: 'links',
               title: locTitles.links || 'Links',
-              content: { items: args.items },
+              content: { items: newItems },
               order: 4
             }, { onConflict: 'business_id,type' });
             if (error) return `Error saving links: ${error.message}`;
@@ -180,14 +178,18 @@ export async function POST(req: Request) {
             layoutVariant: z.enum(['grid', 'masonry']).optional().describe('Tasarım tipi. grid: Standart ızgara. masonry: Pinterest tarzı asimetrik ızgara.')
           }),
           execute: async (args) => {
+            const { data: existing } = await supabase.from('blocks').select('*').eq('business_id', businessId).eq('type', 'gallery').single();
+            const oldItems = existing?.content?.items || [];
+            const newItems = [...oldItems, ...args.items];
+
             const { error } = await supabase.from('blocks').upsert({
               business_id: businessId,
               type: 'gallery',
               title: args.tr.title,
               content: { 
                 tr: args.tr, en: args.en, ru: args.ru,
-                items: args.items,
-                layoutVariant: args.layoutVariant || 'grid'
+                items: newItems,
+                layoutVariant: args.layoutVariant || existing?.content?.layoutVariant || 'grid'
               },
               order: 5
             }, { onConflict: 'business_id,type' });
@@ -216,13 +218,17 @@ export async function POST(req: Request) {
             }))
           }),
           execute: async (args) => {
+            const { data: existing } = await supabase.from('blocks').select('*').eq('business_id', businessId).eq('type', 'testimonials').single();
+            const oldItems = existing?.content?.items || [];
+            const newItems = [...oldItems, ...args.items];
+
             const { error } = await supabase.from('blocks').upsert({
               business_id: businessId,
               type: 'testimonials',
               title: args.tr.title,
               content: { 
                 tr: args.tr, en: args.en, ru: args.ru,
-                items: args.items 
+                items: newItems 
               },
               order: 6
             }, { onConflict: 'business_id,type' });
