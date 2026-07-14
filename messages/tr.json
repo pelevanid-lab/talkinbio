@@ -1,14 +1,15 @@
 {
   "Landing": {
     "nav": {
-      "startFree": "Ücretsiz başla"
+      "startFree": "Ücretsiz başla",
+      "login": "Giriş Yap"
     },
     "hero": {
       "eyebrow": "Tüm sosyal medya hesaplarınız için yeni nesil",
       "headlinePrefix": "Link in bio değil,",
       "headlineStrike": "bak",
       "headlineSuffix": "artık ",
-      "sub": "Ziyaretçilerin linkine tıklayınca statik bir sayfa görmesin — kurduğun işletmeyi tanıyan bir temsilciyle konuşsun. Kurulumu 10 dakika, kod yazmaya gerek yok.",
+      "sub": "Ziyaretçilerin linkine tıklayınca statik bir sayfa görmek yerine, işini tanıyan bir temsilciyle konuşsun. Kurulumu 10 dakika, kod yazmaya gerek yok.",
       "startFree": "Ücretsiz başla",
       "howItWorks": "Nasıl çalışır ↓",
       "note": "Kredi kartı gerekmez · 10 dakikada yayında"

@@ -34,6 +34,9 @@ export default function HomePage() {
           <div className="links" style={{ display: 'none' }}></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <LanguageSwitcher />
+            <Link href="/login" className="btn btn-ghost" style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}>
+              {t('nav.login')}
+            </Link>
             <Link href="/request-access" className="btn btn-primary nav-cta">
               {t('nav.startFree')}
             </Link>

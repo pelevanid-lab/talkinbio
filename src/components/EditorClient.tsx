@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { Loader2, Plus, Edit2, Copy, ExternalLink, RefreshCw, Smartphone, X } from 'lucide-react';
 import BlocksRenderer from './BlocksRenderer';
 import BlockEditorModal from './BlockEditorModal';
+import SetPasswordModal from './SetPasswordModal';
 
 export default function EditorClient({ business, initialBlocks }: { business: any, initialBlocks: any[] }) {
   const [blocks, setBlocks] = useState(initialBlocks);
@@ -265,6 +266,7 @@ export default function EditorClient({ business, initialBlocks }: { business: an
           <Loader2 className="w-8 h-8 text-[var(--coral)] animate-spin" />
         </div>
       )}
+      <SetPasswordModal hasPassword={business.has_password || false} businessId={business.id} />
     </div>
   );
 }

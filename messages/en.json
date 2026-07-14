@@ -1,7 +1,8 @@
 {
   "Landing": {
     "nav": {
-      "startFree": "Start for free"
+      "startFree": "Start for free",
+      "login": "Login"
     },
     "hero": {
       "eyebrow": "Next-gen for all your social media accounts",
