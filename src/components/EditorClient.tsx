@@ -247,32 +247,44 @@ export default function EditorClient({ business, initialBlocks }: { business: an
                 onClick={() => setViewMode('chat')}
                 className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'chat' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                Ajan
+                {t('tabAgent')}
               </button>
               <button 
                 onClick={() => setViewMode('bulk')}
                 className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'bulk' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                Toplu
+                {t('tabBulk')}
               </button>
               <button 
                 onClick={() => setViewMode('manual')}
                 className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'manual' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                Manuel
+                {t('tabManual')}
               </button>
             </div>
 
             {/* Public Link Display */}
             <div className="mt-4 bg-slate-50 rounded-xl p-3 border border-slate-200">
               <div className="flex justify-between items-center mb-1">
-                <span className="text-xs font-medium text-slate-500">Profil Bağlantınız</span>
+                <span className="text-xs font-medium text-slate-500">{t('profileLink')}</span>
                 {isEditingUsername ? (
-                  <button onClick={handleUsernameSave} className="text-xs font-bold text-[var(--teal)] hover:text-teal-700">Kaydet</button>
+                  <button onClick={handleUsernameSave} className="text-xs font-bold text-[var(--teal)] hover:text-teal-700">{t('saveBtn')}</button>
                 ) : (
-                  <button onClick={() => setIsEditingUsername(true)} className="text-xs font-medium text-slate-500 hover:text-[var(--coral)] flex items-center">
-                    <Edit2 className="w-3 h-3 mr-1" /> Düzenle
-                  </button>
+                  <div className="flex items-center space-x-3">
+                    <button onClick={() => setIsEditingUsername(true)} className="text-xs font-medium text-slate-500 hover:text-[var(--coral)] flex items-center">
+                      <Edit2 className="w-3 h-3 mr-1" /> {t('editBtn')}
+                    </button>
+                    {(business.is_published || completeness >= 70) && (
+                      <a 
+                        href={`https://talkinbio.com/${username}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold text-[var(--coral)] hover:text-orange-600 flex items-center"
+                      >
+                        <ExternalLink className="w-3 h-3 mr-1" /> Aç
+                      </a>
+                    )}
+                  </div>
                 )}
               </div>
               
@@ -383,14 +395,14 @@ export default function EditorClient({ business, initialBlocks }: { business: an
           ) : viewMode === 'bulk' ? (
             <div className="p-4 md:p-6 space-y-4 pb-20 flex flex-col h-full overflow-y-auto">
               <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col">
-                <h3 className="text-sm font-bold text-[var(--ink)] mb-2">Toplu Veri Yükleme</h3>
+                <h3 className="text-sm font-bold text-[var(--ink)] mb-2">{t('bulkTitle')}</h3>
                 <p className="text-xs text-slate-500 mb-4">
-                  İşletmenizle ilgili elinizde hazır bulunan (örn. hakkımda yazısı, hizmetler, fiyatlar, menüler) tüm metni buraya yapıştırın. Ajan tek bir hamlede sitenizi oluşturacaktır.
+                  {t('bulkDesc')}
                 </p>
                 <textarea 
                   value={bulkText}
                   onChange={(e) => setBulkText(e.target.value)}
-                  placeholder="İşletmenizle ilgili tüm bilgileri buraya yapıştırın..."
+                  placeholder={t('bulkPlaceholder')}
                   className="w-full flex-1 min-h-[200px] p-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[var(--coral)] resize-none"
                 ></textarea>
                 <button 
@@ -398,14 +410,14 @@ export default function EditorClient({ business, initialBlocks }: { business: an
                   disabled={!bulkText.trim() || isChatLoading}
                   className="mt-4 w-full py-3 bg-[var(--coral)] text-white rounded-lg font-bold hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center justify-center"
                 >
-                  {isChatLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Siteyi Oluştur'}
+                  {isChatLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : t('bulkSubmitBtn')}
                 </button>
               </div>
             </div>
           ) : (
             <div className="p-4 md:p-6 space-y-4 pb-20">
               <div className="mb-6 p-4 bg-white rounded-xl shadow-sm border border-slate-200">
-                <h3 className="text-sm font-bold text-[var(--ink)] mb-3">Sayfa Görünümü</h3>
+                <h3 className="text-sm font-bold text-[var(--ink)] mb-3">{t('pageLayout')}</h3>
                 <div className="flex gap-2">
                   <button 
                     onClick={async () => {

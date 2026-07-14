@@ -1,17 +1,14 @@
-import { getModel } from '@/utils/ai';
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
+import { getModel } from '@/utils/ai';
 
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
     const { messages, businessId, locale = 'tr', completeness = 0 } = await req.json();
-
-    if (!businessId) {
-      return new Response('Missing businessId', { status: 400 });
-    }
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -45,17 +42,17 @@ export async function POST(req: Request) {
       
       KURALLAR:
       1. Konuşkan ve yardımsever ol. Her mesajda sadece bir veya iki soru sor.
-      2. İşletmenin türüne göre proaktifliğini sınırlandır: Eğer danışmanlık, avukatlık gibi 'minimal' bir profilse, medyayı fazla zorlama, sadece dilerse fotoğraf ekleyebileceğini bir kez hatırlat. Eğer fotoğrafçı, kuaför, masör gibi 'galeri öncelikli' bir profilse, fotoğraf veya video isteme konusunda biraz daha teşvik edici ol (ancak asla rahatsız edici boyutta ısrar etme). (Örn: "Sayfanızı canlandırmak dilerseniz sol alttaki ataş ikonunu kullanarak bir fotoğraf yükleyebilirsiniz.")
+      2. İşletmenin türüne göre proaktifliğini sınırlandır: Eğer danışmanlık, avukatlık gibi 'minimal' bir profilse, medyayı fazla zorlama, sadece dilerse fotoğraf veya video ekleyebileceğini hatırlat. Eğer fotoğrafçı, kuaför veya mimar gibi 'galeri-öncelikli' bir işletmeyse daha proaktif ol ve bol bol portfolyo görseli iste.
       3. Bir konu hakkında (Örn: Hakkımda veya Hizmetler) hemen ilk cevapta konuyu kapatma. Elinde yeterince kaliteli materyal olana kadar müşteriyi yormadan, doğal ve akıcı bir şekilde derinleştirici sorular sor.
-      4. Yeterli detay topladığında veya kullanıcı bir fotoğraf/bilgi verdiğinde, aracı (tool) çağırırken bu metni DOĞRUDAN KOPYALAMA. Bir metin yazarı (copywriter) gibi davran; verilen bilgileri profesyonel ve ilgi çekici bir dile çevirerek kaydet. Kullanıcı bir medya yüklediyse (URL), bunu aracın "mediaUrl" parametresine KESİNLİKLE ekle.
+      4. ÖNEMLİ: Verileri araçlara (tools) kaydederken, TÜM METİNLERİ aynı anda 3 dile (Türkçe, İngilizce, Rusça) çevirerek gönder. Kullanıcı sadece tek bir dilde bilgi verse bile, sen arka planda bu bilgiyi diğer 2 dile çevirip araca o şekilde iletmelisin.
       5. Bir aracı (tool) başarıyla çalıştırıp bir bloğu kaydettikten sonra sohbeti sonlandırma! Hemen bir sonraki eksik bölüme (Örn: Hizmetler, İletişim) geçerek yeni sorular sor.
-      6. Sektörel Mimari Kararları: İşletme türüne göre sayfa mimarisini tasarla:
-         - Görsel ağırlıklı bir sektörse (Kuaför, Fotoğrafçı, Mimar vb.) kullanıcıya 'addGallery' aracını kullanarak bir Galeri eklemeyi teklif et. Çoklu fotoğraf isteyebilirsin.
-         - Güven ve uzmanlık ağırlıklı bir sektörse (Danışman, Avukat, Koç vb.) kullanıcıya 'addTestimonials' aracını kullanarak Müşteri Yorumları eklemeyi teklif et.
-         - Temel blokların (Hakkımda, Hizmetler) dışında bu sektörel blokları mutlaka kullanarak sayfayı zenginleştir.
-      7. Kullanıcının tarzına ve işletme türüne göre bir arketip seç (setArchetype aracıyla). Seçenekler: minimal-light, dark-elegant, warm-natural, vibrant-bold, soft-inviting, professional-corporate, playful-colorful, artisan-rustic, luxury-spa, cyber-tech, fitness-heavy. Sadece bir kez yapman yeterli.
-      8. Sayfa Doluluk Oranı: Şu an sayfanın doluluk oranı %${completeness}. %70'i aştığında, kullanıcının iletmek istediği başka bir detay (örneğin çalışma saatleri, ek linkler) olup olmadığını sorarak profili yayına hazır hale getirdiğini (is_published) müjdele.
-      9. TOPLU YÜKLEME (BULK UPLOAD) DURUMU: Eğer kullanıcı sana '[BULK]' etiketiyle çok uzun bir metin verirse (tüm hizmetler, hakkında yazısı, linkler vb. bir arada), ona adım adım soru sormak yerine, elindeki BÜTÜN bilgiyi analiz et ve eksik olan tüm blokları arka arkaya araçları (addAbout, addServices, vb.) çağırarak TEK SEFERDE oluştur. İşlem sırasında "Bilgilerinizi analiz ediyorum...", "Hizmetlerinizi ekliyorum..." gibi süreç notları yazabilirsin.
+      6. Sektörel Mimari Kararları (ART DIRECTOR): Sen bir web tasarımcısısın. İşletme türüne göre sayfa mimarisini tasarla:
+         - Görsel ağırlıklı bir sektörse (Kuaför, Fotoğrafçı, vb.) kullanıcıya 'addGallery' aracını kullanarak bir Galeri eklemeyi teklif et.
+         - Güven ve uzmanlık ağırlıklı bir sektörse (Danışman, vb.) kullanıcıya 'addTestimonials' aracını kullanarak Yorumlar eklemeyi teklif et.
+         - ÇOK ÖNEMLİ: Araçları kullanırken en uygun 'layoutVariant' (görünüm stili) parametresini seç! Masaj salonu veya şık bir restoran için Hakkımda bloğunda 'hero-overlay' (tam ekran) seç. Mimarlık ofisi için galeriyi 'masonry' seç.
+      7. Kullanıcının tarzına ve işletme türüne göre bir arketip seç (setArchetype aracıyla). Seçenekler: minimal-light, dark-elegant, warm-natural, vibrant-bold, soft-inviting, professional-corporate, playful-colorful, artisan-rustic, luxury-spa, cyber-tech, fitness-heavy.
+      8. Sayfa Doluluk Oranı: Şu an sayfanın doluluk oranı %${completeness}. %70'i aştığında, kullanıcının iletmek istediği başka bir detay olup olmadığını sorarak profili yayına hazır hale getirdiğini müjdele.
+      9. TOPLU YÜKLEME (BULK UPLOAD) DURUMU: Eğer kullanıcı sana '[BULK]' etiketiyle çok uzun bir metin verirse, ona adım adım soru sormak yerine, elindeki BÜTÜN bilgiyi analiz et ve eksik olan tüm blokları arka arkaya araçları çağırarak TEK SEFERDE oluştur. İşlem sırasında "Bilgilerinizi analiz ediyorum..." gibi süreç notları yazabilirsin.
       10. KESİNLİKLE kullanıcının dilinde (${locale}) yanıt ver. Eğer 'ru' ise Rusça, 'en' ise İngilizce konuş.
     `;
 
@@ -80,58 +77,70 @@ export async function POST(req: Request) {
           },
         }),
         updateAbout: tool({
-          description: 'Hakkında (About) bloğunu günceller veya oluşturur.',
+          description: 'Hakkında (About) bloğunu günceller veya oluşturur. Metinleri 3 dilde sağlamalısın.',
           parameters: z.object({
-            text: z.string().describe('İşletme hakkında bilgi metni'),
-            mediaUrl: z.string().optional().describe('Kullanıcının yüklediği görsel veya videonun URL adresi')
+            tr: z.object({ text: z.string() }).describe('Türkçe hakkında metni'),
+            en: z.object({ text: z.string() }).describe('İngilizce hakkında metni'),
+            ru: z.object({ text: z.string() }).describe('Rusça hakkında metni'),
+            mediaUrl: z.string().optional().describe('Kullanıcının yüklediği görsel URL adresi'),
+            layoutVariant: z.enum(['standard', 'hero-overlay', 'split-card']).optional().describe('Tasarım tipi. hero-overlay: Tam ekran görsel ve üstüne yazı. split-card: Yan yana resim ve yazı.')
           }),
-          execute: async ({ text, mediaUrl }) => {
+          execute: async ({ tr, en, ru, mediaUrl, layoutVariant }) => {
             const existingAbout = blocks?.find((b: any) => b.type === 'about');
+            const newContent = existingAbout ? { ...existingAbout.content } : {};
+            newContent.tr = { ...newContent.tr, text: tr.text, title: locTitles.about };
+            newContent.en = { ...newContent.en, text: en.text, title: titles.en.about };
+            newContent.ru = { ...newContent.ru, text: ru.text, title: titles.ru.about };
+            if (mediaUrl) newContent.mediaUrl = mediaUrl;
+            if (layoutVariant) newContent.layoutVariant = layoutVariant;
+
             if (existingAbout) {
-              const newContent = { ...existingAbout.content, text };
-              if (mediaUrl) newContent.mediaUrl = mediaUrl;
               await supabase.from('blocks').update({ content: newContent }).eq('id', existingAbout.id);
             } else {
               await supabase.from('blocks').insert({
                 business_id: businessId,
                 type: 'about',
                 title: locTitles.about,
-                content: { text, mediaUrl },
+                content: newContent,
                 order: 1,
                 is_visible: true
               });
             }
-            return 'Hakkında bloğu güncellendi. Lütfen sıradaki bölüme (Örn: Hizmetler) geçerek sohbete devam et.';
+            return 'Hakkında bloğu güncellendi. Lütfen sıradaki bölüme geçerek sohbete devam et.';
           }
         }),
         addService: tool({
-          description: 'Yeni bir hizmet (service) ekler.',
+          description: 'Yeni bir hizmet (service) ekler. Metinleri 3 dilde sağlamalısın.',
           parameters: z.object({
-            title: z.string(),
-            description: z.string().optional(),
+            tr: z.object({ title: z.string(), description: z.string().optional() }),
+            en: z.object({ title: z.string(), description: z.string().optional() }),
+            ru: z.object({ title: z.string(), description: z.string().optional() }),
             price: z.string().optional(),
-            mediaUrl: z.string().optional().describe('Hizmet ile ilgili görsel veya videonun URL adresi')
+            mediaUrl: z.string().optional(),
+            layoutVariant: z.enum(['list', 'grid-cards']).optional().describe('Tasarım tipi. list: Alt alta, grid-cards: Yan yana kutucuklar.')
           }),
-          execute: async ({ title, description, price, mediaUrl }) => {
+          execute: async ({ tr, en, ru, price, mediaUrl, layoutVariant }) => {
             const existingServices = blocks?.find((b: any) => b.type === 'services');
-            const newItem = { title, description, price, mediaUrl };
+            const newItem = { tr, en, ru, price, mediaUrl };
             
             if (existingServices) {
               const items = existingServices.content?.items || [];
+              const updatedContent = { ...existingServices.content, items: [...items, newItem] };
+              if (layoutVariant) updatedContent.layoutVariant = layoutVariant;
               await supabase.from('blocks').update({
-                content: { ...existingServices.content, items: [...items, newItem] }
+                content: updatedContent
               }).eq('id', existingServices.id);
             } else {
               await supabase.from('blocks').insert({
                 business_id: businessId,
                 type: 'services',
                 title: locTitles.services,
-                content: { items: [newItem] },
+                content: { items: [newItem], layoutVariant: layoutVariant || 'grid-cards' },
                 order: 2,
                 is_visible: true
               });
             }
-            return `${title} hizmeti eklendi. Başka eklenecek hizmet yoksa sıradaki bölüme geç.`;
+            return `Hizmet eklendi. Başka eklenecek hizmet yoksa sıradaki bölüme geç.`;
           }
         }),
         addLinks: tool({
@@ -150,54 +159,75 @@ export async function POST(req: Request) {
               content: { items: args.items },
               order: 4
             }, { onConflict: 'business_id,type' });
-            
             if (error) return `Error saving links: ${error.message}`;
-            return `Sosyal medya / link bloğu kaydedildi. Sıradaki eksik bloğu sormaya devam et! (Örn: Çalışma Saatleri)`;
+            return `Sosyal medya / link bloğu kaydedildi.`;
           }
         }),
         addGallery: tool({
-          description: "İşletmenin vizyonunu/ürünlerini sergilemek için bir Galeri (Gallery) bloğu oluşturur veya günceller.",
+          description: "Galeriyi oluşturur. Altyazıları (caption) 3 dilde yazmalısın.",
           parameters: z.object({
-            title: z.string().describe("Galeri başlığı (Örn: Çalışmalarım, Portfolyo, Ortamımız)"),
+            tr: z.object({ title: z.string() }),
+            en: z.object({ title: z.string() }),
+            ru: z.object({ title: z.string() }),
             items: z.array(z.object({
-              url: z.string().describe("Kullanıcının yüklediği görsel URL'si"),
-              caption: z.string().optional().describe("Görsel hakkında kısa açıklama (Örn: Gelin Saçı)")
-            })).describe("Galeriye eklenecek görsellerin listesi")
+              url: z.string(),
+              caption: z.object({
+                tr: z.string().optional(),
+                en: z.string().optional(),
+                ru: z.string().optional()
+              }).optional()
+            })),
+            layoutVariant: z.enum(['grid', 'masonry']).optional().describe('Tasarım tipi. grid: Standart ızgara. masonry: Pinterest tarzı asimetrik ızgara.')
           }),
           execute: async (args) => {
             const { error } = await supabase.from('blocks').upsert({
               business_id: businessId,
               type: 'gallery',
-              title: args.title,
-              content: { items: args.items },
+              title: args.tr.title,
+              content: { 
+                tr: args.tr, en: args.en, ru: args.ru,
+                items: args.items,
+                layoutVariant: args.layoutVariant || 'grid'
+              },
               order: 5
             }, { onConflict: 'business_id,type' });
-            
-            if (error) return `Error saving gallery: ${error.message}`;
-            return `Galeri bloğu başarıyla kaydedildi. (${args.items.length} görsel eklendi). Müşteriye yeni eklenecek başka bir şey olup olmadığını sor.`;
+            if (error) return `Error: ${error.message}`;
+            return `Galeri bloğu başarıyla kaydedildi.`;
           }
         }),
         addTestimonials: tool({
-          description: "Müşteri yorumlarını ve referansları göstermek için Testimonials bloğu oluşturur.",
+          description: "Müşteri yorumlarını (Testimonials) ekler. Yorumları 3 dilde sağlamalısın.",
           parameters: z.object({
-            title: z.string().describe("Yorum bloğu başlığı (Örn: Mutlu Müşterilerimiz, Referanslar)"),
+            tr: z.object({ title: z.string() }),
+            en: z.object({ title: z.string() }),
+            ru: z.object({ title: z.string() }),
             items: z.array(z.object({
-              quote: z.string().describe("Müşterinin yorum metni"),
-              author: z.string().describe("Müşterinin adı soyadı"),
-              role: z.string().optional().describe("Müşterinin unvanı veya mesleği (Örn: CEO, Veli)")
-            })).describe("Müşteri yorumlarının listesi")
+              quote: z.object({
+                tr: z.string(),
+                en: z.string(),
+                ru: z.string()
+              }),
+              author: z.string(),
+              role: z.object({
+                tr: z.string().optional(),
+                en: z.string().optional(),
+                ru: z.string().optional()
+              }).optional()
+            }))
           }),
           execute: async (args) => {
             const { error } = await supabase.from('blocks').upsert({
               business_id: businessId,
               type: 'testimonials',
-              title: args.title,
-              content: { items: args.items },
+              title: args.tr.title,
+              content: { 
+                tr: args.tr, en: args.en, ru: args.ru,
+                items: args.items 
+              },
               order: 6
             }, { onConflict: 'business_id,type' });
-            
-            if (error) return `Error saving testimonials: ${error.message}`;
-            return `Müşteri yorumları bloğu kaydedildi. Başka eklenecek bir şey kalmadıysa işlemi toparla.`;
+            if (error) return `Error: ${error.message}`;
+            return `Müşteri yorumları kaydedildi.`;
           }
         })
       },
