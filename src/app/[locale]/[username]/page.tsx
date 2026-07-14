@@ -70,9 +70,7 @@ export default async function BusinessProfilePage({ params }: any) {
       <main className="flex-1 overflow-y-auto pb-[35dvh]">
         <div className="max-w-md mx-auto w-full px-4 pt-6 pb-8">
           
-          <div className="flex justify-end mb-6">
-            <LanguageSwitcher />
-          </div>
+
 
           {/* Top content area with just language switcher */}
           <div className="flex justify-between items-center mb-6 px-2">
