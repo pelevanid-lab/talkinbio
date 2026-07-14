@@ -17,6 +17,9 @@ export default function EditorClient({ business, initialBlocks }: { business: an
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [viewMode, setViewMode] = useState<'chat' | 'manual'>('chat');
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [username, setUsername] = useState(business.username);
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [usernameError, setUsernameError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -176,9 +179,37 @@ export default function EditorClient({ business, initialBlocks }: { business: an
 
   const copyLink = () => {
     if (!isPublished) return;
-    const url = `${window.location.origin}/${business.username}`;
+    const url = `${window.location.origin}/${username}`;
     navigator.clipboard.writeText(url);
     alert('Link kopyalandı!');
+  };
+
+  const handleUsernameSave = async () => {
+    if (username === business.username) {
+      setIsEditingUsername(false);
+      return;
+    }
+    const cleanUsername = username.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    if (!cleanUsername) {
+      setUsernameError('Geçersiz kullanıcı adı');
+      return;
+    }
+    
+    const { data: existing } = await supabase.from('businesses').select('id').eq('username', cleanUsername).neq('id', business.id).single();
+    if (existing) {
+      setUsernameError('Bu bağlantı zaten alınmış');
+      return;
+    }
+    
+    const { error } = await supabase.from('businesses').update({ username: cleanUsername }).eq('id', business.id);
+    if (error) {
+      setUsernameError('Kaydedilirken hata oluştu');
+    } else {
+      business.username = cleanUsername;
+      setUsername(cleanUsername);
+      setIsEditingUsername(false);
+      setUsernameError('');
+    }
   };
 
   return (
@@ -213,6 +244,39 @@ export default function EditorClient({ business, initialBlocks }: { business: an
               >
                 Manuel
               </button>
+            </div>
+
+            {/* Public Link Display */}
+            <div className="mt-4 bg-slate-50 rounded-xl p-3 border border-slate-200">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs font-medium text-slate-500">Profil Bağlantınız</span>
+                {isEditingUsername ? (
+                  <button onClick={handleUsernameSave} className="text-xs font-bold text-[var(--teal)] hover:text-teal-700">Kaydet</button>
+                ) : (
+                  <button onClick={() => setIsEditingUsername(true)} className="text-xs font-medium text-slate-500 hover:text-[var(--coral)] flex items-center">
+                    <Edit2 className="w-3 h-3 mr-1" /> Düzenle
+                  </button>
+                )}
+              </div>
+              
+              {isEditingUsername ? (
+                <div>
+                  <div className="flex items-center bg-white border border-slate-300 rounded-lg overflow-hidden focus-within:border-[var(--coral)]">
+                    <span className="px-2 py-2 text-sm text-slate-400 bg-slate-50 border-r border-slate-200">talkinbio.com/</span>
+                    <input 
+                      type="text" 
+                      value={username}
+                      onChange={e => setUsername(e.target.value)}
+                      className="w-full p-2 text-sm focus:outline-none"
+                    />
+                  </div>
+                  {usernameError && <p className="text-xs text-red-500 mt-1">{usernameError}</p>}
+                </div>
+              ) : (
+                <div className="flex items-center text-sm font-medium text-[var(--ink)]">
+                  talkinbio.com/<span className="text-[var(--coral)]">{username}</span>
+                </div>
+              )}
             </div>
         </div>
 
@@ -308,9 +372,12 @@ export default function EditorClient({ business, initialBlocks }: { business: an
                     onClick={async () => {
                       const settingsBlock = blocks.find(b => b.type === 'settings');
                       if (settingsBlock) {
+                        setBlocks(blocks.map(b => b.id === settingsBlock.id ? { ...b, content: { ...b.content, layoutMode: 'website' } } : b));
                         await supabase.from('blocks').update({ content: { ...settingsBlock.content, layoutMode: 'website' } }).eq('id', settingsBlock.id);
                       } else {
-                        await supabase.from('blocks').insert({ business_id: business.id, type: 'settings', title: 'Settings', content: { layoutMode: 'website' }, order: 99, is_visible: false });
+                        const newBlock = { business_id: business.id, type: 'settings', title: 'Settings', content: { layoutMode: 'website' }, order: 99, is_visible: false };
+                        setBlocks([...blocks, { id: 'temp-settings', ...newBlock }]);
+                        await supabase.from('blocks').insert(newBlock);
                       }
                     }}
                     className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border ${blocks.find(b => b.type === 'settings')?.content?.layoutMode !== 'linktree' ? 'bg-[var(--coral)] text-white border-[var(--coral)]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
@@ -321,9 +388,12 @@ export default function EditorClient({ business, initialBlocks }: { business: an
                     onClick={async () => {
                       const settingsBlock = blocks.find(b => b.type === 'settings');
                       if (settingsBlock) {
+                        setBlocks(blocks.map(b => b.id === settingsBlock.id ? { ...b, content: { ...b.content, layoutMode: 'linktree' } } : b));
                         await supabase.from('blocks').update({ content: { ...settingsBlock.content, layoutMode: 'linktree' } }).eq('id', settingsBlock.id);
                       } else {
-                        await supabase.from('blocks').insert({ business_id: business.id, type: 'settings', title: 'Settings', content: { layoutMode: 'linktree' }, order: 99, is_visible: false });
+                        const newBlock = { business_id: business.id, type: 'settings', title: 'Settings', content: { layoutMode: 'linktree' }, order: 99, is_visible: false };
+                        setBlocks([...blocks, { id: 'temp-settings', ...newBlock }]);
+                        await supabase.from('blocks').insert(newBlock);
                       }
                     }}
                     className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border ${blocks.find(b => b.type === 'settings')?.content?.layoutMode === 'linktree' ? 'bg-[var(--coral)] text-white border-[var(--coral)]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
