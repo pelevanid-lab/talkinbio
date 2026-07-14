@@ -4,6 +4,35 @@ import { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import MediaUploader from './MediaUploader';
 
+// Shared "background image behind this section" fields, used by about(standard)/services/testimonials/contact/custom.
+function BackgroundImageFields({ content, setContent }: { content: any; setContent: (c: any) => void }) {
+  return (
+    <div className="space-y-3 pt-4 border-t border-slate-100">
+      <label className="block text-sm font-medium mb-1 text-[var(--ink)]">Arka Plan Görseli (opsiyonel)</label>
+      <MediaUploader
+        value={content.backgroundImage || ''}
+        onChange={(url) => setContent({ ...content, backgroundImage: url })}
+        label="Arka Plan Görseli Yükle"
+      />
+      {content.backgroundImage && (
+        <div>
+          <label className="block text-xs font-medium mb-1 text-slate-500">Karartma / Renk Katmanı</label>
+          <select
+            value={content.backgroundOverlay || 'dark'}
+            onChange={(e) => setContent({ ...content, backgroundOverlay: e.target.value })}
+            className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
+          >
+            <option value="dark">Koyu Karartma</option>
+            <option value="light">Açık/Beyaz</option>
+            <option value="tint">Arketip Rengiyle Tonlama</option>
+            <option value="none">Katmansız</option>
+          </select>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function BlockEditorModal({ 
   block, 
   onSave, 
@@ -88,6 +117,8 @@ export default function BlockEditorModal({
                   <option value="standard">Standart</option>
                   <option value="hero-overlay">Tam Ekran Karşılama (Hero)</option>
                   <option value="split-card">Yan Yana Asimetrik (Split)</option>
+                  <option value="big-statement">Büyük Tipografi (Manifesto)</option>
+                  <option value="image-grid">Görsel Kolajı + Metin</option>
                 </select>
                 <label className="block text-sm font-medium mb-1 mt-4">Görsel / Video</label>
                 <MediaUploader 
@@ -97,8 +128,8 @@ export default function BlockEditorModal({
                 {content.mediaUrl && (
                   <div className="pt-2">
                     <label className="block text-xs font-medium mb-1 text-slate-500">Görsel Konumu</label>
-                    <select 
-                      value={content.mediaPosition || 'top'} 
+                    <select
+                      value={content.mediaPosition || 'middle'}
                       onChange={(e) => setContent({...content, mediaPosition: e.target.value})}
                       className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
                     >
@@ -109,6 +140,9 @@ export default function BlockEditorModal({
                   </div>
                 )}
               </div>
+            )}
+            {(block.type !== 'about' || (content.layoutVariant || 'standard') === 'standard') && (
+              <BackgroundImageFields content={content} setContent={setContent} />
             )}
           </div>
         );
@@ -126,13 +160,16 @@ export default function BlockEditorModal({
               >
                 <option value="grid-cards">Yan Yana Kutular (Grid Cards)</option>
                 <option value="list">Alt Alta Klasik Liste</option>
+                <option value="numbered-list">Numaralı Zarif Liste</option>
+                <option value="feature-split">Sağ-Sol Büyük Görsel+Metin</option>
+                <option value="price-table">Klasik Menü/Fiyat Listesi</option>
               </select>
             </div>
             {(content.items || []).map((item: any, idx: number) => {
               const itemLoc = item[activeLang] || item;
               return (
                 <div key={idx} className="p-4 border border-slate-200 rounded-lg relative space-y-3 bg-slate-50">
-                  <button 
+                  <button
                     onClick={() => {
                       const newItems = [...content.items];
                       newItems.splice(idx, 1);
@@ -142,41 +179,41 @@ export default function BlockEditorModal({
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  <input 
-                    value={itemLoc.title || ''} 
+                  <input
+                    value={itemLoc.title || ''}
                     onChange={e => {
                       const newItems = [...content.items];
                       newItems[idx] = { ...item, [activeLang]: { ...itemLoc, title: e.target.value } };
                       setContent({...content, items: newItems});
                     }}
-                    placeholder="Hizmet Adı" 
+                    placeholder="Hizmet Adı"
                     className="w-full p-2 border border-slate-200 rounded focus:border-[var(--coral)] focus:outline-none"
                   />
-                  <textarea 
-                    value={itemLoc.description || ''} 
+                  <textarea
+                    value={itemLoc.description || ''}
                     onChange={e => {
                       const newItems = [...content.items];
                       newItems[idx] = { ...item, [activeLang]: { ...itemLoc, description: e.target.value } };
                       setContent({...content, items: newItems});
                     }}
-                    placeholder="Açıklama" 
+                    placeholder="Açıklama"
                     className="w-full p-2 border border-slate-200 rounded focus:border-[var(--coral)] focus:outline-none"
                   />
                   <div className="flex gap-3">
-                    <input 
-                      value={item.price || ''} 
+                    <input
+                      value={item.price || ''}
                       onChange={e => {
                         const newItems = [...content.items];
                         newItems[idx].price = e.target.value;
                         setContent({...content, items: newItems});
                       }}
-                      placeholder="Fiyat (Örn: 400 TL)" 
+                      placeholder="Fiyat (Örn: 400 TL)"
                       className="flex-1 p-2 border border-slate-200 rounded focus:border-[var(--coral)] focus:outline-none"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-medium mb-1 text-slate-500">Hizmet Görseli / Videosu</label>
-                    <MediaUploader 
+                    <MediaUploader
                       value={item.mediaUrl || ''}
                       onChange={url => {
                         const newItems = [...content.items];
@@ -188,18 +225,31 @@ export default function BlockEditorModal({
                 </div>
               );
             })}
-            <button 
+            <button
               onClick={() => setContent({...content, items: [...(content.items || []), { price: '', mediaUrl: '' }]})}
               className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] font-medium flex items-center justify-center hover:bg-slate-50"
             >
               <Plus className="w-4 h-4 mr-2" /> Yeni Hizmet Ekle
             </button>
+            <BackgroundImageFields content={content} setContent={setContent} />
           </div>
         );
 
       case 'faq':
         return (
           <div className="space-y-4">
+            <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">Tasarım Stili (Varyasyon)</label>
+              <select
+                value={content.layoutVariant || 'chips'}
+                onChange={(e) => setContent({...content, layoutVariant: e.target.value})}
+                className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
+              >
+                <option value="chips">Etiket (Tıklayınca Asistana Sorar)</option>
+                <option value="accordion">Aç/Kapa Liste (Cevabı Gösterir)</option>
+                <option value="numbered">Numaralı Liste (Her Zaman Açık)</option>
+              </select>
+            </div>
             {(content.items || []).map((item: any, idx: number) => (
               <div key={idx} className="p-4 border border-slate-200 rounded-lg relative space-y-3 bg-slate-50">
                 <button 
@@ -243,19 +293,79 @@ export default function BlockEditorModal({
           </div>
         );
 
+      case 'links':
+        return (
+          <div className="space-y-4">
+            <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">Tasarım Stili (Varyasyon)</label>
+              <select
+                value={content.layoutVariant || 'stacked'}
+                onChange={(e) => setContent({...content, layoutVariant: e.target.value})}
+                className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
+              >
+                <option value="stacked">Alt Alta Tam Genişlik Buton</option>
+                <option value="icon-row">Yan Yana Yuvarlak İkon</option>
+                <option value="two-col-grid">2 Sütunlu Etiketli Kart</option>
+              </select>
+            </div>
+            {(content.items || []).map((item: any, idx: number) => (
+              <div key={idx} className="p-4 border border-slate-200 rounded-lg relative space-y-3 bg-slate-50">
+                <button
+                  onClick={() => {
+                    const newItems = [...content.items];
+                    newItems.splice(idx, 1);
+                    setContent({...content, items: newItems});
+                  }}
+                  className="absolute top-2 right-2 text-red-500 hover:bg-red-50 p-1 rounded"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <input
+                  value={item.label || ''}
+                  onChange={e => {
+                    const newItems = [...content.items];
+                    newItems[idx].label = e.target.value;
+                    setContent({...content, items: newItems});
+                  }}
+                  placeholder="Etiket (Örn: Instagram)"
+                  className="w-full p-2 border border-slate-200 rounded font-medium"
+                />
+                <input
+                  value={item.url || ''}
+                  onChange={e => {
+                    const newItems = [...content.items];
+                    newItems[idx].url = e.target.value;
+                    setContent({...content, items: newItems});
+                  }}
+                  placeholder="URL (Örn: https://instagram.com/...)"
+                  className="w-full p-2 border border-slate-200 rounded text-sm"
+                />
+              </div>
+            ))}
+            <button
+              onClick={() => setContent({...content, items: [...(content.items || []), { label: '', url: '' }]})}
+              className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] font-medium flex items-center justify-center hover:bg-slate-50"
+            >
+              <Plus className="w-4 h-4 mr-2" /> Yeni Bağlantı Ekle
+            </button>
+          </div>
+        );
+
       case 'gallery':
         return (
           <div className="space-y-4">
             <LangTabs />
             <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
               <label className="block text-sm font-medium mb-1 text-[var(--ink)]">Tasarım Stili (Varyasyon)</label>
-              <select 
-                value={content.layoutVariant || 'grid'} 
+              <select
+                value={content.layoutVariant || 'grid'}
                 onChange={(e) => setContent({...content, layoutVariant: e.target.value})}
                 className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
               >
                 <option value="grid">Klasik Izgara (Grid)</option>
                 <option value="masonry">Pinterest Stili Sanatsal (Masonry)</option>
+                <option value="fullbleed-carousel">Kenarsız Kaydırmalı Şerit</option>
+                <option value="stacked-fullwidth">Alt Alta Büyük Tam Genişlik</option>
               </select>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -311,6 +421,18 @@ export default function BlockEditorModal({
         return (
           <div className="space-y-4">
             <LangTabs />
+            <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">Tasarım Stili (Varyasyon)</label>
+              <select
+                value={content.layoutVariant || 'scroll-cards'}
+                onChange={(e) => setContent({...content, layoutVariant: e.target.value})}
+                className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
+              >
+                <option value="scroll-cards">Yatay Kaydırmalı Kartlar</option>
+                <option value="big-quote">Büyük Editoryal Alıntı</option>
+                <option value="grid-quotes">2 Sütunlu Kompakt Kartlar</option>
+              </select>
+            </div>
             {(content.items || []).map((item: any, idx: number) => {
               const quoteLoc = item.quote?.[activeLang] || (typeof item.quote === 'string' ? item.quote : '');
               const roleLoc = item.role?.[activeLang] || (typeof item.role === 'string' ? item.role : '');
@@ -361,18 +483,31 @@ export default function BlockEditorModal({
                 </div>
               );
             })}
-            <button 
+            <button
               onClick={() => setContent({...content, items: [...(content.items || []), { quote: {}, author: '', role: {} }]})}
               className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] font-medium flex items-center justify-center hover:bg-slate-50"
             >
               <Plus className="w-4 h-4 mr-2" /> Yeni Yorum Ekle
             </button>
+            <BackgroundImageFields content={content} setContent={setContent} />
           </div>
         );
 
       case 'hours':
         return (
           <div className="space-y-3">
+            <div className="mb-1 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">Tasarım Stili (Varyasyon)</label>
+              <select
+                value={content.layoutVariant || 'table'}
+                onChange={(e) => setContent({...content, layoutVariant: e.target.value})}
+                className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
+              >
+                <option value="table">Tam Liste</option>
+                <option value="compact-badge">Bugün Açık/Kapalı Rozeti</option>
+                <option value="pill-row">Haftalık Özet (Hap Şerit)</option>
+              </select>
+            </div>
             {Object.entries(content.schedule || {}).map(([day, data]: [string, any]) => (
               <div key={day} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg bg-slate-50">
                 <div className="flex items-center space-x-3 w-1/3">

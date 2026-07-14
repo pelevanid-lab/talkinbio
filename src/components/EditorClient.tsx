@@ -2,13 +2,14 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Paperclip } from 'lucide-react';
+import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Paperclip, CheckCircle2, Circle, GripVertical } from 'lucide-react';
 import ArchetypeRenderer from './ArchetypeRenderer';
 import BlockEditorModal from './BlockEditorModal';
 import SetPasswordModal from './SetPasswordModal';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useChat } from '@ai-sdk/react';
 import { useTranslations, useLocale } from 'next-intl';
+import { RECOMMENDED_TYPES, hasRealContent, isRequiredSatisfied } from '@/config/blockTypes';
 
 export default function EditorClient({ business, initialBlocks }: { business: any, initialBlocks: any[] }) {
   const [blocks, setBlocks] = useState(initialBlocks);
@@ -21,37 +22,39 @@ export default function EditorClient({ business, initialBlocks }: { business: an
   const [username, setUsername] = useState(business.username);
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [usernameError, setUsernameError] = useState('');
+  const [isPublished, setIsPublished] = useState<boolean>(business.is_published || false);
+  const [isTogglingPublish, setIsTogglingPublish] = useState(false);
+  const [contactValue, setContactValue] = useState<string | null>(business.contact_value || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
   const chatEndRef = useRef<HTMLDivElement>(null);
-  
+
   const t = useTranslations('Editor');
   const locale = useLocale();
 
-  // 70% threshold calculation
-  const completeness = useMemo(() => {
-    let score = 0;
-    const hasAbout = blocks.some(b => b.type === 'about' && b.content?.text?.length > 10);
-    const hasServices = blocks.some(b => b.type === 'services' && b.content?.items?.length > 0);
-    const hasFAQ = blocks.some(b => b.type === 'faq' && b.content?.items?.length > 0);
-    const hasHours = blocks.some(b => b.type === 'hours');
-    const hasContact = blocks.some(b => b.type === 'contact' && b.content?.text?.length > 5);
+  const hasContactValue = useMemo(() => {
+    try {
+      const parsed = contactValue ? JSON.parse(contactValue) : {};
+      return Object.values(parsed).some((v) => typeof v === 'string' && v.trim().length > 0);
+    } catch {
+      return false;
+    }
+  }, [contactValue]);
 
-    if (hasAbout) score += 30;
-    if (hasServices) score += 30;
-    if (hasFAQ) score += 20;
-    if (hasHours) score += 10;
-    if (hasContact) score += 10;
-    
-    return score;
-  }, [blocks]);
+  const findBlock = (type: string) => blocks.find(b => b.type === type);
 
-  const isPublished = completeness >= 70;
+  const checklist = useMemo(() => ({
+    contentReady: hasRealContent(findBlock('about')) || hasRealContent(findBlock('services')),
+    contact: hasContactValue,
+    recommended: RECOMMENDED_TYPES.map((type) => ({ type, done: hasRealContent(findBlock(type)) })),
+  }), [blocks, hasContactValue]);
+
+  const canPublish = useMemo(() => isRequiredSatisfied(blocks, hasContactValue), [blocks, hasContactValue]);
 
   // Setup AI Agent
   const { messages, input, handleInputChange, handleSubmit, isLoading: isChatLoading, append } = useChat({
     api: '/api/setup-agent',
-    body: { businessId: business.id, locale, completeness },
+    body: { businessId: business.id, locale },
     initialMessages: [
       { id: '1', role: 'assistant', content: t('aiWelcome', { name: business.name }) }
     ]
@@ -102,38 +105,47 @@ export default function EditorClient({ business, initialBlocks }: { business: an
         setBlocks(data);
       }
       
-      // Also refresh business to get archetype updates
-      const { data: bData } = await supabase.from('businesses').select('archetype_id').eq('id', business.id).single();
-      if (bData && bData.archetype_id !== business.archetype_id) {
-        business.archetype_id = bData.archetype_id;
+      // Also refresh business to get archetype/contact updates made by the AI agent
+      const { data: bData } = await supabase.from('businesses').select('archetype_id, contact_value').eq('id', business.id).single();
+      if (bData) {
+        if (bData.archetype_id !== business.archetype_id) {
+          business.archetype_id = bData.archetype_id;
+        }
+        if (bData.contact_value !== contactValue) {
+          setContactValue(bData.contact_value);
+        }
       }
     }, 3000);
     return () => clearInterval(interval);
-  }, [business.id, supabase, viewMode]);
+  }, [business.id, supabase, viewMode, contactValue]);
 
-
-
-  const syncPublishStatus = async (published: boolean) => {
-    if (business.is_published !== published) {
-      await supabase.from('businesses').update({ is_published: published }).eq('id', business.id);
-      business.is_published = published;
+  const handleTogglePublish = async () => {
+    const next = !isPublished;
+    setIsTogglingPublish(true);
+    try {
+      const { error } = await supabase.from('businesses').update({ is_published: next }).eq('id', business.id);
+      if (error) throw error;
+      setIsPublished(next);
+      business.is_published = next;
+    } catch (err) {
+      console.error(err);
+      alert('Yayın durumu güncellenirken hata oluştu.');
+    } finally {
+      setIsTogglingPublish(false);
     }
   };
-  
-  if (isPublished !== business.is_published) {
-    syncPublishStatus(isPublished);
-  }
 
   const handleSaveBlock = async (data: { title: string, content: any }) => {
     setIsSaving(true);
     try {
       if (editingBlock.isNew) {
+        const nextOrder = blocks.reduce((max, b) => Math.max(max, b.order ?? 0), 0) + 1;
         const { data: newBlock, error } = await supabase.from('blocks').insert({
           business_id: business.id,
           type: editingBlock.type,
           title: data.title,
           content: data.content,
-          order: blocks.length,
+          order: nextOrder,
           is_visible: true
         }).select().single();
         
@@ -176,6 +188,28 @@ export default function EditorClient({ business, initialBlocks }: { business: an
 
   const createNewBlock = (type: string, defaultTitle: string) => {
     setEditingBlock({ isNew: true, type, title: defaultTitle, content: {} });
+  };
+
+  const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
+
+  const handleDropReorder = async (overId: string) => {
+    const fromId = draggedBlockId;
+    setDraggedBlockId(null);
+    if (!fromId || fromId === overId) return;
+
+    const visible = blocks.filter(b => b.type !== 'settings');
+    const others = blocks.filter(b => b.type === 'settings');
+    const fromIdx = visible.findIndex(b => b.id === fromId);
+    const toIdx = visible.findIndex(b => b.id === overId);
+    if (fromIdx === -1 || toIdx === -1) return;
+
+    const reordered = [...visible];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+    const withNewOrder = reordered.map((b, idx) => ({ ...b, order: idx }));
+
+    setBlocks([...withNewOrder, ...others]);
+    await Promise.all(withNewOrder.map((b) => supabase.from('blocks').update({ order: b.order }).eq('id', b.id)));
   };
 
   const copyLink = () => {
@@ -274,7 +308,7 @@ export default function EditorClient({ business, initialBlocks }: { business: an
                     <button onClick={() => setIsEditingUsername(true)} className="text-xs font-medium text-slate-500 hover:text-[var(--coral)] flex items-center">
                       <Edit2 className="w-3 h-3 mr-1" /> {t('editBtn')}
                     </button>
-                    {(business.is_published || completeness >= 70) && (
+                    {isPublished && (
                       <a 
                         href={`https://talkinbio.com/${username}`} 
                         target="_blank" 
@@ -309,7 +343,7 @@ export default function EditorClient({ business, initialBlocks }: { business: an
             </div>
         </div>
 
-        {/* Progress Bar (Always visible) */}
+        {/* Publish Checklist (Always visible) */}
         <div className="px-4 md:px-6 py-4 bg-slate-50 border-b border-slate-200">
           <div className="flex justify-between items-center mb-2">
             <h2 className="font-semibold text-sm text-[var(--ink)]">{t('publishStatus')}</h2>
@@ -317,19 +351,43 @@ export default function EditorClient({ business, initialBlocks }: { business: an
               {isPublished ? t('published') : t('draft')}
             </span>
           </div>
-          <div className="w-full bg-slate-200 rounded-full h-1.5 mb-1">
-            <div className={`h-1.5 rounded-full ${isPublished ? 'bg-green-500' : 'bg-[var(--coral)]'}`} style={{ width: `${Math.min(completeness, 100)}%` }}></div>
-          </div>
-          <p className="text-[11px] text-[var(--ink-soft)] flex justify-between">
-            <span>{t('completeness', { score: completeness })}</span>
+
+          <ul className="space-y-1 mb-3">
+            <li className={`text-xs flex items-center ${checklist.contentReady ? 'text-green-600' : 'text-[var(--ink-soft)]'}`}>
+              {checklist.contentReady ? <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 shrink-0" /> : <Circle className="w-3.5 h-3.5 mr-1.5 shrink-0" />}
+              {t('blocks.about')} / {t('blocks.services')}
+            </li>
+            <li className={`text-xs flex items-center ${checklist.contact ? 'text-green-600' : 'text-[var(--ink-soft)]'}`}>
+              {checklist.contact ? <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 shrink-0" /> : <Circle className="w-3.5 h-3.5 mr-1.5 shrink-0" />}
+              {t('blocks.contact')}
+            </li>
+            {checklist.recommended.map(({ type, done }) => (
+              <li key={type} className={`text-xs flex items-center ${done ? 'text-green-600' : 'text-[var(--ink-soft)] opacity-70'}`}>
+                {done ? <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 shrink-0" /> : <Circle className="w-3.5 h-3.5 mr-1.5 shrink-0" />}
+                {t(`blocks.${type}`)} <span className="ml-1 text-[10px] opacity-70">({t('optionalHint')})</span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleTogglePublish}
+              disabled={(!canPublish && !isPublished) || isTogglingPublish}
+              className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isPublished ? 'bg-slate-200 text-slate-700 hover:bg-slate-300' : 'bg-[var(--coral)] text-white hover:bg-orange-600'}`}
+            >
+              {isTogglingPublish ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (isPublished ? t('unpublishBtn') : t('publishBtn'))}
+            </button>
             {isPublished && (
-              <button onClick={copyLink} className="text-[var(--teal)] font-medium flex items-center">
+              <button onClick={copyLink} className="text-[var(--teal)] font-medium flex items-center text-xs px-3 py-2">
                 <Copy className="w-3 h-3 mr-1" /> {t('linkBtn')}
               </button>
             )}
-          </p>
+          </div>
+          {!canPublish && !isPublished && (
+            <p className="text-[11px] text-[var(--ink-soft)] mt-2">{t('publishHint')}</p>
+          )}
         </div>
-        
+
         {/* Main Left Content */}
         <div className="flex-1 overflow-y-auto bg-slate-50/50">
           {viewMode === 'chat' ? (
@@ -462,16 +520,23 @@ export default function EditorClient({ business, initialBlocks }: { business: an
               
               {blocks.filter(b => b.type !== 'settings').length === 0 && <p className="text-sm text-slate-500">{t('noContent')}</p>}
               {blocks.filter(b => b.type !== 'settings').map(b => (
-                <div 
-                  key={b.id} 
+                <div
+                  key={b.id}
+                  draggable
+                  onDragStart={() => setDraggedBlockId(b.id)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => handleDropReorder(b.id)}
                   onClick={() => setEditingBlock(b)}
-                  className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:border-[var(--coral)] transition cursor-pointer shadow-sm group"
+                  className={`flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:border-[var(--coral)] transition cursor-pointer shadow-sm group ${draggedBlockId === b.id ? 'opacity-40' : ''}`}
                 >
-                  <div>
-                    <span className="font-medium text-sm text-[var(--ink)] block group-hover:text-[var(--coral)] transition-colors">
-                      {t(`blocks.${b.type}`)}
-                    </span>
-                    <span className="text-xs text-[var(--ink-soft)] capitalize">{b.type}</span>
+                  <div className="flex items-center gap-2">
+                    <GripVertical className="w-4 h-4 text-slate-300 cursor-grab shrink-0" />
+                    <div>
+                      <span className="font-medium text-sm text-[var(--ink)] block group-hover:text-[var(--coral)] transition-colors">
+                        {t(`blocks.${b.type}`)}
+                      </span>
+                      <span className="text-xs text-[var(--ink-soft)] capitalize">{b.type}</span>
+                    </div>
                   </div>
                   <button className="text-[var(--teal)] group-hover:bg-[var(--coral-tint)] group-hover:text-[var(--coral)] p-2 rounded transition">
                     <Edit2 className="w-4 h-4" />
@@ -487,6 +552,7 @@ export default function EditorClient({ business, initialBlocks }: { business: an
                   <button onClick={() => createNewBlock('faq', t('blocks.faq'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.faq')}</button>
                   <button onClick={() => createNewBlock('hours', t('blocks.hours'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.hours')}</button>
                   <button onClick={() => createNewBlock('contact', t('blocks.contact'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.contact')}</button>
+                  <button onClick={() => createNewBlock('links', t('blocks.links'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.links')}</button>
                   <button onClick={() => createNewBlock('custom', t('blocks.custom'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.custom')}</button>
                 </div>
               </div>
