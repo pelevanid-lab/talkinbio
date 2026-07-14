@@ -15,8 +15,9 @@ export default function EditorClient({ business, initialBlocks }: { business: an
   const [editingBlock, setEditingBlock] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
-  const [viewMode, setViewMode] = useState<'chat' | 'manual'>('chat');
+  const [viewMode, setViewMode] = useState<'chat' | 'manual' | 'bulk'>('chat');
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [bulkText, setBulkText] = useState('');
   const [username, setUsername] = useState(business.username);
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [usernameError, setUsernameError] = useState('');
@@ -212,6 +213,16 @@ export default function EditorClient({ business, initialBlocks }: { business: an
     }
   };
 
+  const handleBulkSubmit = () => {
+    if (!bulkText.trim()) return;
+    append({
+      role: 'user',
+      content: `[BULK]\nİşte işletmemle ilgili tüm detaylar. Lütfen soru sormak yerine, elindeki bütün bilgiyi analiz et ve eksik olan tüm blokları (Hakkımda, Hizmetler vb.) arka arkaya araçları çağırarak tek seferde oluştur:\n\n${bulkText}`
+    });
+    setBulkText('');
+    setViewMode('chat');
+  };
+
   return (
     <div className="flex h-[100dvh]">
       {/* Left Sidebar */}
@@ -231,12 +242,18 @@ export default function EditorClient({ business, initialBlocks }: { business: an
           </div>
 
           {/* Mode Switcher */}
-            <div className="flex justify-between items-center bg-white p-2 rounded-xl shadow-sm border border-slate-200">
+            <div className="flex justify-between items-center bg-white p-2 rounded-xl shadow-sm border border-slate-200 gap-1">
               <button 
                 onClick={() => setViewMode('chat')}
                 className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'chat' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 Ajan
+              </button>
+              <button 
+                onClick={() => setViewMode('bulk')}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'bulk' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Toplu
               </button>
               <button 
                 onClick={() => setViewMode('manual')}
@@ -361,6 +378,28 @@ export default function EditorClient({ business, initialBlocks }: { business: an
                     <Send className="w-4 h-4" />
                   </button>
                 </form>
+              </div>
+            </div>
+          ) : viewMode === 'bulk' ? (
+            <div className="p-4 md:p-6 space-y-4 pb-20 flex flex-col h-full overflow-y-auto">
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col">
+                <h3 className="text-sm font-bold text-[var(--ink)] mb-2">Toplu Veri Yükleme</h3>
+                <p className="text-xs text-slate-500 mb-4">
+                  İşletmenizle ilgili elinizde hazır bulunan (örn. hakkımda yazısı, hizmetler, fiyatlar, menüler) tüm metni buraya yapıştırın. Ajan tek bir hamlede sitenizi oluşturacaktır.
+                </p>
+                <textarea 
+                  value={bulkText}
+                  onChange={(e) => setBulkText(e.target.value)}
+                  placeholder="İşletmenizle ilgili tüm bilgileri buraya yapıştırın..."
+                  className="w-full flex-1 min-h-[200px] p-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[var(--coral)] resize-none"
+                ></textarea>
+                <button 
+                  onClick={handleBulkSubmit}
+                  disabled={!bulkText.trim() || isChatLoading}
+                  className="mt-4 w-full py-3 bg-[var(--coral)] text-white rounded-lg font-bold hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center justify-center"
+                >
+                  {isChatLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Siteyi Oluştur'}
+                </button>
               </div>
             </div>
           ) : (

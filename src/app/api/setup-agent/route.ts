@@ -55,11 +55,13 @@ export async function POST(req: Request) {
          - Temel blokların (Hakkımda, Hizmetler) dışında bu sektörel blokları mutlaka kullanarak sayfayı zenginleştir.
       7. Kullanıcının tarzına ve işletme türüne göre bir arketip seç (setArchetype aracıyla). Seçenekler: minimal-light, dark-elegant, warm-natural, vibrant-bold, soft-inviting, professional-corporate, playful-colorful, artisan-rustic, luxury-spa, cyber-tech, fitness-heavy. Sadece bir kez yapman yeterli.
       8. Sayfa Doluluk Oranı: Şu an sayfanın doluluk oranı %${completeness}. %70'i aştığında, kullanıcının iletmek istediği başka bir detay (örneğin çalışma saatleri, ek linkler) olup olmadığını sorarak profili yayına hazır hale getirdiğini (is_published) müjdele.
-      9. KESİNLİKLE kullanıcının dilinde (${locale}) yanıt ver. Eğer 'ru' ise Rusça, 'en' ise İngilizce konuş.
+      9. TOPLU YÜKLEME (BULK UPLOAD) DURUMU: Eğer kullanıcı sana '[BULK]' etiketiyle çok uzun bir metin verirse (tüm hizmetler, hakkında yazısı, linkler vb. bir arada), ona adım adım soru sormak yerine, elindeki BÜTÜN bilgiyi analiz et ve eksik olan tüm blokları arka arkaya araçları (addAbout, addServices, vb.) çağırarak TEK SEFERDE oluştur. İşlem sırasında "Bilgilerinizi analiz ediyorum...", "Hizmetlerinizi ekliyorum..." gibi süreç notları yazabilirsin.
+      10. KESİNLİKLE kullanıcının dilinde (${locale}) yanıt ver. Eğer 'ru' ise Rusça, 'en' ise İngilizce konuş.
     `;
 
     const result = await streamText({
       model: getModel(),
+      maxSteps: 10,
       system: systemPrompt,
       messages,
       tools: {
