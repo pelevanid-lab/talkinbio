@@ -131,5 +131,34 @@
     "alerts": {
       "error": "An error occurred. Please try again."
     }
+  },
+  "Editor": {
+    "panelTitle": "Panel",
+    "previewBtn": "Preview",
+    "tabAgent": "Setup Agent",
+    "tabManual": "Fine Tuning",
+    "publishStatus": "Publish Status",
+    "published": "PUBLISHED",
+    "draft": "DRAFT",
+    "completeness": "%{score} complete",
+    "linkBtn": "Link",
+    "manualTitle": "Manual Fine Tuning",
+    "manualDesc": "You can manually update the auto-generated content here.",
+    "noContent": "No content yet.",
+    "newSection": "New Section (Manual)",
+    "blocks": {
+      "about": "About",
+      "services": "Services",
+      "faq": "FAQ",
+      "hours": "Hours",
+      "contact": "Contact",
+      "custom": "Custom"
+    },
+    "previewEmpty": "Start chatting with the Setup Assistant.",
+    "assistantSuffix": "Assistant",
+    "assistantGreeting": "How can I help you?",
+    "chatPlaceholder": "Type a message to your assistant...",
+    "agentInputPlaceholder": "Tell us about your business...",
+    "aiWelcome": "Hello {name}! I am your Talkinbio setup assistant. Could you briefly tell me about your business and the services you offer? I'll build your page for you as we chat."
   }
 }

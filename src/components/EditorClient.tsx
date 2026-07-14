@@ -7,6 +7,7 @@ import ArchetypeRenderer from './ArchetypeRenderer';
 import BlockEditorModal from './BlockEditorModal';
 import SetPasswordModal from './SetPasswordModal';
 import { useChat } from '@ai-sdk/react';
+import { useTranslations, useLocale } from 'next-intl';
 
 export default function EditorClient({ business, initialBlocks }: { business: any, initialBlocks: any[] }) {
   const [blocks, setBlocks] = useState(initialBlocks);
@@ -16,13 +17,16 @@ export default function EditorClient({ business, initialBlocks }: { business: an
   const [viewMode, setViewMode] = useState<'chat' | 'manual'>('chat');
   const supabase = createClient();
   const chatEndRef = useRef<HTMLDivElement>(null);
+  
+  const t = useTranslations('Editor');
+  const locale = useLocale();
 
   // Setup AI Agent
   const { messages, input, handleInputChange, handleSubmit, isLoading: isChatLoading } = useChat({
     api: '/api/setup-agent',
-    body: { businessId: business.id },
+    body: { businessId: business.id, locale },
     initialMessages: [
-      { id: '1', role: 'assistant', content: `Merhaba ${business.name}! Ben Talkinbio kurulum asistanınızım. İşletmenizden ve sunduğunuz hizmetlerden kısaca bahseder misiniz? Konuştukça sayfanızı sizin için hazırlayacağım.` }
+      { id: '1', role: 'assistant', content: t('aiWelcome', { name: business.name }) }
     ]
   });
 
@@ -151,12 +155,12 @@ export default function EditorClient({ business, initialBlocks }: { business: an
       <div className="w-full md:w-[450px] bg-white border-r border-slate-200 flex flex-col h-full z-10 shrink-0">
         <div className="p-4 md:p-6 border-b border-slate-200 bg-white">
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-xl font-bold font-bricolage text-[var(--ink)]">Panel</h1>
+            <h1 className="text-xl font-bold font-bricolage text-[var(--ink)]">{t('panelTitle')}</h1>
             <button 
               className="md:hidden p-2 bg-[var(--coral-tint)] text-[var(--coral)] rounded-lg font-medium text-sm flex items-center"
               onClick={() => setShowMobilePreview(true)}
             >
-              <Smartphone className="w-4 h-4 mr-1" /> Önizleme
+              <Smartphone className="w-4 h-4 mr-1" /> {t('previewBtn')}
             </button>
           </div>
 
@@ -167,14 +171,14 @@ export default function EditorClient({ business, initialBlocks }: { business: an
               className={`flex-1 flex items-center justify-center py-2 text-sm font-medium rounded-md transition ${viewMode === 'chat' ? 'bg-white shadow text-[var(--ink)]' : 'text-slate-500 hover:text-slate-700'}`}
             >
               <MessageSquare className="w-4 h-4 mr-2" />
-              Kurulum Ajanı
+              {t('tabAgent')}
             </button>
             <button 
               onClick={() => setViewMode('manual')}
               className={`flex-1 flex items-center justify-center py-2 text-sm font-medium rounded-md transition ${viewMode === 'manual' ? 'bg-white shadow text-[var(--ink)]' : 'text-slate-500 hover:text-slate-700'}`}
             >
               <Settings2 className="w-4 h-4 mr-2" />
-              İnce Ayar
+              {t('tabManual')}
             </button>
           </div>
         </div>
@@ -182,19 +186,19 @@ export default function EditorClient({ business, initialBlocks }: { business: an
         {/* Progress Bar (Always visible) */}
         <div className="px-4 md:px-6 py-4 bg-slate-50 border-b border-slate-200">
           <div className="flex justify-between items-center mb-2">
-            <h2 className="font-semibold text-sm text-[var(--ink)]">Yayın Durumu</h2>
+            <h2 className="font-semibold text-sm text-[var(--ink)]">{t('publishStatus')}</h2>
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isPublished ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>
-              {isPublished ? 'YAYINDA' : 'TASLAK'}
+              {isPublished ? t('published') : t('draft')}
             </span>
           </div>
           <div className="w-full bg-slate-200 rounded-full h-1.5 mb-1">
             <div className={`h-1.5 rounded-full ${isPublished ? 'bg-green-500' : 'bg-[var(--coral)]'}`} style={{ width: `${Math.min(completeness, 100)}%` }}></div>
           </div>
           <p className="text-[11px] text-[var(--ink-soft)] flex justify-between">
-            <span>%{completeness} doluluk</span>
+            <span>{t('completeness', { score: completeness })}</span>
             {isPublished && (
               <button onClick={copyLink} className="text-[var(--teal)] font-medium flex items-center">
-                <Copy className="w-3 h-3 mr-1" /> Link
+                <Copy className="w-3 h-3 mr-1" /> {t('linkBtn')}
               </button>
             )}
           </p>
@@ -230,7 +234,7 @@ export default function EditorClient({ business, initialBlocks }: { business: an
                   <input
                     value={input}
                     onChange={handleInputChange}
-                    placeholder="İşletmenizden bahsedin..."
+                    placeholder={t('agentInputPlaceholder')}
                     className="w-full bg-white border border-slate-300 rounded-full pl-5 pr-12 py-3 text-sm focus:outline-none focus:border-[var(--coral)] focus:ring-1 focus:ring-[var(--coral)] shadow-sm"
                   />
                   <button type="submit" disabled={!input.trim() || isChatLoading} className="absolute right-2 top-1.5 p-1.5 bg-[var(--coral)] text-white rounded-full disabled:opacity-50 transition-opacity">
@@ -241,10 +245,10 @@ export default function EditorClient({ business, initialBlocks }: { business: an
             </div>
           ) : (
             <div className="p-4 md:p-6 space-y-4 pb-20">
-              <h3 className="font-medium text-[var(--ink)]">Manuel İnce Ayar</h3>
-              <p className="text-xs text-slate-500 mb-4">Otomatik eklenen içerikleri buradan manuel olarak güncelleyebilirsiniz.</p>
+              <h3 className="font-medium text-[var(--ink)]">{t('manualTitle')}</h3>
+              <p className="text-xs text-slate-500 mb-4">{t('manualDesc')}</p>
               
-              {blocks.length === 0 && <p className="text-sm text-slate-500">Henüz hiç içerik yok.</p>}
+              {blocks.length === 0 && <p className="text-sm text-slate-500">{t('noContent')}</p>}
               {blocks.map(b => (
                 <div 
                   key={b.id} 
@@ -252,7 +256,9 @@ export default function EditorClient({ business, initialBlocks }: { business: an
                   className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:border-[var(--coral)] transition cursor-pointer shadow-sm group"
                 >
                   <div>
-                    <span className="font-medium text-sm text-[var(--ink)] block group-hover:text-[var(--coral)] transition-colors">{b.title}</span>
+                    <span className="font-medium text-sm text-[var(--ink)] block group-hover:text-[var(--coral)] transition-colors">
+                      {t(`blocks.${b.type}`)}
+                    </span>
                     <span className="text-xs text-[var(--ink-soft)] capitalize">{b.type}</span>
                   </div>
                   <button className="text-[var(--teal)] group-hover:bg-[var(--coral-tint)] group-hover:text-[var(--coral)] p-2 rounded transition">
@@ -262,14 +268,14 @@ export default function EditorClient({ business, initialBlocks }: { business: an
               ))}
 
               <div className="pt-4 border-t border-slate-200 mt-6">
-                <h4 className="text-sm font-medium text-[var(--ink-soft)] mb-3">Yeni Bölüm (Manuel)</h4>
+                <h4 className="text-sm font-medium text-[var(--ink-soft)] mb-3">{t('newSection')}</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => createNewBlock('about', 'Hakkımda')} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">Hakkımda</button>
-                  <button onClick={() => createNewBlock('services', 'Hizmetler')} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">Hizmetler</button>
-                  <button onClick={() => createNewBlock('faq', 'SSS')} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">SSS</button>
-                  <button onClick={() => createNewBlock('hours', 'Çalışma Saatleri')} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">Saatler</button>
-                  <button onClick={() => createNewBlock('contact', 'İletişim')} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">İletişim</button>
-                  <button onClick={() => createNewBlock('custom', 'Özel İçerik')} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">Özel</button>
+                  <button onClick={() => createNewBlock('about', t('blocks.about'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.about')}</button>
+                  <button onClick={() => createNewBlock('services', t('blocks.services'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.services')}</button>
+                  <button onClick={() => createNewBlock('faq', t('blocks.faq'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.faq')}</button>
+                  <button onClick={() => createNewBlock('hours', t('blocks.hours'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.hours')}</button>
+                  <button onClick={() => createNewBlock('contact', t('blocks.contact'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.contact')}</button>
+                  <button onClick={() => createNewBlock('custom', t('blocks.custom'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.custom')}</button>
                 </div>
               </div>
             </div>
@@ -314,7 +320,7 @@ export default function EditorClient({ business, initialBlocks }: { business: an
               />
               {blocks.length === 0 && (
                 <div className="text-center p-6 mx-4 mt-24 bg-white rounded-2xl shadow-sm border border-slate-100 text-slate-400 text-sm">
-                  Kurulum Asistanı ile konuşmaya başlayın.
+                  {t('previewEmpty')}
                 </div>
               )}
             </div>
@@ -328,8 +334,8 @@ export default function EditorClient({ business, initialBlocks }: { business: an
                   <div className="w-5 h-5 bg-[var(--coral)] rounded-full" />
                 </div>
                 <div className="truncate">
-                  <p className="text-xs text-[var(--teal)] font-medium mb-0.5">{business.name} Asistanı</p>
-                  <p className="text-sm text-[var(--ink)] truncate">Size nasıl yardımcı olabilirim?</p>
+                  <p className="text-xs text-[var(--teal)] font-medium mb-0.5">{business.name} {t('assistantSuffix')}</p>
+                  <p className="text-sm text-[var(--ink)] truncate">{t('assistantGreeting')}</p>
                 </div>
               </div>
               <div className="w-8 h-8 rounded-full bg-[var(--paper)] flex items-center justify-center flex-shrink-0 text-[var(--ink-soft)]">
@@ -338,7 +344,7 @@ export default function EditorClient({ business, initialBlocks }: { business: an
             </div>
             
             <div className="w-full pl-4 pr-12 py-3.5 bg-[var(--paper)] border border-[var(--border-light)] rounded-full text-sm text-[var(--muted)] relative pointer-events-auto">
-              Asistanınıza mesaj yazın...
+              {t('chatPlaceholder')}
               <div className="absolute right-1.5 top-1 w-10 h-10 bg-[var(--coral)] rounded-full flex items-center justify-center">
                 <div className="w-3 h-3 border-t-2 border-r-2 border-white transform rotate-45 mr-1" />
               </div>

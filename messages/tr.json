@@ -131,5 +131,34 @@
     "alerts": {
       "error": "Bir hata oluştu. Lütfen tekrar deneyin."
     }
+  },
+  "Editor": {
+    "panelTitle": "Panel",
+    "previewBtn": "Önizleme",
+    "tabAgent": "Kurulum Ajanı",
+    "tabManual": "İnce Ayar",
+    "publishStatus": "Yayın Durumu",
+    "published": "YAYINDA",
+    "draft": "TASLAK",
+    "completeness": "%{score} doluluk",
+    "linkBtn": "Link",
+    "manualTitle": "Manuel İnce Ayar",
+    "manualDesc": "Otomatik eklenen içerikleri buradan manuel olarak güncelleyebilirsiniz.",
+    "noContent": "Henüz hiç içerik yok.",
+    "newSection": "Yeni Bölüm (Manuel)",
+    "blocks": {
+      "about": "Hakkımda",
+      "services": "Hizmetler",
+      "faq": "SSS",
+      "hours": "Saatler",
+      "contact": "İletişim",
+      "custom": "Özel"
+    },
+    "previewEmpty": "Kurulum Asistanı ile konuşmaya başlayın.",
+    "assistantSuffix": "Asistanı",
+    "assistantGreeting": "Size nasıl yardımcı olabilirim?",
+    "chatPlaceholder": "Asistanınıza mesaj yazın...",
+    "agentInputPlaceholder": "İşletmenizden bahsedin...",
+    "aiWelcome": "Merhaba {name}! Ben Talkinbio kurulum asistanınızım. İşletmenizden ve sunduğunuz hizmetlerden kısaca bahseder misiniz? Konuştukça sayfanızı sizin için hazırlayacağım."
   }
 }

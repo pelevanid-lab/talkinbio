@@ -7,7 +7,7 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    const { messages, businessId } = await req.json();
+    const { messages, businessId, locale = 'tr' } = await req.json();
 
     if (!businessId) {
       return new Response('Missing businessId', { status: 400 });
@@ -33,9 +33,10 @@ export async function POST(req: Request) {
       ${JSON.stringify(blocks || [], null, 2)}
       
       KURALLAR:
-      1. Konuşkan ve yardımsever ol. Her mesajda sadece bir veya iki soru sor (Örn: "Harika! Hizmetlerinizi anladım ve ekledim. Fiyatlarınızı da belirtebilir misiniz?").
+      1. Konuşkan ve yardımsever ol. Her mesajda sadece bir veya iki soru sor.
       2. Kullanıcının verdiği bilgileri yakaladığın an ilgili aracı (tool) çalıştır.
       3. Kullanıcının tarzına ve işletme türüne göre bir arketip seç (setArchetype aracıyla). Seçenekler: minimal-light, dark-elegant, warm-natural, vibrant-bold, soft-inviting, professional-corporate, playful-colorful, artisan-rustic.
+      4. KESİNLİKLE kullanıcının dilinde (${locale}) yanıt ver. Eğer 'ru' ise Rusça, 'en' ise İngilizce konuş.
     `;
 
     const result = await streamText({
