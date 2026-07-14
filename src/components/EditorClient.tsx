@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send } from 'lucide-react';
+import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Paperclip } from 'lucide-react';
 import ArchetypeRenderer from './ArchetypeRenderer';
 import BlockEditorModal from './BlockEditorModal';
 import SetPasswordModal from './SetPasswordModal';
@@ -16,20 +16,69 @@ export default function EditorClient({ business, initialBlocks }: { business: an
   const [isSaving, setIsSaving] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [viewMode, setViewMode] = useState<'chat' | 'manual'>('chat');
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
   const chatEndRef = useRef<HTMLDivElement>(null);
   
   const t = useTranslations('Editor');
   const locale = useLocale();
 
+  // 70% threshold calculation
+  const completeness = useMemo(() => {
+    let score = 0;
+    const hasAbout = blocks.some(b => b.type === 'about' && b.content?.text?.length > 10);
+    const hasServices = blocks.some(b => b.type === 'services' && b.content?.items?.length > 0);
+    const hasFAQ = blocks.some(b => b.type === 'faq' && b.content?.items?.length > 0);
+    const hasHours = blocks.some(b => b.type === 'hours');
+    const hasContact = blocks.some(b => b.type === 'contact' && b.content?.text?.length > 5);
+
+    if (hasAbout) score += 30;
+    if (hasServices) score += 30;
+    if (hasFAQ) score += 20;
+    if (hasHours) score += 10;
+    if (hasContact) score += 10;
+    
+    return score;
+  }, [blocks]);
+
+  const isPublished = completeness >= 70;
+
   // Setup AI Agent
-  const { messages, input, handleInputChange, handleSubmit, isLoading: isChatLoading } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, isLoading: isChatLoading, append } = useChat({
     api: '/api/setup-agent',
-    body: { businessId: business.id, locale },
+    body: { businessId: business.id, locale, completeness },
     initialMessages: [
       { id: '1', role: 'assistant', content: t('aiWelcome', { name: business.name }) }
     ]
   });
+
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingMedia(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      
+      const { error } = await supabase.storage.from('media').upload(fileName, file, { cacheControl: '3600' });
+      if (error) throw error;
+      
+      const { data: { publicUrl } } = supabase.storage.from('media').getPublicUrl(fileName);
+      
+      append({
+        role: 'user',
+        content: `[Kullanıcı sisteme bir medya yükledi: ${publicUrl}]`
+      });
+
+    } catch (err: any) {
+      alert("Dosya yüklenirken hata oluştu: " + err.message);
+    } finally {
+      setIsUploadingMedia(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   // Scroll chat to bottom
   useEffect(() => {
@@ -58,25 +107,7 @@ export default function EditorClient({ business, initialBlocks }: { business: an
     return () => clearInterval(interval);
   }, [business.id, supabase, viewMode]);
 
-  // 70% threshold calculation
-  const completeness = useMemo(() => {
-    let score = 0;
-    const hasAbout = blocks.some(b => b.type === 'about' && b.content?.text?.length > 10);
-    const hasServices = blocks.some(b => b.type === 'services' && b.content?.items?.length > 0);
-    const hasFAQ = blocks.some(b => b.type === 'faq' && b.content?.items?.length > 0);
-    const hasHours = blocks.some(b => b.type === 'hours');
-    const hasContact = blocks.some(b => b.type === 'contact' && b.content?.text?.length > 5);
 
-    if (hasAbout) score += 30;
-    if (hasServices) score += 30;
-    if (hasFAQ) score += 20;
-    if (hasHours) score += 10;
-    if (hasContact) score += 10;
-    
-    return score;
-  }, [blocks]);
-
-  const isPublished = completeness >= 70;
 
   const syncPublishStatus = async (published: boolean) => {
     if (business.is_published !== published) {
@@ -169,22 +200,20 @@ export default function EditorClient({ business, initialBlocks }: { business: an
           </div>
 
           {/* Mode Switcher */}
-          <div className="flex bg-slate-100 rounded-lg p-1">
-            <button 
-              onClick={() => setViewMode('chat')}
-              className={`flex-1 flex items-center justify-center py-2 text-sm font-medium rounded-md transition ${viewMode === 'chat' ? 'bg-white shadow text-[var(--ink)]' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              {t('tabAgent')}
-            </button>
-            <button 
-              onClick={() => setViewMode('manual')}
-              className={`flex-1 flex items-center justify-center py-2 text-sm font-medium rounded-md transition ${viewMode === 'manual' ? 'bg-white shadow text-[var(--ink)]' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-              <Settings2 className="w-4 h-4 mr-2" />
-              {t('tabManual')}
-            </button>
-          </div>
+            <div className="flex justify-between items-center bg-white p-2 rounded-xl shadow-sm border border-slate-200">
+              <button 
+                onClick={() => setViewMode('chat')}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'chat' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Ajan
+              </button>
+              <button 
+                onClick={() => setViewMode('manual')}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'manual' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Manuel
+              </button>
+            </div>
         </div>
 
         {/* Progress Bar (Always visible) */}
@@ -234,6 +263,16 @@ export default function EditorClient({ business, initialBlocks }: { business: an
 
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent">
                 <form onSubmit={handleSubmit} className="relative flex items-end">
+                  <button 
+                    type="button" 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingMedia || isChatLoading} 
+                    className="absolute left-3 bottom-2 p-1.5 text-slate-400 hover:text-[var(--coral)] rounded-full disabled:opacity-50 transition-colors z-10"
+                  >
+                    {isUploadingMedia ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
+                  </button>
+                  <input type="file" ref={fileInputRef} onChange={handleMediaUpload} accept="image/*,video/*" className="hidden" />
+                  
                   <textarea
                     value={input}
                     onChange={(e) => {
@@ -251,7 +290,7 @@ export default function EditorClient({ business, initialBlocks }: { business: an
                     }}
                     rows={1}
                     placeholder={t('agentInputPlaceholder')}
-                    className="w-full bg-white border border-slate-300 rounded-3xl pl-5 pr-12 py-3 text-sm focus:outline-none focus:border-[var(--coral)] focus:ring-1 focus:ring-[var(--coral)] shadow-sm resize-none overflow-hidden min-h-[46px] max-h-[150px]"
+                    className="w-full bg-white border border-slate-300 rounded-3xl pl-12 pr-12 py-3 text-sm focus:outline-none focus:border-[var(--coral)] focus:ring-1 focus:ring-[var(--coral)] shadow-sm resize-none overflow-hidden min-h-[46px] max-h-[150px]"
                     style={{ maxHeight: '150px' }}
                   />
                   <button type="submit" disabled={!input.trim() || isChatLoading} className="absolute right-2 bottom-1.5 p-2 bg-[var(--coral)] text-white rounded-full disabled:opacity-50 transition-opacity">
@@ -262,11 +301,46 @@ export default function EditorClient({ business, initialBlocks }: { business: an
             </div>
           ) : (
             <div className="p-4 md:p-6 space-y-4 pb-20">
+              <div className="mb-6 p-4 bg-white rounded-xl shadow-sm border border-slate-200">
+                <h3 className="text-sm font-bold text-[var(--ink)] mb-3">Sayfa Görünümü</h3>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={async () => {
+                      const settingsBlock = blocks.find(b => b.type === 'settings');
+                      if (settingsBlock) {
+                        await supabase.from('blocks').update({ content: { ...settingsBlock.content, layoutMode: 'website' } }).eq('id', settingsBlock.id);
+                      } else {
+                        await supabase.from('blocks').insert({ business_id: business.id, type: 'settings', title: 'Settings', content: { layoutMode: 'website' }, order: 99, is_visible: false });
+                      }
+                    }}
+                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border ${blocks.find(b => b.type === 'settings')?.content?.layoutMode !== 'linktree' ? 'bg-[var(--coral)] text-white border-[var(--coral)]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                  >
+                    Web Sitesi
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      const settingsBlock = blocks.find(b => b.type === 'settings');
+                      if (settingsBlock) {
+                        await supabase.from('blocks').update({ content: { ...settingsBlock.content, layoutMode: 'linktree' } }).eq('id', settingsBlock.id);
+                      } else {
+                        await supabase.from('blocks').insert({ business_id: business.id, type: 'settings', title: 'Settings', content: { layoutMode: 'linktree' }, order: 99, is_visible: false });
+                      }
+                    }}
+                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border ${blocks.find(b => b.type === 'settings')?.content?.layoutMode === 'linktree' ? 'bg-[var(--coral)] text-white border-[var(--coral)]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                  >
+                    Blok (Linktree)
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-2">
+                  Web Sitesi tüm içerikleri alt alta gösterir. Blok modu ise menü açarak sadece tıklanan bölümü gösterir.
+                </p>
+              </div>
+
               <h3 className="font-medium text-[var(--ink)]">{t('manualTitle')}</h3>
               <p className="text-xs text-slate-500 mb-4">{t('manualDesc')}</p>
               
-              {blocks.length === 0 && <p className="text-sm text-slate-500">{t('noContent')}</p>}
-              {blocks.map(b => (
+              {blocks.filter(b => b.type !== 'settings').length === 0 && <p className="text-sm text-slate-500">{t('noContent')}</p>}
+              {blocks.filter(b => b.type !== 'settings').map(b => (
                 <div 
                   key={b.id} 
                   onClick={() => setEditingBlock(b)}
@@ -325,7 +399,7 @@ export default function EditorClient({ business, initialBlocks }: { business: an
             {/* Compact Header */}
             <div className="w-full pt-12 pb-4 px-4 flex justify-between items-center z-10 relative">
               <div></div>
-              <div className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-[10px] text-slate-500 font-medium bg-white/50 backdrop-blur-sm shadow-sm">TR</div>
+              <div className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-[10px] text-slate-500 font-medium bg-white/50 backdrop-blur-sm shadow-sm uppercase">{locale}</div>
             </div>
 
             {/* Blocks (Archetype Preview) */}

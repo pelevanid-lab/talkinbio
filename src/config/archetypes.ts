@@ -1,5 +1,6 @@
 export type MediaProfile = 'gallery-first' | 'service-focused' | 'minimal';
 export type LayoutStyle = 'compact' | 'spacious' | 'card-heavy' | 'flat';
+export type BorderRadiusStyle = 'none' | 'sm' | 'md' | 'xl' | 'full';
 
 export interface ArchetypeConfig {
   id: string;
@@ -18,6 +19,7 @@ export interface ArchetypeConfig {
   };
   mediaProfile: MediaProfile;
   layoutStyle: LayoutStyle;
+  borderRadius: BorderRadiusStyle;
 }
 
 export const ARCHETYPES: Record<string, ArchetypeConfig> = {
@@ -35,6 +37,7 @@ export const ARCHETYPES: Record<string, ArchetypeConfig> = {
     typography: { headingFont: 'font-sans font-bold', bodyFont: 'font-sans' },
     mediaProfile: 'minimal',
     layoutStyle: 'compact',
+    borderRadius: 'xl',
   },
   'dark-elegant': {
     id: 'dark-elegant',
@@ -50,6 +53,7 @@ export const ARCHETYPES: Record<string, ArchetypeConfig> = {
     typography: { headingFont: 'font-serif font-semibold', bodyFont: 'font-sans' },
     mediaProfile: 'gallery-first',
     layoutStyle: 'spacious',
+    borderRadius: 'md',
   },
   'warm-natural': {
     id: 'warm-natural',
@@ -65,6 +69,7 @@ export const ARCHETYPES: Record<string, ArchetypeConfig> = {
     typography: { headingFont: 'font-sans font-medium', bodyFont: 'font-sans' },
     mediaProfile: 'service-focused',
     layoutStyle: 'flat',
+    borderRadius: 'xl',
   },
   'vibrant-bold': {
     id: 'vibrant-bold',
@@ -80,6 +85,7 @@ export const ARCHETYPES: Record<string, ArchetypeConfig> = {
     typography: { headingFont: 'font-bricolage font-black tracking-tight', bodyFont: 'font-sans' },
     mediaProfile: 'gallery-first',
     layoutStyle: 'card-heavy',
+    borderRadius: 'full',
   },
   'soft-inviting': {
     id: 'soft-inviting',
@@ -95,6 +101,7 @@ export const ARCHETYPES: Record<string, ArchetypeConfig> = {
     typography: { headingFont: 'font-sans font-bold', bodyFont: 'font-sans' },
     mediaProfile: 'service-focused',
     layoutStyle: 'compact',
+    borderRadius: 'xl',
   },
   'professional-corporate': {
     id: 'professional-corporate',
@@ -110,6 +117,7 @@ export const ARCHETYPES: Record<string, ArchetypeConfig> = {
     typography: { headingFont: 'font-sans font-semibold', bodyFont: 'font-sans' },
     mediaProfile: 'minimal',
     layoutStyle: 'card-heavy',
+    borderRadius: 'sm',
   },
   'playful-colorful': {
     id: 'playful-colorful',
@@ -125,6 +133,7 @@ export const ARCHETYPES: Record<string, ArchetypeConfig> = {
     typography: { headingFont: 'font-bricolage font-bold', bodyFont: 'font-sans' },
     mediaProfile: 'service-focused',
     layoutStyle: 'flat',
+    borderRadius: 'full',
   },
   'artisan-rustic': {
     id: 'artisan-rustic',
@@ -140,6 +149,55 @@ export const ARCHETYPES: Record<string, ArchetypeConfig> = {
     typography: { headingFont: 'font-serif font-bold', bodyFont: 'font-serif' },
     mediaProfile: 'gallery-first',
     layoutStyle: 'spacious',
+    borderRadius: 'none',
+  },
+  'luxury-spa': {
+    id: 'luxury-spa',
+    name: 'Lüks & Spa',
+    colors: {
+      background: '#F4F7F6',
+      surface: '#FFFFFF',
+      primary: '#6D8A81', // Muted sage green
+      text: '#2C3E38',
+      textMuted: '#70827B',
+      border: '#DCE4E1',
+    },
+    typography: { headingFont: 'font-serif font-medium tracking-wide', bodyFont: 'font-sans font-light' },
+    mediaProfile: 'gallery-first',
+    layoutStyle: 'spacious',
+    borderRadius: 'none',
+  },
+  'cyber-tech': {
+    id: 'cyber-tech',
+    name: 'Siber Teknoloji',
+    colors: {
+      background: '#09090B', // Very dark zinc
+      surface: '#18181B', // Dark zinc
+      primary: '#00FF41', // Matrix green
+      text: '#FAFAFA',
+      textMuted: '#A1A1AA',
+      border: '#27272A',
+    },
+    typography: { headingFont: 'font-mono font-bold tracking-tight', bodyFont: 'font-mono text-sm' },
+    mediaProfile: 'minimal',
+    layoutStyle: 'card-heavy',
+    borderRadius: 'sm',
+  },
+  'fitness-heavy': {
+    id: 'fitness-heavy',
+    name: 'Spor & Güç',
+    colors: {
+      background: '#111111',
+      surface: '#1C1C1C',
+      primary: '#DC2626', // Intense Red
+      text: '#FFFFFF',
+      textMuted: '#9CA3AF',
+      border: '#2D2D2D',
+    },
+    typography: { headingFont: 'font-sans font-black uppercase tracking-tighter', bodyFont: 'font-sans' },
+    mediaProfile: 'gallery-first',
+    layoutStyle: 'compact',
+    borderRadius: 'none',
   }
 };
 

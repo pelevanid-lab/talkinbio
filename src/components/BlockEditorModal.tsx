@@ -34,7 +34,7 @@ export default function BlockEditorModal({
         saturday: { isOpen: false, openTime: '09:00', closeTime: '18:00' },
         sunday: { isOpen: false, openTime: '09:00', closeTime: '18:00' },
       }});
-      else if (block?.type === 'faq' || block?.type === 'links') setContent({ items: [] });
+      else if (block?.type === 'faq' || block?.type === 'links' || block?.type === 'gallery' || block?.type === 'testimonials') setContent({ items: [] });
       else setContent({ text: '' });
     } else {
       setContent(block.content);
@@ -64,12 +64,26 @@ export default function BlockEditorModal({
               />
             </div>
             {block.type === 'about' && (
-              <div>
+              <div className="space-y-3">
                 <label className="block text-sm font-medium mb-1">Görsel / Video</label>
                 <MediaUploader 
                   value={content.mediaUrl || ''}
                   onChange={(url) => setContent({...content, mediaUrl: url})}
                 />
+                {content.mediaUrl && (
+                  <div className="pt-2">
+                    <label className="block text-xs font-medium mb-1 text-slate-500">Görsel Konumu</label>
+                    <select 
+                      value={content.mediaPosition || 'top'} 
+                      onChange={(e) => setContent({...content, mediaPosition: e.target.value})}
+                      className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
+                    >
+                      <option value="top">En Üstte (Başlıktan Önce)</option>
+                      <option value="middle">Ortada (Başlık ile Metin Arasında)</option>
+                      <option value="bottom">En Altta (Metinden Sonra)</option>
+                    </select>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -186,6 +200,113 @@ export default function BlockEditorModal({
               className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] font-medium flex items-center justify-center hover:bg-slate-50"
             >
               <Plus className="w-4 h-4 mr-2" /> Yeni Soru Ekle
+            </button>
+          </div>
+        );
+
+      case 'gallery':
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              {(content.items || []).map((item: any, idx: number) => (
+                <div key={idx} className="relative bg-slate-50 border border-slate-200 rounded-lg p-2 flex flex-col gap-2">
+                  <button 
+                    onClick={() => {
+                      const newItems = [...content.items];
+                      newItems.splice(idx, 1);
+                      setContent({...content, items: newItems});
+                    }}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white hover:bg-red-600 p-1 rounded-full z-10 shadow-sm"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                  <div className="h-32">
+                    <MediaUploader 
+                      value={item.url || ''}
+                      onChange={url => {
+                        const newItems = [...content.items];
+                        newItems[idx].url = url;
+                        setContent({...content, items: newItems});
+                      }}
+                      label="Medya Yükle"
+                    />
+                  </div>
+                  <input 
+                    value={item.caption || ''} 
+                    onChange={e => {
+                      const newItems = [...content.items];
+                      newItems[idx].caption = e.target.value;
+                      setContent({...content, items: newItems});
+                    }}
+                    placeholder="Görsel Açıklaması" 
+                    className="w-full p-2 border border-slate-200 rounded text-xs mt-auto"
+                  />
+                </div>
+              ))}
+            </div>
+            <button 
+              onClick={() => setContent({...content, items: [...(content.items || []), { url: '', caption: '' }]})}
+              className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] font-medium flex items-center justify-center hover:bg-slate-50"
+            >
+              <Plus className="w-4 h-4 mr-2" /> Yeni Medya Ekle
+            </button>
+          </div>
+        );
+
+      case 'testimonials':
+        return (
+          <div className="space-y-4">
+            {(content.items || []).map((item: any, idx: number) => (
+              <div key={idx} className="p-4 border border-slate-200 rounded-lg relative space-y-3 bg-slate-50">
+                <button 
+                  onClick={() => {
+                    const newItems = [...content.items];
+                    newItems.splice(idx, 1);
+                    setContent({...content, items: newItems});
+                  }}
+                  className="absolute top-2 right-2 text-red-500 hover:bg-red-50 p-1 rounded"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <textarea 
+                  value={item.quote || ''} 
+                  onChange={e => {
+                    const newItems = [...content.items];
+                    newItems[idx].quote = e.target.value;
+                    setContent({...content, items: newItems});
+                  }}
+                  placeholder="Müşteri Yorumu..." 
+                  className="w-full p-2 border border-slate-200 rounded min-h-[80px]"
+                />
+                <div className="flex gap-2">
+                  <input 
+                    value={item.author || ''} 
+                    onChange={e => {
+                      const newItems = [...content.items];
+                      newItems[idx].author = e.target.value;
+                      setContent({...content, items: newItems});
+                    }}
+                    placeholder="Müşteri Adı" 
+                    className="flex-1 p-2 border border-slate-200 rounded text-sm"
+                  />
+                  <input 
+                    value={item.role || ''} 
+                    onChange={e => {
+                      const newItems = [...content.items];
+                      newItems[idx].role = e.target.value;
+                      setContent({...content, items: newItems});
+                    }}
+                    placeholder="Unvan (Örn: CEO)" 
+                    className="flex-1 p-2 border border-slate-200 rounded text-sm"
+                  />
+                </div>
+              </div>
+            ))}
+            <button 
+              onClick={() => setContent({...content, items: [...(content.items || []), { quote: '', author: '', role: '' }]})}
+              className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] font-medium flex items-center justify-center hover:bg-slate-50"
+            >
+              <Plus className="w-4 h-4 mr-2" /> Yeni Yorum Ekle
             </button>
           </div>
         );
