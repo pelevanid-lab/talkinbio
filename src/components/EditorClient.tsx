@@ -6,6 +6,7 @@ import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare,
 import ArchetypeRenderer from './ArchetypeRenderer';
 import BlockEditorModal from './BlockEditorModal';
 import SetPasswordModal from './SetPasswordModal';
+import LanguageSwitcher from './LanguageSwitcher';
 import { useChat } from '@ai-sdk/react';
 import { useTranslations, useLocale } from 'next-intl';
 
@@ -155,7 +156,10 @@ export default function EditorClient({ business, initialBlocks }: { business: an
       <div className="w-full md:w-[450px] bg-white border-r border-slate-200 flex flex-col h-full z-10 shrink-0">
         <div className="p-4 md:p-6 border-b border-slate-200 bg-white">
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-xl font-bold font-bricolage text-[var(--ink)]">{t('panelTitle')}</h1>
+            <div className="flex items-center space-x-4">
+              <h1 className="text-xl font-bold font-bricolage text-[var(--ink)]">{t('panelTitle')}</h1>
+              <LanguageSwitcher />
+            </div>
             <button 
               className="md:hidden p-2 bg-[var(--coral-tint)] text-[var(--coral)] rounded-lg font-medium text-sm flex items-center"
               onClick={() => setShowMobilePreview(true)}
@@ -228,16 +232,29 @@ export default function EditorClient({ business, initialBlocks }: { business: an
                 <div ref={chatEndRef} />
               </div>
 
-              {/* Chat Input */}
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent">
-                <form onSubmit={handleSubmit} className="relative">
-                  <input
+                <form onSubmit={handleSubmit} className="relative flex items-end">
+                  <textarea
                     value={input}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      handleInputChange(e);
+                      e.target.style.height = 'auto';
+                      e.target.style.height = `${e.target.scrollHeight}px`;
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if (input.trim() && !isChatLoading) {
+                          e.currentTarget.form?.requestSubmit();
+                        }
+                      }
+                    }}
+                    rows={1}
                     placeholder={t('agentInputPlaceholder')}
-                    className="w-full bg-white border border-slate-300 rounded-full pl-5 pr-12 py-3 text-sm focus:outline-none focus:border-[var(--coral)] focus:ring-1 focus:ring-[var(--coral)] shadow-sm"
+                    className="w-full bg-white border border-slate-300 rounded-3xl pl-5 pr-12 py-3 text-sm focus:outline-none focus:border-[var(--coral)] focus:ring-1 focus:ring-[var(--coral)] shadow-sm resize-none overflow-hidden min-h-[46px] max-h-[150px]"
+                    style={{ maxHeight: '150px' }}
                   />
-                  <button type="submit" disabled={!input.trim() || isChatLoading} className="absolute right-2 top-1.5 p-1.5 bg-[var(--coral)] text-white rounded-full disabled:opacity-50 transition-opacity">
+                  <button type="submit" disabled={!input.trim() || isChatLoading} className="absolute right-2 bottom-1.5 p-2 bg-[var(--coral)] text-white rounded-full disabled:opacity-50 transition-opacity">
                     <Send className="w-4 h-4" />
                   </button>
                 </form>

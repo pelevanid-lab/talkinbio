@@ -119,19 +119,32 @@ export default function ChatWidget({ businessId, businessName }: { businessId: s
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Input Area */}
               <div className="p-4 bg-white border-t border-[var(--border-light)]">
-                <form onSubmit={handleSubmit} className="flex relative items-center">
-                  <input
+                <form onSubmit={handleSubmit} className="flex relative items-end">
+                  <textarea
                     value={input}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      handleInputChange(e);
+                      e.target.style.height = 'auto';
+                      e.target.style.height = `${e.target.scrollHeight}px`;
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if (input.trim() && !isLoading) {
+                          e.currentTarget.form?.requestSubmit();
+                        }
+                      }
+                    }}
+                    rows={1}
                     placeholder="Bir mesaj yazın..."
-                    className="w-full pl-4 pr-12 py-3 bg-[var(--paper)] border border-[var(--border-light)] rounded-full focus:outline-none focus:ring-2 focus:ring-[var(--coral)]/20 focus:border-[var(--coral)] transition-all text-sm"
+                    className="w-full pl-4 pr-12 py-3 bg-[var(--paper)] border border-[var(--border-light)] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[var(--coral)]/20 focus:border-[var(--coral)] transition-all text-sm resize-none overflow-hidden min-h-[46px] max-h-[150px]"
+                    style={{ maxHeight: '150px' }}
                   />
                   <button 
                     type="submit" 
                     disabled={isLoading || !input.trim()}
-                    className="absolute right-1 w-10 h-10 bg-[var(--coral)] text-white rounded-full flex items-center justify-center hover:bg-orange-600 disabled:opacity-50 transition-colors shadow-sm"
+                    className="absolute right-1 bottom-1 w-10 h-10 bg-[var(--coral)] text-white rounded-full flex items-center justify-center hover:bg-orange-600 disabled:opacity-50 transition-colors shadow-sm"
                   >
                     <Send className="w-4 h-4 ml-0.5" />
                   </button>
