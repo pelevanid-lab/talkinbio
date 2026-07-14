@@ -1,4 +1,4 @@
-import { anthropic } from '@ai-sdk/anthropic';
+import { getModel } from '@/utils/ai';
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
     }
 
     const result = await streamText({
-      model: anthropic('claude-sonnet-4-5'),
+      model: getModel(),
       system: systemPrompt,
       messages,
       tools: {

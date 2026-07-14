@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import ChatWidget from '@/components/ChatWidget';
-import BlocksRenderer from '@/components/BlocksRenderer';
+import ArchetypeRenderer from '@/components/ArchetypeRenderer';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { createClient } from '@/utils/supabase/server';
 
@@ -59,7 +59,7 @@ export default async function BusinessProfilePage({ params }: any) {
     .order('order', { ascending: true });
 
   return (
-    <div className="flex flex-col min-h-[100dvh] bg-[var(--paper)] relative">
+    <div className="flex flex-col min-h-[100dvh] relative">
       {!business.is_published && isOwner && (
         <div className="w-full bg-[var(--coral)] text-white text-center py-2 text-sm font-medium shadow-sm z-50">
           Profiliniz henüz ziyaretçilere kapalı. Yayınlamak için eksikleri tamamlayın.
@@ -70,18 +70,20 @@ export default async function BusinessProfilePage({ params }: any) {
       <main className="flex-1 overflow-y-auto pb-[35dvh]">
         <div className="max-w-md mx-auto w-full px-4 pt-6 pb-8">
           
-
-
           {/* Top content area with just language switcher */}
           <div className="flex justify-between items-center mb-6 px-2">
-            <h1 className="text-xl font-bold text-[var(--ink)] font-bricolage">{business.name}</h1>
+            <div></div>
             <LanguageSwitcher />
           </div>
 
           {/* Blocks */}
-          <div className="space-y-4">
+          <div className="w-full">
             {blocks && blocks.length > 0 && (
-              <BlocksRenderer blocks={blocks} />
+              <ArchetypeRenderer 
+                blocks={blocks} 
+                archetypeId={business.archetype_id || 'minimal-light'} 
+                businessName={business.name} 
+              />
             )}
           </div>
 
