@@ -32,6 +32,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   const [needsRepublish, setNeedsRepublish] = useState<boolean>(business.needs_republish || false);
   const [previewActiveBlockId, setPreviewActiveBlockId] = useState<string | null>(null);
   const [contactValue, setContactValue] = useState<string | null>(business.contact_value || null);
+  const [contactMethod, setContactMethod] = useState<string | null>(business.contact_method || null);
   const [isEditingContact, setIsEditingContact] = useState(false);
   const CONTACT_METHODS = ['whatsapp', 'instagram', 'email', 'telegram'] as const;
   const [contactMethods, setContactMethods] = useState<Record<string, { selected: boolean, value: string }>>(() =>
@@ -132,7 +133,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       }
       
       // Also refresh business to get theme/contact/needs_republish updates made by the AI agent
-      const { data: bData } = await supabase.from('businesses').select('theme, contact_value, needs_republish').eq('id', business.id).single();
+      const { data: bData } = await supabase.from('businesses').select('theme, contact_method, contact_value, needs_republish').eq('id', business.id).single();
       if (bData) {
         if (bData.theme && JSON.stringify(bData.theme) !== JSON.stringify(theme)) {
           setTheme(bData.theme);
@@ -140,13 +141,16 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
         if (bData.contact_value !== contactValue) {
           setContactValue(bData.contact_value);
         }
+        if (bData.contact_method !== contactMethod) {
+          setContactMethod(bData.contact_method);
+        }
         if (bData.needs_republish) {
           setNeedsRepublish(true);
         }
       }
     }, 3000);
     return () => clearInterval(interval);
-  }, [business.id, supabase, viewMode, contactValue, theme]);
+  }, [business.id, supabase, viewMode, contactValue, contactMethod, theme]);
 
   const handleTogglePublish = async () => {
     const next = !isPublished;
@@ -340,7 +344,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   const openContactEditor = () => {
     let parsedValues: Record<string, string> = {};
     try { parsedValues = contactValue ? JSON.parse(contactValue) : {}; } catch { parsedValues = {}; }
-    const selectedKeys = (business.contact_method || '').split(',').filter(Boolean);
+    const selectedKeys = (contactMethod || '').split(',').filter(Boolean);
     setContactMethods(Object.fromEntries(CONTACT_METHODS.map((m) => [
       m,
       { selected: m === 'email' || selectedKeys.includes(m), value: parsedValues[m] || '' }
@@ -350,15 +354,15 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
 
   const handleContactSave = async () => {
     const mergedValues = Object.fromEntries(Object.entries(contactMethods).map(([k, v]) => [k, v.value]));
-    const contactMethod = Object.entries(contactMethods)
+    const nextContactMethod = Object.entries(contactMethods)
       .filter(([, v]) => v.selected && v.value.trim())
       .map(([k]) => k)
       .join(',');
     const nextContactValue = JSON.stringify(mergedValues);
     try {
-      const { error } = await supabase.from('businesses').update({ contact_method: contactMethod, contact_value: nextContactValue }).eq('id', business.id);
+      const { error } = await supabase.from('businesses').update({ contact_method: nextContactMethod, contact_value: nextContactValue }).eq('id', business.id);
       if (error) throw error;
-      business.contact_method = contactMethod;
+      setContactMethod(nextContactMethod);
       setContactValue(nextContactValue);
       setIsEditingContact(false);
       await markNeedsRepublish();
@@ -541,7 +545,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 </div>
               ) : (
                 <div className="text-sm font-medium text-[var(--ink)]">
-                  {(business.contact_method || '').split(',').filter(Boolean).map((m: string) => t(`contactMethods.${m}`)).join(', ') || t('noContent')}
+                  {(contactMethod || '').split(',').filter(Boolean).map((m: string) => t(`contactMethods.${m}`)).join(', ') || t('noContent')}
                 </div>
               )}
             </div>
@@ -800,6 +804,8 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 businessName={business.name}
                 activeBlockId={previewActiveBlockId}
                 onActiveBlockChange={setPreviewActiveBlockId}
+                contactMethod={contactMethod}
+                contactValue={contactValue}
               />
               {blocks.length === 0 && (
                 <div className="text-center p-6 mx-4 mt-24 bg-white rounded-2xl shadow-sm border border-slate-100 text-slate-400 text-sm">

@@ -8,7 +8,7 @@ import { Theme } from '@/config/archetypes';
 
 // Owns activeBlockId so the "back" control can live in the same header row as the page
 // title/language switcher instead of floating inside the scrollable block content below.
-export default function ProfilePageBody({ blocks, theme, businessName, pageTitle }: { blocks: any[], theme?: Theme | null, businessName: string, pageTitle: string }) {
+export default function ProfilePageBody({ blocks, theme, businessName, pageTitle, contactMethod, contactValue }: { blocks: any[], theme?: Theme | null, businessName: string, pageTitle: string, contactMethod?: string | null, contactValue?: string | null }) {
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
 
   return (
@@ -30,13 +30,15 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
       </div>
 
       <div className="w-full">
-        {blocks && blocks.length > 0 && (
+        {((blocks && blocks.length > 0) || (contactMethod && contactValue)) && (
           <ArchetypeRenderer
             blocks={blocks}
             theme={theme}
             businessName={businessName}
             activeBlockId={activeBlockId}
             onActiveBlockChange={setActiveBlockId}
+            contactMethod={contactMethod}
+            contactValue={contactValue}
           />
         )}
       </div>

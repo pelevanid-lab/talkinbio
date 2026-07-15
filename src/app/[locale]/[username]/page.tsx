@@ -83,6 +83,8 @@ export default async function BusinessProfilePage({ params }: any) {
             theme={theme}
             businessName={business.name}
             pageTitle={business.page_title || business.name}
+            contactMethod={business.contact_method}
+            contactValue={business.contact_value}
           />
 
         </div>

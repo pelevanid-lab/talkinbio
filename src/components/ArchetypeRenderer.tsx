@@ -35,6 +35,14 @@ const FIXED_TITLES: Record<string, Record<string, string>> = {
   links: { tr: 'Bağlantılar', en: 'Links', ru: 'Ссылки' },
   hours: { tr: 'Çalışma Saatleri', en: 'Working Hours', ru: 'Часы работы' },
   faq: { tr: 'Sıkça Sorulan Sorular', en: 'FAQ', ru: 'Частые вопросы' },
+  contact: { tr: 'İletişim', en: 'Contact', ru: 'Контакты' },
+};
+
+const CONTACT_METHOD_LABELS: Record<string, Record<string, string>> = {
+  whatsapp: { tr: 'Telefon & WhatsApp', en: 'Phone & WhatsApp', ru: 'Телефон и WhatsApp' },
+  instagram: { tr: 'Instagram', en: 'Instagram', ru: 'Instagram' },
+  email: { tr: 'E-posta', en: 'Email', ru: 'Email' },
+  telegram: { tr: 'Telegram', en: 'Telegram', ru: 'Telegram' },
 };
 
 function blockTitleOf(block: any, locale: string) {
@@ -803,6 +811,61 @@ function renderLinks(block: any, ctx: RenderCtx) {
   );
 }
 
+function contactHref(method: string, value: string) {
+  switch (method) {
+    case 'whatsapp': return `https://wa.me/${value.replace(/\D/g, '')}`;
+    case 'instagram': return `https://instagram.com/${value.replace(/^@/, '')}`;
+    case 'telegram': return `https://t.me/${value.replace(/^@/, '')}`;
+    case 'email': return `mailto:${value}`;
+    default: return '#';
+  }
+}
+
+function contactIcon(method: string) {
+  switch (method) {
+    case 'whatsapp': return MessageCircle;
+    case 'instagram': return AtSign;
+    case 'email': return Mail;
+    default: return LinkIcon;
+  }
+}
+
+// Synthetic block (see `visibleBlocks` below) built from business.contact_method/contact_value —
+// not a real `blocks` row, so it reads its data from block.content.method/.value instead of the
+// usual per-locale content shape.
+function renderContact(block: any, ctx: RenderCtx) {
+  const { locale, radiusClass, headingFont } = ctx;
+  const methodKeys: string[] = (block.content?.method || '').split(',').filter(Boolean);
+  let values: Record<string, string> = {};
+  try { values = block.content?.value ? JSON.parse(block.content.value) : {}; } catch { values = {}; }
+  const items = methodKeys.map((key) => ({ key, value: values[key] })).filter((i) => i.value?.trim());
+  if (items.length === 0) return null;
+
+  return (
+    <section key={block.id}>
+      <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{FIXED_TITLES.contact[locale] || FIXED_TITLES.contact.tr}</h2>
+      <div className="flex flex-col gap-3">
+        {items.map(({ key, value }) => {
+          const Icon = contactIcon(key);
+          return (
+            <a
+              key={key}
+              href={contactHref(key, value)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`w-full p-4 flex items-center gap-3 font-semibold border shadow-sm transition hover:scale-[1.02] ${radiusClass}`}
+              style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--primary)' }}
+            >
+              <Icon className="w-5 h-5 shrink-0" />
+              <span>{CONTACT_METHOD_LABELS[key]?.[locale] || key}: {value}</span>
+            </a>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 const BLOCK_RENDERERS: Record<string, (block: any, ctx: RenderCtx) => React.ReactNode> = {
   about: renderAbout,
   services: renderServices,
@@ -812,6 +875,7 @@ const BLOCK_RENDERERS: Record<string, (block: any, ctx: RenderCtx) => React.Reac
   gallery: renderGallery,
   testimonials: renderTestimonials,
   links: renderLinks,
+  contact: renderContact,
   custom: renderTextBlock,
 };
 
@@ -821,6 +885,8 @@ export default function ArchetypeRenderer({
   businessName,
   activeBlockId: controlledActiveBlockId,
   onActiveBlockChange,
+  contactMethod,
+  contactValue,
 }: {
   blocks: any[],
   theme?: Theme | null,
@@ -830,6 +896,10 @@ export default function ArchetypeRenderer({
   // to internal state when omitted.
   activeBlockId?: string | null,
   onActiveBlockChange?: (id: string | null) => void,
+  // business.contact_method / business.contact_value — rendered as a real page section (like any
+  // other block) when at least one method has a value, positioned right after services.
+  contactMethod?: string | null,
+  contactValue?: string | null,
 }) {
   const [internalActiveBlockId, setInternalActiveBlockId] = useState<string | null>(null);
   const activeBlockId = controlledActiveBlockId !== undefined ? controlledActiveBlockId : internalActiveBlockId;
@@ -864,9 +934,18 @@ export default function ArchetypeRenderer({
     }
   }, [theme]);
 
-  // 'contact' is retired as a content block — contact methods live on business.contact_method/
-  // contact_value (edited in the dashboard's fixed "İletişim" section), never as page content.
-  const visibleBlocks = blocks.filter(b => b.type !== 'settings' && b.type !== 'contact' && b.is_visible !== false);
+  // `contact` is no longer a real row in `blocks` (edited as business.contact_method/contact_value
+  // in the dashboard's fixed "İletişim" section instead) — synthesize a virtual block for it here
+  // so it renders as a real page section/tile like everything else, right after services.
+  const visibleBlocks = useMemo(() => {
+    const real = blocks.filter(b => b.type !== 'settings' && b.type !== 'contact' && b.is_visible !== false);
+    let values: Record<string, string> = {};
+    try { values = contactValue ? JSON.parse(contactValue) : {}; } catch { values = {}; }
+    const hasAnyValue = (contactMethod || '').split(',').filter(Boolean).some((k) => values[k]?.trim());
+    if (!hasAnyValue) return real;
+    const contactBlock = { id: '__contact__', type: 'contact', order: 2.5, content: { method: contactMethod, value: contactValue } };
+    return [...real, contactBlock].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }, [blocks, contactMethod, contactValue]);
 
   const styleVars = useMemo(() => {
     return {
