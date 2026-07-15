@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Instagram, MessageCircle } from 'lucide-react';
+import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Send, MessageCircle } from 'lucide-react';
 
 export default function LeadsClient({ business, initialLeads }: { business: any, initialLeads: any[] }) {
   const supabase = createClient();
@@ -118,7 +118,7 @@ export default function LeadsClient({ business, initialLeads }: { business: any,
                     <div className="flex items-center gap-4">
                       {lead.source_username && (
                         <a href={`https://ig.me/m/${lead.source_username.replace('@', '')}`} target="_blank" rel="noreferrer" className="flex items-center text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 rounded-full hover:opacity-90 transition shadow-sm">
-                          <Instagram className="w-4 h-4 mr-1.5" />
+                          <Send className="w-4 h-4 mr-1.5" />
                           Mesaj At
                         </a>
                       )}
