@@ -79,9 +79,9 @@ export default async function BusinessProfilePage({ params }: any) {
       <main className="flex-1 overflow-y-auto pb-[35dvh]">
         <div className="max-w-md mx-auto w-full px-4 pt-6 pb-8">
           
-          {/* Top content area with just language switcher */}
-          <div className="flex justify-between items-center mb-6 px-2">
-            <div></div>
+          {/* Top content area: optional page title (defaults to workspace name) + language switcher */}
+          <div className="flex justify-between items-center mb-6 px-2 gap-3">
+            <span className="text-sm font-semibold truncate text-slate-800">{business.page_title || business.name}</span>
             <LanguageSwitcher />
           </div>
 

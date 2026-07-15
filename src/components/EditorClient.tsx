@@ -25,6 +25,8 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   const [username, setUsername] = useState(business.username);
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [usernameError, setUsernameError] = useState('');
+  const [pageTitle, setPageTitle] = useState(business.page_title || '');
+  const [isEditingPageTitle, setIsEditingPageTitle] = useState(false);
   const [isPublished, setIsPublished] = useState<boolean>(business.is_published || false);
   const [isTogglingPublish, setIsTogglingPublish] = useState(false);
   const [contactValue, setContactValue] = useState<string | null>(business.contact_value || null);
@@ -264,6 +266,16 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     }
   };
 
+  const handlePageTitleSave = async () => {
+    const trimmed = pageTitle.trim();
+    const { error } = await supabase.from('businesses').update({ page_title: trimmed || null }).eq('id', business.id);
+    if (!error) {
+      business.page_title = trimmed || null;
+      setPageTitle(trimmed);
+      setIsEditingPageTitle(false);
+    }
+  };
+
   const handleBulkSubmit = () => {
     if (!bulkText.trim()) return;
     append({
@@ -355,6 +367,33 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
               ) : (
                 <div className="flex items-center text-sm font-medium text-[var(--ink)]">
                   talkinbio.com/<span className="text-[var(--coral)]">{username}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Page Title (optional, defaults to workspace name) */}
+            <div className="mt-3 bg-slate-50 rounded-xl p-3 border border-slate-200">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs font-medium text-slate-500">{t('pageTitle')}</span>
+                {isEditingPageTitle ? (
+                  <button onClick={handlePageTitleSave} className="text-xs font-bold text-[var(--teal)] hover:text-teal-700">{t('saveBtn')}</button>
+                ) : (
+                  <button onClick={() => setIsEditingPageTitle(true)} className="text-xs font-medium text-slate-500 hover:text-[var(--coral)] flex items-center">
+                    <Edit2 className="w-3 h-3 mr-1" /> {t('editBtn')}
+                  </button>
+                )}
+              </div>
+              {isEditingPageTitle ? (
+                <input
+                  type="text"
+                  value={pageTitle}
+                  onChange={e => setPageTitle(e.target.value)}
+                  placeholder={business.name}
+                  className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-[var(--coral)]"
+                />
+              ) : (
+                <div className="text-sm font-medium text-[var(--ink)]">
+                  {pageTitle || business.name}
                 </div>
               )}
             </div>
@@ -608,8 +647,8 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
           <div className="flex-1 overflow-y-auto pb-[30%] relative">
             {/* Compact Header */}
             <div className="w-full pt-12 pb-4 px-4 flex justify-between items-center z-10 relative">
-              <div></div>
-              <div className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-[10px] text-slate-500 font-medium bg-white/50 backdrop-blur-sm shadow-sm uppercase">{locale}</div>
+              <span className="text-sm font-semibold truncate max-w-[70%] text-slate-800">{pageTitle || business.name}</span>
+              <div className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-[10px] text-slate-500 font-medium bg-white/50 backdrop-blur-sm shadow-sm uppercase shrink-0">{locale}</div>
             </div>
 
             {/* Blocks (Archetype Preview) */}
