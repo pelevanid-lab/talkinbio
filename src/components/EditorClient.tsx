@@ -387,18 +387,23 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       {/* Left Sidebar */}
       <div className="w-full md:w-[450px] bg-white border-r border-slate-200 flex flex-col h-full z-10 shrink-0">
         <div className="p-4 md:p-6 border-b border-slate-200 bg-white">
-          <div className="flex justify-end mb-4 md:hidden">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-bold font-bricolage text-[var(--ink)]">{t('panelTitle')}</h1>
+              <LanguageSwitcher />
+            </div>
             <button
-              className="p-2 bg-[var(--coral-tint)] text-[var(--coral)] rounded-lg font-medium text-sm flex items-center"
+              className="md:hidden p-2 bg-[var(--coral-tint)] text-[var(--coral)] rounded-lg font-medium text-sm flex items-center"
               onClick={() => setShowMobilePreview(true)}
             >
               <Smartphone className="w-4 h-4 mr-1" /> {t('previewBtn')}
             </button>
           </div>
 
-          {/* Mode Switcher — the only thing always visible across all tabs; everything else
-              (panel title, profile link, page title, contact, publish status) now lives inside
-              the "İnce Ayar" tab so the Kurulum Ajanı/Toplu tabs aren't buried under fixed chrome. */}
+          {/* Mode Switcher — along with the panel title/language switcher above, this is the only
+              thing always visible across all tabs; profile link, page title, contact, and publish
+              status now live inside the "İnce Ayar" tab so Kurulum Ajanı/Toplu aren't buried under
+              fixed chrome. */}
             <div className="flex justify-between items-center bg-white p-2 rounded-xl shadow-sm border border-slate-200 gap-1">
               <button 
                 onClick={() => setViewMode('chat')}
@@ -513,11 +518,6 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
             </div>
           ) : (
             <div className="p-4 md:p-6 space-y-4 pb-20">
-              <div className="flex items-center gap-4">
-                <h1 className="text-xl font-bold font-bricolage text-[var(--ink)]">{t('panelTitle')}</h1>
-                <LanguageSwitcher />
-              </div>
-
               {/* Public Link Display */}
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
                 <div className="flex justify-between items-center mb-1">
