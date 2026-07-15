@@ -652,7 +652,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
             </div>
 
             {/* Blocks (Archetype Preview) */}
-            <div className="w-full -mt-20">
+            <div className="w-full">
               <ArchetypeRenderer
                 blocks={blocks}
                 theme={theme}

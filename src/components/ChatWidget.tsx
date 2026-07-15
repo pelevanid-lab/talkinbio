@@ -5,6 +5,7 @@ import { useChat } from 'ai/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, X, MessageCircle, Bot, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 
 export default function ChatWidget({ businessId, businessName, locale }: { businessId: string, businessName: string, locale: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -72,11 +73,11 @@ export default function ChatWidget({ businessId, businessName, locale }: { busin
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-[var(--border-light)] bg-white">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-[var(--coral-tint)] rounded-full flex items-center justify-center text-[var(--coral)]">
-                    <Bot className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border border-[var(--border-light)]">
+                    <Image src="/saule-avatar-v1.png" alt="Saule" width={40} height={40} className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-[var(--ink)] font-bricolage">{businessName} {t('assistantSuffix')}</h3>
+                    <h3 className="font-semibold text-[var(--ink)] font-bricolage">Saule</h3>
                     <p className="text-xs text-[var(--teal)] font-medium flex items-center">
                       <span className="w-2 h-2 rounded-full bg-[var(--teal)] mr-1"></span> {t('online')}
                     </p>
@@ -95,8 +96,8 @@ export default function ChatWidget({ businessId, businessName, locale }: { busin
                 {messages.map((m) => (
                   <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`flex max-w-[85%] ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-end gap-2`}>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${m.role === 'user' ? 'bg-slate-200 text-slate-600' : 'bg-[var(--coral-tint)] text-[var(--coral)]'}`}>
-                        {m.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                      <div className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 ${m.role === 'user' ? 'bg-slate-200 text-slate-600' : 'border border-[var(--border-light)]'}`}>
+                        {m.role === 'user' ? <User className="w-4 h-4" /> : <Image src="/saule-avatar-v1.png" alt="Saule" width={32} height={32} className="w-full h-full object-cover" />}
                       </div>
                       <div className={`px-4 py-3 rounded-2xl text-sm ${m.role === 'user' ? 'bg-[var(--ink)] text-white rounded-br-sm' : 'bg-white border border-[var(--border-light)] text-[var(--ink)] shadow-sm rounded-bl-sm'}`}>
                         {m.content}
@@ -107,8 +108,8 @@ export default function ChatWidget({ businessId, businessName, locale }: { busin
                 {isLoading && (
                   <div className="flex justify-start">
                     <div className="flex items-end gap-2">
-                      <div className="w-8 h-8 rounded-full bg-[var(--coral-tint)] text-[var(--coral)] flex items-center justify-center flex-shrink-0">
-                        <Bot className="w-4 h-4" />
+                      <div className="w-8 h-8 rounded-full overflow-hidden border border-[var(--border-light)] flex items-center justify-center flex-shrink-0">
+                        <Image src="/saule-avatar-v1.png" alt="Saule" width={32} height={32} className="w-full h-full object-cover" />
                       </div>
                       <div className="px-4 py-3 bg-white border border-[var(--border-light)] rounded-2xl rounded-bl-sm shadow-sm flex space-x-1">
                         <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce"></div>
@@ -166,11 +167,11 @@ export default function ChatWidget({ businessId, businessName, locale }: { busin
           {/* Quick preview of last message */}
           <div className="bg-white border border-[var(--border-light)] rounded-2xl shadow-lg p-4 flex items-center justify-between mb-4 transform transition group-hover:-translate-y-1">
             <div className="flex items-center space-x-3 overflow-hidden">
-              <div className="w-10 h-10 bg-[var(--coral-tint)] rounded-full flex items-center justify-center text-[var(--coral)] flex-shrink-0">
-                <Bot className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border border-[var(--border-light)]">
+                <Image src="/saule-avatar-v1.png" alt="Saule" width={40} height={40} className="w-full h-full object-cover" />
               </div>
               <div className="truncate">
-                <p className="text-xs text-[var(--teal)] font-medium mb-0.5">{businessName} {t('assistantSuffix')}</p>
+                <p className="text-xs text-[var(--teal)] font-medium mb-0.5">Saule</p>
                 <p className="text-sm text-[var(--ink)] truncate">
                   {messages[messages.length - 1]?.content.substring(0, 40) || t('defaultPreview')}...
                 </p>
