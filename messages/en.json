@@ -153,6 +153,8 @@
     "linkBtn": "Link",
     "publishBtn": "Publish",
     "unpublishBtn": "Unpublish",
+    "republishBtn": "Republish",
+    "republishHint": "Tap to confirm your latest changes are reflected on the live page.",
     "publishHint": "To publish, complete either About or Services, plus your contact info.",
     "optionalHint": "recommended",
     "manualTitle": "Manual Fine Tuning",

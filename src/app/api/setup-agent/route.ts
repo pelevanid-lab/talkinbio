@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     // Fetch existing blocks + business to give context to the AI
     const [{ data: blocks }, { data: business }] = await Promise.all([
       supabase.from('blocks').select('*').eq('business_id', businessId).order('order', { ascending: true }),
-      supabase.from('businesses').select('contact_method, contact_value, category, theme').eq('id', businessId).single(),
+      supabase.from('businesses').select('contact_method, contact_value, category, theme, is_published').eq('id', businessId).single(),
     ]);
 
     const sectorProfile = matchSectorProfile(business?.category);
@@ -415,13 +415,18 @@ export async function POST(req: Request) {
           }
         })
       },
-      onFinish: async ({ text }) => {
+      onFinish: async ({ text, toolCalls }) => {
         if (text) {
           await supabase.from('setup_messages').insert({
             business_id: businessId,
             role: 'assistant',
             content: text,
           });
+        }
+        // Flag the business as having unsaved-to-live edits so the dashboard can prompt the
+        // owner to re-confirm publish (mirrors the manual-edit path in EditorClient).
+        if (business?.is_published && toolCalls && toolCalls.length > 0) {
+          await supabase.from('businesses').update({ needs_republish: true }).eq('id', businessId);
         }
       }
     });

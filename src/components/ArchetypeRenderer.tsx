@@ -2,7 +2,7 @@
 
 import { DEFAULT_THEME, Theme } from '@/config/archetypes';
 import { useMemo, useState } from 'react';
-import { ChevronLeft, Mail, MessageCircle, Phone, Link as LinkIcon, AtSign } from 'lucide-react';
+import { Mail, MessageCircle, Phone, Link as LinkIcon, AtSign } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useLocale } from 'next-intl';
 
@@ -816,8 +816,25 @@ const BLOCK_RENDERERS: Record<string, (block: any, ctx: RenderCtx) => React.Reac
   custom: renderTextBlock,
 };
 
-export default function ArchetypeRenderer({ blocks, theme: themeProp, businessName }: { blocks: any[], theme?: Theme | null, businessName: string }) {
-  const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
+export default function ArchetypeRenderer({
+  blocks,
+  theme: themeProp,
+  businessName,
+  activeBlockId: controlledActiveBlockId,
+  onActiveBlockChange,
+}: {
+  blocks: any[],
+  theme?: Theme | null,
+  businessName: string,
+  // Optional controlled active-block state, so a parent header (page title row) can render the
+  // "back" control itself instead of it floating inside the scrollable block content. Falls back
+  // to internal state when omitted.
+  activeBlockId?: string | null,
+  onActiveBlockChange?: (id: string | null) => void,
+}) {
+  const [internalActiveBlockId, setInternalActiveBlockId] = useState<string | null>(null);
+  const activeBlockId = controlledActiveBlockId !== undefined ? controlledActiveBlockId : internalActiveBlockId;
+  const setActiveBlockId = onActiveBlockChange || setInternalActiveBlockId;
   const locale = useLocale();
 
   const theme = themeProp || DEFAULT_THEME;
@@ -914,17 +931,6 @@ export default function ArchetypeRenderer({ blocks, theme: themeProp, businessNa
 
         {(layoutMode === 'website' || activeBlockId) && (
           <div className={`flex flex-col ${sectionGapClass}`}>
-            {layoutMode === 'linktree' && activeBlockId && (
-              <button
-                type="button"
-                onClick={() => setActiveBlockId(null)}
-                className="flex items-center text-sm font-medium hover:opacity-80 transition mt-6 -ml-2 px-2 py-2"
-                style={{ color: 'var(--primary)' }}
-              >
-                <ChevronLeft className="w-5 h-5 mr-1" /> Geri Dön
-              </button>
-            )}
-
             {(layoutMode === 'website' ? visibleBlocks : visibleBlocks.filter(b => b.id === activeBlockId)).map(renderBlock)}
           </div>
         )}

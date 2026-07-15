@@ -153,6 +153,8 @@
     "linkBtn": "Link",
     "publishBtn": "Yayınla",
     "unpublishBtn": "Yayından Kaldır",
+    "republishBtn": "Yeniden Yayınla",
+    "republishHint": "Son değişikliklerin yayına yansıdığını onaylamak için tıkla.",
     "publishHint": "Yayınlamak için Hakkımda veya Hizmetler bölümünden birini, ve iletişim bilgisini tamamlayın.",
     "optionalHint": "önerilir",
     "manualTitle": "Manuel İnce Ayar",

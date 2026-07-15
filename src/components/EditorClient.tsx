@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical } from 'lucide-react';
+import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft } from 'lucide-react';
 import ArchetypeRenderer from './ArchetypeRenderer';
 import BlockEditorModal from './BlockEditorModal';
 import SetPasswordModal from './SetPasswordModal';
@@ -29,6 +29,8 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   const [isEditingPageTitle, setIsEditingPageTitle] = useState(false);
   const [isPublished, setIsPublished] = useState<boolean>(business.is_published || false);
   const [isTogglingPublish, setIsTogglingPublish] = useState(false);
+  const [needsRepublish, setNeedsRepublish] = useState<boolean>(business.needs_republish || false);
+  const [previewActiveBlockId, setPreviewActiveBlockId] = useState<string | null>(null);
   const [contactValue, setContactValue] = useState<string | null>(business.contact_value || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
@@ -124,14 +126,17 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
         setBlocks(data);
       }
       
-      // Also refresh business to get theme/contact updates made by the AI agent
-      const { data: bData } = await supabase.from('businesses').select('theme, contact_value').eq('id', business.id).single();
+      // Also refresh business to get theme/contact/needs_republish updates made by the AI agent
+      const { data: bData } = await supabase.from('businesses').select('theme, contact_value, needs_republish').eq('id', business.id).single();
       if (bData) {
         if (bData.theme && JSON.stringify(bData.theme) !== JSON.stringify(theme)) {
           setTheme(bData.theme);
         }
         if (bData.contact_value !== contactValue) {
           setContactValue(bData.contact_value);
+        }
+        if (bData.needs_republish) {
+          setNeedsRepublish(true);
         }
       }
     }, 3000);
@@ -142,9 +147,10 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     const next = !isPublished;
     setIsTogglingPublish(true);
     try {
-      const { error } = await supabase.from('businesses').update({ is_published: next }).eq('id', business.id);
+      const { error } = await supabase.from('businesses').update({ is_published: next, needs_republish: false }).eq('id', business.id);
       if (error) throw error;
       setIsPublished(next);
+      setNeedsRepublish(false);
       business.is_published = next;
     } catch (err) {
       console.error(err);
@@ -152,6 +158,29 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     } finally {
       setIsTogglingPublish(false);
     }
+  };
+
+  const handleAcknowledgeChanges = async () => {
+    setIsTogglingPublish(true);
+    try {
+      const { error } = await supabase.from('businesses').update({ needs_republish: false }).eq('id', business.id);
+      if (error) throw error;
+      setNeedsRepublish(false);
+    } catch (err) {
+      console.error(err);
+      alert('İşlem sırasında hata oluştu.');
+    } finally {
+      setIsTogglingPublish(false);
+    }
+  };
+
+  // Flags the business as having unpublished edits — called after any manual save (block edit,
+  // delete, reorder, layout mode) so the publish button can prompt the owner to re-confirm.
+  // AI-chat-driven edits mark this server-side (setup-agent route), picked up by the polling effect below.
+  const markNeedsRepublish = async () => {
+    if (!isPublished) return;
+    setNeedsRepublish(true);
+    await supabase.from('businesses').update({ needs_republish: true }).eq('id', business.id);
   };
 
   const handleSaveBlock = async (data: { title: string, content: any }) => {
@@ -179,6 +208,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
         if (error) throw error;
         setBlocks(blocks.map(b => b.id === editingBlock.id ? { ...b, title: data.title, content: data.content } : b));
       }
+      await markNeedsRepublish();
     } catch (err) {
       console.error(err);
       alert('Kaydedilirken hata oluştu.');
@@ -197,6 +227,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     try {
       await supabase.from('blocks').delete().eq('id', editingBlock.id);
       setBlocks(blocks.filter(b => b.id !== editingBlock.id));
+      await markNeedsRepublish();
     } catch (err) {
       console.error(err);
     } finally {
@@ -229,6 +260,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
 
     setBlocks([...withNewOrder, ...others]);
     await Promise.all(withNewOrder.map((b) => supabase.from('blocks').update({ order: b.order }).eq('id', b.id)));
+    await markNeedsRepublish();
   };
 
   const copyLink = () => {
@@ -269,16 +301,17 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   const handleLayoutModeChange = async (mode: 'website' | 'linktree') => {
     const settingsBlock = blocks.find(b => b.type === 'settings');
     try {
-      if (settingsBlock) {
-        const { error } = await supabase.from('blocks').update({ content: { ...settingsBlock.content, layoutMode: mode } }).eq('id', settingsBlock.id);
-        if (error) throw error;
-        setBlocks(blocks.map(b => b.id === settingsBlock.id ? { ...b, content: { ...b.content, layoutMode: mode } } : b));
-      } else {
-        const newBlock = { business_id: business.id, type: 'settings', title: 'Settings', content: { layoutMode: mode }, order: 99, is_visible: false };
-        const { data, error } = await supabase.from('blocks').insert(newBlock).select().single();
-        if (error) throw error;
-        setBlocks([...blocks, data]);
-      }
+      const { data, error } = await supabase.from('blocks').upsert({
+        business_id: business.id,
+        type: 'settings',
+        title: 'Settings',
+        content: { ...settingsBlock?.content, layoutMode: mode },
+        order: 99,
+        is_visible: false,
+      }, { onConflict: 'business_id,type' }).select().single();
+      if (error) throw error;
+      setBlocks(settingsBlock ? blocks.map(b => b.id === settingsBlock.id ? data : b) : [...blocks, data]);
+      await markNeedsRepublish();
     } catch (err) {
       console.error(err);
       alert('Sayfa görünümü kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
@@ -292,6 +325,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       business.page_title = trimmed || null;
       setPageTitle(trimmed);
       setIsEditingPageTitle(false);
+      await markNeedsRepublish();
     }
   };
 
@@ -446,11 +480,11 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
 
           <div className="flex items-center gap-2">
             <button
-              onClick={handleTogglePublish}
+              onClick={isPublished && needsRepublish ? handleAcknowledgeChanges : handleTogglePublish}
               disabled={(!canPublish && !isPublished) || isTogglingPublish}
-              className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isPublished ? 'bg-slate-200 text-slate-700 hover:bg-slate-300' : 'bg-[var(--coral)] text-white hover:bg-orange-600'}`}
+              className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isPublished && !needsRepublish ? 'bg-slate-200 text-slate-700 hover:bg-slate-300' : 'bg-[var(--coral)] text-white hover:bg-orange-600'}`}
             >
-              {isTogglingPublish ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (isPublished ? t('unpublishBtn') : t('publishBtn'))}
+              {isTogglingPublish ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (isPublished ? (needsRepublish ? t('republishBtn') : t('unpublishBtn')) : t('publishBtn'))}
             </button>
             {isPublished && (
               <button onClick={copyLink} className="text-[var(--teal)] font-medium flex items-center text-xs px-3 py-2">
@@ -460,6 +494,9 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
           </div>
           {!canPublish && !isPublished && (
             <p className="text-[11px] text-[var(--ink-soft)] mt-2">{t('publishHint')}</p>
+          )}
+          {isPublished && needsRepublish && (
+            <p className="text-[11px] text-[var(--coral)] mt-2 font-medium">{t('republishHint')}</p>
           )}
         </div>
 
@@ -646,7 +683,18 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
           <div className="flex-1 overflow-y-auto pb-[30%] relative">
             {/* Compact Header */}
             <div className="w-full pt-12 pb-4 px-4 flex justify-between items-center z-10 relative">
-              <span className="text-sm font-semibold truncate max-w-[70%] text-slate-800">{pageTitle || business.name}</span>
+              <div className="flex items-center gap-1 min-w-0 max-w-[70%]">
+                {previewActiveBlockId && (
+                  <button
+                    type="button"
+                    onClick={() => setPreviewActiveBlockId(null)}
+                    className="p-1 -ml-1 shrink-0 text-slate-800 hover:opacity-70 transition"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                )}
+                <span className="text-sm font-semibold truncate text-slate-800">{pageTitle || business.name}</span>
+              </div>
               <div className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-[10px] text-slate-500 font-medium bg-white/50 backdrop-blur-sm shadow-sm uppercase shrink-0">{locale}</div>
             </div>
 
@@ -656,6 +704,8 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 blocks={blocks}
                 theme={theme}
                 businessName={business.name}
+                activeBlockId={previewActiveBlockId}
+                onActiveBlockChange={setPreviewActiveBlockId}
               />
               {blocks.length === 0 && (
                 <div className="text-center p-6 mx-4 mt-24 bg-white rounded-2xl shadow-sm border border-slate-100 text-slate-400 text-sm">
