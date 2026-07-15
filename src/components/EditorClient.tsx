@@ -71,7 +71,13 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     body: { businessId: business.id, locale },
     initialMessages: initialChatMessages && initialChatMessages.length > 0
       ? initialChatMessages.map((m) => ({ id: m.id, role: m.role, content: m.content }))
-      : [{ id: '1', role: 'assistant', content: t('aiWelcome', { name: business.name }) }]
+      : [{ id: '1', role: 'assistant', content: t('aiWelcome', { name: business.name }) }],
+    // Without this, a failed request (timeout, size limit, server error) just silently drops —
+    // the loading dots disappear and nothing else happens, with no indication anything went wrong.
+    onError: (error) => {
+      console.error('Setup agent chat error:', error);
+      alert('Mesaj gönderilirken bir hata oluştu. Çok uzun bir metin gönderdiyseniz, birkaç parçaya bölüp tekrar deneyin.');
+    },
   });
 
   // Inject the AI-chosen Google Font pair (dynamic per business, so it can't be a static <link> in <head>).

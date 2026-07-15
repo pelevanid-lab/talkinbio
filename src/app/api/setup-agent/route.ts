@@ -6,7 +6,10 @@ import { getModel } from '@/utils/ai';
 import { REQUIRED_TYPES, RECOMMENDED_TYPES, hasRealContent } from '@/config/blockTypes';
 import { matchSectorProfile } from '@/config/sectorProfiles';
 
-export const maxDuration = 60;
+// Large pastes (e.g. a business owner dropping in several long service descriptions at once,
+// each needing translation into 3 languages) can take the model well past a minute to finish
+// all its tool calls — bumped from 60s to reduce timeout failures on those turns.
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   try {
@@ -100,12 +103,13 @@ export async function POST(req: Request) {
       8c. Çalışma saatleri için 'addHours', Sıkça Sorulan Sorular için 'addFAQ' aracını kullan.
       9. TOPLU YÜKLEME (BULK UPLOAD) DURUMU: Eğer kullanıcı sana '[BULK]' etiketiyle çok uzun bir metin verirse, ona adım adım soru sormak yerine, elindeki BÜTÜN bilgiyi analiz et ve eksik olan tüm blokları arka arkaya araçları çağırarak TEK SEFERDE oluştur. ÇOK ÖNEMLİ SIRALAMA: 'setTheme'i HER ZAMAN İLK araç çağrısı yap, ardından 'updateContact' (varsa iletişim bilgisi), sonra içerik bloklarına geç. Metin çok uzunsa ve her şeyi tek seferde bitiremeyeceğini düşünüyorsan, önce en önemlilerini (tema, Hakkımda veya Hizmetler, iletişim) tamamla — asla tema adımını atlayıp doğrudan uzun içerik üretmeye başlama, çünkü süreç yarıda kesilirse kullanıcı tasarımsız/çıplak bir sayfa görür. İşlem sırasında "Bilgilerinizi analiz ediyorum..." gibi süreç notları yazabilirsin.
       10. KESİNLİKLE kullanıcının dilinde (${locale}) yanıt ver. Eğer 'ru' ise Rusça, 'en' ise İngilizce konuş.
+      11. UZUN METİN YAPIŞTIRMALARI: Kullanıcı (BULK etiketi olmadan, normal sohbette) birden fazla ayrı ürün/hizmet içeren çok uzun bir metin yapıştırırsa (ör. birkaç farklı hizmet/ürün açıklaması art arda), bunların HEPSİNİ TEK bir araç çağrısında birleştirip 3 dile çevirmeye ÇALIŞMA — bu, tek bir yanıt adımının çıktı sınırını aşıp yarıda kesilmesine yol açabilir. Bunun yerine her ürün/hizmeti AYRI bir araç çağrısıyla, sırayla (biri bitince diğerine geçerek) kaydet.
     `;
 
     const result = await streamText({
       model: getModel(),
       maxSteps: 16,
-      maxTokens: 8000,
+      maxTokens: 8192,
       system: systemPrompt,
       messages,
       tools: {
