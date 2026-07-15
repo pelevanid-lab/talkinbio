@@ -1,7 +1,7 @@
 'use client';
 
 import { DEFAULT_THEME, Theme } from '@/config/archetypes';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Mail, MessageCircle, Phone, Link as LinkIcon, AtSign } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useLocale } from 'next-intl';
@@ -837,6 +837,16 @@ export default function ArchetypeRenderer({
   const setActiveBlockId = onActiveBlockChange || setInternalActiveBlockId;
   const locale = useLocale();
 
+  // Linktree tiles open the full page (like website mode) scrolled to the tapped section, rather
+  // than isolating just that block — so visitors can still scroll up/down to the neighboring
+  // sections from there. This ref+effect jumps to the tapped section right after it mounts.
+  const activeBlockNodeRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (activeBlockId && activeBlockNodeRef.current) {
+      activeBlockNodeRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
+  }, [activeBlockId]);
+
   const theme = themeProp || DEFAULT_THEME;
 
   const layoutMode = useMemo(() => {
@@ -931,7 +941,11 @@ export default function ArchetypeRenderer({
 
         {(layoutMode === 'website' || activeBlockId) && (
           <div className={`flex flex-col ${sectionGapClass}`}>
-            {(layoutMode === 'website' ? visibleBlocks : visibleBlocks.filter(b => b.id === activeBlockId)).map(renderBlock)}
+            {visibleBlocks.map(block => (
+              <div key={block.id} ref={block.id === activeBlockId ? activeBlockNodeRef : undefined}>
+                {renderBlock(block)}
+              </div>
+            ))}
           </div>
         )}
       </div>
