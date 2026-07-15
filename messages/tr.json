@@ -178,7 +178,7 @@
     "aiWelcome": "Merhaba {name}! Ben Talkinbio kurulum asistanınızım. İşletmenizden ve sunduğunuz hizmetlerden kısaca bahseder misiniz? Konuştukça sayfanızı sizin için hazırlayacağım."
   },
   "ChatWidget": {
-    "welcome": "Merhaba! Ben {name} asistanıyım. Size nasıl yardımcı olabilirim?",
+    "welcome": "Merhaba! Ben {name}'ın asistanıyım. Size nasıl yardımcı olabilirim?",
     "assistantSuffix": "Asistanı",
     "online": "Çevrimiçi",
     "placeholder": "Bir mesaj yazın...",
