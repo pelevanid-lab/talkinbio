@@ -32,10 +32,10 @@ export async function POST(req: Request) {
         `Aksi için güçlü bir sebep olmadıkça bu önerileri takip et.`
       : `Bu işletmenin kategorisi ("${business?.category || 'belirtilmedi'}") bilinen bir sektör profiliyle eşleşmedi; kendi takdirinle özgün bir tema tasarla.`;
 
-    const titles: Record<string, { about: string, services: string, links: string }> = {
-      tr: { about: 'Hakkımda', services: 'Hizmetler', links: 'Bağlantılar' },
-      en: { about: 'About', services: 'Services', links: 'Links' },
-      ru: { about: 'Обо мне', services: 'Услуги', links: 'Ссылки' }
+    const titles: Record<string, { about: string, services: string, links: string, hours: string, faq: string }> = {
+      tr: { about: 'Hakkımda', services: 'Hizmetler', links: 'Bağlantılar', hours: 'Çalışma Saatleri', faq: 'Sıkça Sorulan Sorular' },
+      en: { about: 'About', services: 'Services', links: 'Links', hours: 'Working Hours', faq: 'FAQ' },
+      ru: { about: 'Обо мне', services: 'Услуги', links: 'Ссылки', hours: 'Часы работы', faq: 'Частые вопросы' }
     };
 
     const currentLocale = (locale as string) || 'tr';
@@ -195,6 +195,9 @@ export async function POST(req: Request) {
               type: 'services',
               title: locTitles.services,
               content: {
+                tr: { title: titles.tr.services },
+                en: { title: titles.en.services },
+                ru: { title: titles.ru.services },
                 items: newItems,
                 layoutVariant: args.layoutVariant || existing?.content?.layoutVariant || 'grid-cards',
                 backgroundImage: args.backgroundImage || existing?.content?.backgroundImage || undefined,
@@ -227,6 +230,9 @@ export async function POST(req: Request) {
               type: 'links',
               title: locTitles.links || 'Links',
               content: {
+                tr: { title: titles.tr.links },
+                en: { title: titles.en.links },
+                ru: { title: titles.ru.links },
                 items: newItems,
                 layoutVariant: args.layoutVariant || existing?.content?.layoutVariant || 'stacked'
               },
@@ -335,12 +341,16 @@ export async function POST(req: Request) {
             })
           }),
           execute: async ({ schedule, layoutVariant }) => {
-            const titlesHours: Record<string, string> = { tr: 'Çalışma Saatleri', en: 'Working Hours', ru: 'Часы работы' };
             const { error } = await supabase.from('blocks').upsert({
               business_id: businessId,
               type: 'hours',
-              title: titlesHours[currentLocale] || titlesHours['tr'],
-              content: { schedule, layoutVariant: layoutVariant || 'table' },
+              title: locTitles.hours,
+              content: {
+                tr: { title: titles.tr.hours },
+                en: { title: titles.en.hours },
+                ru: { title: titles.ru.hours },
+                schedule, layoutVariant: layoutVariant || 'table'
+              },
               order: 3
             }, { onConflict: 'business_id,singleton_key' });
             if (error) return `Error: ${error.message}`;
@@ -358,7 +368,6 @@ export async function POST(req: Request) {
             }))
           }),
           execute: async ({ items, layoutVariant }) => {
-            const titlesFaq: Record<string, string> = { tr: 'Sıkça Sorulan Sorular', en: 'FAQ', ru: 'Частые вопросы' };
             const { data: existing } = await supabase.from('blocks').select('*').eq('business_id', businessId).eq('type', 'faq').single();
             const oldItems = existing?.content?.items || [];
             const newItems = [...oldItems, ...items];
@@ -366,8 +375,13 @@ export async function POST(req: Request) {
             const { error } = await supabase.from('blocks').upsert({
               business_id: businessId,
               type: 'faq',
-              title: titlesFaq[currentLocale] || titlesFaq['tr'],
-              content: { items: newItems, layoutVariant: layoutVariant || existing?.content?.layoutVariant || 'chips' },
+              title: locTitles.faq,
+              content: {
+                tr: { title: titles.tr.faq },
+                en: { title: titles.en.faq },
+                ru: { title: titles.ru.faq },
+                items: newItems, layoutVariant: layoutVariant || existing?.content?.layoutVariant || 'chips'
+              },
               order: 7
             }, { onConflict: 'business_id,singleton_key' });
             if (error) return `Error: ${error.message}`;

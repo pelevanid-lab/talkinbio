@@ -175,5 +175,12 @@
     "chatPlaceholder": "Type a message to your assistant...",
     "agentInputPlaceholder": "Tell us about your business...",
     "aiWelcome": "Hello {name}! I am your Talkinbio setup assistant. Could you briefly tell me about your business and the services you offer? I'll build your page for you as we chat."
+  },
+  "ChatWidget": {
+    "welcome": "Hi! I'm {name}'s assistant. How can I help you?",
+    "assistantSuffix": "Assistant",
+    "online": "Online",
+    "placeholder": "Type a message...",
+    "defaultPreview": "How can I help you?"
   }
 }

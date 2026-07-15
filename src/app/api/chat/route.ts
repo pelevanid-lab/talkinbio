@@ -9,7 +9,9 @@ export const maxDuration = 30;
 
 export async function POST(req: Request) {
   try {
-    const { messages, businessId } = await req.json();
+    const { messages, businessId, locale } = await req.json();
+    const localeNames: Record<string, string> = { tr: 'Türkçe', en: 'İngilizce', ru: 'Rusça' };
+    const localeName = localeNames[locale] || null;
 
     if (!businessId) {
       return new Response('Missing businessId', { status: 400 });
@@ -48,7 +50,7 @@ export async function POST(req: Request) {
       ${blocksData.data?.map(b => `${b.title} (${b.type}):\n${JSON.stringify(b.content, null, 2)}`).join('\n\n')}
 
       Kurallar:
-      - Ziyaretçinin dilinde yanıt ver (Türkçe, İngilizce veya Rusça).
+      - Ziyaretçinin dilinde yanıt ver (Türkçe, İngilizce veya Rusça).${localeName ? ` Ziyaretçi sayfayı ${localeName} dilinde görüntülüyor, aksi belli olmadıkça bu dilde yanıt ver.` : ''}
       - Sadece yukarıdaki verilere dayanarak cevap ver, bilgide olmayan şeyleri uydurma.
       - Bilgi yoksa kibarca ziyaretçiyi işletmeyle doğrudan iletişime geçmeye yönlendir.
       - Kullanıcı bir hizmet için rezervasyon yapmak, fiyat almak veya iletişime geçilmesini isterse mutlaka isim ve iletişim bilgilerini iste.

@@ -28,8 +28,17 @@ const SECTION_GAP_CLASS: Record<string, string> = {
 // Each block type is rendered by a small, self-contained function registered below.
 // New block types should only need to add a function + a registry entry here —
 // an unregistered type logs a dev warning instead of silently disappearing (see BLOCK_RENDERERS usage below).
+// Fixed section names for block types whose title is a constant label rather than
+// AI-authored content — covers rows saved before per-locale titles were stored in content.
+const FIXED_TITLES: Record<string, Record<string, string>> = {
+  services: { tr: 'Hizmetler', en: 'Services', ru: 'Услуги' },
+  links: { tr: 'Bağlantılar', en: 'Links', ru: 'Ссылки' },
+  hours: { tr: 'Çalışma Saatleri', en: 'Working Hours', ru: 'Часы работы' },
+  faq: { tr: 'Sıkça Sorulan Sorular', en: 'FAQ', ru: 'Частые вопросы' },
+};
+
 function blockTitleOf(block: any, locale: string) {
-  return block.content?.[locale]?.title || block.title || block.type;
+  return block.content?.[locale]?.title || FIXED_TITLES[block.type]?.[locale] || block.title || block.type;
 }
 
 // Wraps bare content in a surface card when the archetype's layoutStyle calls for it (see RenderCtx.cardWrap).
@@ -124,8 +133,12 @@ function renderAbout(block: any, ctx: RenderCtx) {
   }
 
   if (layoutVariant === 'hero-overlay' && mediaUrl) {
+    // Fixed height rather than `vh` — this section always renders inside a narrow, already-scrollable
+    // column (editor mockup frame or the live page's own scroll area, both with a fixed-height chat
+    // dock reserved below), so viewport-height units measure the wrong box and can make the hero
+    // balloon far taller than the space actually available.
     return (
-      <section key={block.id} className={`relative overflow-hidden ${radiusClass} h-[70vh] min-h-[500px] shadow-xl flex items-end group`}>
+      <section key={block.id} className={`relative overflow-hidden ${radiusClass} h-[440px] shadow-xl flex items-end group`}>
         <div className="absolute inset-0 z-0">
           {mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
             <video src={mediaUrl} className="w-full h-full object-cover" autoPlay loop muted playsInline />
@@ -145,21 +158,25 @@ function renderAbout(block: any, ctx: RenderCtx) {
   }
 
   if (layoutVariant === 'split-card' && mediaUrl) {
+    // Always side-by-side: this renders inside a narrow (max-w-md) column in every real
+    // usage (editor mockup + published page), so a `md:` viewport breakpoint never reflects
+    // the actual available width — it used to squeeze the image into a sliver whenever the
+    // surrounding browser window was wide, regardless of how narrow this column actually was.
     return (
       <section key={block.id} className="pt-4">
-        <div className={`flex flex-col md:flex-row overflow-hidden border shadow-md ${radiusClass}`} style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <div className="w-full md:w-1/2 h-64 md:h-auto relative">
+        <div className={`flex flex-row overflow-hidden border shadow-md ${radiusClass}`} style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <div className="w-2/5 shrink-0 relative">
             {mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
               <video src={mediaUrl} className="w-full h-full object-cover absolute inset-0" autoPlay loop muted playsInline />
             ) : (
               <img src={mediaUrl} alt={blockTitle} className="w-full h-full object-cover absolute inset-0" />
             )}
           </div>
-          <div className="w-full md:w-1/2 p-6 sm:p-8 flex flex-col justify-center">
-            <h2 className={`text-3xl mb-4 font-bold ${headingFont}`} style={{ color: 'var(--text)' }}>
+          <div className="w-3/5 p-4 sm:p-6 flex flex-col justify-center">
+            <h2 className={`text-xl sm:text-2xl mb-2 font-bold ${headingFont}`} style={{ color: 'var(--text)' }}>
               {blockTitle}
             </h2>
-            <div className="markdown-body opacity-90 text-[15px]">
+            <div className="markdown-body opacity-90 text-sm">
               <ReactMarkdown>{aboutText}</ReactMarkdown>
             </div>
           </div>
@@ -265,13 +282,13 @@ function renderServices(block: any, ctx: RenderCtx) {
             const itemLoc = item[locale] || item;
             const reverse = idx % 2 === 1;
             return (
-              <div key={idx} className={`flex flex-col ${reverse ? 'md:flex-row-reverse' : 'md:flex-row'} gap-5 items-center`}>
+              <div key={idx} className={`flex ${reverse ? 'flex-row-reverse' : 'flex-row'} gap-4 items-center`}>
                 {item.mediaUrl && (
-                  <div className={`w-full md:w-1/2 h-56 overflow-hidden ${radiusClass}`}>
+                  <div className={`w-2/5 shrink-0 h-32 overflow-hidden ${radiusClass}`}>
                     <img src={item.mediaUrl} alt={itemLoc.title} className="w-full h-full object-cover" />
                   </div>
                 )}
-                <div className="w-full md:w-1/2">
+                <div className={item.mediaUrl ? 'w-3/5' : 'w-full'}>
                   <h4 className={`text-xl font-semibold mb-2 ${headingFont}`}>{itemLoc.title || item.title}</h4>
                   {(itemLoc.description || item.description) && (
                     <p className="text-sm opacity-80 mb-3" style={{ color: 'var(--text-muted)' }}>{itemLoc.description || item.description}</p>
@@ -899,8 +916,9 @@ export default function ArchetypeRenderer({ blocks, theme: themeProp, businessNa
           <div className={`flex flex-col ${sectionGapClass}`}>
             {layoutMode === 'linktree' && activeBlockId && (
               <button
+                type="button"
                 onClick={() => setActiveBlockId(null)}
-                className="flex items-center text-sm font-medium hover:opacity-80 transition mt-6"
+                className="flex items-center text-sm font-medium hover:opacity-80 transition mt-6 -ml-2 px-2 py-2"
                 style={{ color: 'var(--primary)' }}
               >
                 <ChevronLeft className="w-5 h-5 mr-1" /> Geri Dön

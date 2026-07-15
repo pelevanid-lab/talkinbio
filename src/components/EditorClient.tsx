@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Paperclip, CheckCircle2, Circle, GripVertical } from 'lucide-react';
+import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical } from 'lucide-react';
 import ArchetypeRenderer from './ArchetypeRenderer';
 import BlockEditorModal from './BlockEditorModal';
 import SetPasswordModal from './SetPasswordModal';
@@ -56,7 +56,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
 
   // Setup AI Agent — resumes from the persisted setup_messages history when there is one,
   // so returning to this tab (or reloading the page) doesn't lose the conversation's context.
-  const { messages, input, handleInputChange, handleSubmit, isLoading: isChatLoading, append } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, isLoading: isChatLoading, append, stop } = useChat({
     api: '/api/setup-agent',
     body: { businessId: business.id, locale },
     initialMessages: initialChatMessages && initialChatMessages.length > 0
@@ -461,9 +461,15 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                     className="w-full bg-white border border-slate-300 rounded-3xl pl-12 pr-12 py-3 text-sm focus:outline-none focus:border-[var(--coral)] focus:ring-1 focus:ring-[var(--coral)] shadow-sm resize-none overflow-hidden min-h-[46px] max-h-[150px]"
                     style={{ maxHeight: '150px' }}
                   />
-                  <button type="submit" disabled={!input.trim() || isChatLoading} className="absolute right-2 bottom-1.5 p-2 bg-[var(--coral)] text-white rounded-full disabled:opacity-50 transition-opacity">
-                    <Send className="w-4 h-4" />
-                  </button>
+                  {isChatLoading ? (
+                    <button type="button" onClick={() => stop()} className="absolute right-2 bottom-1.5 p-2.5 bg-[var(--coral)] text-white rounded-lg transition-opacity">
+                      <Square className="w-3 h-3 fill-white" />
+                    </button>
+                  ) : (
+                    <button type="submit" disabled={!input.trim()} className="absolute right-2 bottom-1.5 p-2 bg-[var(--coral)] text-white rounded-full disabled:opacity-50 transition-opacity">
+                      <Send className="w-4 h-4" />
+                    </button>
+                  )}
                 </form>
               </div>
             </div>

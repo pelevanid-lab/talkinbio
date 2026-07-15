@@ -4,19 +4,21 @@ import { useState, useRef, useEffect } from 'react';
 import { useChat } from 'ai/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, X, MessageCircle, Bot, User } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-export default function ChatWidget({ businessId, businessName }: { businessId: string, businessName: string }) {
+export default function ChatWidget({ businessId, businessName, locale }: { businessId: string, businessName: string, locale: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+  const t = useTranslations('ChatWidget');
+
   const { messages, input, handleInputChange, handleSubmit, isLoading, append } = useChat({
     api: '/api/chat',
-    body: { businessId },
+    body: { businessId, locale },
     initialMessages: [
       {
         id: 'welcome',
         role: 'assistant',
-        content: `Merhaba! Ben ${businessName} asistanıyım. Size nasıl yardımcı olabilirim?`
+        content: t('welcome', { name: businessName })
       }
     ]
   });
@@ -74,9 +76,9 @@ export default function ChatWidget({ businessId, businessName }: { businessId: s
                     <Bot className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-[var(--ink)] font-bricolage">{businessName} Asistanı</h3>
+                    <h3 className="font-semibold text-[var(--ink)] font-bricolage">{businessName} {t('assistantSuffix')}</h3>
                     <p className="text-xs text-[var(--teal)] font-medium flex items-center">
-                      <span className="w-2 h-2 rounded-full bg-[var(--teal)] mr-1"></span> Çevrimiçi
+                      <span className="w-2 h-2 rounded-full bg-[var(--teal)] mr-1"></span> {t('online')}
                     </p>
                   </div>
                 </div>
@@ -137,7 +139,7 @@ export default function ChatWidget({ businessId, businessName }: { businessId: s
                       }
                     }}
                     rows={1}
-                    placeholder="Bir mesaj yazın..."
+                    placeholder={t('placeholder')}
                     className="w-full pl-4 pr-12 py-3 bg-[var(--paper)] border border-[var(--border-light)] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[var(--coral)]/20 focus:border-[var(--coral)] transition-all text-sm resize-none overflow-hidden min-h-[46px] max-h-[150px]"
                     style={{ maxHeight: '150px' }}
                   />
@@ -168,9 +170,9 @@ export default function ChatWidget({ businessId, businessName }: { businessId: s
                 <Bot className="w-5 h-5" />
               </div>
               <div className="truncate">
-                <p className="text-xs text-[var(--teal)] font-medium mb-0.5">{businessName} Asistanı</p>
+                <p className="text-xs text-[var(--teal)] font-medium mb-0.5">{businessName} {t('assistantSuffix')}</p>
                 <p className="text-sm text-[var(--ink)] truncate">
-                  {messages[messages.length - 1]?.content.substring(0, 40) || "Size nasıl yardımcı olabilirim?"}...
+                  {messages[messages.length - 1]?.content.substring(0, 40) || t('defaultPreview')}...
                 </p>
               </div>
             </div>

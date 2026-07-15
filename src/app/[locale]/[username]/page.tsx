@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: any) {
 }
 
 export default async function BusinessProfilePage({ params }: any) {
-  const { username } = await params;
+  const { username, locale } = await params;
   const supabase = await createClient();
 
   // 1. Fetch Business
@@ -53,11 +53,13 @@ export default async function BusinessProfilePage({ params }: any) {
   }
 
   // 2. Fetch Blocks
+  // Note: fetch all blocks (not just is_visible) — the invisible `settings` block carries
+  // layoutMode, which ArchetypeRenderer needs to decide website vs. linktree rendering.
+  // ArchetypeRenderer itself filters out settings + is_visible:false blocks before display.
   const { data: blocks } = await supabase
     .from('blocks')
     .select('*')
     .eq('business_id', business.id)
-    .eq('is_visible', true)
     .order('order', { ascending: true });
 
   const theme = business.theme || DEFAULT_THEME;
@@ -100,7 +102,7 @@ export default async function BusinessProfilePage({ params }: any) {
       {/* Bottom 30% Chat Widget */}
       <div className="fixed bottom-0 left-0 right-0 h-[30dvh] bg-transparent z-50 pointer-events-none">
         <div className="max-w-md mx-auto w-full h-full relative pointer-events-auto">
-          <ChatWidget businessId={business.id} businessName={business.name} />
+          <ChatWidget businessId={business.id} businessName={business.name} locale={locale} />
         </div>
       </div>
     </div>
