@@ -1,6 +1,6 @@
 'use client';
 
-import { ARCHETYPES, DEFAULT_ARCHETYPE } from '@/config/archetypes';
+import { DEFAULT_THEME, Theme } from '@/config/archetypes';
 import { useMemo, useState } from 'react';
 import { ChevronLeft, Mail, MessageCircle, Phone, Link as LinkIcon, AtSign } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -10,8 +10,8 @@ type RenderCtx = {
   locale: string;
   radiusClass: string;
   headingFont: string;
-  archetype: typeof DEFAULT_ARCHETYPE;
-  // true when archetype.layoutStyle === 'card-heavy' — consumed by renderers whose default look
+  theme: Theme;
+  // true when theme.layoutStyle === 'card-heavy' — consumed by renderers whose default look
   // (about-standard, contact/custom text) has no card chrome of its own. Renderers that already
   // wrap their items in cards/chips (services, gallery, testimonials, hours, faq, links) ignore it.
   cardWrap: boolean;
@@ -65,7 +65,7 @@ function withSectionBackground(
         <img src={backgroundImage} alt="" className="w-full h-full object-cover" />
         {overlay === 'dark' && <div className="absolute inset-0 bg-black/60" />}
         {overlay === 'light' && <div className="absolute inset-0 bg-white/70" />}
-        {overlay === 'tint' && <div className="absolute inset-0" style={{ backgroundColor: ctx.archetype.colors.primary, opacity: 0.55 }} />}
+        {overlay === 'tint' && <div className="absolute inset-0" style={{ backgroundColor: ctx.theme.colors.primary, opacity: 0.55 }} />}
       </div>
       <div className="relative z-10" style={overlay === 'light' ? undefined : { color: '#fff' }}>
         {content}
@@ -222,7 +222,7 @@ function renderTextBlock(block: any, ctx: RenderCtx) {
 }
 
 function renderServices(block: any, ctx: RenderCtx) {
-  const { locale, radiusClass, headingFont, archetype } = ctx;
+  const { locale, radiusClass, headingFont, theme } = ctx;
   const blockTitle = blockTitleOf(block, locale);
   const layoutVariant = block.content?.layoutVariant || 'grid-cards';
   const items: any[] = block.content?.items || [];
@@ -322,7 +322,7 @@ function renderServices(block: any, ctx: RenderCtx) {
                 className={`p-5 border transition-transform hover:-translate-y-1 ${radiusClass} ${layoutVariant === 'list' ? 'flex flex-col sm:flex-row gap-4 items-start sm:items-center' : ''}`}
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
               >
-                {item.mediaUrl && archetype.mediaProfile !== 'minimal' && (
+                {item.mediaUrl && theme.mediaProfile !== 'minimal' && (
                   <img src={item.mediaUrl} alt={itemLoc.title} className={`object-cover ${radiusClass} ${layoutVariant === 'list' ? 'w-full sm:w-32 h-32 mb-0' : 'w-full h-40 mb-4'}`} />
                 )}
                 <div className={`flex-1 ${layoutVariant === 'list' ? 'w-full' : 'flex justify-between items-start gap-4'}`}>
@@ -799,11 +799,11 @@ const BLOCK_RENDERERS: Record<string, (block: any, ctx: RenderCtx) => React.Reac
   custom: renderTextBlock,
 };
 
-export default function ArchetypeRenderer({ blocks, archetypeId, businessName }: { blocks: any[], archetypeId: string, businessName: string }) {
+export default function ArchetypeRenderer({ blocks, theme: themeProp, businessName }: { blocks: any[], theme?: Theme | null, businessName: string }) {
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const locale = useLocale();
 
-  const archetype = ARCHETYPES[archetypeId] || DEFAULT_ARCHETYPE;
+  const theme = themeProp || DEFAULT_THEME;
 
   const layoutMode = useMemo(() => {
     const settingsBlock = blocks.find(b => b.type === 'settings');
@@ -811,7 +811,7 @@ export default function ArchetypeRenderer({ blocks, archetypeId, businessName }:
   }, [blocks]);
 
   const radiusClass = useMemo(() => {
-    switch (archetype.borderRadius) {
+    switch (theme.borderRadius) {
       case 'none': return 'rounded-none';
       case 'sm': return 'rounded-md';
       case 'md': return 'rounded-xl';
@@ -819,25 +819,31 @@ export default function ArchetypeRenderer({ blocks, archetypeId, businessName }:
       case 'full': return 'rounded-3xl';
       default: return 'rounded-2xl';
     }
-  }, [archetype]);
+  }, [theme]);
 
   const visibleBlocks = blocks.filter(b => b.type !== 'settings' && b.is_visible !== false);
 
   const styleVars = useMemo(() => {
     return {
-      '--bg': archetype.colors.background,
-      '--surface': archetype.colors.surface,
-      '--primary': archetype.colors.primary,
-      '--text': archetype.colors.text,
-      '--text-muted': archetype.colors.textMuted,
-      '--border': archetype.colors.border,
+      '--bg': theme.colors.background,
+      '--surface': theme.colors.surface,
+      '--primary': theme.colors.primary,
+      '--text': theme.colors.text,
+      '--text-muted': theme.colors.textMuted,
+      '--border': theme.colors.border,
+      '--heading-font': `"${theme.headingFont}", sans-serif`,
+      '--body-font': `"${theme.bodyFont}", sans-serif`,
     } as React.CSSProperties;
-  }, [archetype]);
+  }, [theme]);
 
-  const { headingFont, bodyFont } = archetype.typography;
-  const cardWrap = archetype.layoutStyle === 'card-heavy';
-  const sectionGapClass = SECTION_GAP_CLASS[archetype.layoutStyle] || 'gap-10';
-  const renderCtx: RenderCtx = { locale, radiusClass, headingFont, archetype, cardWrap };
+  // Fixed hook classes (see the <style> block below) — the actual font-family comes from the
+  // AI-generated --heading-font/--body-font CSS variables above, not from a Tailwind class,
+  // since theme.headingFont/bodyFont are arbitrary Google Font names rather than a fixed set.
+  const headingFont = 'tb-heading';
+  const bodyFont = 'tb-body';
+  const cardWrap = theme.layoutStyle === 'card-heavy';
+  const sectionGapClass = SECTION_GAP_CLASS[theme.layoutStyle] || 'gap-10';
+  const renderCtx: RenderCtx = { locale, radiusClass, headingFont, theme, cardWrap };
 
   const renderBlock = (block: any) => {
     const renderFn = BLOCK_RENDERERS[block.type];
@@ -866,6 +872,8 @@ export default function ArchetypeRenderer({ blocks, archetypeId, businessName }:
         .markdown-body strong { font-weight: 700; color: inherit; }
         .markdown-body em { font-style: italic; }
         .markdown-body a { color: inherit; text-decoration: underline; }
+        .tb-heading { font-family: var(--heading-font); }
+        .tb-body { font-family: var(--body-font); }
       `}</style>
 
       <div className="flex flex-col gap-10">

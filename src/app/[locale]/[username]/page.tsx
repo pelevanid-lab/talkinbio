@@ -3,6 +3,8 @@ import ChatWidget from '@/components/ChatWidget';
 import ArchetypeRenderer from '@/components/ArchetypeRenderer';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { createClient } from '@/utils/supabase/server';
+import { DEFAULT_THEME } from '@/config/archetypes';
+import { googleFontsHref } from '@/utils/googleFonts';
 
 export async function generateMetadata({ params }: any) {
   const { username } = await params;
@@ -58,8 +60,13 @@ export default async function BusinessProfilePage({ params }: any) {
     .eq('is_visible', true)
     .order('order', { ascending: true });
 
+  const theme = business.theme || DEFAULT_THEME;
+
   return (
     <div className="flex flex-col min-h-[100dvh] relative">
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+      <link href={googleFontsHref(theme.headingFont, theme.bodyFont)} rel="stylesheet" />
       {!business.is_published && isOwner && (
         <div className="w-full bg-[var(--coral)] text-white text-center py-2 text-sm font-medium shadow-sm z-50">
           Profiliniz henüz ziyaretçilere kapalı. Yayınlamak için eksikleri tamamlayın.
@@ -79,10 +86,10 @@ export default async function BusinessProfilePage({ params }: any) {
           {/* Blocks */}
           <div className="w-full">
             {blocks && blocks.length > 0 && (
-              <ArchetypeRenderer 
-                blocks={blocks} 
-                archetypeId={business.archetype_id || 'minimal-light'} 
-                businessName={business.name} 
+              <ArchetypeRenderer
+                blocks={blocks}
+                theme={theme}
+                businessName={business.name}
               />
             )}
           </div>

@@ -20,17 +20,17 @@ export async function POST(req: Request) {
     // Fetch existing blocks + business to give context to the AI
     const [{ data: blocks }, { data: business }] = await Promise.all([
       supabase.from('blocks').select('*').eq('business_id', businessId).order('order', { ascending: true }),
-      supabase.from('businesses').select('contact_method, contact_value, category').eq('id', businessId).single(),
+      supabase.from('businesses').select('contact_method, contact_value, category, theme').eq('id', businessId).single(),
     ]);
 
     const sectorProfile = matchSectorProfile(business?.category);
     const sectorGuidance = sectorProfile
       ? `Bu işletmenin kategorisi ("${business?.category}") "${sectorProfile.id}" sektör profiliyle eşleşiyor:\n` +
-        `- Önerilen arketipler (öncelik sırasıyla): ${sectorProfile.archetypes.join(', ')}\n` +
+        `- Tema ruh hali: ${sectorProfile.themeMood}\n` +
         `- Önerilen varyantlar: ${JSON.stringify(sectorProfile.variants)}\n` +
         `- Gerekçe: ${sectorProfile.note}\n` +
         `Aksi için güçlü bir sebep olmadıkça bu önerileri takip et.`
-      : `Bu işletmenin kategorisi ("${business?.category || 'belirtilmedi'}") bilinen bir sektör profiliyle eşleşmedi; genel ART DIRECTOR kurallarına göre kendi takdirini kullan.`;
+      : `Bu işletmenin kategorisi ("${business?.category || 'belirtilmedi'}") bilinen bir sektör profiliyle eşleşmedi; kendi takdirinle özgün bir tema tasarla.`;
 
     const titles: Record<string, { about: string, services: string, links: string }> = {
       tr: { about: 'Hakkımda', services: 'Hizmetler', links: 'Bağlantılar' },
@@ -40,6 +40,16 @@ export async function POST(req: Request) {
 
     const currentLocale = (locale as string) || 'tr';
     const locTitles = titles[currentLocale] || titles['tr'];
+
+    // Persist the conversation so returning to this tab (or reloading the page) doesn't lose context.
+    const lastUserMessage = messages[messages.length - 1];
+    if (lastUserMessage && lastUserMessage.role === 'user') {
+      await supabase.from('setup_messages').insert({
+        business_id: businessId,
+        role: 'user',
+        content: lastUserMessage.content,
+      });
+    }
 
     // Build a readiness summary (replaces the old numeric %completeness) so the AI knows
     // exactly which required/recommended sections are still missing.
@@ -62,6 +72,9 @@ export async function POST(req: Request) {
       Mevcut Sayfa Blokları:
       ${JSON.stringify(blocks || [], null, 2)}
 
+      Mevcut Tema:
+      ${business?.theme ? JSON.stringify(business.theme) : 'Henüz tema ayarlanmadı.'}
+
       Yayına Hazırlık Durumu:
       ${readinessSummary}
 
@@ -76,37 +89,49 @@ export async function POST(req: Request) {
       5. Bir aracı (tool) başarıyla çalıştırıp bir bloğu kaydettikten sonra sohbeti sonlandırma! Hemen bir sonraki eksik bölüme (Örn: Hizmetler, İletişim, Çalışma Saatleri, SSS) geçerek yeni sorular sor.
       5b. ÇOK ÖNEMLİ: Bir aracın (tool) sonucu "Error:" ile başlıyorsa, o bölüm KAYDEDİLMEMİŞTİR. Bunu asla başarılıymış gibi sunma — kullanıcıya açıkça "X bölümünü kaydederken teknik bir sorun oluştu, tekrar deneyeyim" gibi dürüstçe bildir ve mümkünse tekrar dene. Özet mesajında sadece gerçekten "Error:" içermeyen sonuçlar için ✅ kullan.
       6. Sektörel Mimari Kararları (ART DIRECTOR): Sen bir web tasarımcısısın. İşletme türüne göre sayfa mimarisini tasarla:
-         - ÖNCE yukarıdaki "Sektör Profili Önerisi"ne bak — bir profil eşleştiyse arketip ve varyant seçimlerinde onu takip et, tahmin yürütme.
+         - ÖNCE yukarıdaki "Sektör Profili Önerisi"ne bak — bir profil eşleştiyse tema ruh hali ve varyant seçimlerinde onu takip et, tahmin yürütme.
          - Görsel ağırlıklı bir sektörse (Kuaför, Fotoğrafçı, vb.) kullanıcıya 'addGallery' aracını kullanarak bir Galeri eklemeyi teklif et.
          - Güven ve uzmanlık ağırlıklı bir sektörse (Danışman, vb.) kullanıcıya 'addTestimonials' aracını kullanarak Yorumlar eklemeyi teklif et.
          - ÇOK ÖNEMLİ: Her aracın 'layoutVariant' parametresi var, her zaman işletmenin tarzına en uygun olanı seç (her tool'un açıklamasında hangi varyantın ne zaman uygun olduğu yazıyor). Örnekler: Masaj salonu/şık restoran için Hakkımda'da 'hero-overlay'; az sayıda ama güçlü bir manifesto metni varsa 'big-statement'; mimarlık ofisi için galeride 'masonry'; birkaç etkileyici fotoğrafla mobil-öncelikli bir his için galeride 'fullbleed-carousel' veya 'stacked-fullwidth'; premium/az sayıda hizmet için services'te 'numbered-list' veya 'feature-split'; restoran/kafe menüsü için services'te 'price-table'; tek ve güçlü bir müşteri yorumu varsa testimonials'ta 'big-quote', birden fazla kısa yorum varsa 'grid-quotes'; uzun bir SSS listesi varsa faq'da 'accordion', tüm cevapların hemen görünmesini istiyorsan 'numbered'; sosyal medya linkleri için links'te 'icon-row' veya 'two-col-grid'; haftalık saatleri tek satırda özetlemek için hours'ta 'pill-row'.
-         - Arka plan görseli (backgroundImage): updateAbout (sadece 'standard' varyantında), addServices ve addTestimonials tool'larında opsiyonel 'backgroundImage' + 'backgroundOverlay' ('dark'/'light'/'tint'/'none') parametreleri var. Kullanıcı çarpıcı bir görsel yüklediyse ve o bölüm için özel bir varyant seçmediysen, bölümün arkasına bu görseli koyup 'dark' veya arketipin ana rengiyle 'tint' overlay uygulamayı düşün — ama abartma, her bölüme koyma.
-      7. Kullanıcının tarzına ve işletme türüne göre bir arketip seç (setArchetype aracıyla). Seçenekler: minimal-light, dark-elegant, warm-natural, vibrant-bold, soft-inviting, professional-corporate, playful-colorful, artisan-rustic, luxury-spa, cyber-tech, fitness-heavy.
+         - Arka plan görseli (backgroundImage): updateAbout (sadece 'standard' varyantında), addServices ve addTestimonials tool'larında opsiyonel 'backgroundImage' + 'backgroundOverlay' ('dark'/'light'/'tint'/'none') parametreleri var. Kullanıcı çarpıcı bir görsel yüklediyse ve o bölüm için özel bir varyant seçmediysen, bölümün arkasına bu görseli koyup 'dark' veya temanın ana rengiyle 'tint' overlay uygulamayı düşün — ama abartma, her bölüme koyma.
+      7. TEMA (setTheme aracıyla): Sen artık 11 sabit temadan seçmiyorsun — işletmenin ruhuna uygun ÖZGÜN bir renk paleti (hex) + Google Font çifti tasarlıyorsun. Sektöre göre klişeleşmiş kombinasyonlardan kaçın (ör. her "spa" için aynı yeşil-bej paleti); yukarıdaki "Sektör Profili Önerisi"ndeki tema ruh hali ipucunu bir başlangıç noktası olarak kullan ama kendi yorumunu kat. Font isimleri gerçek, yaygın Google Fonts aile adları olmalı (ör. "Fraunces", "Playfair Display", "Space Grotesk", "Inter", "DM Sans", "Cormorant", "Bricolage Grotesque"). 'setTheme'i HER ZAMAN ilk çağırdığın araçlardan biri yap — ucuz bir adımdır ve süreç herhangi bir sebeple yarıda kesilse bile en azından tasarım uygulanmış olsun.
       8. Yayına Hazırlık: Yayınlanabilmesi için ZORUNLU olan tek şey (Hakkımda VEYA Hizmetler) + İletişim bilgisidir — yukarıdaki "Yayına Hazırlık Durumu"na bak. Bunlar tamamlandığında kullanıcıya "artık yayınlayabilirsin" de ve editördeki 'Yayınla' butonuna basmasını söyle (sen otomatik yayınlamazsın, karar kullanıcıya ait). Çalışma Saatleri, SSS, Galeri, Yorumlar ve Bağlantılar zorunlu değildir ama önerilir; bunlar eksikse nazikçe eklemeyi teklif etmeye devam et.
       8b. İletişim bilgisi (telefon/WhatsApp/Instagram/e-posta) bir "blok" değildir, işletmenin genel ayarlarında tutulur. Kullanıcı iletişim bilgisi verirse veya günceller ise 'updateContact' aracını kullan.
       8c. Çalışma saatleri için 'addHours', Sıkça Sorulan Sorular için 'addFAQ' aracını kullan.
-      9. TOPLU YÜKLEME (BULK UPLOAD) DURUMU: Eğer kullanıcı sana '[BULK]' etiketiyle çok uzun bir metin verirse, ona adım adım soru sormak yerine, elindeki BÜTÜN bilgiyi analiz et ve eksik olan tüm blokları arka arkaya araçları çağırarak TEK SEFERDE oluştur. İşlem sırasında "Bilgilerinizi analiz ediyorum..." gibi süreç notları yazabilirsin.
+      9. TOPLU YÜKLEME (BULK UPLOAD) DURUMU: Eğer kullanıcı sana '[BULK]' etiketiyle çok uzun bir metin verirse, ona adım adım soru sormak yerine, elindeki BÜTÜN bilgiyi analiz et ve eksik olan tüm blokları arka arkaya araçları çağırarak TEK SEFERDE oluştur. ÇOK ÖNEMLİ SIRALAMA: 'setTheme'i HER ZAMAN İLK araç çağrısı yap, ardından 'updateContact' (varsa iletişim bilgisi), sonra içerik bloklarına geç. Metin çok uzunsa ve her şeyi tek seferde bitiremeyeceğini düşünüyorsan, önce en önemlilerini (tema, Hakkımda veya Hizmetler, iletişim) tamamla — asla tema adımını atlayıp doğrudan uzun içerik üretmeye başlama, çünkü süreç yarıda kesilirse kullanıcı tasarımsız/çıplak bir sayfa görür. İşlem sırasında "Bilgilerinizi analiz ediyorum..." gibi süreç notları yazabilirsin.
       10. KESİNLİKLE kullanıcının dilinde (${locale}) yanıt ver. Eğer 'ru' ise Rusça, 'en' ise İngilizce konuş.
     `;
 
     const result = await streamText({
       model: getModel(),
       maxSteps: 16,
+      maxTokens: 8000,
       system: systemPrompt,
       messages,
       tools: {
-        setArchetype: tool({
-          description: 'İşletmenin görünümü için uygun arketipi (tema) seçer.',
+        setTheme: tool({
+          description: "İşletmeye özgün bir renk paleti + Google Font çifti tasarlar. 11 sabit temadan biri DEĞİL, senin o işletmeye özel ürettiğin bir kombinasyon.",
           parameters: z.object({
-            archetype_id: z.enum([
-              'minimal-light', 'dark-elegant', 'warm-natural', 'vibrant-bold',
-              'soft-inviting', 'professional-corporate', 'playful-colorful', 'artisan-rustic',
-              'luxury-spa', 'cyber-tech', 'fitness-heavy'
-            ])
+            colors: z.object({
+              background: z.string().regex(/^#[0-9a-fA-F]{6}$/).describe('Sayfa arka planı (hex)'),
+              surface: z.string().regex(/^#[0-9a-fA-F]{6}$/).describe('Kart/konteyner arka planı (hex)'),
+              primary: z.string().regex(/^#[0-9a-fA-F]{6}$/).describe('Vurgu rengi — butonlar, linkler (hex)'),
+              text: z.string().regex(/^#[0-9a-fA-F]{6}$/).describe('Ana metin rengi (hex)'),
+              textMuted: z.string().regex(/^#[0-9a-fA-F]{6}$/).describe('İkincil/pasif metin rengi (hex)'),
+              border: z.string().regex(/^#[0-9a-fA-F]{6}$/).describe('Sınır çizgisi rengi (hex)'),
+            }),
+            headingFont: z.string().regex(/^[A-Za-z0-9 ]+$/).describe('Başlıklar için gerçek bir Google Font aile adı, örn. "Fraunces"'),
+            bodyFont: z.string().regex(/^[A-Za-z0-9 ]+$/).describe('Gövde metni için gerçek bir Google Font aile adı, örn. "Mulish"'),
+            mediaProfile: z.enum(['gallery-first', 'service-focused', 'minimal']).describe('gallery-first: görsel ağırlıklı sektörler. service-focused: hizmet görselleri orta düzeyde. minimal: az/hiç görsel.'),
+            layoutStyle: z.enum(['compact', 'spacious', 'card-heavy', 'flat']).describe('compact: dar boşluklar. spacious: bol boşluk, lüks his. card-heavy: bölümler kart içinde. flat: kart çerçevesi yok.'),
+            borderRadius: z.enum(['none', 'sm', 'md', 'xl', 'full']).describe('Köşe yuvarlaklığı. none: keskin köşe. full: çok yuvarlak.'),
           }),
-          execute: async ({ archetype_id }) => {
-            await supabase.from('businesses').update({ archetype_id }).eq('id', businessId);
-            return `Arketip ${archetype_id} olarak ayarlandı.`;
+          execute: async ({ colors, headingFont, bodyFont, mediaProfile, layoutStyle, borderRadius }) => {
+            const { error } = await supabase.from('businesses').update({
+              theme: { colors, headingFont, bodyFont, mediaProfile, layoutStyle, borderRadius }
+            }).eq('id', businessId);
+            if (error) return `Error: ${error.message}`;
+            return `Tema ayarlandı: ${headingFont} / ${bodyFont}, ana renk ${colors.primary}.`;
           },
         }),
         updateAbout: tool({
@@ -376,6 +401,15 @@ export async function POST(req: Request) {
           }
         })
       },
+      onFinish: async ({ text }) => {
+        if (text) {
+          await supabase.from('setup_messages').insert({
+            business_id: businessId,
+            role: 'assistant',
+            content: text,
+          });
+        }
+      }
     });
 
     return result.toDataStreamResponse();

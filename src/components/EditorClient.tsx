@@ -10,9 +10,12 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useChat } from '@ai-sdk/react';
 import { useTranslations, useLocale } from 'next-intl';
 import { RECOMMENDED_TYPES, hasRealContent, isRequiredSatisfied } from '@/config/blockTypes';
+import { DEFAULT_THEME, Theme } from '@/config/archetypes';
+import { googleFontsHref } from '@/utils/googleFonts';
 
-export default function EditorClient({ business, initialBlocks }: { business: any, initialBlocks: any[] }) {
+export default function EditorClient({ business, initialBlocks, initialChatMessages }: { business: any, initialBlocks: any[], initialChatMessages?: any[] }) {
   const [blocks, setBlocks] = useState(initialBlocks);
+  const [theme, setTheme] = useState<Theme>(business.theme || DEFAULT_THEME);
   const [editingBlock, setEditingBlock] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
@@ -51,14 +54,28 @@ export default function EditorClient({ business, initialBlocks }: { business: an
 
   const canPublish = useMemo(() => isRequiredSatisfied(blocks, hasContactValue), [blocks, hasContactValue]);
 
-  // Setup AI Agent
+  // Setup AI Agent — resumes from the persisted setup_messages history when there is one,
+  // so returning to this tab (or reloading the page) doesn't lose the conversation's context.
   const { messages, input, handleInputChange, handleSubmit, isLoading: isChatLoading, append } = useChat({
     api: '/api/setup-agent',
     body: { businessId: business.id, locale },
-    initialMessages: [
-      { id: '1', role: 'assistant', content: t('aiWelcome', { name: business.name }) }
-    ]
+    initialMessages: initialChatMessages && initialChatMessages.length > 0
+      ? initialChatMessages.map((m) => ({ id: m.id, role: m.role, content: m.content }))
+      : [{ id: '1', role: 'assistant', content: t('aiWelcome', { name: business.name }) }]
   });
+
+  // Inject the AI-chosen Google Font pair (dynamic per business, so it can't be a static <link> in <head>).
+  useEffect(() => {
+    const linkId = 'tb-editor-google-fonts';
+    let link = document.getElementById(linkId) as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement('link');
+      link.id = linkId;
+      link.rel = 'stylesheet';
+      document.head.appendChild(link);
+    }
+    link.href = googleFontsHref(theme.headingFont, theme.bodyFont);
+  }, [theme.headingFont, theme.bodyFont]);
 
   const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -105,11 +122,11 @@ export default function EditorClient({ business, initialBlocks }: { business: an
         setBlocks(data);
       }
       
-      // Also refresh business to get archetype/contact updates made by the AI agent
-      const { data: bData } = await supabase.from('businesses').select('archetype_id, contact_value').eq('id', business.id).single();
+      // Also refresh business to get theme/contact updates made by the AI agent
+      const { data: bData } = await supabase.from('businesses').select('theme, contact_value').eq('id', business.id).single();
       if (bData) {
-        if (bData.archetype_id !== business.archetype_id) {
-          business.archetype_id = bData.archetype_id;
+        if (bData.theme && JSON.stringify(bData.theme) !== JSON.stringify(theme)) {
+          setTheme(bData.theme);
         }
         if (bData.contact_value !== contactValue) {
           setContactValue(bData.contact_value);
@@ -117,7 +134,7 @@ export default function EditorClient({ business, initialBlocks }: { business: an
       }
     }, 3000);
     return () => clearInterval(interval);
-  }, [business.id, supabase, viewMode, contactValue]);
+  }, [business.id, supabase, viewMode, contactValue, theme]);
 
   const handleTogglePublish = async () => {
     const next = !isPublished;
@@ -591,9 +608,9 @@ export default function EditorClient({ business, initialBlocks }: { business: an
 
             {/* Blocks (Archetype Preview) */}
             <div className="w-full -mt-20">
-              <ArchetypeRenderer 
-                blocks={blocks} 
-                archetypeId={business.archetype_id || 'minimal-light'} 
+              <ArchetypeRenderer
+                blocks={blocks}
+                theme={theme}
                 businessName={business.name}
               />
               {blocks.length === 0 && (
