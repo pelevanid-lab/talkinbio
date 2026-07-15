@@ -387,20 +387,18 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       {/* Left Sidebar */}
       <div className="w-full md:w-[450px] bg-white border-r border-slate-200 flex flex-col h-full z-10 shrink-0">
         <div className="p-4 md:p-6 border-b border-slate-200 bg-white">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-bold font-bricolage text-[var(--ink)]">{t('panelTitle')}</h1>
-              <LanguageSwitcher />
-            </div>
-            <button 
-              className="md:hidden p-2 bg-[var(--coral-tint)] text-[var(--coral)] rounded-lg font-medium text-sm flex items-center"
+          <div className="flex justify-end mb-4 md:hidden">
+            <button
+              className="p-2 bg-[var(--coral-tint)] text-[var(--coral)] rounded-lg font-medium text-sm flex items-center"
               onClick={() => setShowMobilePreview(true)}
             >
               <Smartphone className="w-4 h-4 mr-1" /> {t('previewBtn')}
             </button>
           </div>
 
-          {/* Mode Switcher */}
+          {/* Mode Switcher — the only thing always visible across all tabs; everything else
+              (panel title, profile link, page title, contact, publish status) now lives inside
+              the "İnce Ayar" tab so the Kurulum Ajanı/Toplu tabs aren't buried under fixed chrome. */}
             <div className="flex justify-between items-center bg-white p-2 rounded-xl shadow-sm border border-slate-200 gap-1">
               <button 
                 onClick={() => setViewMode('chat')}
@@ -421,182 +419,6 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 {t('tabManual')}
               </button>
             </div>
-
-            {/* Public Link Display */}
-            <div className="mt-4 bg-slate-50 rounded-xl p-3 border border-slate-200">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-xs font-medium text-slate-500">{t('profileLink')}</span>
-                {isEditingUsername ? (
-                  <button onClick={handleUsernameSave} className="text-xs font-bold text-[var(--teal)] hover:text-teal-700">{t('saveBtn')}</button>
-                ) : (
-                  <div className="flex items-center space-x-3">
-                    <button onClick={() => setIsEditingUsername(true)} className="text-xs font-medium text-slate-500 hover:text-[var(--coral)] flex items-center">
-                      <Edit2 className="w-3 h-3 mr-1" /> {t('editBtn')}
-                    </button>
-                    {isPublished && (
-                      <a 
-                        href={`https://talkinbio.com/${username}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-xs font-bold text-[var(--coral)] hover:text-orange-600 flex items-center"
-                      >
-                        <ExternalLink className="w-3 h-3 mr-1" /> Aç
-                      </a>
-                    )}
-                  </div>
-                )}
-              </div>
-              
-              {isEditingUsername ? (
-                <div>
-                  <div className="flex items-center bg-white border border-slate-300 rounded-lg overflow-hidden focus-within:border-[var(--coral)]">
-                    <span className="px-2 py-2 text-sm text-slate-400 bg-slate-50 border-r border-slate-200">talkinbio.com/</span>
-                    <input 
-                      type="text" 
-                      value={username}
-                      onChange={e => setUsername(e.target.value)}
-                      className="w-full p-2 text-sm focus:outline-none"
-                    />
-                  </div>
-                  {usernameError && <p className="text-xs text-red-500 mt-1">{usernameError}</p>}
-                </div>
-              ) : (
-                <div className="flex items-center text-sm font-medium text-[var(--ink)]">
-                  talkinbio.com/<span className="text-[var(--coral)]">{username}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Page Title (optional, defaults to workspace name) */}
-            <div className="mt-3 bg-slate-50 rounded-xl p-3 border border-slate-200">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-xs font-medium text-slate-500">{t('pageTitle')}</span>
-                {isEditingPageTitle ? (
-                  <button onClick={handlePageTitleSave} className="text-xs font-bold text-[var(--teal)] hover:text-teal-700">{t('saveBtn')}</button>
-                ) : (
-                  <button onClick={() => setIsEditingPageTitle(true)} className="text-xs font-medium text-slate-500 hover:text-[var(--coral)] flex items-center">
-                    <Edit2 className="w-3 h-3 mr-1" /> {t('editBtn')}
-                  </button>
-                )}
-              </div>
-              {isEditingPageTitle ? (
-                <input
-                  type="text"
-                  value={pageTitle}
-                  onChange={e => setPageTitle(e.target.value)}
-                  placeholder={business.name}
-                  className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-[var(--coral)]"
-                />
-              ) : (
-                <div className="text-sm font-medium text-[var(--ink)]">
-                  {pageTitle || business.name}
-                </div>
-              )}
-            </div>
-
-            {/* Contact methods — the single source of truth also used by request-access and the
-                setup agent's updateContact tool; not a reorderable page block. */}
-            <div className="mt-3 bg-slate-50 rounded-xl p-3 border border-slate-200">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-xs font-medium text-slate-500">{t('blocks.contact')}</span>
-                {isEditingContact ? (
-                  <button onClick={handleContactSave} className="text-xs font-bold text-[var(--teal)] hover:text-teal-700">{t('saveBtn')}</button>
-                ) : (
-                  <button onClick={openContactEditor} className="text-xs font-medium text-slate-500 hover:text-[var(--coral)] flex items-center">
-                    <Edit2 className="w-3 h-3 mr-1" /> {t('editBtn')}
-                  </button>
-                )}
-              </div>
-              {isEditingContact ? (
-                <div className="space-y-2">
-                  {CONTACT_METHODS.map((method) => {
-                    const isEmail = method === 'email';
-                    return (
-                      <div key={method} className="p-2 bg-white border border-slate-200 rounded-lg">
-                        <div className="flex items-center">
-                          {isEmail ? (
-                            <span className="text-xs font-medium text-[var(--ink)]">
-                              {t(`contactMethods.${method}`)} <span className="text-[var(--coral)]">*</span>
-                            </span>
-                          ) : (
-                            <label className="flex items-center text-xs font-medium text-[var(--ink)] cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={contactMethods[method].selected}
-                                onChange={(e) => setContactMethods({ ...contactMethods, [method]: { ...contactMethods[method], selected: e.target.checked } })}
-                                className="mr-1.5 accent-[var(--coral)]"
-                              />
-                              {t(`contactMethods.${method}`)}
-                            </label>
-                          )}
-                        </div>
-                        {(isEmail || contactMethods[method].selected) && (
-                          <input
-                            type={isEmail ? 'email' : 'text'}
-                            value={contactMethods[method].value}
-                            onChange={(e) => setContactMethods({ ...contactMethods, [method]: { ...contactMethods[method], value: e.target.value } })}
-                            placeholder={t(`contactMethodPlaceholders.${method}`)}
-                            className="w-full mt-1 p-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-[var(--coral)]"
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-sm font-medium text-[var(--ink)]">
-                  {(contactMethod || '').split(',').filter(Boolean).map((m: string) => t(`contactMethods.${m}`)).join(', ') || t('noContent')}
-                </div>
-              )}
-            </div>
-        </div>
-
-        {/* Publish Checklist (Always visible) */}
-        <div className="px-4 md:px-6 py-4 bg-slate-50 border-b border-slate-200">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="font-semibold text-sm text-[var(--ink)]">{t('publishStatus')}</h2>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isPublished ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>
-              {isPublished ? t('published') : t('draft')}
-            </span>
-          </div>
-
-          <ul className="space-y-1 mb-3">
-            <li className={`text-xs flex items-center ${checklist.contentReady ? 'text-green-600' : 'text-[var(--ink-soft)]'}`}>
-              {checklist.contentReady ? <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 shrink-0" /> : <Circle className="w-3.5 h-3.5 mr-1.5 shrink-0" />}
-              {t('blocks.about')} / {t('blocks.services')}
-            </li>
-            <li className={`text-xs flex items-center ${checklist.contact ? 'text-green-600' : 'text-[var(--ink-soft)]'}`}>
-              {checklist.contact ? <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 shrink-0" /> : <Circle className="w-3.5 h-3.5 mr-1.5 shrink-0" />}
-              {t('blocks.contact')}
-            </li>
-            {checklist.recommended.map(({ type, done }) => (
-              <li key={type} className={`text-xs flex items-center ${done ? 'text-green-600' : 'text-[var(--ink-soft)] opacity-70'}`}>
-                {done ? <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 shrink-0" /> : <Circle className="w-3.5 h-3.5 mr-1.5 shrink-0" />}
-                {t(`blocks.${type}`)} <span className="ml-1 text-[10px] opacity-70">({t('optionalHint')})</span>
-              </li>
-            ))}
-          </ul>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={isPublished && needsRepublish ? handleAcknowledgeChanges : handleTogglePublish}
-              disabled={(!canPublish && !isPublished) || isTogglingPublish}
-              className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isPublished && !needsRepublish ? 'bg-slate-200 text-slate-700 hover:bg-slate-300' : 'bg-[var(--coral)] text-white hover:bg-orange-600'}`}
-            >
-              {isTogglingPublish ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (isPublished ? (needsRepublish ? t('republishBtn') : t('unpublishBtn')) : t('publishBtn'))}
-            </button>
-            {isPublished && (
-              <button onClick={copyLink} className="text-[var(--teal)] font-medium flex items-center text-xs px-3 py-2">
-                <Copy className="w-3 h-3 mr-1" /> {t('linkBtn')}
-              </button>
-            )}
-          </div>
-          {!canPublish && !isPublished && (
-            <p className="text-[11px] text-[var(--ink-soft)] mt-2">{t('publishHint')}</p>
-          )}
-          {isPublished && needsRepublish && (
-            <p className="text-[11px] text-[var(--coral)] mt-2 font-medium">{t('republishHint')}</p>
-          )}
         </div>
 
         {/* Main Left Content */}
@@ -691,6 +513,187 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
             </div>
           ) : (
             <div className="p-4 md:p-6 space-y-4 pb-20">
+              <div className="flex items-center gap-4">
+                <h1 className="text-xl font-bold font-bricolage text-[var(--ink)]">{t('panelTitle')}</h1>
+                <LanguageSwitcher />
+              </div>
+
+              {/* Public Link Display */}
+              <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs font-medium text-slate-500">{t('profileLink')}</span>
+                  {isEditingUsername ? (
+                    <button onClick={handleUsernameSave} className="text-xs font-bold text-[var(--teal)] hover:text-teal-700">{t('saveBtn')}</button>
+                  ) : (
+                    <div className="flex items-center space-x-3">
+                      <button onClick={() => setIsEditingUsername(true)} className="text-xs font-medium text-slate-500 hover:text-[var(--coral)] flex items-center">
+                        <Edit2 className="w-3 h-3 mr-1" /> {t('editBtn')}
+                      </button>
+                      {isPublished && (
+                        <a
+                          href={`https://talkinbio.com/${username}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-bold text-[var(--coral)] hover:text-orange-600 flex items-center"
+                        >
+                          <ExternalLink className="w-3 h-3 mr-1" /> Aç
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {isEditingUsername ? (
+                  <div>
+                    <div className="flex items-center bg-white border border-slate-300 rounded-lg overflow-hidden focus-within:border-[var(--coral)]">
+                      <span className="px-2 py-2 text-sm text-slate-400 bg-slate-50 border-r border-slate-200">talkinbio.com/</span>
+                      <input
+                        type="text"
+                        value={username}
+                        onChange={e => setUsername(e.target.value)}
+                        className="w-full p-2 text-sm focus:outline-none"
+                      />
+                    </div>
+                    {usernameError && <p className="text-xs text-red-500 mt-1">{usernameError}</p>}
+                  </div>
+                ) : (
+                  <div className="flex items-center text-sm font-medium text-[var(--ink)]">
+                    talkinbio.com/<span className="text-[var(--coral)]">{username}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Page Title (optional, defaults to workspace name) */}
+              <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs font-medium text-slate-500">{t('pageTitle')}</span>
+                  {isEditingPageTitle ? (
+                    <button onClick={handlePageTitleSave} className="text-xs font-bold text-[var(--teal)] hover:text-teal-700">{t('saveBtn')}</button>
+                  ) : (
+                    <button onClick={() => setIsEditingPageTitle(true)} className="text-xs font-medium text-slate-500 hover:text-[var(--coral)] flex items-center">
+                      <Edit2 className="w-3 h-3 mr-1" /> {t('editBtn')}
+                    </button>
+                  )}
+                </div>
+                {isEditingPageTitle ? (
+                  <input
+                    type="text"
+                    value={pageTitle}
+                    onChange={e => setPageTitle(e.target.value)}
+                    placeholder={business.name}
+                    className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-[var(--coral)]"
+                  />
+                ) : (
+                  <div className="text-sm font-medium text-[var(--ink)]">
+                    {pageTitle || business.name}
+                  </div>
+                )}
+              </div>
+
+              {/* Contact methods — the single source of truth also used by request-access and the
+                  setup agent's updateContact tool; not a reorderable page block. */}
+              <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs font-medium text-slate-500">{t('blocks.contact')}</span>
+                  {isEditingContact ? (
+                    <button onClick={handleContactSave} className="text-xs font-bold text-[var(--teal)] hover:text-teal-700">{t('saveBtn')}</button>
+                  ) : (
+                    <button onClick={openContactEditor} className="text-xs font-medium text-slate-500 hover:text-[var(--coral)] flex items-center">
+                      <Edit2 className="w-3 h-3 mr-1" /> {t('editBtn')}
+                    </button>
+                  )}
+                </div>
+                {isEditingContact ? (
+                  <div className="space-y-2">
+                    {CONTACT_METHODS.map((method) => {
+                      const isEmail = method === 'email';
+                      return (
+                        <div key={method} className="p-2 bg-white border border-slate-200 rounded-lg">
+                          <div className="flex items-center">
+                            {isEmail ? (
+                              <span className="text-xs font-medium text-[var(--ink)]">
+                                {t(`contactMethods.${method}`)} <span className="text-[var(--coral)]">*</span>
+                              </span>
+                            ) : (
+                              <label className="flex items-center text-xs font-medium text-[var(--ink)] cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={contactMethods[method].selected}
+                                  onChange={(e) => setContactMethods({ ...contactMethods, [method]: { ...contactMethods[method], selected: e.target.checked } })}
+                                  className="mr-1.5 accent-[var(--coral)]"
+                                />
+                                {t(`contactMethods.${method}`)}
+                              </label>
+                            )}
+                          </div>
+                          {(isEmail || contactMethods[method].selected) && (
+                            <input
+                              type={isEmail ? 'email' : 'text'}
+                              value={contactMethods[method].value}
+                              onChange={(e) => setContactMethods({ ...contactMethods, [method]: { ...contactMethods[method], value: e.target.value } })}
+                              placeholder={t(`contactMethodPlaceholders.${method}`)}
+                              className="w-full mt-1 p-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-[var(--coral)]"
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-sm font-medium text-[var(--ink)]">
+                    {(contactMethod || '').split(',').filter(Boolean).map((m: string) => t(`contactMethods.${m}`)).join(', ') || t('noContent')}
+                  </div>
+                )}
+              </div>
+
+              {/* Publish Checklist */}
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                <div className="flex justify-between items-center mb-2">
+                  <h2 className="font-semibold text-sm text-[var(--ink)]">{t('publishStatus')}</h2>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isPublished ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>
+                    {isPublished ? t('published') : t('draft')}
+                  </span>
+                </div>
+
+                <ul className="space-y-1 mb-3">
+                  <li className={`text-xs flex items-center ${checklist.contentReady ? 'text-green-600' : 'text-[var(--ink-soft)]'}`}>
+                    {checklist.contentReady ? <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 shrink-0" /> : <Circle className="w-3.5 h-3.5 mr-1.5 shrink-0" />}
+                    {t('blocks.about')} / {t('blocks.services')}
+                  </li>
+                  <li className={`text-xs flex items-center ${checklist.contact ? 'text-green-600' : 'text-[var(--ink-soft)]'}`}>
+                    {checklist.contact ? <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 shrink-0" /> : <Circle className="w-3.5 h-3.5 mr-1.5 shrink-0" />}
+                    {t('blocks.contact')}
+                  </li>
+                  {checklist.recommended.map(({ type, done }) => (
+                    <li key={type} className={`text-xs flex items-center ${done ? 'text-green-600' : 'text-[var(--ink-soft)] opacity-70'}`}>
+                      {done ? <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 shrink-0" /> : <Circle className="w-3.5 h-3.5 mr-1.5 shrink-0" />}
+                      {t(`blocks.${type}`)} <span className="ml-1 text-[10px] opacity-70">({t('optionalHint')})</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={isPublished && needsRepublish ? handleAcknowledgeChanges : handleTogglePublish}
+                    disabled={(!canPublish && !isPublished) || isTogglingPublish}
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isPublished && !needsRepublish ? 'bg-slate-200 text-slate-700 hover:bg-slate-300' : 'bg-[var(--coral)] text-white hover:bg-orange-600'}`}
+                  >
+                    {isTogglingPublish ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (isPublished ? (needsRepublish ? t('republishBtn') : t('unpublishBtn')) : t('publishBtn'))}
+                  </button>
+                  {isPublished && (
+                    <button onClick={copyLink} className="text-[var(--teal)] font-medium flex items-center text-xs px-3 py-2">
+                      <Copy className="w-3 h-3 mr-1" /> {t('linkBtn')}
+                    </button>
+                  )}
+                </div>
+                {!canPublish && !isPublished && (
+                  <p className="text-[11px] text-[var(--ink-soft)] mt-2">{t('publishHint')}</p>
+                )}
+                {isPublished && needsRepublish && (
+                  <p className="text-[11px] text-[var(--coral)] mt-2 font-medium">{t('republishHint')}</p>
+                )}
+              </div>
+
               <div className="mb-6 p-4 bg-white rounded-xl shadow-sm border border-slate-200">
                 <h3 className="text-sm font-bold text-[var(--ink)] mb-3">{t('pageLayout')}</h3>
                 <div className="flex gap-2">
