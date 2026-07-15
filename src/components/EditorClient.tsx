@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft } from 'lucide-react';
+import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus } from 'lucide-react';
 import ArchetypeRenderer from './ArchetypeRenderer';
 import BlockEditorModal from './BlockEditorModal';
 import SetPasswordModal from './SetPasswordModal';
@@ -457,46 +457,64 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
               </div>
 
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent">
-                <form onSubmit={handleSubmit} className="relative flex items-end">
+                <form onSubmit={handleSubmit} className="flex items-end gap-2">
                   <button 
                     type="button" 
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploadingMedia || isChatLoading} 
-                    className="absolute left-3 bottom-2 p-1.5 text-slate-400 hover:text-[var(--coral)] rounded-full disabled:opacity-50 transition-colors z-10"
+                    title="Geçmiş Konuşmalar"
+                    className="mb-0.5 p-2.5 bg-white text-slate-500 hover:text-[var(--coral)] rounded-full border border-slate-300 shadow-sm shrink-0 transition-colors"
                   >
-                    {isUploadingMedia ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
+                    <Archive className="w-5 h-5" />
                   </button>
-                  <input type="file" ref={fileInputRef} onChange={handleMediaUpload} accept="image/*,video/*" className="hidden" />
-                  
-                  <textarea
-                    value={input}
-                    onChange={(e) => {
-                      handleInputChange(e);
-                      e.target.style.height = 'auto';
-                      e.target.style.height = `${e.target.scrollHeight}px`;
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        if (input.trim() && !isChatLoading) {
-                          e.currentTarget.form?.requestSubmit();
+
+                  <div className="relative flex-1">
+                    <button 
+                      type="button" 
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingMedia || isChatLoading} 
+                      className="absolute left-3 bottom-2 p-1.5 text-slate-400 hover:text-[var(--coral)] rounded-full disabled:opacity-50 transition-colors z-10"
+                    >
+                      {isUploadingMedia ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
+                    </button>
+                    <input type="file" ref={fileInputRef} onChange={handleMediaUpload} accept="image/*,video/*" className="hidden" />
+                    
+                    <textarea
+                      value={input}
+                      onChange={(e) => {
+                        handleInputChange(e);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = `${e.target.scrollHeight}px`;
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          if (input.trim() && !isChatLoading) {
+                            e.currentTarget.form?.requestSubmit();
+                          }
                         }
-                      }
-                    }}
-                    rows={1}
-                    placeholder={t('agentInputPlaceholder')}
-                    className="w-full bg-white border border-slate-300 rounded-3xl pl-12 pr-12 py-3 text-sm focus:outline-none focus:border-[var(--coral)] focus:ring-1 focus:ring-[var(--coral)] shadow-sm resize-none overflow-hidden min-h-[46px] max-h-[150px]"
-                    style={{ maxHeight: '150px' }}
-                  />
-                  {isChatLoading ? (
-                    <button type="button" onClick={() => stop()} className="absolute right-2 bottom-1.5 p-2.5 bg-[var(--coral)] text-white rounded-lg transition-opacity">
-                      <Square className="w-3 h-3 fill-white" />
-                    </button>
-                  ) : (
-                    <button type="submit" disabled={!input.trim()} className="absolute right-2 bottom-1.5 p-2 bg-[var(--coral)] text-white rounded-full disabled:opacity-50 transition-opacity">
-                      <Send className="w-4 h-4" />
-                    </button>
-                  )}
+                      }}
+                      rows={1}
+                      placeholder={t('agentInputPlaceholder')}
+                      className="w-full bg-white border border-slate-300 rounded-3xl pl-12 pr-12 py-3 text-sm focus:outline-none focus:border-[var(--coral)] focus:ring-1 focus:ring-[var(--coral)] shadow-sm resize-none overflow-hidden min-h-[46px] max-h-[150px]"
+                      style={{ maxHeight: '150px' }}
+                    />
+                    {isChatLoading ? (
+                      <button type="button" onClick={() => stop()} className="absolute right-2 bottom-1.5 p-2.5 bg-[var(--coral)] text-white rounded-lg transition-opacity">
+                        <Square className="w-3 h-3 fill-white" />
+                      </button>
+                    ) : (
+                      <button type="submit" disabled={!input.trim()} className="absolute right-2 bottom-1.5 p-2 bg-[var(--coral)] text-white rounded-full disabled:opacity-50 transition-opacity">
+                        <Send className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <button 
+                    type="button"
+                    title="Yeni Sohbet"
+                    className="mb-0.5 p-2.5 bg-white text-slate-500 hover:text-[var(--coral)] rounded-full border border-slate-300 shadow-sm shrink-0 transition-colors"
+                  >
+                    <MessageSquarePlus className="w-5 h-5" />
+                  </button>
                 </form>
               </div>
             </div>
