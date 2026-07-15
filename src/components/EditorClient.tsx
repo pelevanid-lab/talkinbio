@@ -266,6 +266,25 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     }
   };
 
+  const handleLayoutModeChange = async (mode: 'website' | 'linktree') => {
+    const settingsBlock = blocks.find(b => b.type === 'settings');
+    try {
+      if (settingsBlock) {
+        const { error } = await supabase.from('blocks').update({ content: { ...settingsBlock.content, layoutMode: mode } }).eq('id', settingsBlock.id);
+        if (error) throw error;
+        setBlocks(blocks.map(b => b.id === settingsBlock.id ? { ...b, content: { ...b.content, layoutMode: mode } } : b));
+      } else {
+        const newBlock = { business_id: business.id, type: 'settings', title: 'Settings', content: { layoutMode: mode }, order: 99, is_visible: false };
+        const { data, error } = await supabase.from('blocks').insert(newBlock).select().single();
+        if (error) throw error;
+        setBlocks([...blocks, data]);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Sayfa görünümü kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
+    }
+  };
+
   const handlePageTitleSave = async () => {
     const trimmed = pageTitle.trim();
     const { error } = await supabase.from('businesses').update({ page_title: trimmed || null }).eq('id', business.id);
@@ -539,34 +558,14 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
               <div className="mb-6 p-4 bg-white rounded-xl shadow-sm border border-slate-200">
                 <h3 className="text-sm font-bold text-[var(--ink)] mb-3">{t('pageLayout')}</h3>
                 <div className="flex gap-2">
-                  <button 
-                    onClick={async () => {
-                      const settingsBlock = blocks.find(b => b.type === 'settings');
-                      if (settingsBlock) {
-                        setBlocks(blocks.map(b => b.id === settingsBlock.id ? { ...b, content: { ...b.content, layoutMode: 'website' } } : b));
-                        await supabase.from('blocks').update({ content: { ...settingsBlock.content, layoutMode: 'website' } }).eq('id', settingsBlock.id);
-                      } else {
-                        const newBlock = { business_id: business.id, type: 'settings', title: 'Settings', content: { layoutMode: 'website' }, order: 99, is_visible: false };
-                        setBlocks([...blocks, { id: 'temp-settings', ...newBlock }]);
-                        await supabase.from('blocks').insert(newBlock);
-                      }
-                    }}
+                  <button
+                    onClick={() => handleLayoutModeChange('website')}
                     className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border ${blocks.find(b => b.type === 'settings')?.content?.layoutMode !== 'linktree' ? 'bg-[var(--coral)] text-white border-[var(--coral)]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
                   >
                     Web Sitesi
                   </button>
-                  <button 
-                    onClick={async () => {
-                      const settingsBlock = blocks.find(b => b.type === 'settings');
-                      if (settingsBlock) {
-                        setBlocks(blocks.map(b => b.id === settingsBlock.id ? { ...b, content: { ...b.content, layoutMode: 'linktree' } } : b));
-                        await supabase.from('blocks').update({ content: { ...settingsBlock.content, layoutMode: 'linktree' } }).eq('id', settingsBlock.id);
-                      } else {
-                        const newBlock = { business_id: business.id, type: 'settings', title: 'Settings', content: { layoutMode: 'linktree' }, order: 99, is_visible: false };
-                        setBlocks([...blocks, { id: 'temp-settings', ...newBlock }]);
-                        await supabase.from('blocks').insert(newBlock);
-                      }
-                    }}
+                  <button
+                    onClick={() => handleLayoutModeChange('linktree')}
                     className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border ${blocks.find(b => b.type === 'settings')?.content?.layoutMode === 'linktree' ? 'bg-[var(--coral)] text-white border-[var(--coral)]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
                   >
                     Blok (Linktree)
