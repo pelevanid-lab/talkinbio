@@ -13,7 +13,11 @@ export const maxDuration = 300;
 
 export async function POST(req: Request) {
   try {
-    const { messages, businessId, locale = 'tr' } = await req.json();
+    const { messages, businessId, locale = 'tr', sessionId } = await req.json();
+
+    if (!sessionId) {
+      return new Response('Missing sessionId', { status: 400 });
+    }
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -47,8 +51,16 @@ export async function POST(req: Request) {
     // Persist the conversation so returning to this tab (or reloading the page) doesn't lose context.
     const lastUserMessage = messages[messages.length - 1];
     if (lastUserMessage && lastUserMessage.role === 'user') {
+      // Ensure the session exists
+      await supabase.from('setup_sessions').upsert({
+        id: sessionId,
+        business_id: businessId,
+        title: 'Sohbet' // We can update this dynamically later if needed
+      }, { onConflict: 'id' });
+
       await supabase.from('setup_messages').insert({
         business_id: businessId,
+        session_id: sessionId,
         role: 'user',
         content: lastUserMessage.content,
       });
@@ -421,8 +433,15 @@ export async function POST(req: Request) {
       },
       onFinish: async ({ text, toolCalls }) => {
         if (text) {
+          await supabase.from('setup_sessions').upsert({
+            id: sessionId,
+            business_id: businessId,
+            title: 'Sohbet'
+          }, { onConflict: 'id' });
+
           await supabase.from('setup_messages').insert({
             business_id: businessId,
+            session_id: sessionId,
             role: 'assistant',
             content: text,
           });

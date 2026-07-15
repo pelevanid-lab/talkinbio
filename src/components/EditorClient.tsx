@@ -13,8 +13,11 @@ import { RECOMMENDED_TYPES, hasRealContent, isRequiredSatisfied } from '@/config
 import { DEFAULT_THEME, Theme } from '@/config/archetypes';
 import { googleFontsHref } from '@/utils/googleFonts';
 
-export default function EditorClient({ business, initialBlocks, initialChatMessages }: { business: any, initialBlocks: any[], initialChatMessages?: any[] }) {
+export default function EditorClient({ business, initialBlocks, initialChatMessages, initialSessions }: { business: any, initialBlocks: any[], initialChatMessages?: any[], initialSessions?: any[] }) {
   const [blocks, setBlocks] = useState(initialBlocks);
+  const [sessions, setSessions] = useState<any[]>(initialSessions || []);
+  const [activeSessionId, setActiveSessionId] = useState(() => (initialSessions && initialSessions.length > 0) ? initialSessions[0].id : crypto.randomUUID());
+  const [showArchive, setShowArchive] = useState(false);
   const [theme, setTheme] = useState<Theme>(business.theme || DEFAULT_THEME);
   const [editingBlock, setEditingBlock] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -66,11 +69,12 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
 
   // Setup AI Agent — resumes from the persisted setup_messages history when there is one,
   // so returning to this tab (or reloading the page) doesn't lose the conversation's context.
-  const { messages, input, handleInputChange, handleSubmit, isLoading: isChatLoading, append, stop } = useChat({
+  // Setup AI Agent
+  const { messages, setMessages, input, handleInputChange, handleSubmit, isLoading: isChatLoading, append, stop } = useChat({
     api: '/api/setup-agent',
-    body: { businessId: business.id, locale },
+    body: { businessId: business.id, locale, sessionId: activeSessionId },
     initialMessages: initialChatMessages && initialChatMessages.length > 0
-      ? initialChatMessages.map((m) => ({ id: m.id, role: m.role, content: m.content }))
+      ? initialChatMessages.filter((m) => m.session_id === activeSessionId).map((m) => ({ id: m.id, role: m.role, content: m.content }))
       : [{ id: '1', role: 'assistant', content: t('aiWelcome', { name: business.name }) }],
     // Without this, a failed request (timeout, size limit, server error) just silently drops —
     // the loading dots disappear and nothing else happens, with no indication anything went wrong.
@@ -79,6 +83,25 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       alert('Mesaj gönderilirken bir hata oluştu. Çok uzun bir metin gönderdiyseniz, birkaç parçaya bölüp tekrar deneyin.');
     },
   });
+
+  const handleNewChat = () => {
+    const newId = crypto.randomUUID();
+    setActiveSessionId(newId);
+    setMessages([{ id: '1', role: 'assistant', content: t('aiWelcome', { name: business.name }) }]);
+    setSessions([{ id: newId, title: 'Yeni Sohbet', created_at: new Date().toISOString() }, ...sessions]);
+    setShowArchive(false);
+  };
+
+  const switchSession = async (sessionId: string) => {
+    setActiveSessionId(sessionId);
+    setShowArchive(false);
+    const { data } = await supabase.from('setup_messages').select('*').eq('session_id', sessionId).order('created_at', { ascending: true });
+    if (data && data.length > 0) {
+      setMessages(data.map((m: any) => ({ id: m.id, role: m.role, content: m.content })));
+    } else {
+      setMessages([{ id: '1', role: 'assistant', content: t('aiWelcome', { name: business.name }) }]);
+    }
+  };
 
   // Inject the AI-chosen Google Font pair (dynamic per business, so it can't be a static <link> in <head>).
   useEffect(() => {
@@ -433,7 +456,33 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
         </div>
 
         {/* Main Left Content */}
-        <div className="flex-1 overflow-y-auto bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto bg-slate-50/50 relative">
+          {showArchive && (
+            <div className="absolute inset-0 z-20 bg-white flex flex-col">
+              <div className="flex items-center justify-between p-4 border-b border-slate-200">
+                <h3 className="font-semibold text-slate-800">Geçmiş Konuşmalar</h3>
+                <button onClick={() => setShowArchive(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-500">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                {sessions.length === 0 ? (
+                  <div className="text-center text-slate-500 py-8 text-sm">Geçmiş konuşma bulunamadı.</div>
+                ) : (
+                  sessions.map(s => (
+                    <button
+                      key={s.id}
+                      onClick={() => switchSession(s.id)}
+                      className={`w-full text-left p-4 rounded-xl border transition-colors ${activeSessionId === s.id ? 'bg-[var(--coral-tint)] border-[var(--coral)] text-[var(--coral)]' : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'}`}
+                    >
+                      <div className="font-medium">{s.title || 'Sohbet'}</div>
+                      <div className="text-xs opacity-70 mt-1">{new Date(s.created_at).toLocaleString()}</div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
           {viewMode === 'chat' ? (
             <div className="flex flex-col h-full relative">
               <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
@@ -461,6 +510,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                   <button 
                     type="button" 
                     title="Geçmiş Konuşmalar"
+                    onClick={() => setShowArchive(true)}
                     className="mb-0.5 p-2.5 bg-white text-slate-500 hover:text-[var(--coral)] rounded-full border border-slate-300 shadow-sm shrink-0 transition-colors"
                   >
                     <Archive className="w-5 h-5" />
@@ -511,6 +561,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                   <button 
                     type="button"
                     title="Yeni Sohbet"
+                    onClick={handleNewChat}
                     className="mb-0.5 p-2.5 bg-white text-slate-500 hover:text-[var(--coral)] rounded-full border border-slate-300 shadow-sm shrink-0 transition-colors"
                   >
                     <MessageSquarePlus className="w-5 h-5" />
@@ -800,12 +851,12 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
         <div className="my-10 w-full max-w-[390px] rounded-[3rem] border-[12px] border-slate-800 bg-white shadow-2xl overflow-hidden flex flex-col relative h-[800px] shrink-0 mx-auto">
           
           {/* Mockup Notch */}
-          <div className="absolute top-0 inset-x-0 h-6 flex justify-center z-50">
+<div className="absolute top-0 inset-x-0 h-6 flex justify-center z-50">
             <div className="w-32 h-6 bg-slate-800 rounded-b-xl"></div>
           </div>
 
           {/* Top 70% Content Area */}
-          <div className="flex-1 overflow-y-auto pb-[30%] relative">
+          <div className="flex-1 flex flex-col relative overflow-hidden bg-slate-50">
             {/* Compact Header */}
             <div className="w-full pt-12 pb-4 px-4 flex justify-between items-center z-10 relative">
               <div className="flex items-center gap-1 min-w-0 max-w-[70%]">
