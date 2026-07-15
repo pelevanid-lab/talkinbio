@@ -6,8 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, X, MessageCircle, Bot, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
+import ReactMarkdown from 'react-markdown';
 
-export default function ChatWidget({ businessId, businessName, locale }: { businessId: string, businessName: string, locale: string }) {
+export default function ChatWidget({ businessId, businessName, locale, initialMessages = [] }: { businessId: string, businessName: string, locale: string, initialMessages?: any[] }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const t = useTranslations('ChatWidget');
@@ -15,7 +16,7 @@ export default function ChatWidget({ businessId, businessName, locale }: { busin
   const { messages, input, handleInputChange, handleSubmit, isLoading, append } = useChat({
     api: '/api/chat',
     body: { businessId, locale },
-    initialMessages: [
+    initialMessages: initialMessages.length > 0 ? initialMessages : [
       {
         id: 'welcome',
         role: 'assistant',
@@ -100,7 +101,18 @@ export default function ChatWidget({ businessId, businessName, locale }: { busin
                         {m.role === 'user' ? <User className="w-4 h-4" /> : <Image src="/saule-avatar-v1.png" alt="Saule" width={32} height={32} className="w-full h-full object-cover" />}
                       </div>
                       <div className={`px-4 py-3 rounded-2xl text-sm ${m.role === 'user' ? 'bg-[var(--ink)] text-white rounded-br-sm' : 'bg-white border border-[var(--border-light)] text-[var(--ink)] shadow-sm rounded-bl-sm'}`}>
-                        {m.content}
+                        {m.role === 'user' ? m.content : (
+                          <ReactMarkdown components={{
+                            p: ({node, ...props}) => <p className="mb-2 last:mb-0 leading-relaxed" {...props} />,
+                            ul: ({node, ...props}) => <ul className="list-disc pl-4 mb-2 last:mb-0" {...props} />,
+                            ol: ({node, ...props}) => <ol className="list-decimal pl-4 mb-2 last:mb-0" {...props} />,
+                            li: ({node, ...props}) => <li className="mb-1 last:mb-0" {...props} />,
+                            a: ({node, ...props}) => <a className="text-[var(--coral)] underline hover:text-orange-600 transition" target="_blank" rel="noreferrer" {...props} />,
+                            strong: ({node, ...props}) => <strong className="font-semibold text-[var(--ink)]" {...props} />
+                          }}>
+                            {m.content}
+                          </ReactMarkdown>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus } from 'lucide-react';
+import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Lightbulb } from 'lucide-react';
 import ArchetypeRenderer from './ArchetypeRenderer';
 import BlockEditorModal from './BlockEditorModal';
 import SetPasswordModal from './SetPasswordModal';
@@ -12,6 +12,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { RECOMMENDED_TYPES, hasRealContent, isRequiredSatisfied } from '@/config/blockTypes';
 import { DEFAULT_THEME, Theme } from '@/config/archetypes';
 import { googleFontsHref } from '@/utils/googleFonts';
+import { useBeiweSuggestions } from '@/hooks/useBeiweSuggestions';
 
 export default function EditorClient({ business, initialBlocks, initialChatMessages, initialSessions }: { business: any, initialBlocks: any[], initialChatMessages?: any[], initialSessions?: any[] }) {
   const [blocks, setBlocks] = useState(initialBlocks);
@@ -41,12 +42,14 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   const [contactMethods, setContactMethods] = useState<Record<string, { selected: boolean, value: string }>>(() =>
     Object.fromEntries(CONTACT_METHODS.map((m) => [m, { selected: m === 'email', value: '' }]))
   );
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const t = useTranslations('Editor');
   const locale = useLocale();
+  const suggestions = useBeiweSuggestions(blocks, business.category, contactValue);
 
   const hasContactValue = useMemo(() => {
     try {
@@ -75,19 +78,29 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     body: { businessId: business.id, locale, sessionId: activeSessionId },
     initialMessages: initialChatMessages && initialChatMessages.length > 0
       ? initialChatMessages.filter((m) => m.session_id === activeSessionId).map((m) => ({ id: m.id, role: m.role, content: m.content }))
-      : [{ id: '1', role: 'assistant', content: t('aiWelcome', { name: business.name }) }],
-    // Without this, a failed request (timeout, size limit, server error) just silently drops —
-    // the loading dots disappear and nothing else happens, with no indication anything went wrong.
+      : [],  // Boş başlıyor — Sayfa Durumu Kartı sahte mesaj yerine geçiyor
     onError: (error) => {
       console.error('Setup agent chat error:', error);
       alert('Mesaj gönderilirken bir hata oluştu. Çok uzun bir metin gönderdiyseniz, birkaç parçaya bölüp tekrar deneyin.');
     },
   });
 
+  const archiveCurrentAndNewSession = async () => {
+    if (activeSessionId) {
+      await supabase.from('setup_messages').insert({
+        business_id: business.id,
+        session_id: activeSessionId,
+        role: 'assistant',
+        content: '[Sistem: Bu oturumda manuel düzenleme yapıldı. Yeni sohbet başlatıldı.]'
+      });
+    }
+    handleNewChat();
+  };
+
   const handleNewChat = () => {
     const newId = crypto.randomUUID();
     setActiveSessionId(newId);
-    setMessages([{ id: '1', role: 'assistant', content: t('aiWelcome', { name: business.name }) }]);
+    setMessages([]);  // Tamamen boş — Sayfa Durumu Kartı devraliyor
     setSessions([{ id: newId, title: 'Yeni Sohbet', created_at: new Date().toISOString() }, ...sessions]);
     setShowArchive(false);
   };
@@ -224,6 +237,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   const handleSaveBlock = async (data: { title: string, content: any }) => {
     setIsSaving(true);
     try {
+      let updatedBlocks;
       if (editingBlock.isNew) {
         const nextOrder = blocks.reduce((max, b) => Math.max(max, b.order ?? 0), 0) + 1;
         const { data: newBlock, error } = await supabase.from('blocks').insert({
@@ -236,7 +250,8 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
         }).select().single();
         
         if (error) throw error;
-        setBlocks([...blocks, newBlock]);
+        updatedBlocks = [...blocks, newBlock];
+        setBlocks(updatedBlocks);
       } else {
         const { error } = await supabase.from('blocks').update({
           title: data.title,
@@ -244,9 +259,11 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
         }).eq('id', editingBlock.id);
         
         if (error) throw error;
-        setBlocks(blocks.map(b => b.id === editingBlock.id ? { ...b, title: data.title, content: data.content } : b));
+        updatedBlocks = blocks.map(b => b.id === editingBlock.id ? { ...b, title: data.title, content: data.content } : b);
+        setBlocks(updatedBlocks);
       }
       await markNeedsRepublish();
+      await archiveCurrentAndNewSession();
     } catch (err) {
       console.error(err);
       alert('Kaydedilirken hata oluştu.');
@@ -264,8 +281,10 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     setIsSaving(true);
     try {
       await supabase.from('blocks').delete().eq('id', editingBlock.id);
-      setBlocks(blocks.filter(b => b.id !== editingBlock.id));
+      const updatedBlocks = blocks.filter(b => b.id !== editingBlock.id);
+      setBlocks(updatedBlocks);
       await markNeedsRepublish();
+      await archiveCurrentAndNewSession();
     } catch (err) {
       console.error(err);
     } finally {
@@ -299,6 +318,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     setBlocks([...withNewOrder, ...others]);
     await Promise.all(withNewOrder.map((b) => supabase.from('blocks').update({ order: b.order }).eq('id', b.id)));
     await markNeedsRepublish();
+    await archiveCurrentAndNewSession();
   };
 
   const copyLink = () => {
@@ -350,6 +370,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       if (error) throw error;
       setBlocks(settingsBlock ? blocks.map(b => b.id === settingsBlock.id ? data : b) : [...blocks, data]);
       await markNeedsRepublish();
+      await archiveCurrentAndNewSession();
     } catch (err) {
       console.error(err);
       alert('Sayfa görünümü kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
@@ -421,12 +442,67 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
               <h1 className="text-xl font-bold font-bricolage text-[var(--ink)]">{t('panelTitle')}</h1>
               <LanguageSwitcher />
             </div>
-            <button
-              className="md:hidden p-2 bg-[var(--coral-tint)] text-[var(--coral)] rounded-lg font-medium text-sm flex items-center"
-              onClick={() => setShowMobilePreview(true)}
-            >
-              <Smartphone className="w-4 h-4 mr-1" /> {t('previewBtn')}
-            </button>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <button 
+                  onClick={() => setShowSuggestions(!showSuggestions)}
+                  className="p-2 bg-yellow-50 text-yellow-600 hover:bg-yellow-100 rounded-lg font-medium text-sm flex items-center relative transition-colors"
+                  title="Beiwe'den İpuçları"
+                >
+                  <Lightbulb className="w-5 h-5" />
+                  {suggestions.length > 0 && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+                  )}
+                </button>
+                {showSuggestions && (
+                  <div className="absolute top-full mt-2 -right-12 md:right-0 w-80 max-h-[400px] overflow-y-auto bg-white rounded-xl shadow-2xl border border-slate-200 z-[100] flex flex-col">
+                    <div className="p-3 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white/90 backdrop-blur-sm">
+                      <h3 className="font-bold text-sm text-[var(--ink)] flex items-center gap-1.5">
+                        <Lightbulb className="w-4 h-4 text-yellow-500" /> Beiwe'nin Notları
+                      </h3>
+                      <button onClick={() => setShowSuggestions(false)} className="text-slate-400 hover:text-slate-600">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="p-2 flex flex-col gap-1.5">
+                      {suggestions.length === 0 ? (
+                        <div className="p-4 text-center text-sm text-slate-500">
+                          🎉 Sayfanız şu an harika görünüyor! Başka bir tavsiyem yok.
+                        </div>
+                      ) : (
+                        suggestions.map((s) => (
+                          <button
+                            key={s.id}
+                            onClick={() => {
+                              setShowSuggestions(false);
+                              setViewMode('chat');
+                              append({ role: 'user', content: s.triggerMessage });
+                            }}
+                            className="text-left w-full p-3 rounded-lg border border-slate-100 hover:border-yellow-200 hover:bg-yellow-50 transition-colors flex items-start gap-3 group"
+                          >
+                            <span className="text-lg leading-none shrink-0">{s.icon}</span>
+                            <div>
+                              <p className="text-xs text-[var(--ink)] font-medium leading-relaxed group-hover:text-yellow-900">
+                                {s.message}
+                              </p>
+                              <span className="text-[10px] text-yellow-600 font-bold mt-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                ✦ Beiwe ile düzelt
+                              </span>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <button
+                className="md:hidden p-2 bg-[var(--coral-tint)] text-[var(--coral)] rounded-lg font-medium text-sm flex items-center"
+                onClick={() => setShowMobilePreview(true)}
+              >
+                <Smartphone className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Mode Switcher — along with the panel title/language switcher above, this is the only
@@ -486,10 +562,70 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
           {viewMode === 'chat' ? (
             <div className="flex flex-col h-full relative">
               <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
+                {/* Sayfa Durumu Kartı — sadece chat boşsa gösterilir */}
+                {messages.length === 0 && !isChatLoading && (() => {
+                  const trackedBlocks = [
+                    { type: 'about', label: 'Hakkımda' },
+                    { type: 'services', label: 'Hizmetler' },
+                    { type: 'hours', label: 'Çalışma Saat.' },
+                    { type: 'faq', label: 'S.S.S.' },
+                  ];
+                  const hasAnyContent = blocks.some(b => hasRealContent(b));
+                  const missingBlocks = trackedBlocks.filter(({ type }) => !blocks.find(b => b.type === type && hasRealContent(b)));
+                  const hasMissing = missingBlocks.length > 0 || !hasContactValue;
+
+                  return (
+                    <div className="rounded-2xl border border-[var(--coral)] bg-[var(--coral-tint)] p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold tracking-widest text-[var(--coral)] uppercase font-mono">
+                          📊 Sayfa Durumu
+                        </span>
+                        {hasAnyContent && (
+                          <span className="text-[10px] text-[var(--ink-soft)]">
+                            {trackedBlocks.length - missingBlocks.length + (hasContactValue ? 1 : 0)}/{trackedBlocks.length + 1} tamamlandı
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {trackedBlocks.map(({ type, label }) => {
+                          const done = !!blocks.find(b => b.type === type && hasRealContent(b));
+                          return (
+                            <span key={type} className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border ${done ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-[var(--ink-soft)] border-[rgba(20,35,31,0.15)]'}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${done ? 'bg-green-500' : 'bg-slate-300'}`} />
+                              {label}
+                            </span>
+                          );
+                        })}
+                        <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border ${hasContactValue ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-[var(--ink-soft)] border-[rgba(20,35,31,0.15)]'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${hasContactValue ? 'bg-green-500' : 'bg-slate-300'}`} />
+                          İletişim
+                        </span>
+                      </div>
+
+                      {hasMissing ? (
+                        <button
+                          onClick={() => append({ role: 'user', content: '__DEVAM__' })}
+                          disabled={isChatLoading}
+                          className="w-full mt-1 py-2 px-4 bg-[var(--coral)] text-white text-xs font-bold rounded-full hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          <span>✦</span> Beiwe ile devam et
+                        </button>
+                      ) : (
+                        <p className="text-xs text-green-700 font-medium text-center">
+                          🎉 Tüm temel bölümler tamamlandı! Beiwe'ye ekstra fikirler sorabilirsiniz.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {messages.map((m, idx) => (
                   <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${m.role === 'user' ? 'bg-[var(--ink)] text-white' : 'bg-white border border-slate-200 text-slate-800 shadow-sm'}`}>
-                      {m.content}
+                      {m.content === '__DEVAM__' ? (
+                        <span className="italic text-white/70 text-xs">Sayfamı analiz et...</span>
+                      ) : m.content}
                     </div>
                   </div>
                 ))}
@@ -561,7 +697,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                   <button 
                     type="button"
                     title="Yeni Sohbet"
-                    onClick={handleNewChat}
+                    onClick={() => handleNewChat()}
                     className="mb-0.5 p-2.5 bg-white text-slate-500 hover:text-[var(--coral)] rounded-full border border-slate-300 shadow-sm shrink-0 transition-colors"
                   >
                     <MessageSquarePlus className="w-5 h-5" />

@@ -51,11 +51,15 @@ export async function POST(req: Request) {
     // Persist the conversation so returning to this tab (or reloading the page) doesn't lose context.
     const lastUserMessage = messages[messages.length - 1];
     if (lastUserMessage && lastUserMessage.role === 'user') {
-      // Ensure the session exists
+      const meaningfulUserMsgs = messages.filter((m: any) => m.role === 'user' && m.content && m.content.length > 10 && m.content !== '__DEVAM__');
+      const sessionTitle = meaningfulUserMsgs.length > 0 
+        ? (meaningfulUserMsgs[0].content.length > 45 ? meaningfulUserMsgs[0].content.substring(0, 45).trim() + '...' : meaningfulUserMsgs[0].content)
+        : 'Sohbet';
+
       await supabase.from('setup_sessions').upsert({
         id: sessionId,
         business_id: businessId,
-        title: 'Sohbet' // We can update this dynamically later if needed
+        title: sessionTitle
       }, { onConflict: 'id' });
 
       await supabase.from('setup_messages').insert({
@@ -81,7 +85,25 @@ export async function POST(req: Request) {
     ].join('\n');
 
     const systemPrompt = `
-      Sen Talkinbio'nun 'Kurulum Asistanı'sın. Amacın, işletme sahibiyle sohbet ederek public profil sayfasını oluşturmak.
+      Sen Beiwe'sin — Talkinbio'nun kurulum asistanı. Amacın, işletme sahibiyle sohbet ederek onların public profil sayfasını birlikte oluşturmak.
+      
+      Beiwe hakkında:
+      - Tutum: Her zaman cesaretlendirici, profesyonel ama samimi bir tasarım danışmanı.
+      - Yasaklar: "Size nasıl yardımcı olabilirim", "Tabii ki, hemen yapıyorum", "Anladım", "Bir yapay zeka olarak..." gibi jenerik AI cümleleri kurmak kesinlikle yasak.
+      - Tepkiler: Bir bölüm tamamlandığında kısa bir takdir cümlesi kur ("Harika bir Hakkımda yazısı oldu!"), boş bir bölüm gördüğünde merak uyandır.
+      - Odak: Müşteriyi asla tek bir mesajda birden fazla bölümle veya peş peşe 3-4 soruyla boğma. Tek tek, adım adım ilerle.
+      Asla jenerik bir karşılama yapma — bunun yerine sayfanın mevcut durumuna bakarak proaktif bir öneri veya soru ile başla.
+      
+      ÖNEMLİ — İlk mesajda ne yapmalısın:
+      Eğer sayfa boşsa: İşletmenin adını ve kategorisini bilerek "Merhaba! Şimdi ${business?.category || 'işletmeniz'} için bir profil oluşturalım. Başlamak için işletmenizi birkaç cümleyle anlatın — ne yapıyorsunuz, kime hizmet ediyorsunuz?" gibi yönlendirici bir soruyla başla.
+      Eğer bloklar zaten varsa ama eksikler mevcutsa: Hangi bölümlerin eksik olduğunu doğrudan belirt ve kaldığın yerden devam et. "Hakkımda bölümünüz hazır görünüyor, ancak henüz çalışma saatleriniz ve iletişim bilgileriniz eksik — bunları ekleyelim mi?" gibi.
+      
+      ÖZEL TETİKLEYİCİ: Kullanıcı sana tam olarak "__DEVAM__" gönderirse, bu "Sayfa Durumu Kartı"ndaki butona bastığı anlamına gelir — sana bakmana veya devam etmene izin veriyor. Bu durumda:
+      1. "Merhaba" veya tanışma cümlesi YAZMA — zaten konuşma bağlamı var.
+      2. Yukarıdaki Mevcut Sayfa Blokları'nı ve Yayına Hazırlık Durumu'nu oku.
+      3. Hangi bölümlerin eksik olduğunu net bir şekilde belirt, en önemli eksikten başla ve o konuda soru sor.
+      4. Maksimum 2 cümle ile odaklı başla — "Sayfanıza baktım. X bölümünüz eksik, birkaç soruyla tamamlayalım: [soru]" gibi.
+
       Kullanıcı işletmesini anlattıkça, arka planda araçları (tools) kullanarak sayfayı güncellemelisin.
       
       Mevcut Sayfa Blokları:
@@ -120,7 +142,7 @@ export async function POST(req: Request) {
 
     const result = await streamText({
       model: getModel(),
-      maxSteps: 16,
+      maxSteps: 20,
       maxTokens: 8192,
       system: systemPrompt,
       messages,
@@ -435,9 +457,8 @@ export async function POST(req: Request) {
         if (text) {
           await supabase.from('setup_sessions').upsert({
             id: sessionId,
-            business_id: businessId,
-            title: 'Sohbet'
-          }, { onConflict: 'id' });
+            business_id: businessId
+          }, { onConflict: 'id', ignoreDuplicates: true });
 
           await supabase.from('setup_messages').insert({
             business_id: businessId,

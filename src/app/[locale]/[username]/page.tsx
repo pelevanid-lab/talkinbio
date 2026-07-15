@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
 import ChatWidget from '@/components/ChatWidget';
 import ProfilePageBody from '@/components/ProfilePageBody';
 import { createClient } from '@/utils/supabase/server';
@@ -63,6 +64,34 @@ export default async function BusinessProfilePage({ params }: any) {
 
   const theme = business.theme || DEFAULT_THEME;
 
+  // 3. Fetch past conversation if visitor_session_id exists
+  let initialMessages: any[] = [];
+  try {
+    const cookieStore = await cookies();
+    const visitorSessionId = cookieStore.get('visitor_session_id')?.value;
+    if (visitorSessionId) {
+      const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+      const supabaseAdmin = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+      const { data: conv } = await supabaseAdmin
+        .from('conversations')
+        .select('messages(id, role, content, created_at)')
+        .eq('business_id', business.id)
+        .eq('visitor_session_id', visitorSessionId)
+        .single();
+      
+      if (conv?.messages) {
+        initialMessages = conv.messages
+          .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+          .map((m: any) => ({ id: m.id, role: m.role, content: m.content }));
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load past messages', err);
+  }
+
   return (
     <div className="flex flex-col min-h-[100dvh] relative">
       <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -93,7 +122,7 @@ export default async function BusinessProfilePage({ params }: any) {
       {/* Bottom 30% Chat Widget */}
       <div className="fixed bottom-0 left-0 right-0 h-[30dvh] bg-transparent z-50 pointer-events-none">
         <div className="max-w-md mx-auto w-full h-full relative pointer-events-auto">
-          <ChatWidget businessId={business.id} businessName={business.name} locale={locale} />
+          <ChatWidget businessId={business.id} businessName={business.name} locale={locale} initialMessages={initialMessages} />
         </div>
       </div>
     </div>
