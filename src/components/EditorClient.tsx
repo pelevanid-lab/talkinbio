@@ -32,6 +32,11 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   const [needsRepublish, setNeedsRepublish] = useState<boolean>(business.needs_republish || false);
   const [previewActiveBlockId, setPreviewActiveBlockId] = useState<string | null>(null);
   const [contactValue, setContactValue] = useState<string | null>(business.contact_value || null);
+  const [isEditingContact, setIsEditingContact] = useState(false);
+  const CONTACT_METHODS = ['whatsapp', 'instagram', 'email', 'telegram'] as const;
+  const [contactMethods, setContactMethods] = useState<Record<string, { selected: boolean, value: string }>>(() =>
+    Object.fromEntries(CONTACT_METHODS.map((m) => [m, { selected: m === 'email', value: '' }]))
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -247,8 +252,8 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     setDraggedBlockId(null);
     if (!fromId || fromId === overId) return;
 
-    const visible = blocks.filter(b => b.type !== 'settings');
-    const others = blocks.filter(b => b.type === 'settings');
+    const visible = blocks.filter(b => b.type !== 'settings' && b.type !== 'contact');
+    const others = blocks.filter(b => b.type === 'settings' || b.type === 'contact');
     const fromIdx = visible.findIndex(b => b.id === fromId);
     const toIdx = visible.findIndex(b => b.id === overId);
     if (fromIdx === -1 || toIdx === -1) return;
@@ -326,6 +331,40 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       setPageTitle(trimmed);
       setIsEditingPageTitle(false);
       await markNeedsRepublish();
+    }
+  };
+
+  // Reads the current business.contact_method/contact_value into the checkbox+input form shape,
+  // then opens the editor — done on open (not on mount) so it always reflects the latest value
+  // even if the AI chat updated it via updateContact since the page loaded.
+  const openContactEditor = () => {
+    let parsedValues: Record<string, string> = {};
+    try { parsedValues = contactValue ? JSON.parse(contactValue) : {}; } catch { parsedValues = {}; }
+    const selectedKeys = (business.contact_method || '').split(',').filter(Boolean);
+    setContactMethods(Object.fromEntries(CONTACT_METHODS.map((m) => [
+      m,
+      { selected: m === 'email' || selectedKeys.includes(m), value: parsedValues[m] || '' }
+    ])));
+    setIsEditingContact(true);
+  };
+
+  const handleContactSave = async () => {
+    const mergedValues = Object.fromEntries(Object.entries(contactMethods).map(([k, v]) => [k, v.value]));
+    const contactMethod = Object.entries(contactMethods)
+      .filter(([, v]) => v.selected && v.value.trim())
+      .map(([k]) => k)
+      .join(',');
+    const nextContactValue = JSON.stringify(mergedValues);
+    try {
+      const { error } = await supabase.from('businesses').update({ contact_method: contactMethod, contact_value: nextContactValue }).eq('id', business.id);
+      if (error) throw error;
+      business.contact_method = contactMethod;
+      setContactValue(nextContactValue);
+      setIsEditingContact(false);
+      await markNeedsRepublish();
+    } catch (err) {
+      console.error(err);
+      alert('İletişim bilgileri kaydedilirken hata oluştu.');
     }
   };
 
@@ -447,6 +486,62 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
               ) : (
                 <div className="text-sm font-medium text-[var(--ink)]">
                   {pageTitle || business.name}
+                </div>
+              )}
+            </div>
+
+            {/* Contact methods — the single source of truth also used by request-access and the
+                setup agent's updateContact tool; not a reorderable page block. */}
+            <div className="mt-3 bg-slate-50 rounded-xl p-3 border border-slate-200">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs font-medium text-slate-500">{t('blocks.contact')}</span>
+                {isEditingContact ? (
+                  <button onClick={handleContactSave} className="text-xs font-bold text-[var(--teal)] hover:text-teal-700">{t('saveBtn')}</button>
+                ) : (
+                  <button onClick={openContactEditor} className="text-xs font-medium text-slate-500 hover:text-[var(--coral)] flex items-center">
+                    <Edit2 className="w-3 h-3 mr-1" /> {t('editBtn')}
+                  </button>
+                )}
+              </div>
+              {isEditingContact ? (
+                <div className="space-y-2">
+                  {CONTACT_METHODS.map((method) => {
+                    const isEmail = method === 'email';
+                    return (
+                      <div key={method} className="p-2 bg-white border border-slate-200 rounded-lg">
+                        <div className="flex items-center">
+                          {isEmail ? (
+                            <span className="text-xs font-medium text-[var(--ink)]">
+                              {t(`contactMethods.${method}`)} <span className="text-[var(--coral)]">*</span>
+                            </span>
+                          ) : (
+                            <label className="flex items-center text-xs font-medium text-[var(--ink)] cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={contactMethods[method].selected}
+                                onChange={(e) => setContactMethods({ ...contactMethods, [method]: { ...contactMethods[method], selected: e.target.checked } })}
+                                className="mr-1.5 accent-[var(--coral)]"
+                              />
+                              {t(`contactMethods.${method}`)}
+                            </label>
+                          )}
+                        </div>
+                        {(isEmail || contactMethods[method].selected) && (
+                          <input
+                            type={isEmail ? 'email' : 'text'}
+                            value={contactMethods[method].value}
+                            onChange={(e) => setContactMethods({ ...contactMethods, [method]: { ...contactMethods[method], value: e.target.value } })}
+                            placeholder={t(`contactMethodPlaceholders.${method}`)}
+                            className="w-full mt-1 p-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-[var(--coral)]"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-sm font-medium text-[var(--ink)]">
+                  {(business.contact_method || '').split(',').filter(Boolean).map((m: string) => t(`contactMethods.${m}`)).join(', ') || t('noContent')}
                 </div>
               )}
             </div>
@@ -616,8 +711,8 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
               <h3 className="font-medium text-[var(--ink)]">{t('manualTitle')}</h3>
               <p className="text-xs text-slate-500 mb-4">{t('manualDesc')}</p>
               
-              {blocks.filter(b => b.type !== 'settings').length === 0 && <p className="text-sm text-slate-500">{t('noContent')}</p>}
-              {blocks.filter(b => b.type !== 'settings').map(b => (
+              {blocks.filter(b => b.type !== 'settings' && b.type !== 'contact').length === 0 && <p className="text-sm text-slate-500">{t('noContent')}</p>}
+              {blocks.filter(b => b.type !== 'settings' && b.type !== 'contact').map(b => (
                 <div
                   key={b.id}
                   draggable
@@ -649,7 +744,6 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                   <button onClick={() => createNewBlock('services', t('blocks.services'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.services')}</button>
                   <button onClick={() => createNewBlock('faq', t('blocks.faq'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.faq')}</button>
                   <button onClick={() => createNewBlock('hours', t('blocks.hours'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.hours')}</button>
-                  <button onClick={() => createNewBlock('contact', t('blocks.contact'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.contact')}</button>
                   <button onClick={() => createNewBlock('links', t('blocks.links'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.links')}</button>
                   <button onClick={() => createNewBlock('custom', t('blocks.custom'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.custom')}</button>
                 </div>

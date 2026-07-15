@@ -112,17 +112,18 @@
       "title": "Как с вами связаться?",
       "desc": "Как ваши клиенты должны связываться с вами со страницы?",
       "methodsLabel": "Способы связи (можно выбрать несколько)",
+      "emailRequiredNote": "Email обязателен.",
       "methods": {
-        "whatsapp": "WhatsApp",
-        "phone": "Телефонный звонок",
+        "whatsapp": "Телефон и WhatsApp",
         "instagram": "Instagram DM",
-        "email": "Email"
+        "email": "Email",
+        "telegram": "Telegram"
       },
       "placeholders": {
         "whatsapp": "Например: +7 9XX XXX XX XX",
-        "phone": "Например: +7 9XX XXX XX XX",
         "instagram": "Например: @username",
-        "email": "Например: hello@company.com"
+        "email": "Например: hello@company.com",
+        "telegram": "Например: @username"
       }
     },
     "step3": {
@@ -148,6 +149,18 @@
     "tabManual": "Тонкая настройка",
     "profileLink": "Ссылка на ваш профиль",
     "pageTitle": "Заголовок страницы (необязательно)",
+    "contactMethods": {
+      "whatsapp": "Телефон и WhatsApp",
+      "instagram": "Instagram DM",
+      "email": "Email",
+      "telegram": "Telegram"
+    },
+    "contactMethodPlaceholders": {
+      "whatsapp": "Например: +7 9XX XXX XX XX",
+      "instagram": "Например: @username",
+      "email": "Например: hello@company.com",
+      "telegram": "Например: @username"
+    },
     "editBtn": "Изменить",
     "saveBtn": "Сохранить",
     "bulkTitle": "Массовая загрузка данных",

@@ -389,10 +389,10 @@ export async function POST(req: Request) {
           }
         }),
         updateContact: tool({
-          description: "İşletmenin iletişim yöntemlerini (WhatsApp, telefon, Instagram, e-posta) günceller. Bu bir blok değil, işletmenin genel ayarıdır.",
+          description: "İşletmenin iletişim yöntemlerini (WhatsApp/Telefon, Instagram, e-posta, Telegram) günceller. Bu bir blok değil, işletmenin genel ayarıdır.",
           parameters: z.object({
             items: z.array(z.object({
-              method: z.enum(['whatsapp', 'phone', 'instagram', 'email']),
+              method: z.enum(['whatsapp', 'instagram', 'email', 'telegram']).describe("'whatsapp': hem telefon araması hem WhatsApp için kullanılan tek numara."),
               value: z.string()
             }))
           }),

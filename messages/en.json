@@ -104,17 +104,18 @@
       "title": "How to get in touch?",
       "desc": "How should your customers contact you from your page?",
       "methodsLabel": "Contact Methods (You can select multiple)",
+      "emailRequiredNote": "Email is required.",
       "methods": {
-        "whatsapp": "WhatsApp",
-        "phone": "Phone Call",
+        "whatsapp": "Phone & WhatsApp",
         "instagram": "Instagram DM",
-        "email": "Email"
+        "email": "Email",
+        "telegram": "Telegram"
       },
       "placeholders": {
         "whatsapp": "Ex: +1 5XX XXX XX XX",
-        "phone": "Ex: +1 5XX XXX XX XX",
         "instagram": "Ex: @username",
-        "email": "Ex: hello@company.com"
+        "email": "Ex: hello@company.com",
+        "telegram": "Ex: @username"
       }
     },
     "step3": {
@@ -140,6 +141,18 @@
     "tabManual": "Fine Tuning",
     "profileLink": "Your Profile Link",
     "pageTitle": "Page Title (optional)",
+    "contactMethods": {
+      "whatsapp": "Phone & WhatsApp",
+      "instagram": "Instagram DM",
+      "email": "Email",
+      "telegram": "Telegram"
+    },
+    "contactMethodPlaceholders": {
+      "whatsapp": "Ex: +1 5XX XXX XX XX",
+      "instagram": "Ex: @username",
+      "email": "Ex: hello@company.com",
+      "telegram": "Ex: @username"
+    },
     "editBtn": "Edit",
     "saveBtn": "Save",
     "bulkTitle": "Bulk Data Upload",

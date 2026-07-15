@@ -33,9 +33,9 @@ export default function RequestAccessPage() {
     accountEmail: '',
     contacts: {
       whatsapp: { selected: true, value: '' },
-      phone: { selected: false, value: '' },
       instagram: { selected: false, value: '' },
-      email: { selected: false, value: '' },
+      email: { selected: true, value: '' },
+      telegram: { selected: false, value: '' },
     }
   });
 
@@ -175,44 +175,54 @@ export default function RequestAccessPage() {
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 600 }}>{t('step2.methodsLabel')}</label>
                   
                   {(Object.keys(formData.contacts) as Array<keyof typeof formData.contacts>).map((method) => {
+                    const isEmail = method === 'email';
                     return (
-                      <div key={method} style={{ 
-                        display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', 
-                        border: '0.5px solid var(--border)', borderRadius: '12px', background: 'var(--paper)' 
+                      <div key={method} style={{
+                        display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px',
+                        border: '0.5px solid var(--border)', borderRadius: '12px', background: 'var(--paper)'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center' }}>
-                          <input
-                            type="checkbox"
-                            id={`contact-${method}`}
-                            checked={formData.contacts[method].selected}
-                            onChange={(e) => setFormData({
-                              ...formData, 
-                              contacts: { 
-                                ...formData.contacts, 
-                                [method]: { ...formData.contacts[method], selected: e.target.checked } 
-                              }
-                            })}
-                            style={{ width: '18px', height: '18px', accentColor: 'var(--coral)' }}
-                          />
-                          <label htmlFor={`contact-${method}`} style={{ marginLeft: '10px', fontSize: '15px', fontWeight: 500, cursor: 'pointer' }}>
-                            {t(`step2.methods.${method}`)}
-                          </label>
+                          {isEmail ? (
+                            <label style={{ fontSize: '15px', fontWeight: 500 }}>
+                              {t(`step2.methods.${method}`)} <span style={{ color: 'var(--coral)' }}>*</span>
+                            </label>
+                          ) : (
+                            <>
+                              <input
+                                type="checkbox"
+                                id={`contact-${method}`}
+                                checked={formData.contacts[method].selected}
+                                onChange={(e) => setFormData({
+                                  ...formData,
+                                  contacts: {
+                                    ...formData.contacts,
+                                    [method]: { ...formData.contacts[method], selected: e.target.checked }
+                                  }
+                                })}
+                                style={{ width: '18px', height: '18px', accentColor: 'var(--coral)' }}
+                              />
+                              <label htmlFor={`contact-${method}`} style={{ marginLeft: '10px', fontSize: '15px', fontWeight: 500, cursor: 'pointer' }}>
+                                {t(`step2.methods.${method}`)}
+                              </label>
+                            </>
+                          )}
                         </div>
-                        
-                        {formData.contacts[method].selected && (
-                          <div style={{ marginLeft: '28px' }}>
-                            <input 
-                              type={method === 'email' ? 'email' : 'text'}
+
+                        {(isEmail || formData.contacts[method].selected) && (
+                          <div style={{ marginLeft: isEmail ? 0 : '28px' }}>
+                            <input
+                              type={isEmail ? 'email' : 'text'}
+                              required={isEmail}
                               value={formData.contacts[method].value}
                               onChange={(e) => setFormData({
-                                ...formData, 
-                                contacts: { 
-                                  ...formData.contacts, 
-                                  [method]: { ...formData.contacts[method], value: e.target.value } 
+                                ...formData,
+                                contacts: {
+                                  ...formData.contacts,
+                                  [method]: { ...formData.contacts[method], value: e.target.value }
                                 }
                               })}
-                              style={{ 
-                                width: '100%', padding: '10px 14px', border: '0.5px solid var(--border)', 
+                              style={{
+                                width: '100%', padding: '10px 14px', border: '0.5px solid var(--border)',
                                 borderRadius: '8px', background: 'var(--paper-raised)', outline: 'none',
                                 fontFamily: 'inherit', fontSize: '14px'
                               }}
@@ -275,11 +285,11 @@ export default function RequestAccessPage() {
                     {t('nav.next')}
                   </button>
                 ) : (
-                  <button 
+                  <button
                     onClick={submitForm}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !formData.contacts.email.value}
                     className="btn btn-primary"
-                    style={{ opacity: isSubmitting ? 0.5 : 1, padding: '10px 24px' }}
+                    style={{ opacity: (isSubmitting || !formData.contacts.email.value) ? 0.5 : 1, padding: '10px 24px' }}
                   >
                     {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                     {isSubmitting ? t('nav.submitting') : t('nav.submit')}

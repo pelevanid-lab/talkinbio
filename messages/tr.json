@@ -104,17 +104,18 @@
       "title": "Nasıl İletişim Kurulacak?",
       "desc": "Müşterileriniz sizinle sayfadan nasıl iletişime geçsin?",
       "methodsLabel": "İletişim Yöntemleri (Birden fazla seçebilirsiniz)",
+      "emailRequiredNote": "E-posta zorunludur.",
       "methods": {
-        "whatsapp": "WhatsApp",
-        "phone": "Telefon Araması",
+        "whatsapp": "Telefon & WhatsApp",
         "instagram": "Instagram DM",
-        "email": "E-posta"
+        "email": "E-posta",
+        "telegram": "Telegram"
       },
       "placeholders": {
         "whatsapp": "Örn: +90 5XX XXX XX XX",
-        "phone": "Örn: +90 5XX XXX XX XX",
         "instagram": "Örn: @kullaniciadi",
-        "email": "Örn: iletisim@sirket.com"
+        "email": "Örn: iletisim@sirket.com",
+        "telegram": "Örn: @kullaniciadi"
       }
     },
     "step3": {
@@ -140,6 +141,18 @@
     "tabManual": "İnce Ayar",
     "profileLink": "Profil Bağlantınız",
     "pageTitle": "Sayfa Başlığı (opsiyonel)",
+    "contactMethods": {
+      "whatsapp": "Telefon & WhatsApp",
+      "instagram": "Instagram DM",
+      "email": "E-posta",
+      "telegram": "Telegram"
+    },
+    "contactMethodPlaceholders": {
+      "whatsapp": "Örn: +90 5XX XXX XX XX",
+      "instagram": "Örn: @kullaniciadi",
+      "email": "Örn: iletisim@sirket.com",
+      "telegram": "Örn: @kullaniciadi"
+    },
     "editBtn": "Düzenle",
     "saveBtn": "Kaydet",
     "bulkTitle": "Toplu Veri Yükleme",

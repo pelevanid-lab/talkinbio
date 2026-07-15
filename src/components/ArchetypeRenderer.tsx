@@ -812,7 +812,6 @@ const BLOCK_RENDERERS: Record<string, (block: any, ctx: RenderCtx) => React.Reac
   gallery: renderGallery,
   testimonials: renderTestimonials,
   links: renderLinks,
-  contact: renderTextBlock,
   custom: renderTextBlock,
 };
 
@@ -865,7 +864,9 @@ export default function ArchetypeRenderer({
     }
   }, [theme]);
 
-  const visibleBlocks = blocks.filter(b => b.type !== 'settings' && b.is_visible !== false);
+  // 'contact' is retired as a content block — contact methods live on business.contact_method/
+  // contact_value (edited in the dashboard's fixed "İletişim" section), never as page content.
+  const visibleBlocks = blocks.filter(b => b.type !== 'settings' && b.type !== 'contact' && b.is_visible !== false);
 
   const styleVars = useMemo(() => {
     return {
