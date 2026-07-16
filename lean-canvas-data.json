@@ -1,78 +1,69 @@
 {
   "problem": [
-    "Küçük işletmeler ve serbest çalışanlar için profesyonel web sitesi oluşturmak çok pahalı ve teknik bilgi gerektiriyor",
-    "Linktree gibi mevcut 'link in bio' araçları statik, kişiselleştirilmemiş ve etkileşimsiz",
-    "İşletmeler form doldurma süreçlerinde yüksek terk oranları yaşıyor ve potansiyel müşterilerle anlamlı etkileşim kuramıyor"
+    "Küçük işletmeler ve serbest çalışanlar bio linklerine trafik alıyor ama bu trafik ölü: Linktree tarzı sayfalar statik, soru soramıyor, randevu alamıyor, lead toplayamıyor.",
+    "Ziyaretçilerin soruları (fiyat, uygunluk, \"grup mu bireysel mi?\") cevapsız kalınca DM'e düşüyor; işletme sahibi mesajlara yetişemiyor, potansiyel müşteri kaçıyor.",
+    "Formlar yüksek terk oranıyla çalışıyor; ziyaretçi form doldurmak yerine soru sormak istiyor."
   ],
   "existingAlternatives": [
-    "Linktree, Bio.fm gibi basit link toplama araçları",
-    "WordPress, Wix gibi geleneksel web sitesi oluşturucular",
-    "Manuel form doldurma ve statik iletişim sayfaları"
+    "Linktree, Bio.fm gibi statik link toplama araçları (ücretsiz ama etkileşimsiz)",
+    "DM/WhatsApp üzerinden manuel cevaplama (ölçeklenmiyor, geç cevap = kayıp müşteri)",
+    "Intercom, Tidio gibi chatbot widget'ları (kurumsal, pahalı, web sitesi gerektiriyor — bio ekosistemine yabancı)"
   ],
   "solution": [
-    "Yapay zeka destekli sohbet arayüzü ile dakikalar içinde profesyonel profil oluşturma",
-    "Ziyaretçilerle 7/24 etkileşimli sohbet, otomatik randevu alma ve lead toplama sistemi",
-    "Kod bilgisi gerektirmeyen, konuşarak yönetilebilen akıllı mikro web sitesi"
+    "Bio linkine konan, işletme adına 7/24 konuşan yapay zeka asistanı: soruları cevaplar, randevu alır, lead toplar.",
+    "Kurulum sohbetle: işletme sahibi Beiwe ile konuşur, Beiwe hizmetleri yapılandırılmış olarak toplar (hizmet türü, grup/bireysel, süre, fiyat, kontenjan) — asistan uydurmaz, sadece doğrulanmış bilgiyi söyler.",
+    "Asistanın etrafında otomatik oluşan mini profil sayfası (site, ürünün kendisi değil ambalajı)."
   ],
   "keyMetrics": [
     "Aylık aktif işletme sayısı (MAU)",
     "Ziyaretçi-Saule etkileşim oranı ve sohbet başına ortalama mesaj sayısı",
     "Lead dönüşüm oranı (ziyaretçiden forma)",
     "Aylık yinelenen gelir (MRR) ve müşteri yaşam boyu değeri (LTV)",
-    "Müşteri edinme maliyeti (CAC) ve churn oranı"
+    "Kredi başına gerçekleşen API maliyeti (hedef: sohbet ≤$0,02, Beiwe çarpanlarının doğrulanması) — ilk 100 kullanıcıda haftalık takip",
+    "Saule/Beiwe kredi tüketim oranı (kullanıcılar krediyi neye harcıyor?)",
+    "Devir bakiyesi toplamı (kredi borcu riski takibi)",
+    "Kurulum tamamlama, ilk lead'e süre, sohbet→lead dönüşümü, kredi tükenme oranı, MRR, churn"
   ],
-  "uniqueValueProposition": "Formlar yerine sohbet: Yapay zeka kurulum asistanınız Beiwe ile konuşarak 5 dakikada profesyonel işletme sayfanız hazır. Ziyaretçileriniz de Saule ile sohbet ederek randevu alır, bilgi edinir.",
-  "highLevelConcept": "[\"İşletme profilleri için 'Intercom + Linktree' veya 'Sohbet eden Carrd'\"]",
-  "unfairAdvantage": "[\"Saule'nin doğal dil işleme yetenekleri ve işletmeye özel öğrenme kapasitesi, kullanıcı deneyimini sürekli iyileştiren veri modeli, erken pazara giriş avantajı\"]",
+  "uniqueValueProposition": "Bio linkin artık cevap veriyor.\" Linktree ziyaretçiye liste gösterir; Saule ziyaretçiyle konuşur, sorusunu cevaplar ve onu randevuya/lead'e dönüştürür. 5 dakikada, kod yazmadan, konuşarak kurulur.",
+  "highLevelConcept": "Linktree + resepsiyonist\" — ya da : \"Bio'ndaki 7/24 çalışan asistanın.\"",
+  "unfairAdvantage": "Her Saule profili altında \"Saule ile konuşuyorsunuz\" imzası — müşterinizin her ziyaretçisi sizin de potansiyel müşteriniz. Ürün kullanıldıkça kendini pazarlar; bu, reklam bütçesiyle satın alınamaz.",
   "channels": [
-    "Instagram, TikTok ve LinkedIn'de küçük işletme sahiplerine yönelik içerik pazarlaması",
-    "Freelancer ve girişimci toplulukları (Facebook grupları, Discord sunucuları)",
-    "SEO odaklı blog içerikleri ('link in bio alternatifleri', 'yapay zeka ile web sitesi')",
-    "Influencer ve mikro-influencer ortaklıkları",
-    "Product Hunt ve Hacker News gibi erken benimseyici platformlar",
-    "Google Ads ve Meta Ads (hedefli kampanyalar)"
+    "Ana kama: Ürün içi viral döngü (\"Saule ile yapıldı\") + niş topluluklar (koç/eğitmen Facebook grupları, Discord)",
+    "Product Hunt lansmanı (erken benimseyici dalgası için)",
+    "SEO: \"Linktree alternatifi\", \"konuşan bio linki\" içerikleri",
+    "Ücretli reklam yok (LTV/CAC kanıtlanana kadar)"
   ],
   "customerSegments": [
-    "Serbest çalışanlar (freelancer, danışman, koç, eğitmen)",
-    "Küçük işletme sahipleri (kuaför, kafe, butik, yerel hizmet sağlayıcılar)",
-    "İçerik üreticileri ve influencer'lar",
-    "Etkinlik organizatörleri ve topluluk yöneticileri",
-    "Yeni başlayan girişimciler ve yan gelir arayanlar"
+    "Randevu bazlı çalışan profesyoneller (koç, terapist, eğitmen, güzellik uzmanı) — birincil kama",
+    "Serbest çalışanlar ve danışmanlar",
+    "Küçük yerel işletmeler (kuaför, butik, kafe)",
+    "İçerik üreticileri ve mikro-influencer'lar"
   ],
   "earlyAdopters": [
-    "Sosyal medyada aktif olan, 25-40 yaş arası, teknolojiye açık serbest çalışanlar",
-    "Dijital varlığını güçlendirmek isteyen ancak teknik bilgisi olmayan küçük işletme sahipleri",
-    "Hızlı çözüm arayan, yeni araçları denemeye istekli, bütçesi sınırlı girişimciler",
-    "Müşteri etkileşimini artırmak isteyen, randevu bazlı çalışan profesyoneller (koç, terapist, güzellik uzmanı)"
+    "Instagram/TikTok'tan müşteri kazanan, DM yükünden bunalan, randevuyla çalışan 25–40 yaş profesyoneller",
+    "Halihazırda Linktree kullanan ama \"statik\" bulanlar",
+    "Uliana profili: hizmet çeşitleri (grup/bireysel) hakkında sürekli aynı soruları alan eğitmenler"
   ],
   "costStructure": [
-    "Vercel hosting ve altyapı maliyetleri",
-    "OpenAI API kullanım maliyetleri (Saule için)",
-    "Supabase veritabanı ve depolama ücretleri",
-    "Stripe ödeme işlem komisyonları",
-    "Pazarlama ve reklam harcamaları (Google Ads, Meta Ads)",
-    "Müşteri destek ve operasyon maliyetleri",
-    "Yazılım geliştirme ve bakım giderleri"
+    "Claude API: Sonnet 4.5 (Saule sohbetleri + Beiwe standart görevler), Sonnet 5 (sadece Beiwe ağır görevleri) — kredi çarpanlarıyla tavanlanmış, plan başına ≤ fiyatın %50'si",
+    "İlk kurulum API maliyeti (kredisiz onboarding) → müşteri edinme maliyetine (CAC) yazılır",
+    "Vercel + Supabase altyapı, Stripe (~%3), topluluk odaklı pazarlama, geliştirme/destek"
   ],
   "revenueStreams": [
-    "Aylık abonelik planları (Temel: ₺99, Pro: ₺249, İşletme: ₺499)",
-    "Yıllık abonelik indirimleri (%20-30 indirim)",
-    "Premium özellikler için ek ücretler (özel domain, gelişmiş analitik, beyaz etiket)",
-    "Kurumsal müşteriler için özel fiyatlandırma ve çoklu hesap yönetimi",
-    "Affiliate/referans programı komisyonları"
+    "Starter $9 → 200 kredi",
+    "Pro $29 → 700 kredi",
+    "Business $79 → 1.800 kredi",
+    "Ek kredi paketi: $5 → 100 kredi (birim fiyatı planlardan biraz pahalı — plana yükseltmeyi teşvik eder)",
+    "Kredi devri: Kullanılmayan krediler sonraki aya devreder (bakiye tavanı: 2 aylık kota)",
+    "Kredi tükenince asistan kapanmaz: \"mesaj bırakın\" moduna geçer, lead toplamaya devam eder — ziyaretçi asla duvara çarpmaz, işletme sahibi yükseltmeye nazikçe itilir",
+    "Yıllık ödemede %20 indirim",
+    "Kredi tüketimi şeffaf: Saule sohbeti 1, Beiwe güncellemesi 3, Beiwe sayfa oluşturma 10 kredi — panelde her zaman görünür"
   ],
   "_locks": [
-    "problem",
-    "solution",
-    "uniqueValueProposition",
-    "unfairAdvantage",
     "customerSegments",
-    "existingAlternatives",
     "keyMetrics",
     "highLevelConcept",
-    "channels",
-    "earlyAdopters",
-    "costStructure",
-    "revenueStreams"
+    "revenueStreams",
+    "costStructure"
   ]
 }
