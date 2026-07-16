@@ -16,7 +16,7 @@ import {
 const elevatorPitch = {
   tr: `Instagram veya WhatsApp'tan müşteri alan her hizmet sahibinin ortak bir sorunu var: DM'ler çoğalıyor, takip edilemiyor ve lead'ler kayboluyor.
 
-talkinbio, bu sorunu çözen konuşan bir bio sayfasıdır. Saule — yapay zeka destekli müşteri hizmetleri asistanınız — sayfanızı ziyaret eden her potansiyel müşteriyle 7/24 konuşur, randevu toplar ve lead listesi oluşturur. Beiwe ise tüm bu veriyi haftalık içerik önerisine ve pazarlama içgörüsüne dönüştürür.
+talkinbio, bu sorunu çözen konuşan bio sayfasıdır. Saule — yapay zeka destekli müşteri hizmetleri asistanınız — sayfanızı ziyaret eden her potansiyel müşteriyle 7/24 konuşur, randevu toplar ve lead listesi oluşturur. Beiwe ise tüm bu veriyi haftalık içerik önerisine ve pazarlama içgörüsüne dönüştürür.
 
 Sonuç: işletme sahibi uyurken, sayfası çalışır.`,
   en: `Every service provider who gets clients through Instagram or WhatsApp shares the same problem: DMs pile up, follow-ups slip through, and leads are lost.
