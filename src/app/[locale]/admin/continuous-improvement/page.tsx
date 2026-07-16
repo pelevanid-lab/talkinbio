@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Play, Edit2, Trash2, Wand2, Save, X, Loader2 } from 'lucide-react';
+import { Play, Edit2, Trash2, Wand2, Save, X, Loader2, Lock, Unlock } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 
 interface LeanCanvasData {
@@ -17,6 +17,7 @@ interface LeanCanvasData {
   earlyAdopters: string[];
   costStructure: string[];
   revenueStreams: string[];
+  _locks?: string[];
 }
 
 export default function LeanCanvasPage() {
@@ -56,8 +57,8 @@ export default function LeanCanvasPage() {
     }
   };
 
-  const handleFieldAction = async (field: keyof LeanCanvasData, action: 'update' | 'regenerate', value?: any) => {
-    setFieldLoading(field);
+  const handleFieldAction = async (field: keyof LeanCanvasData, action: 'update' | 'regenerate' | 'toggleLock', value?: any) => {
+    if (action !== 'toggleLock') setFieldLoading(field);
     try {
       const res = await fetch('/api/admin/lean-canvas', {
         method: 'PUT',
@@ -70,7 +71,7 @@ export default function LeanCanvasPage() {
     } catch (err: any) {
       setError(err.message);
     } finally {
-      setFieldLoading(null);
+      if (action !== 'toggleLock') setFieldLoading(null);
       setEditingField(null);
     }
   };
@@ -114,15 +115,19 @@ export default function LeanCanvasPage() {
     const isLoading = fieldLoading === field;
     const val = data[field];
     const hasData = isArray ? (val as string[])?.length > 0 : !!val;
+    const isLocked = data._locks?.includes(field) || false;
 
     return (
       <div className="p-4 flex-1 flex flex-col group relative">
         <div className="flex justify-between items-start mb-2">
-          <div>
+          <div className="flex gap-2 items-center">
             <h3 className="font-bold text-slate-900 leading-tight">{title}</h3>
-            <p className="text-xs text-slate-500">{desc}</p>
+            {isLocked && <Lock className="w-4 h-4 text-blue-500" />}
           </div>
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button onClick={() => handleFieldAction(field, 'toggleLock')} title={isLocked ? "Kilidi Aç" : "Kilitle (Tüm kanvası doldururken sabit kalır)"} className={`p-1.5 rounded-md transition ${isLocked ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' : 'text-slate-600 hover:bg-slate-100'}`} disabled={isLoading}>
+              {isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+            </button>
             <button onClick={() => handleFieldAction(field, 'regenerate')} title="Yapay Zeka ile Yeniden Oluştur" className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition disabled:opacity-50" disabled={isLoading}>
               <Wand2 className="w-4 h-4" />
             </button>
@@ -135,7 +140,9 @@ export default function LeanCanvasPage() {
           </div>
         </div>
 
-        <div className="mt-2 flex-1 relative">
+        <p className="text-xs text-slate-500 mb-2">{desc}</p>
+
+        <div className="flex-1 relative">
           {isLoading ? (
             <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
               <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />

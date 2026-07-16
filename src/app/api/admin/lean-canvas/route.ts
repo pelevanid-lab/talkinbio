@@ -69,6 +69,19 @@ export async function POST(req: Request) {
       schema: leanCanvasSchema,
       prompt: systemPrompt,
     });
+    
+    const currentData = await readData() || {};
+    const lockedFields = currentData._locks || [];
+    
+    // Preserve locked fields
+    for (const field of lockedFields) {
+      if (currentData[field] !== undefined) {
+        (object as any)[field] = currentData[field];
+      }
+    }
+    
+    (object as any)._locks = lockedFields;
+    
     await writeData(object);
     return NextResponse.json(object);
   } catch (error: any) {
@@ -84,6 +97,17 @@ export async function PUT(req: Request) {
     const body = await req.json();
     const { field, action, value } = body;
     let currentData = await readData() || {};
+
+    if (action === 'toggleLock') {
+      currentData._locks = currentData._locks || [];
+      if (currentData._locks.includes(field)) {
+        currentData._locks = currentData._locks.filter((f: string) => f !== field);
+      } else {
+        currentData._locks.push(field);
+      }
+      await writeData(currentData);
+      return NextResponse.json(currentData);
+    }
 
     if (action === 'update') {
       currentData[field] = value;
