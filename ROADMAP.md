@@ -270,6 +270,13 @@ overengineering yapmadan, iki ucuz tasarım kuralıyla garanti altına alıyoruz
 "yeniden yazma" değil "paketleme" olur.
 
 ### 2.2 AI SDK güncellemesi (`ai` v3 → güncel major)
+- **Bloke edici bug (Faz 0 testinde bulundu):** `ai@3.4.33` çekirdeği, `streamText`'e
+  `temperature` verilmese bile `prepareCallSettings` içinde otomatik `temperature: 0`
+  enjekte ediyor (`node_modules/ai/dist/index.js:1245`). `claude-sonnet-5` bu parametreyi
+  değeri ne olursa olsun reddediyor ("`temperature` is deprecated for this model", 400).
+  Eski SDK'da bunu atlamanın yolu yok — bu yüzden `.env.local`'da `AI_MODEL` geçici olarak
+  `claude-sonnet-4-5-20250929`'a sabitlendi. **`claude-sonnet-5`'e geçiş bu SDK güncellemesini
+  bekliyor**; güncelleme sonrası tekrar denenmeli.
 - `streamText`/`tool`/`useChat` API'leri major sürümlerde değişti — migration rehberi
   takip edilerek yapılır; refactor'la aynı PR'da olmasın (ayrı, önce SDK sonra modül taşıma).
 - Kazanımlar: `@ts-ignore`'lu Zod tip uyumsuzlukları çözülür, daha iyi tool-streaming,

@@ -55,16 +55,18 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
         {isExpanded && (
           <>
             {/* Backdrop */}
-            <motion.div 
+            <motion.div
+              key="chat-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={toggleExpand}
               className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[60]"
             />
-            
+
             {/* Sheet */}
             <motion.div
+              key="chat-sheet"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
