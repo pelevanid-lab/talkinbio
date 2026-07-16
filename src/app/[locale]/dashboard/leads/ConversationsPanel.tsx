@@ -11,6 +11,7 @@ type ConversationRow = {
   visitor_session_id: string;
   last_message_at: string | null;
   is_read: boolean;
+  is_preview: boolean;
   created_at: string;
 };
 
@@ -121,9 +122,14 @@ export default function ConversationsPanel({
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-semibold text-[#14231F] truncate">
-                  {leadName || `Ziyaretçi #${c.visitor_session_id.slice(-6)}`}
+                  {c.is_preview ? 'Test Konuşması' : (leadName || `Ziyaretçi #${c.visitor_session_id.slice(-6)}`)}
                 </span>
-                {!isRead && <span className="w-2 h-2 rounded-full bg-[#FF6A5C] shrink-0" />}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {c.is_preview && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500">Test</span>
+                  )}
+                  {!isRead && <span className="w-2 h-2 rounded-full bg-[#FF6A5C]" />}
+                </div>
               </div>
               <p className="text-xs text-[#8A8880] mt-1 font-mono">
                 {c.last_message_at

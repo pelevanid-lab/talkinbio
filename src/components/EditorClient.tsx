@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Lightbulb } from 'lucide-react';
 import ArchetypeRenderer from './ArchetypeRenderer';
+import ChatWidget from './ChatWidget';
 import BlockEditorModal from './BlockEditorModal';
 import SetPasswordModal from './SetPasswordModal';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -1056,30 +1057,17 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
             </div>
           </div>
 
-          {/* Bottom 30% Chat Mockup */}
-          <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-transparent flex flex-col justify-end p-4 z-50 pointer-events-none">
-            <div className="w-full bg-white border border-[var(--border-light)] rounded-2xl shadow-lg p-4 flex items-center justify-between mb-4 transform transition pointer-events-auto">
-              <div className="flex items-center space-x-3 overflow-hidden">
-                <div className="w-10 h-10 bg-[var(--coral-tint)] rounded-full flex items-center justify-center text-[var(--coral)] flex-shrink-0">
-                  <div className="w-5 h-5 bg-[var(--coral)] rounded-full" />
-                </div>
-                <div className="truncate">
-                  <p className="text-xs text-[var(--teal)] font-medium mb-0.5">{business.name} {t('assistantSuffix')}</p>
-                  <p className="text-sm text-[var(--ink)] truncate">{t('assistantGreeting')}</p>
-                </div>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-[var(--paper)] flex items-center justify-center flex-shrink-0 text-[var(--ink-soft)]">
-                <div className="w-4 h-4 bg-[var(--ink-soft)] rounded-full" />
-              </div>
-            </div>
-            
-            <div className="w-full pl-4 pr-12 py-3.5 bg-[var(--paper)] border border-[var(--border-light)] rounded-full text-sm text-[var(--muted)] relative pointer-events-auto">
-              {t('chatPlaceholder')}
-              <div className="absolute right-1.5 top-1 w-10 h-10 bg-[var(--coral)] rounded-full flex items-center justify-center">
-                <div className="w-3 h-3 border-t-2 border-r-2 border-white transform rotate-45 mr-1" />
-              </div>
-            </div>
-          </div>
+          {/* Bottom 30% — real Saule, live (Faz 1.7): owner can test their own assistant without publishing.
+              Preview conversations are flagged is_preview so they never trigger lead emails or mix with real visitors. */}
+          <ChatWidget
+            variant="inline"
+            preview
+            businessId={business.id}
+            businessName={business.name}
+            locale={locale}
+            initialMessages={[]}
+            customGreeting={business.saule_settings?.customGreetingEnabled ? business.saule_settings?.customGreeting : null}
+          />
         </div>
       </div>
 

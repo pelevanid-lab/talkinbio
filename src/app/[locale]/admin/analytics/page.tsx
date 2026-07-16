@@ -22,7 +22,7 @@ export default async function AdminAnalyticsPage() {
   let demoStats: { conversationCount: number; messageCount: number; requestCount: number; conversionRate: number } | null = null;
   if (demoBusinessId) {
     const [{ data: demoConversations }, { count: requestCount }] = await Promise.all([
-      supabaseAdmin.from('conversations').select('id').eq('business_id', demoBusinessId),
+      supabaseAdmin.from('conversations').select('id').eq('business_id', demoBusinessId).eq('is_preview', false),
       supabaseAdmin.from('onboarding_requests').select('id', { count: 'exact', head: true }).eq('source', 'saule'),
     ]);
     const conversationIds = (demoConversations || []).map(c => c.id);

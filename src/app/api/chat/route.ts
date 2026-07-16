@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { Resend } from 'resend';
 import { isConversationActive } from '@/utils/conversationWindow';
+import { createClient as createServerSupabase } from '@/utils/supabase/server';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -13,7 +14,7 @@ const DEMO_MESSAGE_CAP = 30; // Faz 1.6: landing demosu için geçici, cömert o
 
 export async function POST(req: Request) {
   try {
-    const { messages, businessId, locale, newConversation } = await req.json();
+    const { messages, businessId, locale, newConversation, preview } = await req.json();
     const localeNames: Record<string, string> = { tr: 'Türkçe', en: 'İngilizce', ru: 'Rusça' };
     const localeName = localeNames[locale] || null;
 
@@ -46,6 +47,18 @@ export async function POST(req: Request) {
     }
 
     const isDemoBusiness = !!process.env.TALKINBIO_BUSINESS_ID && businessId === process.env.TALKINBIO_BUSINESS_ID;
+
+    // Faz 1.7: editor önizlemesi — yalnızca işletmenin sahibi, kendi işletmesi için preview isteyebilir.
+    let isPreview = false;
+    if (preview) {
+      const supabaseAuth = await createServerSupabase();
+      const { data: { user } } = await supabaseAuth.auth.getUser();
+      if (!user || user.id !== businessData.data.owner_id) {
+        return new Response('Preview not allowed', { status: 403 });
+      }
+      isPreview = true;
+    }
+    const conversationKey = isPreview ? `preview:${businessId}` : visitorSessionId;
 
     const sauleSettings = businessData.data.saule_settings || {};
     const tone = {
@@ -104,15 +117,16 @@ export async function POST(req: Request) {
       ${handoffInstruction}
     `;
 
-    // Find the visitor's most recent conversation; reuse it only if it's still
-    // "active" (last activity within 7 days) and the visitor didn't ask for a fresh one.
+    // Find the most recent conversation for this key; reuse it only if it's still
+    // "active" (last activity within 7 days) and a fresh one wasn't requested.
+    // Preview (Faz 1.7) uses a distinct key so the owner's test chat never mixes with real visitor conversations.
     let conversationId;
     if (!newConversation) {
       const { data: convData } = await supabaseAdmin
         .from('conversations')
         .select('id, last_message_at, created_at')
         .eq('business_id', businessId)
-        .eq('visitor_session_id', visitorSessionId)
+        .eq('visitor_session_id', conversationKey)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -125,7 +139,7 @@ export async function POST(req: Request) {
     if (!conversationId) {
       const { data: newConv } = await supabaseAdmin
         .from('conversations')
-        .insert({ business_id: businessId, visitor_session_id: visitorSessionId })
+        .insert({ business_id: businessId, visitor_session_id: conversationKey, is_preview: isPreview })
         .select('id')
         .single();
       conversationId = newConv?.id;
@@ -249,8 +263,8 @@ export async function POST(req: Request) {
               return { success: false, message: "Kayıt sırasında bir hata oluştu." };
             }
 
-            // Send email via Resend
-            if (process.env.RESEND_API_KEY && contactValues.email) {
+            // Send email via Resend (skipped for editor preview test conversations — Faz 1.7)
+            if (!isPreview && process.env.RESEND_API_KEY && contactValues.email) {
               try {
                 const resend = new Resend(process.env.RESEND_API_KEY);
                 await resend.emails.send({

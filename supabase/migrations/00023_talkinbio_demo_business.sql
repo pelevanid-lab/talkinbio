@@ -1,12 +1,11 @@
 -- Faz 1.6: reserved "talkinbio" demo business — on the landing page, Saule answers on
 -- Talkinbio's own behalf (dogfooding: the phone mockup's chat is the real product, not a screenshot).
 -- Fixed id so the app can reference it via the TALKINBIO_BUSINESS_ID env var without a lookup.
--- Owner is resolved by email so we don't need to know the auth.users UUID ahead of time; if that
--- account doesn't exist yet, the business is created with a null owner (fix later via SQL/dashboard).
+-- Owner is Enes's real Supabase Auth account (enespehlivan@live.com), confirmed via auth.users.
 insert into public.businesses (id, owner_id, username, name, category, contact_method, contact_value, primary_language, is_published, saule_settings)
 select
   '11111111-1111-1111-1111-111111111111'::uuid,
-  (select id from auth.users where email = 'enes@talkinbio.com' limit 1),
+  '51ace037-2985-4351-b82b-fe4a85f6469a'::uuid,
   'talkinbio',
   'Talkinbio',
   'SaaS / Dijital Asistan',
@@ -50,7 +49,7 @@ select '11111111-1111-1111-1111-111111111111'::uuid, 'services', 'Neler Yapabili
         "ru": {"title": "Заявки и контакты", "description": "Собирает данные заинтересованных клиентов — вам остаётся только связаться с ними."}
       },
       {
-        "tr": {"title": "Kolay Yönetim Paneli", "description": "İçeriğinizi ve Saule'nin bildiklerini dakikalar içinde güncelleyin."},
+        "tr": {"title": "Kolay Yönetim Paneli", "description": "İçeriğinizi ve Saule''nin bildiklerini dakikalar içinde güncelleyin."},
         "en": {"title": "Easy Management Panel", "description": "Update your content and what Saule knows in minutes."},
         "ru": {"title": "Простая панель управления", "description": "Обновляйте контент и знания Saule за считанные минуты."}
       }

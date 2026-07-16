@@ -8,7 +8,7 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 
-export default function ChatWidget({ businessId, businessName, locale, initialMessages = [], customGreeting, variant = 'sheet' }: { businessId: string, businessName: string, locale: string, initialMessages?: any[], customGreeting?: string | null, variant?: 'sheet' | 'inline' }) {
+export default function ChatWidget({ businessId, businessName, locale, initialMessages = [], customGreeting, variant = 'sheet', preview = false }: { businessId: string, businessName: string, locale: string, initialMessages?: any[], customGreeting?: string | null, variant?: 'sheet' | 'inline', preview?: boolean }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const t = useTranslations('ChatWidget');
@@ -23,7 +23,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, append, setMessages } = useChat({
     api: '/api/chat',
-    body: { businessId, locale },
+    body: { businessId, locale, preview },
     initialMessages: initialMessages.length > 0 ? initialMessages : [welcomeMessage()]
   });
 
@@ -191,6 +191,9 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
                     <Send className="w-4 h-4 ml-0.5" />
                   </button>
                 </form>
+                <p className="text-center text-[10px] text-[var(--muted)] mt-2">
+                  {t('signature')} — <a href="https://talkinbio.com/?utm_source=widget&utm_medium=signature&utm_campaign=saule_signature" target="_blank" rel="noreferrer" className="underline hover:text-[var(--coral)]">talkinbio.com</a>
+                </p>
               </div>
             </motion.div>
           </>

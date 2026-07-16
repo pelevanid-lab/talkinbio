@@ -198,6 +198,7 @@
     "online": "Online",
     "placeholder": "Type a message...",
     "defaultPreview": "How can I help you?",
-    "newChat": "New chat"
+    "newChat": "New chat",
+    "signature": "You're chatting with Saule"
   }
 }
