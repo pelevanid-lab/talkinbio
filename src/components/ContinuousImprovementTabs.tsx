@@ -2,12 +2,13 @@
 
 import { usePathname } from 'next/navigation';
 import { Link } from '@/i18n/routing';
-import { LayoutGrid, TrendingUp, Map } from 'lucide-react';
+import { LayoutGrid, TrendingUp, Map, Mic } from 'lucide-react';
 
 const tabs = [
   { label: 'Yalın Kanvas', href: '/admin/continuous-improvement', icon: LayoutGrid },
-  { label: 'Fermi Tahmini V.1', href: '/admin/continuous-improvement/fermi-estimation', icon: TrendingUp },
+  { label: 'Fermi Tahmini', href: '/admin/continuous-improvement/fermi-estimation', icon: TrendingUp },
   { label: 'Çekim Gücü Yol Haritası', href: '/admin/continuous-improvement/traction-roadmap', icon: Map },
+  { label: 'Yalın Satış Konuşması', href: '/admin/continuous-improvement/lean-pitch', icon: Mic },
 ];
 
 export default function ContinuousImprovementTabs() {
