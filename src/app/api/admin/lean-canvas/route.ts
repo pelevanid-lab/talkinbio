@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server';
-import { generateObject, generateText } from 'ai';
+import { generateObject } from 'ai';
 import { z } from 'zod';
 import { getModel } from '@/utils/ai';
 import { cookies } from 'next/headers';
-import fs from 'fs/promises';
-import path from 'path';
+import { supabaseAdmin } from '@/utils/supabase/admin';
 
 export const maxDuration = 60;
-
-const DATA_FILE = path.join(process.cwd(), 'lean-canvas-data.json');
 
 const leanCanvasSchema = z.object({
   problem: z.array(z.string()).describe('Müşterilerin en büyük 3 sorunu'),
@@ -26,13 +23,16 @@ const leanCanvasSchema = z.object({
 });
 
 const systemPrompt = `
-  Sen kıdemli bir iş stratejisti ve ürün yöneticisi yapay zekasın. Görevin, mevcut "Talkinbio" projesi için bir Yalın Kanvas (Lean Canvas) modeli oluşturmaktır.
-  Talkinbio Hakkında Bilgi:
-  - Talkinbio, işletmelerin karmaşık formlar yerine sohbet tabanlı bir yapay zeka asistanı aracılığıyla profillerini oluşturup yönetebildikleri bir "Link in Bio" ve mikro web sitesi platformudur.
-  - İşletmeler sisteme üye olur ve "Saule" adlı bir yapay zeka asistanı onlarla röportaj yaparak işletmelerine özel bir sayfa oluşturur.
-  - Müşterilerin ziyaretçileri bu sayfayı ziyaret ettiğinde yine Saule ile sohbet edebilir, randevu alabilir, lead formları bırakabilir ve işletme hakkında bilgi alabilirler.
-  - Teknoloji: Next.js, Tailwind, Supabase, Stripe abonelikleri, Vercel AI SDK.
-  Lütfen bu proje için çok gerçekçi, hedefe odaklı ve mantıklı bir Yalın Kanvas tablosu doldur. İçerik tamamen Türkçe olmalı ve verilen veri yapısına tam olarak uymalıdır.
+  Sen kıdemli bir iş stratejisti ve ürün yöneticisi yapay zekasın. Görevin, "Talkinbio" projesi için Yalın Kanvas (Lean Canvas) içeriği üretmek.
+
+  Talkinbio hakkında GERÇEK durum (uydurma, buna sadık kal):
+  - Talkinbio, işletmelerin sohbet tabanlı yapay zeka asistanıyla profil sayfası kurup yönettiği bir "Link in Bio" platformudur.
+  - İki agent var: "Beiwe" işletme sahibiyle röportaj yaparak sayfayı kurar (bloklar, 3 dilde içerik, özgün tema); "Saule" public sayfada ziyaretçilerle konuşur, soruları yalnızca işletmenin doğrulanmış verisinden cevaplar, lead toplar.
+  - Randevu bugün "talep" düzeyinde (takvim entegrasyonu v2 planı). Saule'nin WhatsApp/Instagram DM kanallarına taşınması v2 planı.
+  - Teknoloji: Next.js, Tailwind, Supabase, Vercel AI SDK (Claude modelleri). Ödeme entegrasyonu HENÜZ YOK; kredi bazlı fiyatlandırma modeli planlandı (iyzico/Stripe kararı açık).
+  - Bu kanvas ekibin koduna yol gösteren canlı bir belgedir: henüz kodda olmayan planları yazabilirsin ama parantez içinde işaretle, örn. "(v2)" veya "(Faz 1'de eklenecek)".
+
+  İçerik tamamen Türkçe olmalı ve verilen veri yapısına tam uymalıdır.
 `;
 
 async function checkAuth() {
@@ -42,22 +42,31 @@ async function checkAuth() {
 }
 
 async function readData() {
-  try {
-    const data = await fs.readFile(DATA_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch (e) {
-    return null;
-  }
+  const { data, error } = await supabaseAdmin
+    .from('lean_canvas')
+    .select('data')
+    .eq('id', 1)
+    .maybeSingle();
+  if (error) throw new Error(`Kanvas okunamadı: ${error.message}`);
+  return data?.data || null;
 }
 
 async function writeData(data: any) {
-  await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  const { error } = await supabaseAdmin
+    .from('lean_canvas')
+    .upsert({ id: 1, data, updated_at: new Date().toISOString() });
+  if (error) throw new Error(`Kanvas kaydedilemedi: ${error.message}`);
 }
 
 export async function GET(req: Request) {
   if (!(await checkAuth())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const data = await readData();
-  return NextResponse.json(data || {});
+  try {
+    const data = await readData();
+    return NextResponse.json(data || {});
+  } catch (error: any) {
+    console.error('Lean Canvas GET API Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {
@@ -69,19 +78,19 @@ export async function POST(req: Request) {
       schema: leanCanvasSchema,
       prompt: systemPrompt,
     });
-    
-    const currentData = await readData() || {};
+
+    const currentData = (await readData()) || {};
     const lockedFields = currentData._locks || [];
-    
+
     // Preserve locked fields
     for (const field of lockedFields) {
       if (currentData[field] !== undefined) {
         (object as any)[field] = currentData[field];
       }
     }
-    
+
     (object as any)._locks = lockedFields;
-    
+
     await writeData(object);
     return NextResponse.json(object);
   } catch (error: any) {
@@ -96,7 +105,7 @@ export async function PUT(req: Request) {
   try {
     const body = await req.json();
     const { field, action, value } = body;
-    let currentData = await readData() || {};
+    const currentData = (await readData()) || {};
 
     if (action === 'toggleLock') {
       currentData._locks = currentData._locks || [];
@@ -113,8 +122,8 @@ export async function PUT(req: Request) {
       currentData[field] = value;
       await writeData(currentData);
       return NextResponse.json(currentData);
-    } 
-    
+    }
+
     if (action === 'regenerate') {
       // Regenerate a single field based on the schema using AI
       const fieldDescriptions: Record<string, string> = {
@@ -134,7 +143,11 @@ export async function PUT(req: Request) {
 
       const isArrayType = ['problem', 'existingAlternatives', 'solution', 'keyMetrics', 'channels', 'customerSegments', 'earlyAdopters', 'costStructure', 'revenueStreams'].includes(field);
 
-      const promptString = systemPrompt + `\n\nŞu anda sadece Yalın Kanvas içindeki "${field}" alanını oluşturmanı istiyorum. Bu alanın açıklaması şudur: ` + fieldDescriptions[field];
+      // Feed the rest of the canvas in so a single regenerated field stays coherent with it.
+      const { _locks, ...contextData } = currentData;
+      const promptString = systemPrompt
+        + `\n\nMevcut kanvasın geri kalanı (tutarlı kal):\n${JSON.stringify(contextData, null, 1)}`
+        + `\n\nŞu anda SADECE "${field}" alanını yeniden üret. Bu alanın açıklaması: ${fieldDescriptions[field]}`;
 
       let generatedValue: any;
       if (isArrayType) {

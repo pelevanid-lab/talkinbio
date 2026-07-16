@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Lean canvas artık Supabase lean_canvas tablosunda yaşıyor (admin > Sürekli Gelişim)
+lean-canvas-data.json

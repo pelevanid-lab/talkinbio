@@ -5,6 +5,11 @@
 > evrilecek; **Saule** web widget'ından gerçek sosyal medya kanallarına (WhatsApp → Instagram)
 > taşınacak müşteri hizmetleri agent'ı.
 >
+> **Pusula belge:** Ürün stratejisinin tek kaynağı, admin panelindeki Yalın Kanvas'tır
+> (Admin > Sürekli Gelişim; Supabase `lean_canvas` tablosu). Bu yol haritasındaki her faz
+> kanvasla tutarlı olmalı; bir plan kanvasla çelişirse ya plan ya kanvas güncellenir —
+> sessizce ıraksamaya izin verilmez.
+>
 > Kapsam kararı (2026-07-16): Meta entegrasyonları (WhatsApp + Instagram DM) **v2'ye alındı**.
 > v1, mevcut `ig.me`/`wa.me` handoff köprüsü + landing'de canlı Saule demosu + Beiwe'nin
 > marketing agent'a ilk evrimi ile satışa çıkar. Meta başvuru evrakları (Business
@@ -97,7 +102,7 @@ oturum "DB'deki en yeni oturum" seçildiği için eski konuşma geri geliyor. Ay
 ### 1.1 Konuşma transkripti ekranı (en öncelikli eksik)
 Sahip, Saule'nin müşterilerle ne konuştuğunu görebilmeli.
 
-**Migration `00017_conversation_metadata.sql`:**
+**Migration `00019_conversation_metadata.sql`** (00017-00018'i lean canvas aldı)**:**
 ```sql
 alter table conversations add column last_message_at timestamptz;
 alter table conversations add column is_read boolean default false;   -- sahip için okundu bilgisi
@@ -132,7 +137,7 @@ assistant mesajı enjekte edebilir.
 Sahipler Saule'ye sayfada yazmayan şeyler öğretebilmeli (iptal politikası,
 kampanya kuralları, "şu soruya şöyle cevap ver").
 
-**Migration `00018_saule_knowledge.sql`:**
+**Migration `00020_saule_knowledge.sql`:**
 ```sql
 create table saule_knowledge (
   id uuid primary key default uuid_generate_v4(),
@@ -162,7 +167,7 @@ sistemdeki bir işletme kaydı olur ve mevcut akış aynen kullanılır.
 
 **Kurulum:**
 - Rezerve `talkinbio` username'iyle özel bir business kaydı (seed migration
-  `00019_talkinbio_demo_business.sql`; ID sabit env: `TALKINBIO_BUSINESS_ID`).
+  `00021_talkinbio_demo_business.sql`; ID sabit env: `TALKINBIO_BUSINESS_ID`).
 - İçeriği Beiwe ile kur (dogfooding #2): Hakkında = ürün tanıtımı, Hizmetler = özellikler
   /planlar, SSS = "Saule nedir, nasıl çalışır, fiyat ne olacak" tarzı satış soruları.
   Faz 1.4 bilgi tabanına satış senaryoları eklenir ("fiyat sorulursa erken erişimin
@@ -213,6 +218,12 @@ yayınlamadan hiç deneyemiyor.
   Faz 3 konuşma madenciliğinden ve admin raporlarından hariç tutulur.
 - Sahip Saule ayarını (ton, bilgi tabanı) değiştirip önizlemede anında test edebilir —
   "kaydet → önizlemede dene" döngüsü Saule ayar sayfasının değerini artırır.
+
+### 1.8 Saule imzası (kanvasın "Haksız Avantaj" Katman 1'i)
+Kanvas, her Saule widget'ında bir imza vaat ediyor; kodda henüz yok. ChatWidget'ın
+altına küçük, zarif bir "Saule ile konuşuyorsunuz — talkinbio.com" imzası eklenir
+(3 dilde, UTM parametreli link). Ürün içi viral döngünün ilk tuğlası — birkaç
+satırlık iş, dönüşüm ölçümü Faz S'teki Search Console + UTM ile yapılır.
 
 ### Kabul kriterleri
 - [ ] Sahip tüm konuşma transkriptlerini dashboard'dan okuyabiliyor, lead ↔ konuşma geçişi çalışıyor.
@@ -284,7 +295,20 @@ overengineering yapmadan, iki ucuz tasarım kuralıyla garanti altına alıyoruz
 - Not: Next.js 16 breaking changes — route dosyalarına dokunan her işte
   `node_modules/next/dist/docs/` altındaki ilgili rehber okunmalı (AGENTS.md kuralı).
 
-### 2.3 Test altyapısı
+### 2.3 Prompt caching + bağlam diyeti (birim maliyet hedefi)
+Kanvasın hedefi sohbet başına ≤$0,02; Faz 0 testinde ölçülen gerçek: **~$0,026/mesaj**
+(tek Saule mesajı 8,1K prompt token tüketiyor — sistem prompt'u tüm blokları 3 dilde,
+pretty-print JSON olarak taşıyor). Hedefe iki işle ulaşılır:
+- **Bağlam diyeti:** bloklar yalnızca ziyaretçinin dilinde, kompakt formatta prompt'a girer
+  (muhtemelen tek başına ~%50 azaltır). Faz 1.2'deki 30-mesajlık pencere de tarihçe
+  büyümesini keser.
+- **Prompt caching:** sistem prompt'u + bloklar konuşma boyunca sabittir; Anthropic prompt
+  caching ile cache'lenmiş girdi ~10 kat ucuzlar. SDK güncellemesi (2.2) düzgün cache
+  kontrolünün ön koşulu — bu yüzden bu madde Faz 2'de.
+Doğrulama: Faz 4.2 `usage_events` ölçümü; kredi çarpanları (Saule 1 / Beiwe 3 / kurulum 10)
+bu veriyle kalibre edilir.
+
+### 2.4 Test altyapısı
 - Vitest kurulumu; ilk hedefler:
   - `useBeiweSuggestions` (Faz 0'daki bug'ların regresyon testleri),
   - Beiwe tool execute fonksiyonları (Supabase mock'u ile upsert şekilleri),
@@ -369,7 +393,7 @@ Meta entegrasyonunun v2'ye alınmasıyla v1'in ana farklılaştırıcısı bu fa
 ### 3.3 Haftalık özet e-postası
 - Vercel Cron + Resend (doğrulanmış domain hazır ✅):
   yeni lead sayısı, konuşma sayısı, en sık sorular, Beiwe'nin haftanın önerisi.
-- Ön koşul: basit sayfa görüntülenme sayacı — **migration `00020_page_views.sql`**
+- Ön koşul: basit sayfa görüntülenme sayacı — **migration `00022_page_views.sql`**
   (business_id, günlük tekilleştirilmiş sayaç; `[username]/page.tsx` server-side artırır).
 
 ### Kabul kriterleri
@@ -411,11 +435,21 @@ gerçek kullanıcının hiç karşılaşmayacağı hız sınırlarındadır.
 - Kritik: **model-bazlı fiyat farkını görünür kılar** — Beiwe'ye güçlü model verme
   kararı (Faz 0.1) veriyle test edilir.
 
-### 4.3 Plan/faturalandırma
-- Plan şeması: Free (yalnız sayfa + sınırlı Saule) / Pro (tam Saule + marketing;
-  v2'de kanallar Pro'ya eklenir).
-- `businesses.plan` kolonu + limit enforcement 4.1 sayaçlarına bağlanır.
-- Ödeme: TR pazarı için iyzico vs Stripe kararı (ayrı araştırma maddesi).
+### 4.3 Plan/faturalandırma — kredi modeli (kanvasla hizalandı)
+Kanvasın kilitli "Gelir Kalemleri" kutusundaki model uygulanır:
+- **Planlar:** Starter $9 → 200 kredi | Pro $29 → 700 | Business $79 → 1.800;
+  yıllık ödemede %20 indirim; ek kredi paketi $5 → 100 (birim pahalı — plana yükseltme teşviki).
+- **Kredi çarpanları:** Saule sohbeti 1 / Beiwe güncellemesi 3 / sayfa oluşturma 10 —
+  tahmindir, 4.2 `usage_events` ölçümüyle kalibre edilir (2.3'teki maliyet hedefi ön koşul,
+  yoksa 10 kredilik kurulum zararına satılır).
+- **Kredi devri:** kullanılmayan krediler devreder, bakiye tavanı 2 aylık kota.
+- **Fiili ücretsiz katman:** kredi bitince asistan kapanmaz — sayfa + "mesaj bırakın" modu
+  (LLM'siz lead toplama) yaşar; ziyaretçi duvara çarpmaz, viral imza döngüsü (1.8) beslenmeye
+  devam eder, sahip yükseltmeye nazikçe itilir.
+- `businesses.plan` + kredi bakiyesi kolonları; limit enforcement 4.1 sayaçlarına bağlanır;
+  kredi tüketimi dashboard'da şeffaf gösterilir.
+- Ödeme: iyzico vs Stripe kararı + TR segmentleri/USD fiyat çelişkisinin çözümü
+  (ayrı araştırma maddesi — kanvasta da açık soru olarak işaretli).
 - Mevcut admin "subscriptions" sayfası gerçek veriye bağlanır.
 
 ### Kabul kriterleri
