@@ -110,15 +110,26 @@ export async function PUT(req: Request) {
 
       const isArrayType = ['problem', 'existingAlternatives', 'solution', 'keyMetrics', 'channels', 'customerSegments', 'earlyAdopters', 'costStructure', 'revenueStreams'].includes(field);
 
-      const fieldSchema = isArrayType ? z.object({ value: z.array(z.string()) }) : z.object({ value: z.string() });
+      const promptString = systemPrompt + `\n\nŞu anda sadece Yalın Kanvas içindeki "${field}" alanını oluşturmanı istiyorum. Bu alanın açıklaması şudur: ` + fieldDescriptions[field];
 
-      const { object } = await generateObject({
-        model: getModel('analysis'),
-        schema: fieldSchema,
-        prompt: systemPrompt + `\n\nŞu anda sadece Yalın Kanvas içindeki "${field}" alanını oluşturmanı istiyorum. Bu alanın açıklaması şudur: ` + fieldDescriptions[field],
-      });
+      let generatedValue: any;
+      if (isArrayType) {
+        const { object } = await generateObject({
+          model: getModel('analysis'),
+          schema: z.object({ value: z.array(z.string()) }),
+          prompt: promptString,
+        });
+        generatedValue = object.value;
+      } else {
+        const { object } = await generateObject({
+          model: getModel('analysis'),
+          schema: z.object({ value: z.string() }),
+          prompt: promptString,
+        });
+        generatedValue = object.value;
+      }
 
-      currentData[field] = object.value;
+      currentData[field] = generatedValue;
       await writeData(currentData);
       return NextResponse.json(currentData);
     }
