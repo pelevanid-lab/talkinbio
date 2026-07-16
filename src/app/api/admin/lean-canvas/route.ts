@@ -115,7 +115,7 @@ export async function PUT(req: Request) {
       const { object } = await generateObject({
         model: getModel('analysis'),
         schema: fieldSchema,
-        prompt: systemPrompt + \`\\n\\nŞu anda sadece Yalın Kanvas içindeki "\${field}" alanını oluşturmanı istiyorum. Bu alanın açıklaması şudur: \` + fieldDescriptions[field],
+        prompt: systemPrompt + `\n\nŞu anda sadece Yalın Kanvas içindeki "${field}" alanını oluşturmanı istiyorum. Bu alanın açıklaması şudur: ` + fieldDescriptions[field],
       });
 
       currentData[field] = object.value;
