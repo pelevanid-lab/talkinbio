@@ -14,10 +14,16 @@ export interface Suggestion {
 const VISUAL_SECTORS = ['beauty_salon', 'photographer', 'tattoo_artist', 'architect', 'restaurant'];
 const TRUST_SECTORS = ['consultant', 'lawyer', 'therapist', 'real_estate', 'financial_advisor', 'health'];
 
-export function useBeiweSuggestions(blocks: any[], businessCategory: string | null, contactValue: string | null) {
+export function useBeiweSuggestions(
+  blocks: any[],
+  businessCategory: string | null,
+  contactValue: string | null,
+  locale: string,
+  hasCustomTheme: boolean
+) {
   return useMemo(() => {
     const suggestions: Suggestion[] = [];
-    
+
     // Helper to find block
     const getBlock = (type: string) => blocks.find(b => b.type === type && hasRealContent(b));
     const aboutBlock = getBlock('about');
@@ -25,10 +31,10 @@ export function useBeiweSuggestions(blocks: any[], businessCategory: string | nu
     const galleryBlock = getBlock('gallery');
     const testimonialsBlock = getBlock('testimonials');
     const linksBlock = getBlock('links');
-    
+
     // 1. About text is too short
     if (aboutBlock) {
-      const text = aboutBlock.content?.text || '';
+      const text = aboutBlock.content?.[locale]?.text || '';
       if (text.length > 0 && text.length < 60) {
         suggestions.push({
           id: 'short-about',
@@ -43,9 +49,9 @@ export function useBeiweSuggestions(blocks: any[], businessCategory: string | nu
     // 2. Services without image or price
     if (servicesBlock) {
       const items = servicesBlock.content?.items || [];
-      const hasImage = items.some((item: any) => item.image);
+      const hasImage = items.some((item: any) => item.mediaUrl);
       const hasPrice = items.some((item: any) => item.price);
-      
+
       if (items.length > 0 && (!hasImage && !hasPrice)) {
         suggestions.push({
           id: 'bland-services',
@@ -91,7 +97,6 @@ export function useBeiweSuggestions(blocks: any[], businessCategory: string | nu
     }
 
     // 6. Theme Suggestion (Generic)
-    const hasCustomTheme = blocks.some(b => b.type === 'settings' && b.content?.theme?.palette);
     if (!hasCustomTheme) {
       suggestions.push({
         id: 'missing-theme',
@@ -103,5 +108,5 @@ export function useBeiweSuggestions(blocks: any[], businessCategory: string | nu
     }
 
     return suggestions;
-  }, [blocks, businessCategory, contactValue]);
+  }, [blocks, businessCategory, contactValue, locale, hasCustomTheme]);
 }

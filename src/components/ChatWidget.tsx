@@ -8,7 +8,7 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 
-export default function ChatWidget({ businessId, businessName, locale, initialMessages = [] }: { businessId: string, businessName: string, locale: string, initialMessages?: any[] }) {
+export default function ChatWidget({ businessId, businessName, locale, initialMessages = [], customGreeting }: { businessId: string, businessName: string, locale: string, initialMessages?: any[], customGreeting?: string | null }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const t = useTranslations('ChatWidget');
@@ -20,7 +20,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
       {
         id: 'welcome',
         role: 'assistant',
-        content: t('welcome', { name: businessName })
+        content: customGreeting || t('welcome', { name: businessName })
       }
     ]
   });

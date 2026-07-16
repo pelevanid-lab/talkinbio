@@ -141,7 +141,7 @@ export async function POST(req: Request) {
     `;
 
     const result = await streamText({
-      model: getModel(),
+      model: getModel('beiwe'),
       maxSteps: 20,
       maxTokens: 8192,
       system: systemPrompt,

@@ -63,6 +63,10 @@ export default async function BusinessProfilePage({ params }: any) {
     .order('order', { ascending: true });
 
   const theme = business.theme || DEFAULT_THEME;
+  const sauleSettings = business.saule_settings || {};
+  const customGreeting = sauleSettings.customGreetingEnabled && sauleSettings.customGreeting
+    ? sauleSettings.customGreeting
+    : null;
 
   // 3. Fetch past conversation if visitor_session_id exists
   let initialMessages: any[] = [];
@@ -122,7 +126,7 @@ export default async function BusinessProfilePage({ params }: any) {
       {/* Bottom 30% Chat Widget */}
       <div className="fixed bottom-0 left-0 right-0 h-[30dvh] bg-transparent z-50 pointer-events-none">
         <div className="max-w-md mx-auto w-full h-full relative pointer-events-auto">
-          <ChatWidget businessId={business.id} businessName={business.name} locale={locale} initialMessages={initialMessages} />
+          <ChatWidget businessId={business.id} businessName={business.name} locale={locale} initialMessages={initialMessages} customGreeting={customGreeting} />
         </div>
       </div>
     </div>

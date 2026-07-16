@@ -17,9 +17,13 @@ import { useBeiweSuggestions } from '@/hooks/useBeiweSuggestions';
 export default function EditorClient({ business, initialBlocks, initialChatMessages, initialSessions }: { business: any, initialBlocks: any[], initialChatMessages?: any[], initialSessions?: any[] }) {
   const [blocks, setBlocks] = useState(initialBlocks);
   const [sessions, setSessions] = useState<any[]>(initialSessions || []);
-  const [activeSessionId, setActiveSessionId] = useState(() => (initialSessions && initialSessions.length > 0) ? initialSessions[0].id : crypto.randomUUID());
+  const [activeSessionId, setActiveSessionId] = useState(() => {
+    const activeSession = (initialSessions || []).find((s) => !s.is_archived);
+    return activeSession ? activeSession.id : crypto.randomUUID();
+  });
   const [showArchive, setShowArchive] = useState(false);
   const [theme, setTheme] = useState<Theme>(business.theme || DEFAULT_THEME);
+  const [hasCustomTheme, setHasCustomTheme] = useState<boolean>(!!business.theme);
   const [editingBlock, setEditingBlock] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
@@ -49,7 +53,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
 
   const t = useTranslations('Editor');
   const locale = useLocale();
-  const suggestions = useBeiweSuggestions(blocks, business.category, contactValue);
+  const suggestions = useBeiweSuggestions(blocks, business.category, contactValue, locale, hasCustomTheme);
 
   const hasContactValue = useMemo(() => {
     try {
@@ -93,21 +97,38 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
         role: 'assistant',
         content: '[Sistem: Bu oturumda manuel düzenleme yapıldı. Yeni sohbet başlatıldı.]'
       });
+      await supabase.from('setup_sessions').update({ is_archived: true }).eq('id', activeSessionId);
+      setSessions((prev) => prev.map((s) => (s.id === activeSessionId ? { ...s, is_archived: true } : s)));
     }
-    handleNewChat();
+    await handleNewChat();
   };
 
-  const handleNewChat = () => {
+  const handleNewChat = async () => {
     const newId = crypto.randomUUID();
+    // Persisted immediately (not on first message) — otherwise an abandoned new chat
+    // never lands in setup_sessions and a reload resurrects the previous conversation.
+    await supabase.from('setup_sessions').upsert({
+      id: newId,
+      business_id: business.id,
+      title: 'Yeni Sohbet',
+      is_archived: false
+    }, { onConflict: 'id' });
     setActiveSessionId(newId);
     setMessages([]);  // Tamamen boş — Sayfa Durumu Kartı devraliyor
-    setSessions([{ id: newId, title: 'Yeni Sohbet', created_at: new Date().toISOString() }, ...sessions]);
+    setSessions((prev) => [{ id: newId, title: 'Yeni Sohbet', created_at: new Date().toISOString(), is_archived: false }, ...prev]);
     setShowArchive(false);
   };
 
   const switchSession = async (sessionId: string) => {
     setActiveSessionId(sessionId);
     setShowArchive(false);
+    // Explicitly picking an archived session means the user wants to continue it —
+    // pull it back into active duty so it resurfaces on the next reload.
+    const targetSession = sessions.find((s) => s.id === sessionId);
+    if (targetSession?.is_archived) {
+      await supabase.from('setup_sessions').update({ is_archived: false }).eq('id', sessionId);
+      setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, is_archived: false } : s)));
+    }
     const { data } = await supabase.from('setup_messages').select('*').eq('session_id', sessionId).order('created_at', { ascending: true });
     if (data && data.length > 0) {
       setMessages(data.map((m: any) => ({ id: m.id, role: m.role, content: m.content })));
@@ -179,6 +200,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       if (bData) {
         if (bData.theme && JSON.stringify(bData.theme) !== JSON.stringify(theme)) {
           setTheme(bData.theme);
+          setHasCustomTheme(true);
         }
         if (bData.contact_value !== contactValue) {
           setContactValue(bData.contact_value);
@@ -551,7 +573,12 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                       onClick={() => switchSession(s.id)}
                       className={`w-full text-left p-4 rounded-xl border transition-colors ${activeSessionId === s.id ? 'bg-[var(--coral-tint)] border-[var(--coral)] text-[var(--coral)]' : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'}`}
                     >
-                      <div className="font-medium">{s.title || 'Sohbet'}</div>
+                      <div className="font-medium flex items-center gap-2">
+                        {s.title || 'Sohbet'}
+                        {s.is_archived && (
+                          <span className="text-[10px] font-normal uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">Arşivlendi</span>
+                        )}
+                      </div>
                       <div className="text-xs opacity-70 mt-1">{new Date(s.created_at).toLocaleString()}</div>
                     </button>
                   ))

@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     const systemPrompt = `
       Sen Saule'sin — ${businessData.data.name} adlı işletmenin dijital ön masa asistanısın. 
       Seni ziyaretçiler görüyor, işletme sahibi değil. ${tone}
-      Asla "yapay zeka" veya "bot" olduğunu söyleme; bir asistan olarak konuş.
+      Kendiliğinden "yapay zeka" veya "bot" olduğunu gündeme getirme; bir asistan olarak konuş. Ama ziyaretçi doğrudan bir yapay zeka/bot ile mi konuştuğunu sorarsa, bunu inkar etme — dürüstçe dijital bir asistan olduğunu söyle.
       ${appointmentGuidance}
 
       Sektör: ${businessData.data.category || 'Belirtilmedi'}
@@ -121,7 +121,7 @@ export async function POST(req: Request) {
     }
 
     const result = await streamText({
-      model: getModel(),
+      model: getModel('saule'),
       maxSteps: 4,
       system: systemPrompt,
       messages,
