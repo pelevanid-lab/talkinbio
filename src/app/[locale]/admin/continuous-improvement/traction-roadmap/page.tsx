@@ -43,10 +43,10 @@ const milestones: Milestone[] = [
     status: 'active',
     timeHorizon: '0 – 6. ay',
     successCriteria:
-      '10 ödeme yapan müşteri + sorun görüşmelerinde tekrar eden acı nokta doğrulandı + iş modeli kârlı işleyebilecek fiyat noktası test edildi (dolar mı, TL mi?)',
+      '10 ödeme yapan müşteri + sorun görüşmelerinde tekrar eden acı nokta doğrulandı + $9 dolar-sabit fiyat noktasının (TL tahsilat kur üzerinden) kabul gördüğü test edildi',
     omtm: 'Ödeme yapan müşteri sayısı',
     omtmNote:
-      'Sadece kayıt veya deneme değil — gerçek ödeme. Tek rakamlı sayılar bile bu aşamada anlamlı sinyal. TL fiyatlama kararı bu aşamada alınmalı.',
+      'Sadece kayıt veya deneme değil — gerçek ödeme. Tek rakamlı sayılar bile bu aşamada anlamlı sinyal. Fiyat dolara sabitlendi (karar 2026-07-17); test edilen, $9 noktasının kabulüdür. Faz 4 faturalandırması öncesi ödemeler bilinçli olarak manuel tahsil edilir (havale/elden).',
     assumptions: [
       {
         text: 'Hizmet sahipleri DM\'den kaçan lead için ödeme yapar',
@@ -57,7 +57,7 @@ const milestones: Milestone[] = [
         status: 'unvalidated',
       },
       {
-        text: 'Saule\'nin kurulumu Beiwe ile 30 dakikadan kısa sürer',
+        text: 'Beiwe kurulumu, landing\'in vaat ettiği gibi ~10 dakikada tamamlanır',
         status: 'unvalidated',
       },
       {
@@ -68,7 +68,8 @@ const milestones: Milestone[] = [
     experiments: [
       '20 hedef segment görüşmesi — problem interview scripti, çözüm gösterme yok',
       '10 kişilik ücretli pilot: Beiwe kurulumu + 30 gün Saule aktif → gerçek lead var mı?',
-      'Fiyat hassasiyeti testi: $9/ay vs TL karşılığı — hangisi daha az direnç görüyor?',
+      'Fiyat kabul testi: $9/ay, kur üzerinden TL karşılığıyla sunulduğunda pilotta direnç görüyor mu?',
+      'Landing demo hunisi: Saule konuşması → erişim talebi dönüşüm oranı (admin/analytics\'te canlı ölçülüyor, Faz 1.6)',
     ],
     mauryaNote:
       'Bu aşamada satmak utanç verici değil — zorunlu. Ödeme, söz değil, taahhüttür.',
@@ -82,7 +83,7 @@ const milestones: Milestone[] = [
     status: 'locked',
     timeHorizon: '6 – 18. ay',
     successCriteria:
-      "~550 ödeme yapan müşteri ($100K ARR eşiği, $15 Efektif TR ARPU ile) + aylık churn < %5 + NPS > 40 + referral kanalı organik trafik üretiyor. Not: 550, adreslenebilir 30K pazarının %1,8'i — erken doğrulama için ulaşılabilir.",
+      "~550 ödeme yapan müşteri ($100K ARR eşiği, $15 efektif ARPU ile) + aylık churn < %5 + NPS > 40 + referral kanalı organik trafik üretiyor. Not: 550, adreslenebilir 30K pazarının %1,8'i — erken doğrulama için ulaşılabilir.",
     omtm: 'Aylık elde tutulan ödeme yapan müşteri (net MRR büyümesi)',
     omtmNote:
       'Müşteri kazanım hızı değil, kalanların oranı. Aylık %5 churn = yılda %46 kayıp. Churn yüksekse ürün-pazar uyumu yoktur — büyüme yanılsaması yaratır.',
@@ -92,7 +93,7 @@ const milestones: Milestone[] = [
         status: 'unvalidated',
       },
       {
-        text: "Saule'nin \"Powered by talkinbio\" imzası viral döngü yaratır",
+        text: 'Saule\'nin "Saule ile konuşuyorsunuz — talkinbio.com" imzası (Faz 1.8, yayında) viral döngü yaratır',
         status: 'unvalidated',
       },
       {
@@ -100,7 +101,7 @@ const milestones: Milestone[] = [
         status: 'unvalidated',
       },
       {
-        text: "TL fiyatlama churn'i düşürür, kur riskini azaltır",
+        text: 'Dolar-sabit fiyat, kur dalgalanmasında kabul edilebilir churn üretir',
         status: 'unvalidated',
       },
     ],
@@ -108,7 +109,7 @@ const milestones: Milestone[] = [
       'Cohort analizi: 1. ay müşterilerin 3. aydaki retention oranı nedir?',
       'NPS anketi: "talkinbio olmasaydı ne kullanırdın?" sorusu dahil',
       'Referral takibi: kayıtların kaçı mevcut müşteri tavsiyesiyle geliyor?',
-      'TL fiyatlama A/B testi: churn ve dönüşüm oranına etkisi',
+      'Kur-churn takibi: TL karşılığı fiyat yükseldiğinde churn nasıl tepki veriyor? Yıllık plan payı bunu yumuşatıyor mu?',
     ],
     mauryaNote:
       'Ürün/pazar uyumu bir his değil, bir metrik. Churn < %5 ve organik büyüme — ikisi birlikte.',
@@ -122,7 +123,7 @@ const milestones: Milestone[] = [
     status: 'locked',
     timeHorizon: '18 – 36. ay',
     successCriteria:
-      '~$2,1M ARR (Global 9K ödeme yapan müşteri, $20 ARPU) + öngörülebilir büyüme (CAC < LTV / 3) + WhatsApp & Instagram DM aktif + TR + MENA büyüme kanalları tekrarlanabilir. Türkiye tavanı ~$400K-$500K ARR — bu hedef v2 global genişlemeyi şart kılıyor.',
+      '~$810K ARR (Global 4.5K ödeme yapan müşteri, $15 ARPU) + öngörülebilir büyüme (CAC < LTV / 3) + WhatsApp & Instagram DM aktif + TR + MENA kanalları tekrarlanabilir. Türkiye tavanı ~$400K-$500K ARR — v2 global genişleme ana büyüme motorudur.',
     omtm: 'Net yeni MRR (yeni + expansion − churn)',
     omtmNote:
       'Türkiye tavanını aştıktan sonra büyüme yalnızca yeni pazardan gelir. v2 kanallar çalışmıyorsa büyüme durur — bu aşamada en büyük varsayım budur.',
@@ -151,6 +152,13 @@ const milestones: Milestone[] = [
 ];
 
 const pivotLog = [
+  {
+    date: '2026-07-17',
+    assumption: 'TR pazarı için lokal sabit TL fiyat gerekir; efektif ARPU bu yüzden $15\'e düşer (Fermi V.1)',
+    result: 'Karar (Enes): fiyatlar dolara sabit — TL tahsilat güncel kur üzerinden yapılır; girdi maliyetleri dolar olduğu için lokal TL fiyat sürdürülemez. Kur riski gelir tarafından churn tarafına taşındı.',
+    action: 'Fermi V.1.1: $15 efektif ARPU korundu ama gerekçesi "Starter-ağırlıklı plan karması + %20 yıllık indirim" olarak revize edildi. Faz 4.3 birim ekonomisi ($0,045/kredi) dolar bazında geçerliliğini korur.',
+    type: 'metric',
+  },
   {
     date: '2026-07-16',
     assumption: 'Meta entegrasyonları (WhatsApp + Instagram DM) v1\'de şart',
@@ -316,7 +324,7 @@ export default function TractionRoadmapPage() {
           <p className="text-slate-500 text-sm">
             Ash Maurya · <em>Running Lean</em>, Bölüm 4 — Doğru zamanda doğru eylemi yap. Ürün/pazar uyumundan önce pivot et, sonra optimize et.
           </p>
-          <p className="text-xs text-slate-400 mt-1 font-mono">V.1 · 2026-07-17 · Fermi V.1 (Efektif TL ARPU) ile uyumlu. Statik — yenilikler oldukça kod bazında güncellenir</p>
+          <p className="text-xs text-slate-400 mt-1 font-mono">V.1.1 · 2026-07-17 · Fermi V.1.1 (dolar-sabit fiyat) ile uyumlu. Statik — yenilikler oldukça kod bazında güncellenir</p>
         </div>
 
         {/* Stage Progress */}
@@ -374,10 +382,10 @@ export default function TractionRoadmapPage() {
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'ARR Hedefi (Global)', value: '~$2,1M', note: '9K müşteri, global' },
-              { label: 'TR Tavanı', value: '~$400K', note: '30K adreslenebilirin %7\'si' },
-              { label: 'Ort. Efektif ARPU', value: '$15/ay', note: 'TR için TL bazlı fiyatlama' },
-              { label: 'Zaman Ufku', value: '36 ay', note: 'v2 olmadan TR tavanı aşılamaz' },
+              { label: 'ARR Hedefi (Baz)', value: '~$810K', note: '4.5K müşteri, global' },
+              { label: 'Stretch Hedef', value: '~$1,6M', note: '9K müşteri (%6 yakalama)' },
+              { label: 'Ort. Efektif ARPU', value: '$15/ay', note: 'Dolar-sabit fiyat; Starter-ağırlıklı karma + yıllık indirim' },
+              { label: 'Zaman Ufku', value: '36 ay', note: 'Gerçekçi tempo: 550 → 4.5K' },
             ].map((item) => (
               <div key={item.label} className="bg-white/10 rounded-xl p-4">
                 <p className="text-[10px] uppercase tracking-wider text-slate-400 mb-1">{item.label}</p>
@@ -426,7 +434,7 @@ export default function TractionRoadmapPage() {
               <tbody className="divide-y divide-slate-100">
                 {milestones.map((m) => {
                   const sc = statusConfig[m.status];
-                  const thresholds = ['10 ödeme yapan müşteri (TL/$ fiyat kararı dahil)', '~550 müşteri + churn < %5 ($100K ARR, $15 ARPU)', '~$2,1M ARR + CAC < LTV/3 (v2 + global şart)'];
+                  const thresholds = ['10 ödeme yapan müşteri (Faz 4 öncesi manuel tahsilat)', '~550 müşteri + churn < %5 ($100K ARR, $15 ARPU)', '~$810K ARR + CAC < LTV/3 (v2 + global baz hedef)'];
                   return (
                     <tr key={m.id} className={m.status === 'active' ? 'bg-blue-50/40' : ''}>
                       <td className="px-5 py-3 font-medium text-slate-900">{m.stage}</td>

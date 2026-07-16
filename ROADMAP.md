@@ -5,17 +5,22 @@
 > evrilecek; **Saule** web widget'ından gerçek sosyal medya kanallarına (WhatsApp → Instagram)
 > taşınacak müşteri hizmetleri agent'ı.
 >
-> **Pusula belge:** Ürün stratejisinin tek kaynağı, admin panelindeki Yalın Kanvas'tır
-> (Admin > Sürekli Gelişim; Supabase `lean_canvas` tablosu). Bu yol haritasındaki her faz
-> kanvasla tutarlı olmalı; bir plan kanvasla çelişirse ya plan ya kanvas güncellenir —
-> sessizce ıraksamaya izin verilmez.
+> **Pusula belgeler:** Stratejinin "neden"i admin panelindeki Yalın Kanvas'ta yaşar
+> (Admin > Sürekli Gelişim; Supabase `lean_canvas` tablosu). 2026-07-17'den beri iki
+> kardeş belge eşlik eder (ikisi de statik TSX olarak kodda): **Fermi Tahmini**
+> ("ne kadar" — pazar boyutu, efektif ARPU, senaryolar;
+> `admin/continuous-improvement/fermi-estimation`) ve **Çekim Gücü Yol Haritası**
+> ("ne zaman, hangi sırayla" — Maurya aşamaları, OMTM, varsayımlar, pivot günlüğü;
+> `.../traction-roadmap`). Bu yol haritasındaki her faz üç belgeyle tutarlı olmalı;
+> çelişki görüldüğünde ya plan ya ilgili belge güncellenir — sessizce ıraksamaya
+> izin verilmez.
 >
 > Kapsam kararı (2026-07-16): Meta entegrasyonları (WhatsApp + Instagram DM) **v2'ye alındı**.
 > v1, mevcut `ig.me`/`wa.me` handoff köprüsü + landing'de canlı Saule demosu + Beiwe'nin
 > marketing agent'a ilk evrimi ile satışa çıkar. Meta başvuru evrakları (Business
 > Verification vb.) geliştirmeden bağımsız olarak v1 sırasında başlatılır.
 >
-> Son güncelleme: 2026-07-16
+> Son güncelleme: 2026-07-17
 
 ## v1 — Faz özeti ve bağımlılıklar
 
@@ -34,6 +39,7 @@
 |-----|--------|-----|
 | 5 | WhatsApp kanalı | Meta evrak süreci v1 sırasında bitirilmiş olur |
 | 6 | Instagram DM kanalı | App Review, Faz 5 biter bitmez tetiklenir |
+| 7 | Dil/locale genişlemesi (ar/es/pt) | Fermi'nin MENA+LatAm hedefinin ön koşulu; kanal işinden bağımsız, paralel başlatılabilir |
 
 ---
 
@@ -487,8 +493,13 @@ Kanvasın kilitli "Gelir Kalemleri" kutusundaki model uygulanır:
   devam eder, sahip yükseltmeye nazikçe itilir.
 - `businesses.plan` + kredi bakiyesi kolonları; limit enforcement 4.1 sayaçlarına bağlanır;
   kredi tüketimi dashboard'da şeffaf gösterilir.
-- Ödeme: iyzico vs Stripe kararı + TR segmentleri/USD fiyat çelişkisinin çözümü
-  (ayrı araştırma maddesi — kanvasta da açık soru olarak işaretli).
+- **Fiyatlama kararı (2026-07-17, Enes):** fiyatlar **dolara sabittir**; TL tahsilat
+  güncel kur üzerinden yapılır, lokal sabit TL fiyat yoktur (girdi maliyetleri dolar).
+  Birim ekonomi hesapları ($0,045/kredi) dolar bazında geçerliliğini korur; kur riski
+  gelir tarafında değil churn tarafındadır (Fermi V.1.1 risk tablosu). Kanvastaki
+  açık fiyat sorusu bu kararla kapandı — Gelir Kalemleri kutusuna işlenmeli.
+- Ödeme sağlayıcı kararı (iyzico vs Stripe) hâlâ açık — dolar-sabit fiyat + TL tahsilat
+  kombinasyonunu destekleyen sağlayıcı seçilmeli (ayrı araştırma maddesi).
 - Mevcut admin "subscriptions" sayfası gerçek veriye bağlanır.
 
 ### Kabul kriterleri
@@ -575,6 +586,18 @@ Vizyonun kalbi; mimari olarak Faz 5'in kopyası, zorluk Meta süreçlerinde.
 ### Kabul kriterleri
 - [ ] Bağlı bir IG hesabının DM'ine Saule cevap veriyor.
 - [ ] API bağlamamış işletmelerde eski handoff akışı bozulmadan çalışıyor.
+
+## Faz 7 — Dil/locale genişlemesi: ar / es / pt
+
+Fermi V.1.1'in global senaryosu ($810K baz, $1,6M stretch) tamamen MENA+LatAm'a dayanır
+ve bu pazarlar Arapça/İspanyolca/Portekizce olmadan adreslenemez — v2 "iş modelinin
+kendisi" ise dil genişlemesi onun ön koşuludur. Kapsam (detaylandırılacak):
+- next-intl locale rotalarına ar/es/pt eklenmesi; `messages/*.json` çevirileri.
+- Blok içerik şeması bugün tr/en/ru üçlüsüne gömülü (Beiwe tool'ları 3 dilde üretir,
+  ChatWidget imzası 3 dilde) — şema esnetilmeli veya hedef locale seti genişletilmeli.
+- Arapça için RTL düzen desteği (ayrı tasarım işi — en maliyetli kalem).
+- Saule zaten model seviyesinde çok dilli; asıl iş UI + içerik şeması tarafında.
+- Kanal işinden (Faz 5-6) bağımsızdır; Meta onayları beklerken paralel yürütülebilir.
 
 ---
 

@@ -9,8 +9,12 @@ import { TrendingUp, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 /* ------------------------------------------------------------------ */
 
 /*
-  ARPU: TR SaaS pazarı için lokal (TL) fiyatlama zorunluluğu nedeniyle
-  $22 olan teorik ARPU, ~$15 efektif ARPU'ya indirilmiştir.
+  Fiyatlama kararı (2026-07-17, Enes): fiyatlar DOLARA SABİTTİR; TL tahsilat
+  güncel kur üzerinden yapılır, lokal sabit TL fiyat yoktur. Birim ekonomi
+  ($0,045/kredi, ROADMAP 4.3) dolar bazında geçerliliğini korur.
+
+  ARPU: $22 teorik blended ARPU, Starter-ağırlıklı erken dönem plan karması
+  + %20 yıllık ödeme indirimi nedeniyle ~$15 efektif ARPU'ya indirilmiştir.
 
   Pazar: Sadece "sosyal medya kullanıcısı" değil, "müşterisiyle DM'den
   iş yapan satıcı" spesifik filtresiyle modellenmiştir.
@@ -23,7 +27,7 @@ const scenarios = [
     color: 'red',
     captureRate: 'TR adreslenebilirin %1\'i',
     customers: '~300',
-    arpu: '$15/ay (TL)',
+    arpu: '$15/ay (efektif)',
     mrr: '~$4.500',
     arr: '~$54K',
     comment:
@@ -36,7 +40,7 @@ const scenarios = [
     color: 'yellow',
     captureRate: 'TR adreslenebilirin %3\'ü',
     customers: '~900',
-    arpu: '$15/ay (TL)',
+    arpu: '$15/ay (efektif)',
     mrr: '~$13.500',
     arr: '~$162K',
     comment:
@@ -49,7 +53,7 @@ const scenarios = [
     color: 'blue',
     captureRate: 'TR adreslenebilirin %7\'si',
     customers: '~2.100',
-    arpu: '$15/ay (TL)',
+    arpu: '$15/ay (efektif)',
     mrr: '~$31.500',
     arr: '~$378K',
     comment:
@@ -58,17 +62,17 @@ const scenarios = [
   },
   {
     id: 'optimistic-global',
-    label: 'v2 Global (TR+MENA+LatAm)',
+    label: 'v2 Global (Baz)',
     color: 'green',
-    captureRate: 'Global adreslenebilirin %6\'sı',
-    customers: '~9.000',
-    arpu: '$20/ay (Karma)',
-    mrr: '~$180.000',
-    arr: '~$2,1M',
+    captureRate: 'Global adreslenebilirin %3\'ü',
+    customers: '~4.500',
+    arpu: '$15/ay (Efektif)',
+    mrr: '~$67.500',
+    arr: '~$810K',
     comment:
-      'WhatsApp+IG DM (v2) aktif. MENA/LatAm (300M+ IG kullanıcısı) aynı sorun ' +
-      've satın alma bariyerleriyle ~120K ek adreslenebilir pazar yaratır. ' +
-      'Büyük stratejik hedef budur.',
+      'WhatsApp+IG DM (v2) aktif. MENA/LatAm pazarlarına giriş. ' +
+      'Aynı muhafazakâr yakalama oranı (%3) ve alım gücü bariyerleriyle. ' +
+      'Bu hedefin stretch/iyimser versiyonu ise ~$1,6M ARR (%6 yakalama) civarındadır.',
   },
 ];
 
@@ -126,9 +130,9 @@ const thresholds = [
 
 const risks = [
   {
-    actor: 'TL / Kur Bariyeri',
-    threat: '$9/ay (~370 TL) mikro satıcı için ciddi bariyer. Kur kötüleşirse müşteri kaybı hızlanır.',
-    defense: 'TL fiyatlama zorunlu — bu yüzden TR ARPU\'su $15 olarak modellendi.',
+    actor: 'Kur Bariyeri (Dolar-Sabit Fiyat)',
+    threat: 'Fiyat dolara sabit: kur yükseldikçe TL karşılığı fiyat da yükselir. $9/ay bugün ~370 TL; devalüasyonda bariyer büyür, churn hızlanır. Risk gelir tarafında değil, müşteri tutma tarafındadır.',
+    defense: 'Gelir dolar bazında korunur (karar 2026-07-17). Yıllık ödeme (%20 indirim) fiyatı 12 ay kilitler; değer iletişimi "kaçan lead\'in maliyeti" üzerinden yapılır.',
     severity: 'high',
   },
   {
@@ -138,9 +142,9 @@ const risks = [
     severity: 'medium',
   },
   {
-    actor: 'Churn',
-    threat: 'AI SaaS\'ta aylık churn yüksek seyreder. %5 churn → yılda %46 müşteri kaybı.',
-    defense: 'Beiwe marketing agent (Faz 3) her ay yeni değer üretmeli — aksi hâlde retention kırılır.',
+    actor: 'Churn & CAC (LTV Bağlantısı)',
+    threat: 'Aylık %5 churn ile LTV = $15 / 0,05 = $300. CAC < LTV/3 kuralı gereği edinim maliyeti <$100 olmalı.',
+    defense: 'Ücretli kanallarla <$100 CAC TR\'de zordur. Faz 1.8 viral imza döngüsü (2026-07-17\'de yayında) ve Faz 3 "Beiwe" çalışmazsa model kırılır; imza dönüşümü Faz S UTM\'leriyle ölçülecek.',
     severity: 'high',
   },
 ];
@@ -209,7 +213,7 @@ export default function FermiEstimationPage() {
             Muhafazakâr yaklaşım — canımızın istediğini değil, işin gerektirdiği zorluğu görmek için.
           </p>
           <p className="text-xs text-slate-400 mt-1 font-mono">
-            V.1 · 2026-07-17 — DM katmanı ve Efektif TL ARPU filtreleri aktif
+            V.1.1 · 2026-07-17 — DM katmanı aktif; fiyat dolara sabit, efektif ARPU plan karmasından
           </p>
         </div>
 
@@ -270,9 +274,14 @@ export default function FermiEstimationPage() {
           <div className="mt-3 bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-start gap-3">
             <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
             <p className="text-xs text-slate-700 leading-relaxed">
-              <strong>Global (MENA+LatAm) Ekstrapolasyonu:</strong> Benzer ödeme bariyerlerine sahip MENA ve LatAm bölgelerinde 
-              yaklaşık 300M+ IG kullanıcısı var. Aynı zincir (~%2 satıcı → ~%40 DM kullanan → ~%5 ödeyebilen) uygulandığında 
+              <strong>Global (MENA+LatAm) Ekstrapolasyonu:</strong> Benzer ödeme bariyerlerine sahip MENA ve LatAm bölgelerinde
+              yaklaşık 300M+ IG kullanıcısı var. Aynı zincir (~%2 satıcı → ~%40 DM kullanan → ~%5 ödeyebilen) uygulandığında
               kabaca <strong>~120.000 adreslenebilir müşteri</strong> eklenir. Global toplam adreslenebilir pazar: ~150K.
+              <br /><br />
+              <strong>Ön koşul — dil genişlemesi:</strong> Ürün bugün 3 dile gömülü (tr/en/ru); MENA+LatAm hedefi
+              Arapça/İspanyolca/Portekizce locale desteği olmadan gerçekleşemez (ROADMAP v2 Faz 7).
+              <strong> Modellenmemiş yukarı yön:</strong> Halihazırda desteklenen Rusça segmenti
+              (TR'deki Rusça konuşan hizmet verenler + BDT) bu modelde ayrıca sayılmadı.
             </p>
           </div>
         </section>
@@ -281,31 +290,34 @@ export default function FermiEstimationPage() {
         <section>
           <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-mono">2</span>
-            Gelir Modeli — Efektif TL ARPU
+            Gelir Modeli — Efektif ARPU (Dolar-Sabit Fiyat)
           </h2>
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
             <div className="p-5">
               <p className="text-sm text-slate-700 mb-4">
-                Global fiyatlandırma modelinde (örn. $9 / $29 / $79) ağırlıklı ortalama ARPU ~$22 civarındadır. 
-                Ancak Türkiye (ve benzeri) pazarlarda kur bariyerini aşmak için uygulanan lokal fiyatlandırma, 
-                dolar bazında %30-40'lık bir kesinti yaratır.
+                <strong>Fiyatlama kararı (2026-07-17):</strong> Fiyatlar dolara sabittir ($9 / $29 / $79);
+                TL tahsilat güncel kur üzerinden yapılır, lokal sabit TL fiyat yoktur — girdi maliyetleri
+                dolar olduğu için başka yolu yok. Bu sayede birim ekonomi (ROADMAP 4.3, $0,045/kredi)
+                dolar bazında geçerliliğini korur. Teorik blended ARPU ~$22'dir; ancak erken dönemde
+                plan karması Starter'a yaslanır ve yıllık ödeme %20 indirimlidir — muhafazakâr
+                efektif ARPU bu yüzden ~$15 alınır.
               </p>
-              
+
               <div className="flex flex-col sm:flex-row gap-4 mb-2">
                 <div className="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-4">
-                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Global Teorik ARPU</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Teorik Blended ARPU</p>
                   <p className="text-xl font-bold font-mono text-slate-400 line-through decoration-slate-400/50">$22.00</p>
                 </div>
                 <div className="flex-1 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-xs text-blue-600 uppercase tracking-wider mb-1 font-semibold">TR Efektif ARPU (TL Model)</p>
+                  <p className="text-xs text-blue-600 uppercase tracking-wider mb-1 font-semibold">Efektif ARPU (Starter-ağırlıklı karma + yıllık indirim)</p>
                   <p className="text-xl font-bold font-mono text-blue-900">~$15.00</p>
                 </div>
               </div>
             </div>
             <div className="px-5 py-3 border-t border-slate-100 bg-slate-50">
               <p className="text-xs text-slate-600">
-                Pazar boyutunu değil, doğrudan geliri etkileyen asıl faktör budur. 
-                Finansal hedefler bu efektif ARPU üzerinden hesaplanmalıdır.
+                Kur riski gelir tarafında değil, müşteri tutma tarafındadır: kur yükseldikçe TL karşılığı
+                fiyat artar, churn baskısı büyür. Finansal hedefler bu efektif ARPU üzerinden hesaplanmalıdır.
               </p>
             </div>
           </div>
