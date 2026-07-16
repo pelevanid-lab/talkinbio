@@ -5,11 +5,15 @@ import { createClient } from '@/utils/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Send, MessageCircle } from 'lucide-react';
+import ConversationsPanel from './ConversationsPanel';
+import KnowledgeBasePanel from './KnowledgeBasePanel';
 
-export default function LeadsClient({ business, initialLeads }: { business: any, initialLeads: any[] }) {
+export default function LeadsClient({ business, initialLeads, initialConversations, initialKnowledge }: { business: any, initialLeads: any[], initialConversations: any[], initialKnowledge: any[] }) {
   const supabase = createClient();
-  const [activeTab, setActiveTab] = useState<'leads' | 'settings'>('leads');
+  const [activeTab, setActiveTab] = useState<'leads' | 'conversations' | 'settings'>('leads');
   const [leads, setLeads] = useState(initialLeads);
+  const [conversations] = useState(initialConversations);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   
   // Settings state
   const [settings, setSettings] = useState(business.saule_settings || {});
@@ -58,6 +62,12 @@ export default function LeadsClient({ business, initialLeads }: { business: any,
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'leads' ? 'bg-white text-[#14231F] shadow-sm' : 'text-[#8A8880] hover:text-[#4B5A55]'}`}
               >
                 <Inbox className="w-4 h-4" /> Talepler
+              </button>
+              <button
+                onClick={() => setActiveTab('conversations')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'conversations' ? 'bg-white text-[#14231F] shadow-sm' : 'text-[#8A8880] hover:text-[#4B5A55]'}`}
+              >
+                <MessageCircle className="w-4 h-4" /> Konuşmalar
               </button>
               <button
                 onClick={() => setActiveTab('settings')}
@@ -112,6 +122,11 @@ export default function LeadsClient({ business, initialLeads }: { business: any,
                   
                   <div className="bg-[#F4F2ED] rounded-xl p-4 mb-4">
                     <p className="text-[#4B5A55] text-sm">{lead.summary}</p>
+                    {lead.preferred_datetime && (
+                      <p className="text-[#14231F] text-xs font-medium mt-2 flex items-center">
+                        <Clock className="w-3.5 h-3.5 mr-1.5" /> Tercih edilen zaman: {lead.preferred_datetime}
+                      </p>
+                    )}
                   </div>
                   
                   <div className="flex items-center justify-between border-t border-[rgba(20,35,31,0.10)] pt-4">
@@ -128,21 +143,38 @@ export default function LeadsClient({ business, initialLeads }: { business: any,
                       </a>
                     </div>
                     
-                    {lead.status === 'new' ? (
-                      <button onClick={() => handleMarkSeen(lead.id)} className="text-sm font-medium text-white bg-[#FF6A5C] px-4 py-2 rounded-full hover:bg-orange-600 transition flex items-center shadow-sm">
-                        <CheckCircle2 className="w-4 h-4 mr-1.5" />
-                        İşaretle
-                      </button>
-                    ) : (
-                      <div className="flex items-center text-sm text-[#8A8880]">
-                        <CheckCircle2 className="w-4 h-4 mr-1.5" /> İncelendi
-                      </div>
-                    )}
+                    <div className="flex items-center gap-3">
+                      {lead.conversation_id && (
+                        <button
+                          onClick={() => { setActiveTab('conversations'); setSelectedConversationId(lead.conversation_id); }}
+                          className="text-sm font-medium text-[#8A8880] hover:text-[#FF6A5C] transition flex items-center"
+                        >
+                          <MessageCircle className="w-4 h-4 mr-1.5" /> Konuşmayı Gör
+                        </button>
+                      )}
+                      {lead.status === 'new' ? (
+                        <button onClick={() => handleMarkSeen(lead.id)} className="text-sm font-medium text-white bg-[#FF6A5C] px-4 py-2 rounded-full hover:bg-orange-600 transition flex items-center shadow-sm">
+                          <CheckCircle2 className="w-4 h-4 mr-1.5" />
+                          İşaretle
+                        </button>
+                      ) : (
+                        <div className="flex items-center text-sm text-[#8A8880]">
+                          <CheckCircle2 className="w-4 h-4 mr-1.5" /> İncelendi
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           )
+        ) : activeTab === 'conversations' ? (
+          <ConversationsPanel
+            conversations={conversations}
+            leads={leads}
+            selectedConversationId={selectedConversationId}
+            onSelectConversation={(id) => setSelectedConversationId(id)}
+          />
         ) : (
           <div className="bg-white border border-[rgba(20,35,31,0.10)] rounded-[20px] p-6 shadow-sm">
             <div className="flex items-center gap-4 mb-8 pb-6 border-b border-[rgba(20,35,31,0.10)]">
@@ -240,6 +272,8 @@ export default function LeadsClient({ business, initialLeads }: { business: any,
                   </div>
                 )}
               </div>
+
+              <KnowledgeBasePanel businessId={business.id} initialKnowledge={initialKnowledge} />
 
               {/* Save Button */}
               <div className="pt-6 border-t border-[rgba(20,35,31,0.10)] flex items-center justify-between">

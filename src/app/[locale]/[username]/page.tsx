@@ -5,6 +5,7 @@ import ProfilePageBody from '@/components/ProfilePageBody';
 import { createClient } from '@/utils/supabase/server';
 import { DEFAULT_THEME } from '@/config/archetypes';
 import { googleFontsHref } from '@/utils/googleFonts';
+import { isConversationActive } from '@/utils/conversationWindow';
 
 export async function generateMetadata({ params }: any) {
   const { username } = await params;
@@ -81,12 +82,17 @@ export default async function BusinessProfilePage({ params }: any) {
       );
       const { data: conv } = await supabaseAdmin
         .from('conversations')
-        .select('messages(id, role, content, created_at)')
+        .select('last_message_at, created_at, messages(id, role, content, created_at)')
         .eq('business_id', business.id)
         .eq('visitor_session_id', visitorSessionId)
-        .single();
-      
-      if (conv?.messages) {
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      // Faz 1.3: >7 gün sessiz kalan konuşma "aktif" sayılmaz, geçmişi yüklenmez.
+      const isActive = conv && isConversationActive(conv.last_message_at, conv.created_at);
+
+      if (isActive && conv?.messages) {
         initialMessages = conv.messages
           .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
           .map((m: any) => ({ id: m.id, role: m.role, content: m.content }));

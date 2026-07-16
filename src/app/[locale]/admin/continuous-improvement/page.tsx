@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Play, Edit2, Trash2, Wand2, Save, X, Loader2, Lock, Unlock } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
+import ContinuousImprovementTabs from '@/components/ContinuousImprovementTabs';
 
 interface LeanCanvasData {
   problem: string[];
@@ -232,7 +233,8 @@ export default function LeanCanvasPage() {
 
   return (
     <AdminLayout>
-      <div className="flex justify-between items-center mb-8">
+      <ContinuousImprovementTabs />
+      <div className="flex justify-between items-center mb-8 mt-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Yalın Kanvas</h1>
           <p className="text-slate-500 mt-1">Sürekli Gelişim</p>

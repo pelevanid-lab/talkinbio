@@ -34,5 +34,20 @@ export default async function LeadsDashboardPage() {
     .eq('business_id', business.id)
     .order('created_at', { ascending: false });
 
-  return <LeadsClient business={business} initialLeads={leads || []} />;
+  // Fetch conversations (Faz 1.1 — transkript ekranı)
+  const { data: conversations } = await supabase
+    .from('conversations')
+    .select('id, visitor_session_id, last_message_at, is_read, created_at')
+    .eq('business_id', business.id)
+    .eq('is_preview', false)
+    .order('last_message_at', { ascending: false, nullsFirst: false });
+
+  // Fetch Saule knowledge base (Faz 1.4)
+  const { data: knowledge } = await supabase
+    .from('saule_knowledge')
+    .select('*')
+    .eq('business_id', business.id)
+    .order('created_at', { ascending: false });
+
+  return <LeadsClient business={business} initialLeads={leads || []} initialConversations={conversations || []} initialKnowledge={knowledge || []} />;
 }

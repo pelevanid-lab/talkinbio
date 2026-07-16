@@ -197,6 +197,7 @@
     "assistantSuffix": "Asistanı",
     "online": "Çevrimiçi",
     "placeholder": "Bir mesaj yazın...",
-    "defaultPreview": "Size nasıl yardımcı olabilirim?"
+    "defaultPreview": "Size nasıl yardımcı olabilirim?",
+    "newChat": "Yeni sohbet"
   }
 }

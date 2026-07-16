@@ -205,6 +205,7 @@
     "assistantSuffix": "Ассистент",
     "online": "Онлайн",
     "placeholder": "Напишите сообщение...",
-    "defaultPreview": "Чем я могу вам помочь?"
+    "defaultPreview": "Чем я могу вам помочь?",
+    "newChat": "Новый чат"
   }
 }

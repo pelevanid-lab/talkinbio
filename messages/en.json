@@ -197,6 +197,7 @@
     "assistantSuffix": "Assistant",
     "online": "Online",
     "placeholder": "Type a message...",
-    "defaultPreview": "How can I help you?"
+    "defaultPreview": "How can I help you?",
+    "newChat": "New chat"
   }
 }

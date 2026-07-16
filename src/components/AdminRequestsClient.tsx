@@ -80,6 +80,9 @@ export default function AdminRequestsClient({ initialPending, initialProcessed }
                   <h3 className="font-bold text-lg text-slate-900">{req.name}</h3>
                   <p className="text-slate-500">{req.email}</p>
                   <div className="mt-2 flex gap-2 flex-wrap">
+                    <span className={`px-2 py-1 text-xs rounded-md font-medium ${req.source === 'saule' ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-600'}`}>
+                      {req.source === 'saule' ? 'Saule' : 'Form'}
+                    </span>
                     <span className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Kategori: {req.category || 'Belirtilmedi'}</span>
                     <span className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-md">
                       İletişim: {Object.keys(req.contacts).filter(k => req.contacts[k].selected).join(', ')}
@@ -126,6 +129,9 @@ export default function AdminRequestsClient({ initialPending, initialProcessed }
                   <p className="text-sm text-slate-500">{req.email}</p>
                 </div>
                 <div className="flex items-center gap-4">
+                  {req.source === 'saule' && (
+                    <span className="px-2 py-1 bg-orange-50 text-orange-600 text-xs rounded-md font-medium">Saule</span>
+                  )}
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${req.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     {req.status === 'approved' ? 'Onaylandı' : 'Reddedildi'}
                   </span>

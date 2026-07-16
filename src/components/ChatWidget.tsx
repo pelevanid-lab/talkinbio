@@ -3,27 +3,39 @@
 import { useState, useRef, useEffect } from 'react';
 import { useChat } from 'ai/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, X, MessageCircle, Bot, User } from 'lucide-react';
+import { Send, X, MessageCircle, Bot, User, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 
-export default function ChatWidget({ businessId, businessName, locale, initialMessages = [], customGreeting }: { businessId: string, businessName: string, locale: string, initialMessages?: any[], customGreeting?: string | null }) {
+export default function ChatWidget({ businessId, businessName, locale, initialMessages = [], customGreeting, variant = 'sheet' }: { businessId: string, businessName: string, locale: string, initialMessages?: any[], customGreeting?: string | null, variant?: 'sheet' | 'inline' }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const t = useTranslations('ChatWidget');
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading, append } = useChat({
+  const [pendingNewConversation, setPendingNewConversation] = useState(false);
+
+  const welcomeMessage = () => ({
+    id: `welcome-${Date.now()}`,
+    role: 'assistant' as const,
+    content: customGreeting || t('welcome', { name: businessName })
+  });
+
+  const { messages, input, handleInputChange, handleSubmit, isLoading, append, setMessages } = useChat({
     api: '/api/chat',
     body: { businessId, locale },
-    initialMessages: initialMessages.length > 0 ? initialMessages : [
-      {
-        id: 'welcome',
-        role: 'assistant',
-        content: customGreeting || t('welcome', { name: businessName })
-      }
-    ]
+    initialMessages: initialMessages.length > 0 ? initialMessages : [welcomeMessage()]
   });
+
+  const handleNewChat = () => {
+    setMessages([welcomeMessage()]);
+    setPendingNewConversation(true);
+  };
+
+  const onFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    handleSubmit(e, { body: { newConversation: pendingNewConversation } });
+    setPendingNewConversation(false);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -50,19 +62,21 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
 
   return (
     <>
-      {/* Expanded Bottom Sheet */}
+      {/* Expanded Bottom Sheet (or, for variant="inline", a panel bounded to the parent frame) */}
       <AnimatePresence>
         {isExpanded && (
           <>
             {/* Backdrop */}
-            <motion.div
-              key="chat-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={toggleExpand}
-              className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[60]"
-            />
+            {variant === 'sheet' && (
+              <motion.div
+                key="chat-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={toggleExpand}
+                className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[60]"
+              />
+            )}
 
             {/* Sheet */}
             <motion.div
@@ -71,7 +85,9 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 h-[85dvh] bg-white rounded-t-3xl shadow-2xl z-[70] flex flex-col overflow-hidden"
+              className={variant === 'sheet'
+                ? 'fixed bottom-0 left-0 right-0 h-[85dvh] bg-white rounded-t-3xl shadow-2xl z-[70] flex flex-col overflow-hidden'
+                : 'absolute inset-0 bg-white z-20 flex flex-col overflow-hidden'}
             >
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-[var(--border-light)] bg-white">
@@ -86,12 +102,21 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
                     </p>
                   </div>
                 </div>
-                <button 
-                  onClick={toggleExpand}
-                  className="w-10 h-10 rounded-full bg-[var(--paper)] flex items-center justify-center text-[var(--ink-soft)] hover:bg-slate-200 transition"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleNewChat}
+                    title={t('newChat')}
+                    className="w-10 h-10 rounded-full bg-[var(--paper)] flex items-center justify-center text-[var(--ink-soft)] hover:bg-slate-200 transition"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={toggleExpand}
+                    className="w-10 h-10 rounded-full bg-[var(--paper)] flex items-center justify-center text-[var(--ink-soft)] hover:bg-slate-200 transition"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Messages Area */}
@@ -137,7 +162,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
               </div>
 
               <div className="p-4 bg-white border-t border-[var(--border-light)]">
-                <form onSubmit={handleSubmit} className="flex relative items-end">
+                <form onSubmit={onFormSubmit} className="flex relative items-end">
                   <textarea
                     value={input}
                     onChange={(e) => {
@@ -172,11 +197,13 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
         )}
       </AnimatePresence>
 
-      {/* Collapsed State (Bottom 30% area inside parent) */}
+      {/* Collapsed State (fills the parent frame — for "sheet" that's a pre-sized bottom-30dvh wrapper; for "inline" this positions itself) */}
       {!isExpanded && (
-        <div 
+        <div
           onClick={toggleExpand}
-          className="w-full h-full p-4 flex flex-col justify-end cursor-pointer group"
+          className={variant === 'sheet'
+            ? 'w-full h-full p-4 flex flex-col justify-end cursor-pointer group'
+            : 'absolute bottom-0 left-0 right-0 h-[31%] p-3 flex flex-col justify-end cursor-pointer group'}
         >
           {/* Quick preview of last message */}
           <div className="bg-white border border-[var(--border-light)] rounded-2xl shadow-lg p-4 flex items-center justify-between mb-4 transform transition group-hover:-translate-y-1">

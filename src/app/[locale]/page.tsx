@@ -1,7 +1,9 @@
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
+import { cookies } from 'next/headers';
 import { Link } from '@/i18n/routing';
 import LandingMockup from '@/components/LandingMockup';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { isConversationActive } from '@/utils/conversationWindow';
 import './landing.css';
 
 const LogoSVG = () => (
@@ -21,8 +23,44 @@ const LogoSVG = () => (
   </svg>
 );
 
-export default function HomePage() {
-  const t = useTranslations('Landing');
+export default async function HomePage({ params }: any) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'Landing' });
+
+  // Faz 1.6: landing'deki Saule önizlemesi gerçek demo işletmeye bağlanır (dogfooding).
+  const demoBusinessId = process.env.TALKINBIO_BUSINESS_ID || null;
+  let demoInitialMessages: any[] = [];
+  if (demoBusinessId) {
+    try {
+      const cookieStore = await cookies();
+      const visitorSessionId = cookieStore.get('visitor_session_id')?.value;
+      if (visitorSessionId) {
+        const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+        const supabaseAdmin = createSupabaseClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
+        const { data: conv } = await supabaseAdmin
+          .from('conversations')
+          .select('last_message_at, created_at, messages(id, role, content, created_at)')
+          .eq('business_id', demoBusinessId)
+          .eq('visitor_session_id', visitorSessionId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const isActive = conv && isConversationActive(conv.last_message_at, conv.created_at);
+
+        if (isActive && conv?.messages) {
+          demoInitialMessages = conv.messages
+            .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+            .map((m: any) => ({ id: m.id, role: m.role, content: m.content }));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load landing demo messages', err);
+    }
+  }
 
   return (
     <div id="landing-page">
@@ -67,7 +105,12 @@ export default function HomePage() {
               <p className="hero-note">{t('hero.note')}</p>
             </div>
 
-            <LandingMockup />
+            <LandingMockup
+              businessId={demoBusinessId}
+              businessName="Talkinbio"
+              locale={locale}
+              initialMessages={demoInitialMessages}
+            />
           </div>
         </section>
 

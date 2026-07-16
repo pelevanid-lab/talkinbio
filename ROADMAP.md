@@ -298,7 +298,12 @@ overengineering yapmadan, iki ucuz tasarım kuralıyla garanti altına alıyoruz
 ### 2.3 Prompt caching + bağlam diyeti (birim maliyet hedefi)
 Kanvasın hedefi sohbet başına ≤$0,02; Faz 0 testinde ölçülen gerçek: **~$0,026/mesaj**
 (tek Saule mesajı 8,1K prompt token tüketiyor — sistem prompt'u tüm blokları 3 dilde,
-pretty-print JSON olarak taşıyor). Hedefe iki işle ulaşılır:
+pretty-print JSON olarak taşıyor). **Beiwe'de öncelik daha yüksek:** Faz 4.3 testinde
+ölçülen gerçek maliyetler, Beiwe'nin her çağrıda ~18-19K token'lık sabit yük taşıdığını
+gösterdi — küçük bir güncelleme bile tam bir BULK kurulumla neredeyse aynı maliyette
+(~$0,12-0,15). Prompt caching burada Saule'den de kritik: sabit yük (mevcut bloklar +
+kural seti) kısaltılmadan "güncelleme" kredi tier'i kalıcı olarak ince marjlı kalır.
+Hedefe iki işle ulaşılır:
 - **Bağlam diyeti:** bloklar yalnızca ziyaretçinin dilinde, kompakt formatta prompt'a girer
   (muhtemelen tek başına ~%50 azaltır). Faz 1.2'deki 30-mesajlık pencere de tarihçe
   büyümesini keser.
@@ -435,13 +440,47 @@ gerçek kullanıcının hiç karşılaşmayacağı hız sınırlarındadır.
 - Kritik: **model-bazlı fiyat farkını görünür kılar** — Beiwe'ye güçlü model verme
   kararı (Faz 0.1) veriyle test edilir.
 
-### 4.3 Plan/faturalandırma — kredi modeli (kanvasla hizalandı)
+### 4.3 Plan/faturalandırma — kredi modeli (kanvasla hizalandı, gerçek maliyetle doğrulandı)
 Kanvasın kilitli "Gelir Kalemleri" kutusundaki model uygulanır:
 - **Planlar:** Starter $9 → 200 kredi | Pro $29 → 700 | Business $79 → 1.800;
   yıllık ödemede %20 indirim; ek kredi paketi $5 → 100 (birim pahalı — plana yükseltme teşviki).
-- **Kredi çarpanları:** Saule sohbeti 1 / Beiwe güncellemesi 3 / sayfa oluşturma 10 —
-  tahmindir, 4.2 `usage_events` ölçümüyle kalibre edilir (2.3'teki maliyet hedefi ön koşul,
-  yoksa 10 kredilik kurulum zararına satılır).
+
+- **Kredi çarpanları — GERÇEK ÖLÇÜM (2026-07-16, Uliana Pehlivan test hesabı, Sonnet 4.5
+  $3/$15 per MTok):**
+
+  | Eylem | Kredi | Gerçek maliyet | Kredi fiyatı ($0,045/kredi) | Maliyet oranı |
+  |---|---|---|---|---|
+  | Saule sohbeti | 1 | $0,026 (8.139 girdi + 136 çıktı token) | $0,045 | %58 |
+  | Beiwe güncelleme (tek alan) | 3 | **$0,121** (37.395 girdi + 571 çıktı, 2 adım) | $0,135 | **%89** |
+  | Beiwe kurulum (tam BULK: tema+iletişim+hakkımda+hizmetler+saatler+SSS) | 10 | **$0,147** (39.481 girdi + 1.921 çıktı, 2 adım) | $0,45 | %33 |
+
+  **Şaşırtıcı bulgu — varsayılan 1:3:10 oranı gerçekle ters düşüyor:** "güncelleme" ile
+  "kurulum" neredeyse aynı maliyette (~$0,12-0,15) çünkü Beiwe'nin sistem prompt'u
+  (mevcut bloklar JSON + sektör profili + 11 maddelik kural seti) ~18-19K token'lık **sabit
+  yük** taşıyor — kullanıcı tek bir çalışma saati güncellemesi bile istese bu yük aynen
+  gönderiliyor. Gerçek oran Saule:güncelleme:kurulum ≈ 1 : 4,6 : 5,6 — tasarımdaki 1:3:10
+  değil. Sonuç: küçük güncellemeler kredi başına en ince marjlı (%89 maliyet oranı, %11
+  marj) eylem; kurulum ise en sağlıklısı (%33 maliyet oranı).
+  **En kötü senaryo stres testi:** 200 kredinin tamamı yalnızca güncellemeye harcansa
+  (66 işlem × $0,121 = $8,05 gerçek maliyet) $9 fiyata karşı hâlâ pozitif ama çok ince
+  bir marj (%11) — zarar değil, ama tampon yok. Kredi tavanı doğal bir zarar-durdurucu
+  işlevi görüyor.
+  **Aksiyon:** çarpanlar bu gerçek ölçümle yeniden kalibre edilmeli (ör. güncelleme
+  3→5, kurulum 10→6 gibi gerçek orana yakınsatılmalı) VEYA (tercih edilen) Faz 2.3'teki
+  prompt caching Beiwe'nin ~18K sabit yükünü küçültsün — küçük güncellemelerin asıl
+  sorunu çarpan değil, her çağrıda tekrar ödenen sabit maliyet. `usage_events` (4.2)
+  bu kalibrasyonu üretimde sürekli doğrulayacak.
+
+- **Ürün gereksinimi (2026-07-16, Enes onayı) — kabul kriteri:** Starter paketi alan bir
+  kullanıcı (a) sayfasını en az bir kez oluşturabilmeli, (b) deneme yanılmayla **birkaç kez**
+  yeniden oluşturabilmeli/düzenleyebilmeli, (c) Saule'yi de bir miktar deneyimleyebilmeli —
+  hepsi 200 kredi içinde. Gerçek sayılarla model: 3× kurulum (30 kredi, $0,44) + 15
+  etkileşimli güncelleme (45 kredi, $1,81) + 20 Saule mesajı (20 kredi, $0,53) = 95/200
+  kredi, ~$2,78 gerçek maliyet → $9 fiyata karşı %31 maliyet oranı, %69 marj. **Bu senaryo
+  200 kredi içinde rahatça ve kârlı şekilde karşılanıyor** — asıl risk yukarıdaki
+  "yalnızca güncelleme" uç senaryosunda, tipik kullanımda değil. Faz 4'te bu senaryo
+  gerçek `usage_events` verisiyle otomatik bir kabul testine dönüştürülmeli (yeni hesap →
+  kurulum + N düzenleme + M Saule mesajı → toplam maliyet fiyatın altında kalıyor mu?).
 - **Kredi devri:** kullanılmayan krediler devreder, bakiye tavanı 2 aylık kota.
 - **Fiili ücretsiz katman:** kredi bitince asistan kapanmaz — sayfa + "mesaj bırakın" modu
   (LLM'siz lead toplama) yaşar; ziyaretçi duvara çarpmaz, viral imza döngüsü (1.8) beslenmeye
