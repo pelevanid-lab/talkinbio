@@ -121,9 +121,9 @@ const thresholds = [
     achievable: true,
   },
   {
-    target: '$1M+ ARR',
-    what: 'v2 kanal genişlemesi + MENA/LatAm',
-    note: 'Türkiye tek başına bu ölçeği vermez. v2 olmadan senaryo dışı.',
+    target: '$810K – $1,6M ARR',
+    what: 'v2 Global (Baz: 4.5K müşteri / Stretch: 9K)',
+    note: 'Türkiye tek başına bu ölçeği vermez. v2 kanallar (WA+IG DM) ve Faz 7 dil genişlemesi olmadan senaryo dışı.',
     achievable: false,
   },
 ];
@@ -384,6 +384,48 @@ export default function FermiEstimationPage() {
                   v2 opsiyonel bir büyüme taktiği değil, <strong>iş modelinin kendisidir.</strong>
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 6. Karşılaştırılabilirler */}
+        <section>
+          <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-mono">6</span>
+            Karşılaştırılabilirler — Beklenti Kalibrasyonu
+          </h2>
+          <p className="text-xs text-slate-500 mb-3">
+            Referans şirketler gerçekçi hedef belirleme içindir — rakip analizi değil.
+            Ödeme yapan müşteri sayısı açıklanmayan rakamlar yanıltıcı olabilir.
+          </p>
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50">
+                  <th className="text-left px-5 py-3 font-semibold text-slate-700">Şirket</th>
+                  <th className="text-left px-5 py-3 font-semibold text-slate-700">Müşteri Tabanı</th>
+                  <th className="text-left px-5 py-3 font-semibold text-slate-700">ARR</th>
+                  <th className="text-left px-5 py-3 font-semibold text-slate-700 hidden md:table-cell">Not</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {comparables.map((c, i) => (
+                  <tr key={i} className={c.caveat ? 'bg-amber-50/40' : ''}>
+                    <td className="px-5 py-3 font-semibold text-slate-900">{c.name}</td>
+                    <td className="px-5 py-3 text-slate-700">{c.customers}</td>
+                    <td className="px-5 py-3 text-mono font-bold text-slate-900">{c.arr}</td>
+                    <td className="px-5 py-3 text-slate-500 text-xs hidden md:table-cell">
+                      {c.caveat && <span className="text-amber-600 font-medium mr-1">⚠</span>}
+                      {c.note}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="px-5 py-3 border-t border-slate-100 bg-slate-50">
+              <p className="text-xs text-slate-500">
+                ⚠ Sarı satırlar: ödeme yapan müşteri sayısı açıklanmamış — "1M+ işletme kullanıyor" ifadesi ücretsiz plan egemenliğini gizleyebilir. Cal.com (bootstrapped, ekiple) en gerçekçi tempo referansıdır.
+              </p>
             </div>
           </div>
         </section>
