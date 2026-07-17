@@ -104,14 +104,46 @@ const mdComponents = {
   p: ({ node, ...props }: any) => <p className="text-sm text-slate-700 leading-relaxed mb-3" {...props} />,
   ul: ({ node, ...props }: any) => <ul className="list-disc pl-5 space-y-1.5 text-sm text-slate-700 mb-3" {...props} />,
   ol: ({ node, ...props }: any) => <ol className="list-decimal pl-5 space-y-1.5 text-sm text-slate-700 mb-3" {...props} />,
-  li: ({ node, ...props }: any) => <li className="leading-relaxed" {...props} />,
+  li: ({ node, children, ...props }: any) => {
+    const extractText = (child: any): string => {
+      if (typeof child === 'string') return child;
+      if (Array.isArray(child)) return child.map(extractText).join('');
+      if (child && child.props && child.props.children) return extractText(child.props.children);
+      return '';
+    };
+    const textContent = extractText(children).trim();
+    
+    if (textContent.startsWith('✔️')) {
+      return (
+        <li className="leading-relaxed bg-green-50 text-green-800 px-3 py-2 rounded-md border border-green-300/60 mb-2 list-none [&>p]:mb-0 shadow-sm" {...props}>
+          {children}
+        </li>
+      );
+    }
+    if (textContent.startsWith('⭕')) {
+      return (
+        <li className="leading-relaxed text-slate-500 mb-2 list-none [&>p]:mb-0" {...props}>
+          {children}
+        </li>
+      );
+    }
+    return <li className="leading-relaxed" {...props}>{children}</li>;
+  },
   blockquote: ({ node, ...props }: any) => (
     <blockquote className="border-l-4 border-blue-200 bg-blue-50/50 rounded-r-lg pl-4 pr-3 py-2 my-4 text-sm text-slate-700 [&_p]:mb-1.5 [&_p:last-child]:mb-0" {...props} />
   ),
-  code: ({ node, inline, ...props }: any) =>
-    inline
-      ? <code className="bg-slate-100 text-slate-800 rounded px-1 py-0.5 text-xs font-mono" {...props} />
-      : <code className="block bg-slate-900 text-slate-100 rounded-xl p-4 text-xs font-mono overflow-x-auto my-3 whitespace-pre" {...props} />,
+  code: ({ node, className, children, ...props }: any) => {
+    const isBlock = String(children).includes('\n');
+    return isBlock ? (
+      <code className="block bg-slate-900 text-slate-100 rounded-xl p-4 text-xs font-mono overflow-x-auto my-3 whitespace-pre" {...props}>
+        {children}
+      </code>
+    ) : (
+      <code className="bg-slate-100 text-slate-800 rounded px-1.5 py-0.5 text-[0.8rem] font-mono border border-slate-200" {...props}>
+        {children}
+      </code>
+    );
+  },
   pre: ({ node, ...props }: any) => <pre className="my-0" {...props} />,
   a: ({ node, ...props }: any) => <a className="text-blue-600 underline hover:text-blue-800" {...props} />,
   hr: ({ node, ...props }: any) => <hr className="my-8 border-slate-200" {...props} />,
@@ -135,6 +167,12 @@ export default function RoadmapClient({ content }: { content: string }) {
     sidebarContent = content.substring(phaseSIndex, phase3Index);
     const mainPart2 = content.substring(phase3Index);
     mainContent = mainPart1 + mainPart2;
+  }
+
+  // Checkbox dönüşümleri: mdComponents.li içindeki özel stillerin tetiklenmesi için
+  mainContent = mainContent.replace(/- \[x\] /g, '- ✔️ ').replace(/- \[ \] /g, '- ⭕ ');
+  if (sidebarContent) {
+    sidebarContent = sidebarContent.replace(/- \[x\] /g, '- ✔️ ').replace(/- \[ \] /g, '- ⭕ ');
   }
 
   const mainBlocks = splitBlocks(mainContent);

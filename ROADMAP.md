@@ -363,8 +363,8 @@ Talkinbio'nun görünürlüğünü, arama motoru otoritesini ve sosyal kanıtın
 - **Saule İmzası:** Müşterilerin widget'larında yer alan "Saule ile konuşuyorsunuz" imzasından gelen trafiğin (UTM parametreleri ile) ölçümlenmesi ve viral büyüme katsayısının (K-factor) izlenmesi.
 
 ### Kabul Kriterleri
-- [ ] Zengin sonuç testi (Rich Results Test) tüm şemaları doğruluyor.
-- [ ] Yayınlanan her profil sitemap'te yer alıyor ve Search Console'da indeksleniyor.
+- [x] Zengin sonuç testi (Rich Results Test) tüm şemaları doğruluyor.
+- [x] Yayınlanan her profil sitemap'te yer alıyor ve Search Console'da indeksleniyor.
 - [ ] UTM ile gelen trafik ve widget imzası dönüşümleri admin panelinde izlenebiliyor.
 
 ---
