@@ -1,254 +1,301 @@
 {
-    "Landing":  {
-                    "nav":  {
-                                "startFree":  "Early access",
-                                "login":  "Login",
-                                "stakeholders":  "For Stakeholders"
-                            },
-                    "hero":  {
-                                 "eyebrow":  "Next-gen for all your social media accounts",
-                                 "headlinePrefix":  "It\u0027s not link in bio,",
-                                 "headlineStrike":  "look",
-                                 "headlineSuffix":  "it\u0027s now ",
-                                 "sub":  "Don\u0027t let your visitors see a static page when they click your link — let them talk to an agent that knows your business. Setup takes 10 minutes, no code required.",
-                                 "startFree":  "Apply for early access",
-                                 "howItWorks":  "How it works ↓",
-                                 "note":  "Limited early access · Live in 10 minutes"
-                             },
-                    "statement":  {
-                                      "text":  "Don\u0027t you think \"Link in bio\" is getting old? Don\u0027t trap your customers in mazes with the old web-form layout. Leave your business to talkinbio; let it ask, guide, and answer."
-                                  },
-                    "steps":  {
-                                  "title":  "The setup itself is your agent\u0027s training.",
-                                  "sub":  "No separate \"train the AI\" step. Every answer you give while setting up your page becomes your agent\u0027s knowledge base.",
-                                  "step1":  {
-                                                "title":  "Answer a few questions",
-                                                "desc":  "What do you sell, what are your prices, your hours — you explain it in a simple chat flow, no form filling."
-                                            },
-                                  "step2":  {
-                                                "title":  "Your page and your agent are born together",
-                                                "desc":  "The information you provide turns into both a visible page and what your agent knows — one source, two outputs."
-                                            },
-                                  "step3":  {
-                                                "title":  "Put your link in your bio, let it talk",
-                                                "desc":  "Visitor asks a question, your agent answers, and takes note of interested customers for you."
-                                            }
-                              },
-                    "features":  {
-                                     "title":  "Everything you need to grow your business, on one page.",
-                                     "sub":  "Not a complex panel — just exactly what you need for your business.",
-                                     "feat1":  {
-                                                   "title":  "24/7 talking agent",
-                                                   "desc":  "Your customers can ask questions even while you sleep, your agent answers by knowing your business."
-                                               },
-                                     "feat2":  {
-                                                   "title":  "Photo and video",
-                                                   "desc":  "Explain your services with visuals — add your own photo or short video to each block."
-                                               },
-                                     "feat3":  {
-                                                   "title":  "Multi-language support",
-                                                   "desc":  "Your agent answers in whichever language the visitor writes, you only set it up in one language."
-                                               },
-                                     "feat4":  {
-                                                   "title":  "Your inbox is ready",
-                                                   "desc":  "The name, contact, and request of every interested visitor automatically drops to you."
-                                               },
-                                     "feat5":  {
-                                                   "title":  "Don\u0027t bother with design",
-                                                   "desc":  "You don\u0027t choose a theme, template, or layout — your page is automatically built from its content."
-                                               },
-                                     "feat6":  {
-                                                   "title":  "Ready for all social media",
-                                                   "desc":  "One link, in one place — Instagram, WhatsApp, TikTok. Suitable for all platforms."
-                                               }
-                                 },
-                    "audience":  {
-                                     "title":  "For everyone who uses social media professionally.",
-                                     "sub":  "For those who struggle to answer appointments, pricing, availability questions and more one by one every day.",
-                                     "chips":  [
-                                                   "Hairdresser \u0026 barber",
-                                                   "Massage \u0026 spa",
-                                                   "Personal trainer",
-                                                   "Consulting",
-                                                   "Handmade craft studio",
-                                                   "Photographer",
-                                                   "Dental \u0026 aesthetic clinics"
-                                               ]
-                                 },
-                    "mockup":  {
-                                   "services":  "Services",
-                                   "servicesDesc":  "Massage, skin care, hair",
-                                   "prices":  "Prices",
-                                   "pricesDesc":  "Packages starting from $20",
-                                   "hours":  "Working hours",
-                                   "hoursDesc":  "Every day 10:00 – 19:00",
-                                   "msg1":  "Is Saturday at 15:00 available?",
-                                   "msg2":  "Yes, 15:00 works! Can I get your name and number?",
-                                   "typing":  "typing..."
-                               },
-                    "cta":  {
-                                "title":  "Let your bio link start talking today.",
-                                "sub":  "Setup takes 10 minutes · early access spots are limited.",
-                                "startFree":  "Apply for early access",
-                                "demo":  "See a sample page"
-                            },
-                    "footer":  {
-                                   "privacy":  "Privacy",
-                                   "terms":  "Terms of use",
-                                   "contact":  "Contact",
-                                   "brandLink":  "talkinbio.com/you"
-                               }
-                },
-    "RequestAccess":  {
-                          "step1":  {
-                                        "title":  "Early Access Request",
-                                        "desc":  "First, let\u0027s get your email address and workspace name for your account.",
-                                        "emailLabel":  "Account Email",
-                                        "emailPlaceholder":  "example@mail.com",
-                                        "nameLabel":  "Workspace",
-                                        "namePlaceholder":  "Ex: X Studio",
-                                        "categoryLabel":  "Category / Field",
-                                        "categoryPlaceholder":  "Ex: Photographer, Beauty Expert, Therapist..."
-                                    },
-                          "step2":  {
-                                        "title":  "How to get in touch?",
-                                        "desc":  "How should your customers contact you from your page?",
-                                        "methodsLabel":  "Contact Methods (You can select multiple)",
-                                        "emailRequiredNote":  "Email is required.",
-                                        "methods":  {
-                                                        "whatsapp":  "Phone \u0026 WhatsApp",
-                                                        "instagram":  "Instagram DM",
-                                                        "email":  "Email",
-                                                        "telegram":  "Telegram"
-                                                    },
-                                        "placeholders":  {
-                                                             "whatsapp":  "Ex: +1 5XX XXX XX XX",
-                                                             "instagram":  "Ex: @username",
-                                                             "email":  "Ex: hello@company.com",
-                                                             "telegram":  "Ex: @username"
-                                                         }
-                                    },
-                          "step3":  {
-                                        "title":  "Request Received!",
-                                        "desc":  "We have successfully received your early access request. After review, we will send a login link (Magic Link) to the email address you provided.",
-                                        "homeBtn":  "Return to Homepage"
-                                    },
-                          "nav":  {
-                                      "prev":  "Back",
-                                      "next":  "Next",
-                                      "submit":  "Submit Request",
-                                      "submitting":  "Submitting..."
-                                  },
-                          "alerts":  {
-                                         "error":  "An error occurred. Please try again."
-                                     }
-                      },
-    "Editor":  {
-                   "panelTitle":  "Panel",
-                   "previewBtn":  "Preview",
-                   "tabAgent":  "Setup Agent",
-                   "tabBulk":  "Bulk",
-                   "tabManual":  "Fine Tuning",
-                   "profileLink":  "Your Profile Link",
-                   "pageTitle":  "Page Title (optional)",
-                   "contactMethods":  {
-                                          "whatsapp":  "Phone \u0026 WhatsApp",
-                                          "instagram":  "Instagram DM",
-                                          "email":  "Email",
-                                          "telegram":  "Telegram"
-                                      },
-                   "contactMethodPlaceholders":  {
-                                                     "whatsapp":  "Ex: +1 5XX XXX XX XX",
-                                                     "instagram":  "Ex: @username",
-                                                     "email":  "Ex: hello@company.com",
-                                                     "telegram":  "Ex: @username"
-                                                 },
-                   "editBtn":  "Edit",
-                   "saveBtn":  "Save",
-                   "bulkTitle":  "Bulk Data Upload",
-                   "bulkDesc":  "Paste all the text you have about your business (e.g. about me, services, prices, menus) here. The agent will create your site in one go.",
-                   "bulkPlaceholder":  "Paste all information about your business here...",
-                   "bulkSubmitBtn":  "Create Site",
-                   "pageLayout":  "Page Layout",
-                   "publishStatus":  "Publish Status",
-                   "published":  "PUBLISHED",
-                   "draft":  "DRAFT",
-                   "linkBtn":  "Link",
-                   "publishBtn":  "Publish",
-                   "unpublishBtn":  "Unpublish",
-                   "republishBtn":  "Republish",
-                   "republishHint":  "Tap to confirm your latest changes are reflected on the live page.",
-                   "publishHint":  "To publish, complete either About or Services, plus your contact info.",
-                   "optionalHint":  "recommended",
-                   "manualTitle":  "Manual Fine Tuning",
-                   "manualDesc":  "You can manually update the auto-generated content here.",
-                   "noContent":  "No content yet.",
-                   "newSection":  "New Section (Manual)",
-                   "blocks":  {
-                                  "about":  "About",
-                                  "services":  "Services",
-                                  "faq":  "FAQ",
-                                  "hours":  "Hours",
-                                  "contact":  "Contact",
-                                  "custom":  "Custom",
-                                  "gallery":  "Gallery",
-                                  "testimonials":  "Testimonials",
-                                  "links":  "Links"
-                              },
-                   "previewEmpty":  "Start chatting with the Setup Assistant.",
-                   "assistantSuffix":  "Assistant",
-                   "assistantGreeting":  "How can I help you?",
-                   "chatPlaceholder":  "Type a message to your assistant...",
-                   "agentInputPlaceholder":  "Tell us about your business...",
-                   "aiWelcome":  "Hello {name}! I am your Talkinbio setup assistant. Could you briefly tell me about your business and the services you offer? I\u0027ll build your page for you as we chat."
-               },
-    "ChatWidget":  {
-                       "welcome":  "Hi! I\u0027m {name}\u0027s assistant. How can I help you?",
-                       "assistantSuffix":  "Assistant",
-                       "online":  "Online",
-                       "placeholder":  "Type a message...",
-                       "defaultPreview":  "How can I help you?",
-                       "newChat":  "New chat",
-                       "signature":  "You\u0027re chatting with Saule"
-                   },
-    "Stakeholders":  {
-                         "title":  "To Our Stakeholders",
-                         "intro":  "Dear team members, users, and investors; on this page I will tell you about both talkinbio and how we work together.",
-                         "q1":  {
-                                    "title":  "Why Now",
-                                    "content":  "For individual service providers running their business through social media, something changed in the last three years: DMs went from being a content channel to a sales channel. Booking appointments, asking about prices, negotiating, deciding. All of this flows through Instagram DMs. And sellers are no longer able to manage this volume.\n\nThe opening of WhatsApp Business API to individual accounts added a new layer: a seller can now technically access an infrastructure to operate all their channels from behind a single link, in a single voice. But there is no tool to set this up, manage it, and grow with it.\n\nLinktree didn\u0027t see this gap. Salesforce didn\u0027t care about this segment. The CRM giants sold their packages to SMBs, not to individuals. This gap was left empty intentionally. We are building the solution inside it."
-                                },
-                         "q2":  {
-                                    "title":  "What Happens If Nothing Changes",
-                                    "content":  "A customer asks a question. The reply comes 4 hours later. The customer already went somewhere else. The seller doesn\u0027t even notice.\n\nThis scenario plays out every day across tens of thousands of the 600,000 individual sellers in Turkey alone. The revenue loss is invisible because nobody says \u0027I missed them.\u0027 The customer left. It doesn\u0027t get counted.\n\nFor investors, let\u0027s make this concrete: A seller receives an average of 10 DMs per day. 40% of those come with buying intent. Due to response delays, 2 of those 4 customers are lost. Average transaction value: $20. That\u0027s $14,600 in annual losses for a single seller. Multiply across the market and the damage is incalculable.\n\nFor the team, a simpler truth: We are here to solve this problem. And if we can\u0027t, then what needs to stop, stops."
-                                },
-                         "q3":  {
-                                    "title":  "Why Existing Alternatives Fall Short",
-                                    "content":  "Linktree: It doesn\u0027t answer the visitor\u0027s question. Someone clicking a seller\u0027s link wants to learn about a service, but there\u0027s no match. Linktree is a storefront, not a representative.\n\nManyChat and similar chatbot tools: Complex setup, fixed and brittle scenarios. Designing a separate flow for each question requires technical knowledge. Individual sellers don\u0027t have the time or capacity.\n\nLarge CRMs (HubSpot, Pipedrive): Overly complex for a coach or beauty professional. Onboarding takes weeks, pricing is annual subscription-based, integration requires technical knowledge. These products were designed for businesses with IT departments inside their walls.\n\nWhatsApp Business alone: Questions come in, they reply manually. No automation, no follow-up, no analytics. Just slightly more organized messaging.\n\nNone of them combine 24/7 availability, question-answering, customer classification, lead list generation, and marketing recommendations in one place. That gap is talkinbio."
-                                },
-                         "q4":  {
-                                    "title":  "What We Do",
-                                    "content":  "talkinbio consists of two components.\n\nSaule is the 24/7 AI assistant on your bio page. A visitor asks a question, Saule listens, understands, and responds like a representative who knows your services. It collects appointments, records interested visitors, and flags follow-up situations. When you wake up in the morning, you don\u0027t find missed DMs — you find a sorted and labeled lead list.\n\nBeiwe is the agent that analyzes these conversations and produces weekly marketing recommendations. \u0027Which question was asked most this week? Which service got the most interest? What hours saw the most visitors?\u0027 — Beiwe answers these questions and lets you base your next content decision on data.\n\nSetup takes 10 minutes. No coding required. Once the system starts running, it works even when you don\u0027t."
-                                },
-                         "q5":  {
-                                    "title":  "What Makes Us Different",
-                                    "content":  "At the bottom of every Saule conversation is a small signature: \u0027You\u0027re chatting with Saule — talkinbio.com.\u0027 This signature is seen by every user who visits the seller\u0027s page. The user thinks \u0027I want this for my page too\u0027 and signs up. That means the product grows itself. CAC stays organic without paid acquisition.\n\nFirst advantage: The viral loop. Every active assistant becomes a channel for acquiring new users.\n\nSecond advantage: Accumulated conversation data. The more Beiwe is used, the more personalized it becomes. A new competitor cannot immediately copy this data advantage. Early users carry strategic value in terms of data richness.\n\nThird: Turkish-first architecture. We\u0027re building the localization skeleton from the ground up — one that adapts to markets with different languages and payment infrastructures (MENA, LatAm). This means a v2 expansion that doesn\u0027t have to start from scratch."
-                                },
-                         "q6":  {
-                                    "title":  "Our Revenue Model",
-                                    "content":  "We operate a credit-based subscription system. Three tiers.\n\nStarter ($9/month, 200 credits): For the individual seller receiving 3–5 DMs per day, setting up an assistant for the first time. Users at this tier are learning what Saule is and testing the system\u0027s value.\n\nPro ($29/month, 700 credits): For sellers receiving 30+ DMs per week with a regular customer base who use Beiwe analytics. This tier is our core revenue engine.\n\nBusiness ($79/month, 1,800 credits): For sellers managing multiple service lines, high-volume DM traffic, and mature automation needs.\n\nPricing is dollar-fixed. TL collection is at the current exchange rate. Annual payment comes with a 20% discount — savings for the customer and a buffer against currency risk for us.\n\nEffective ARPU: $15 (early-stage Starter-heavy mix + annual discount effect). LTV: $300 (at 5% churn assumption). CAC target: below $100 — the viral signature loop should keep this organic."
-                                },
-                         "q7":  {
-                                    "title":  "Where We\u0027re Headed",
-                                    "content":  "Today we\u0027re at Stage 1: Problem/Solution Fit. Our OMTM is number of paying customers. The counter is currently at 0/10. Goal: complete 20 problem interviews, validate the recurring pain points, launch the first 10 pilots at $9/month paid.\n\nStage 2 (550 customers, $100K ARR): Crossing this threshold is proof of Problem/Solution Fit. By then we\u0027ll have measured whether the viral loop works. The investor conversation starts from here.\n\nStage 3 (v2 Global, ~4,500 customers, $810K ARR base case): Direct WhatsApp and Instagram DM integration. MENA and LatAm localization. Language expansion. At this point Saule no longer only lives on the bio page — it works across every channel.\n\nStretch scenario (6% global capture): ~9,000 customers, ~$1.6M ARR.\n\nEvery step requires proof from the previous one. Right now we\u0027re doing what\u0027s next: the first 10 payments.\n\nIn the long run, talkinbio is not just a tool for individuals. Saule and Beiwe are evolving into an agent infrastructure that works across every communication channel for businesses. We\u0027re not naming this phase yet — the product will speak for itself."
-                                },
-                         "q8":  {
-                                    "title":  "How We Work",
-                                    "content":  "We follow the Running Lean methodology. This isn\u0027t a slogan — it\u0027s a framework that directly determines how we work.\n\nProblem validation before product. We complete customer interviews before building. If a recurring pain point doesn\u0027t emerge from 20 interviews, we increase the number.\n\nNo free trials. This isn\u0027t just a preference — it\u0027s a methodological decision. In Ash Maurya\u0027s Running Lean this is clear: free early access collects the curious, not customers. The first 10 to pay are the test of the value hypothesis — payment is commitment.\n\nContinuous Improvement dashboard: Lean Canvas, Fermi Estimation, Traction Roadmap, and Lean Pitch — all of these, including the page you\u0027re reading now, are living documents. They update as we change, and every update is saved with a version. Version discipline is a standard.\n\nEvidence classes are transparent. What\u0027s been validated is stated clearly. So is what hasn\u0027t. Inflated claims of proof are not accepted."
-                                },
-                         "q9":  {
-                                    "title":  "What We\u0027re Asking For",
-                                    "content":  "To our users: Setup takes 10 minutes. Connect your bio link to talkinbio and see how many leads Saule collects in a month. If it creates no value, don\u0027t continue. If it does, you now know.\n\nTo our investors: We\u0027re currently in early-stage bootstrapped mode. The time for an investment conversation is when we cross $100K ARR. But rather than introducing ourselves only at that point, we wanted you to know us now. The numbers are real, the model is honest, the open questions are open. We\u0027ll be in touch when we\u0027re ready.\n\nTo our team: When you need to remember why building this matters, come back to this page. We believe what we\u0027re doing is right. That\u0027s the only thing left to prove."
-                                }
-                     }
+  "Landing": {
+    "nav": {
+      "startFree": "Early access",
+      "login": "Login",
+      "stakeholders": "For Stakeholders"
+    },
+    "hero": {
+      "eyebrow": "Next-gen for all your social media accounts",
+      "headlinePrefix": "It's not link in bio,",
+      "headlineStrike": "look",
+      "headlineSuffix": "it's now ",
+      "sub": "Don't let your visitors see a static page when they click your link — let them talk to an agent that knows your business. Setup takes 10 minutes, no code required.",
+      "startFree": "Apply for early access",
+      "howItWorks": "How it works ↓",
+      "note": "Limited early access · Live in 10 minutes"
+    },
+    "statement": {
+      "text": "Don't you think \"Link in bio\" is getting old? Don't trap your customers in mazes with the old web-form layout. Leave your business to talkinbio; let it ask, guide, and answer."
+    },
+    "steps": {
+      "title": "The setup itself is your agent's training.",
+      "sub": "No separate \"train the AI\" step. Every answer you give while setting up your page becomes your agent's knowledge base.",
+      "step1": {
+        "title": "Answer a few questions",
+        "desc": "What do you sell, what are your prices, your hours — you explain it in a simple chat flow, no form filling."
+      },
+      "step2": {
+        "title": "Your page and your agent are born together",
+        "desc": "The information you provide turns into both a visible page and what your agent knows — one source, two outputs."
+      },
+      "step3": {
+        "title": "Put your link in your bio, let it talk",
+        "desc": "Visitor asks a question, your agent answers, and takes note of interested customers for you."
+      }
+    },
+    "features": {
+      "title": "Everything you need to grow your business, on one page.",
+      "sub": "Not a complex panel — just exactly what you need for your business.",
+      "feat1": {
+        "title": "24/7 talking agent",
+        "desc": "Your customers can ask questions even while you sleep, your agent answers by knowing your business."
+      },
+      "feat2": {
+        "title": "Photo and video",
+        "desc": "Explain your services with visuals — add your own photo or short video to each block."
+      },
+      "feat3": {
+        "title": "Multi-language support",
+        "desc": "Your agent answers in whichever language the visitor writes, you only set it up in one language."
+      },
+      "feat4": {
+        "title": "Your inbox is ready",
+        "desc": "The name, contact, and request of every interested visitor automatically drops to you."
+      },
+      "feat5": {
+        "title": "Don't bother with design",
+        "desc": "You don't choose a theme, template, or layout — your page is automatically built from its content."
+      },
+      "feat6": {
+        "title": "Ready for all social media",
+        "desc": "One link, in one place — Instagram, WhatsApp, TikTok. Suitable for all platforms."
+      }
+    },
+    "audience": {
+      "title": "For everyone who uses social media professionally.",
+      "sub": "For those who struggle to answer appointments, pricing, availability questions and more one by one every day.",
+      "chips": [
+        "Hairdresser & barber",
+        "Massage & spa",
+        "Personal trainer",
+        "Consulting",
+        "Handmade craft studio",
+        "Photographer",
+        "Dental & aesthetic clinics"
+      ]
+    },
+    "mockup": {
+      "services": "Services",
+      "servicesDesc": "Massage, skin care, hair",
+      "prices": "Prices",
+      "pricesDesc": "Packages starting from $20",
+      "hours": "Working hours",
+      "hoursDesc": "Every day 10:00 – 19:00",
+      "msg1": "Is Saturday at 15:00 available?",
+      "msg2": "Yes, 15:00 works! Can I get your name and number?",
+      "typing": "typing..."
+    },
+    "cta": {
+      "title": "Let your bio link start talking today.",
+      "sub": "Setup takes 10 minutes · early access spots are limited.",
+      "startFree": "Apply for early access",
+      "demo": "See a sample page"
+    },
+    "footer": {
+      "privacy": "GDPR & Privacy",
+      "terms": "",
+      "contact": "Contact",
+      "brandLink": "talkinbio.com/you",
+      "rights": "© 2026 talkinbio. All rights reserved."
+    }
+  },
+  "RequestAccess": {
+    "step1": {
+      "title": "Early Access Request",
+      "desc": "First, let's get your email address and workspace name for your account.",
+      "emailLabel": "Account Email",
+      "emailPlaceholder": "example@mail.com",
+      "nameLabel": "Workspace",
+      "namePlaceholder": "Ex: X Studio",
+      "categoryLabel": "Category / Field",
+      "categoryPlaceholder": "Ex: Photographer, Beauty Expert, Therapist..."
+    },
+    "step2": {
+      "title": "How to get in touch?",
+      "desc": "How should your customers contact you from your page?",
+      "methodsLabel": "Contact Methods (You can select multiple)",
+      "emailRequiredNote": "Email is required.",
+      "methods": {
+        "whatsapp": "Phone & WhatsApp",
+        "instagram": "Instagram DM",
+        "email": "Email",
+        "telegram": "Telegram"
+      },
+      "placeholders": {
+        "whatsapp": "Ex: +1 5XX XXX XX XX",
+        "instagram": "Ex: @username",
+        "email": "Ex: hello@company.com",
+        "telegram": "Ex: @username"
+      }
+    },
+    "step3": {
+      "title": "Request Received!",
+      "desc": "We have successfully received your early access request. After review, we will send a login link (Magic Link) to the email address you provided.",
+      "homeBtn": "Return to Homepage"
+    },
+    "nav": {
+      "prev": "Back",
+      "next": "Next",
+      "submit": "Submit Request",
+      "submitting": "Submitting..."
+    },
+    "alerts": {
+      "error": "An error occurred. Please try again."
+    }
+  },
+  "Editor": {
+    "panelTitle": "Panel",
+    "previewBtn": "Preview",
+    "tabAgent": "Setup Agent",
+    "tabBulk": "Bulk",
+    "tabManual": "Fine Tuning",
+    "profileLink": "Your Profile Link",
+    "pageTitle": "Page Title (optional)",
+    "contactMethods": {
+      "whatsapp": "Phone & WhatsApp",
+      "instagram": "Instagram DM",
+      "email": "Email",
+      "telegram": "Telegram"
+    },
+    "contactMethodPlaceholders": {
+      "whatsapp": "Ex: +1 5XX XXX XX XX",
+      "instagram": "Ex: @username",
+      "email": "Ex: hello@company.com",
+      "telegram": "Ex: @username"
+    },
+    "editBtn": "Edit",
+    "saveBtn": "Save",
+    "bulkTitle": "Bulk Data Upload",
+    "bulkDesc": "Paste all the text you have about your business (e.g. about me, services, prices, menus) here. The agent will create your site in one go.",
+    "bulkPlaceholder": "Paste all information about your business here...",
+    "bulkSubmitBtn": "Create Site",
+    "pageLayout": "Page Layout",
+    "publishStatus": "Publish Status",
+    "published": "PUBLISHED",
+    "draft": "DRAFT",
+    "linkBtn": "Link",
+    "publishBtn": "Publish",
+    "unpublishBtn": "Unpublish",
+    "republishBtn": "Republish",
+    "republishHint": "Tap to confirm your latest changes are reflected on the live page.",
+    "publishHint": "To publish, complete either About or Services, plus your contact info.",
+    "optionalHint": "recommended",
+    "manualTitle": "Manual Fine Tuning",
+    "manualDesc": "You can manually update the auto-generated content here.",
+    "noContent": "No content yet.",
+    "newSection": "New Section (Manual)",
+    "blocks": {
+      "about": "About",
+      "services": "Services",
+      "faq": "FAQ",
+      "hours": "Hours",
+      "contact": "Contact",
+      "custom": "Custom",
+      "gallery": "Gallery",
+      "testimonials": "Testimonials",
+      "links": "Links"
+    },
+    "previewEmpty": "Start chatting with the Setup Assistant.",
+    "assistantSuffix": "Assistant",
+    "assistantGreeting": "How can I help you?",
+    "chatPlaceholder": "Type a message to your assistant...",
+    "agentInputPlaceholder": "Tell us about your business...",
+    "aiWelcome": "Hello {name}! I am your Talkinbio setup assistant. Could you briefly tell me about your business and the services you offer? I'll build your page for you as we chat."
+  },
+  "ChatWidget": {
+    "welcome": "Hi! I'm {name}'s assistant. How can I help you?",
+    "assistantSuffix": "Assistant",
+    "online": "Online",
+    "placeholder": "Type a message...",
+    "defaultPreview": "How can I help you?",
+    "newChat": "New chat",
+    "signature": "You're chatting with Saule"
+  },
+  "Stakeholders": {
+    "title": "To Our Stakeholders",
+    "intro": "Dear team members, users, and investors; on this page I will tell you about both talkinbio and how we work together.",
+    "q1": {
+      "title": "Why Now",
+      "content": "For individual service providers running their business through social media, something changed in the last three years: DMs went from being a content channel to a sales channel. Booking appointments, asking about prices, negotiating, deciding. All of this flows through Instagram DMs. And sellers are no longer able to manage this volume.\n\nThe opening of WhatsApp Business API to individual accounts added a new layer: a seller can now technically access an infrastructure to operate all their channels from behind a single link, in a single voice. But there is no tool to set this up, manage it, and grow with it.\n\nLinktree didn't see this gap. Salesforce didn't care about this segment. The CRM giants sold their packages to SMBs, not to individuals. This gap was left empty intentionally. We are building the solution inside it."
+    },
+    "q2": {
+      "title": "What Happens If Nothing Changes",
+      "content": "A customer asks a question. The reply comes 4 hours later. The customer already went somewhere else. The seller doesn't even notice.\n\nThis scenario plays out every day across tens of thousands of the 600,000 individual sellers in Turkey alone. The revenue loss is invisible because nobody says 'I missed them.' The customer left. It doesn't get counted.\n\nFor investors, let's make this concrete: A seller receives an average of 10 DMs per day. 40% of those come with buying intent. Due to response delays, 2 of those 4 customers are lost. Average transaction value: $20. That's $14,600 in annual losses for a single seller. Multiply across the market and the damage is incalculable.\n\nFor the team, a simpler truth: We are here to solve this problem. And if we can't, then what needs to stop, stops."
+    },
+    "q3": {
+      "title": "Why Existing Alternatives Fall Short",
+      "content": "Linktree: It doesn't answer the visitor's question. Someone clicking a seller's link wants to learn about a service, but there's no match. Linktree is a storefront, not a representative.\n\nManyChat and similar chatbot tools: Complex setup, fixed and brittle scenarios. Designing a separate flow for each question requires technical knowledge. Individual sellers don't have the time or capacity.\n\nLarge CRMs (HubSpot, Pipedrive): Overly complex for a coach or beauty professional. Onboarding takes weeks, pricing is annual subscription-based, integration requires technical knowledge. These products were designed for businesses with IT departments inside their walls.\n\nWhatsApp Business alone: Questions come in, they reply manually. No automation, no follow-up, no analytics. Just slightly more organized messaging.\n\nNone of them combine 24/7 availability, question-answering, customer classification, lead list generation, and marketing recommendations in one place. That gap is talkinbio."
+    },
+    "q4": {
+      "title": "What We Do",
+      "content": "talkinbio consists of two components.\n\nSaule is the 24/7 AI assistant on your bio page. A visitor asks a question, Saule listens, understands, and responds like a representative who knows your services. It collects appointments, records interested visitors, and flags follow-up situations. When you wake up in the morning, you don't find missed DMs — you find a sorted and labeled lead list.\n\nBeiwe is the agent that analyzes these conversations and produces weekly marketing recommendations. 'Which question was asked most this week? Which service got the most interest? What hours saw the most visitors?' — Beiwe answers these questions and lets you base your next content decision on data.\n\nSetup takes 10 minutes. No coding required. Once the system starts running, it works even when you don't."
+    },
+    "q5": {
+      "title": "What Makes Us Different",
+      "content": "At the bottom of every Saule conversation is a small signature: 'You're chatting with Saule — talkinbio.com.' This signature is seen by every user who visits the seller's page. The user thinks 'I want this for my page too' and signs up. That means the product grows itself. CAC stays organic without paid acquisition.\n\nFirst advantage: The viral loop. Every active assistant becomes a channel for acquiring new users.\n\nSecond advantage: Accumulated conversation data. The more Beiwe is used, the more personalized it becomes. A new competitor cannot immediately copy this data advantage. Early users carry strategic value in terms of data richness.\n\nThird: Turkish-first architecture. We're building the localization skeleton from the ground up — one that adapts to markets with different languages and payment infrastructures (MENA, LatAm). This means a v2 expansion that doesn't have to start from scratch."
+    },
+    "q6": {
+      "title": "Our Revenue Model",
+      "content": "We operate a credit-based subscription system. Three tiers.\n\nStarter ($9/month, 200 credits): For the individual seller receiving 3–5 DMs per day, setting up an assistant for the first time. Users at this tier are learning what Saule is and testing the system's value.\n\nPro ($29/month, 700 credits): For sellers receiving 30+ DMs per week with a regular customer base who use Beiwe analytics. This tier is our core revenue engine.\n\nBusiness ($79/month, 1,800 credits): For sellers managing multiple service lines, high-volume DM traffic, and mature automation needs.\n\nPricing is dollar-fixed. TL collection is at the current exchange rate. Annual payment comes with a 20% discount — savings for the customer and a buffer against currency risk for us.\n\nEffective ARPU: $15 (early-stage Starter-heavy mix + annual discount effect). LTV: $300 (at 5% churn assumption). CAC target: below $100 — the viral signature loop should keep this organic."
+    },
+    "q7": {
+      "title": "Where We're Headed",
+      "content": "Today we're at Stage 1: Problem/Solution Fit. Our OMTM is number of paying customers. The counter is currently at 0/10. Goal: complete 20 problem interviews, validate the recurring pain points, launch the first 10 pilots at $9/month paid.\n\nStage 2 (550 customers, $100K ARR): Crossing this threshold is proof of Problem/Solution Fit. By then we'll have measured whether the viral loop works. The investor conversation starts from here.\n\nStage 3 (v2 Global, ~4,500 customers, $810K ARR base case): Direct WhatsApp and Instagram DM integration. MENA and LatAm localization. Language expansion. At this point Saule no longer only lives on the bio page — it works across every channel.\n\nStretch scenario (6% global capture): ~9,000 customers, ~$1.6M ARR.\n\nEvery step requires proof from the previous one. Right now we're doing what's next: the first 10 payments.\n\nIn the long run, talkinbio is not just a tool for individuals. Saule and Beiwe are evolving into an agent infrastructure that works across every communication channel for businesses. We're not naming this phase yet — the product will speak for itself."
+    },
+    "q8": {
+      "title": "How We Work",
+      "content": "We follow the Running Lean methodology. This isn't a slogan — it's a framework that directly determines how we work.\n\nProblem validation before product. We complete customer interviews before building. If a recurring pain point doesn't emerge from 20 interviews, we increase the number.\n\nNo free trials. This isn't just a preference — it's a methodological decision. In Ash Maurya's Running Lean this is clear: free early access collects the curious, not customers. The first 10 to pay are the test of the value hypothesis — payment is commitment.\n\nContinuous Improvement dashboard: Lean Canvas, Fermi Estimation, Traction Roadmap, and Lean Pitch — all of these, including the page you're reading now, are living documents. They update as we change, and every update is saved with a version. Version discipline is a standard.\n\nEvidence classes are transparent. What's been validated is stated clearly. So is what hasn't. Inflated claims of proof are not accepted."
+    },
+    "q9": {
+      "title": "What We're Asking For",
+      "content": "To our users: Setup takes 10 minutes. Connect your bio link to talkinbio and see how many leads Saule collects in a month. If it creates no value, don't continue. If it does, you now know.\n\nTo our investors: We're currently in early-stage bootstrapped mode. The time for an investment conversation is when we cross $100K ARR. But rather than introducing ourselves only at that point, we wanted you to know us now. The numbers are real, the model is honest, the open questions are open. We'll be in touch when we're ready.\n\nTo our team: When you need to remember why building this matters, come back to this page. We believe what we're doing is right. That's the only thing left to prove."
+    }
+  },
+  "Legal": {
+    "eyebrow": "Legal",
+    "title": "Privacy Policy & GDPR Notice",
+    "copy": "PEH Solutions takes the privacy and security of your personal data seriously. This page explains how we collect, use and protect your data in accordance with the General Data Protection Regulation (GDPR) and applicable privacy laws.",
+    "lastUpdated": "Last updated: June 2026",
+    "sections": [
+      {
+        "title": "1. Data Controller",
+        "body": "PEH Solutions (referred to as 'Company', 'PEH', 'we' or 'us') is the data controller for personal data collected through the talkinbio platform. Contact: info@talkinbio.com"
+      },
+      {
+        "title": "2. Personal Data We Collect",
+        "body": "When you use the talkinbio platform, we collect the following categories of personal data:\n\n• Identity data: Full name\n• Contact data: Email address\n• Account data: Workspace name, user role, job title\n• Usage data: Login timestamps, in-platform actions, feature usage logs\n• Content data: Customer interaction notes, tickets and related business data entered into the platform\n\nCustomer data you enter into talkinbio is processed on your behalf. In this context, your company also acts as a data controller for that data."
+      },
+      {
+        "title": "3. Legal Basis for Processing",
+        "body": "We process your personal data under the following legal bases under GDPR Article 6:\n\n• Account creation and authentication → Performance of a contract (Art. 6(1)(b))\n• Providing platform services → Performance of a contract (Art. 6(1)(b))\n• Security and audit logs → Legitimate interests (Art. 6(1)(f))\n• Product development and error analysis → Legitimate interests (Art. 6(1)(f))\n• Legal compliance → Legal obligation (Art. 6(1)(c))\n• Marketing communications → Consent (Art. 6(1)(a)) — only where you have given explicit consent"
+      },
+      {
+        "title": "4. Data Transfers",
+        "body": "Your personal data may be transferred to Google Firebase and Supabase (acting as a data processor) to provide our technical infrastructure. Where data is transferred outside the European Economic Area, we ensure appropriate safeguards are in place in accordance with GDPR Chapter V, including Standard Contractual Clauses where applicable."
+      },
+      {
+        "title": "5. Data Retention",
+        "body": "We retain your personal data for as long as your account is active and for a defined period thereafter to meet legal obligations. Data that is no longer required is securely deleted or anonymized."
+      },
+      {
+        "title": "6. Your Rights Under GDPR",
+        "body": "Under GDPR, you have the following rights:\n\n• Right of access — to obtain a copy of your personal data\n• Right to rectification — to correct inaccurate or incomplete data\n• Right to erasure ('right to be forgotten') — to request deletion of your data\n• Right to restriction of processing\n• Right to data portability\n• Right to object — including to processing based on legitimate interests\n• Rights related to automated decision-making and profiling\n\nTo exercise any of these rights, please contact us at info@talkinbio.com. We will respond within 30 days. If you are not satisfied with our response, you have the right to lodge a complaint with your local supervisory authority."
+      },
+      {
+        "title": "7. Cookies",
+        "body": "The talkinbio platform uses strictly necessary cookies for session management and security. Analytics and marketing cookies are only used where you have given explicit consent. You can manage your cookie preferences through your browser settings."
+      },
+      {
+        "title": "8. Changes to This Policy",
+        "body": "PEH reserves the right to update this Privacy Policy. Significant changes will be communicated to your registered email address. The current version is always available on this page."
+      },
+      {
+        "title": "9. Contact",
+        "body": "For all privacy-related requests and GDPR inquiries, please contact us at: info@talkinbio.com"
+      }
+    ],
+    "contactTitle": "Data Controller Contact",
+    "contactBody": "PEH Solutions\ninfo@talkinbio.com\ntalkinbio Platform — talkinbio.com"
+  }
 }

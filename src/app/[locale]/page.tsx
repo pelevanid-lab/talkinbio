@@ -224,14 +224,12 @@ export default async function HomePage({ params }: any) {
             <LogoSVG />
             <div className="foot-links">
               <Link href="/admin/login">Admin</Link>
-              <Link href="#">{t('footer.privacy')}</Link>
-              <Link href="#">{t('footer.terms')}</Link>
-              <Link href="#">{t('footer.contact')}</Link>
+              <Link href="/legal">{t('footer.privacy')}</Link>
             </div>
           </div>
-          <div className="footer-bar">
+          <div className="footer-bar" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
             <span>{t('footer.brandLink')}</span>
-            <div className="dot-btn"></div>
+            <span style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{t('footer.rights')} · <a href="mailto:info@talkinbio.com" style={{ color: 'inherit', textDecoration: 'underline' }}>info@talkinbio.com</a></span>
           </div>
         </div>
       </footer>
