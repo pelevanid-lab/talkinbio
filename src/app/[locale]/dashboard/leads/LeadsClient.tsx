@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Send, MessageCircle, Archive, ArchiveRestore, Trash2 } from 'lucide-react';
+import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Send, MessageCircle, Archive, ArchiveRestore, Trash2, StickyNote, Mail } from 'lucide-react';
 import ConversationsPanel from './ConversationsPanel';
 import KnowledgeBasePanel from './KnowledgeBasePanel';
 
@@ -40,6 +40,14 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
       console.error(error);
       setLeads(prev);
       alert('İşlem sırasında bir hata oluştu.');
+    }
+  };
+
+  const handleUpdateNotes = async (leadId: string, notes: string) => {
+    const { error } = await supabase.from('leads').update({ notes }).eq('id', leadId);
+    if (error) {
+      console.error(error);
+      alert('Not kaydedilirken bir hata oluştu.');
     }
   };
 
@@ -167,7 +175,25 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                       </p>
                     )}
                   </div>
-                  
+
+                  <div className="mb-4">
+                    <label className="text-xs font-semibold text-[#8A8880] mb-1.5 flex items-center gap-1.5 font-mono uppercase tracking-wider">
+                      <StickyNote className="w-3.5 h-3.5" /> Notunuz
+                    </label>
+                    <textarea
+                      defaultValue={lead.notes || ''}
+                      onBlur={(e) => {
+                        if (e.target.value !== (lead.notes || '')) {
+                          setLeads(leads.map(l => l.id === lead.id ? { ...l, notes: e.target.value } : l));
+                          handleUpdateNotes(lead.id, e.target.value);
+                        }
+                      }}
+                      placeholder="Bu kişi hakkında kendinize not bırakın — yalnızca siz görürsünüz."
+                      className="w-full p-2.5 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F] bg-white"
+                      rows={2}
+                    />
+                  </div>
+
                   <div className="flex items-center justify-between border-t border-[rgba(20,35,31,0.10)] pt-4">
                     <div className="flex items-center gap-4">
                       {lead.source_username && (
@@ -358,6 +384,16 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
           </div>
         )}
       </main>
+
+      <footer className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
+        <div className="bg-white border border-[rgba(20,35,31,0.10)] rounded-2xl px-5 py-4 flex items-center gap-3 text-sm">
+          <Mail className="w-4 h-4 text-[#8A8880] shrink-0" />
+          <p className="text-[#4B5A55]">
+            Talkinbio sürekli gelişen bir uygulama. Geri bildiriminiz, istekleriniz veya şikayetleriniz varsa
+            bize <a href="mailto:info@talkinbio.com" className="text-[#FF6A5C] font-medium hover:underline">info@talkinbio.com</a> adresinden ulaşabilirsiniz.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

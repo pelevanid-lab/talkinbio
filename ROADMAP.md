@@ -147,6 +147,25 @@ işletme sahibine yönlendirilir" akışının fiili karşılığı.
 - Doğrulama: typecheck + 29 test yeşil. Tarayıcıda gerçek tıklama testi yapılmadı —
   yalnızca kullanıcı isterse.
 
+**1.1.2 Not alanı + geri bildirim çağrısı (2026-07-18):** Kullanıcı, tam bir CRM katmanı
+(müşteri/lead ayrımı, etiketleme, ticket sistemi, hizmet geçmişi) istedi; tartışma
+sonucunda **bilinçli olarak ertelendi** — gerekçe: (a) Paydaşlar sayfasının (q3) kendi
+konumlandırması "büyük CRM'ler aşırı karmaşık, biz basitiz" diyor, tam CRM bu farkı
+aşındırma riski taşıyor; (b) ayna-odası kuralı — Faz P'nin 20 görüşmesi henüz
+yapılmadı, bu özelliklerin gerçek pilot ihtiyacı olduğu doğrulanmadı. **Şimdilik yalnızca
+tek bir quick win yapıldı:**
+- Migration `00028_leads_notes.sql`: `leads.notes text` — işletme sahibi her talep
+  kartına serbest metin not düşebiliyor (ziyaretçi görmüyor, transkriptten bağımsız).
+  UI: kart içi textarea, blur'da kaydediyor (`LeadsClient.tsx`).
+- Panel'e (tüm sekmelerde görünen) kalıcı bir geri bildirim çağrısı eklendi: "Talkinbio
+  sürekli gelişen bir uygulama..." + `info@talkinbio.com` mailto linki (`LeadsClient.tsx`
+  footer).
+- Doğrulama: typecheck + 29 test yeşil.
+- **Kapsam dışı bırakılanlar (Faz P geri bildirimiyle yeniden değerlendirilecek):**
+  lead/müşteri stage ayrımı, etiketleme, ayrı `tickets` tablosu, son hizmet tarihi/tekrar
+  sayacı, durgunluk göstergesi, duplicate tespiti. Öneri hazır (bu konuşmada tartışıldı),
+  kod yazılmadı.
+
 ### 1.2 Sunucu tarafı mesaj geçmişi (güvenlik)
 `/api/chat` şu an `messages` dizisini istemciden alıyor → ziyaretçi sahte
 assistant mesajı enjekte edebilir.
@@ -623,10 +642,10 @@ Meta entegrasyonunun v2'ye alınmasıyla v1'in ana farklılaştırıcısı bu fa
 - Vercel Cron (`/api/cron/weekly-report`, `vercel.json`'da schedule hazır — bkz.
   Faz 3 hazırlık notu) + Resend (doğrulanmış domain hazır ✅):
   yeni lead sayısı, konuşma sayısı, en sık sorular, Beiwe'nin haftanın önerisi.
-- Ön koşul: basit sayfa görüntülenme sayacı — **migration `00028_page_views.sql`**
-  (planda 00022, sonra 00027 yazıyordu; 00027'yi 1.1.1'in arşiv/silme migration'ı aldı
-  (2026-07-18) — bkz. Faz 3 hazırlık notu; business_id, günlük tekilleştirilmiş sayaç;
-  `[username]/page.tsx` server-side artırır).
+- Ön koşul: basit sayfa görüntülenme sayacı — **migration `00029_page_views.sql`**
+  (planda 00022, sonra 00027, sonra 00028 yazıyordu; 00027'yi 1.1.1'in arşiv/silme,
+  00028'i 1.1.2'nin not alanı migration'ı aldı (2026-07-18) — bkz. Faz 3 hazırlık notu;
+  business_id, günlük tekilleştirilmiş sayaç; `[username]/page.tsx` server-side artırır).
 
 ### Kabul kriterleri
 - [ ] Cron haftalık çalışıyor; en az bir gerçek konuşma setinden anlamlı FAQ önerisi çıkıyor.
