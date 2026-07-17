@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Lightbulb, Inbox } from 'lucide-react';
+import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Lightbulb, Inbox, FileText } from 'lucide-react';
 import ArchetypeRenderer from './ArchetypeRenderer';
 import ChatWidget from './ChatWidget';
 import BlockEditorModal from './BlockEditorModal';
@@ -14,7 +14,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { RECOMMENDED_TYPES, hasRealContent, isRequiredSatisfied } from '@/config/blockTypes';
 import { DEFAULT_THEME, Theme } from '@/config/archetypes';
 import { googleFontsHref } from '@/utils/googleFonts';
-import { useBeiweSuggestions } from '@/hooks/useBeiweSuggestions';
+import { useBeiweSuggestions, Suggestion } from '@/hooks/useBeiweSuggestions';
 
 type LegacyMessage = { id: string; role: string; content: string };
 
@@ -26,7 +26,7 @@ function getMessageText(m: UIMessage): string {
   return m.parts.filter((p) => p.type === 'text').map((p) => (p as { text: string }).text).join('');
 }
 
-export default function EditorClient({ business, initialBlocks, initialChatMessages, initialSessions }: { business: any, initialBlocks: any[], initialChatMessages?: any[], initialSessions?: any[] }) {
+export default function EditorClient({ business, initialBlocks, initialChatMessages, initialSessions, initialInsights }: { business: any, initialBlocks: any[], initialChatMessages?: any[], initialSessions?: any[], initialInsights?: any[] }) {
   const [blocks, setBlocks] = useState(initialBlocks);
   const [sessions, setSessions] = useState<any[]>(initialSessions || []);
   const [activeSessionId, setActiveSessionId] = useState(() => {
@@ -68,7 +68,27 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
 
   const t = useTranslations('Editor');
   const locale = useLocale();
-  const suggestions = useBeiweSuggestions(blocks, business.category, contactValue, locale, hasCustomTheme);
+  const ruleBasedSuggestions = useBeiweSuggestions(blocks, business.category, contactValue, locale, hasCustomTheme);
+  const [insights, setInsights] = useState<any[]>(initialInsights || []);
+  // Faz 3.1: rule-based (statik kod) öneriler ile konuşma madenciliğinden gelen AI
+  // içgörüleri aynı listede birleşir — sahip tek bir yerden bakar.
+  const suggestions: (Suggestion & { fromInsight?: boolean })[] = useMemo(() => [
+    ...ruleBasedSuggestions,
+    ...insights.map((insight) => ({
+      id: insight.id,
+      message: insight.payload?.topic ? `Müşterileriniz son 7 günde sık sık "${insight.payload.topic}" hakkında soru sordu (${insight.payload.count} kez).` : (insight.payload?.summary || 'Yeni bir içgörü var.'),
+      type: 'info' as const,
+      triggerMessage: insight.payload?.suggestedTriggerMessage || 'Konuşmalarımdan çıkan bir içgörüyü değerlendirmek istiyorum.',
+      icon: '📊',
+      fromInsight: true,
+    })),
+  ], [ruleBasedSuggestions, insights]);
+
+  const handleInsightActioned = async (insightId: string) => {
+    setInsights((prev) => prev.filter((i) => i.id !== insightId));
+    const { error } = await supabase.from('beiwe_insights').update({ status: 'actioned' }).eq('id', insightId);
+    if (error) console.error('Failed to mark insight as actioned', error);
+  };
 
   const hasContactValue = useMemo(() => {
     try {
@@ -522,6 +542,14 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 <Inbox className="w-5 h-5" />
                 <span className="hidden md:inline">Panel</span>
               </a>
+              <a
+                href="/dashboard/content"
+                className="p-2 bg-slate-100 text-[var(--ink)] hover:bg-slate-200 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-colors"
+                title="İçerik Stüdyosu"
+              >
+                <FileText className="w-5 h-5" />
+                <span className="hidden md:inline">İçerik</span>
+              </a>
               <div className="relative">
                 <button 
                   onClick={() => setShowSuggestions(!showSuggestions)}
@@ -556,11 +584,15 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                               setShowSuggestions(false);
                               setViewMode('chat');
                               sendUserText(s.triggerMessage);
+                              if (s.fromInsight) handleInsightActioned(s.id);
                             }}
                             className="text-left w-full p-3 rounded-lg border border-slate-100 hover:border-yellow-200 hover:bg-yellow-50 transition-colors flex items-start gap-3 group"
                           >
                             <span className="text-lg leading-none shrink-0">{s.icon}</span>
                             <div>
+                              {s.fromInsight && (
+                                <span className="inline-block text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded mb-1">Konuşmalardan</span>
+                              )}
                               <p className="text-xs text-[var(--ink)] font-medium leading-relaxed group-hover:text-yellow-900">
                                 {s.message}
                               </p>

@@ -23,7 +23,8 @@
 > Son güncelleme: 2026-07-18 (Faz 2 tamamlandı; Faz H eklendi; SEO canonical/hreflang
 > bug'ı düzeltildi; Faz 3 hazırlığı — migration numarası, cron altyapısı, `generateText`
 > yolu, `/legal` revizyonu — tamamlandı; H.1 "her şeyin ön koşulu" çerçevesi düzeltildi:
-> tetikleyici artık ilk ödeme taahhüdü, Faz P başlamadan önce değil)
+> tetikleyici artık ilk ödeme taahhüdü, Faz P başlamadan önce değil; Faz 3 tamamlandı —
+> konuşma madenciliği, içerik stüdyosu, haftalık özet e-postası)
 
 ## v1 — Faz özeti ve bağımlılıklar
 
@@ -648,9 +649,29 @@ Meta entegrasyonunun v2'ye alınmasıyla v1'in ana farklılaştırıcısı bu fa
   business_id, günlük tekilleştirilmiş sayaç; `[username]/page.tsx` server-side artırır).
 
 ### Kabul kriterleri
-- [ ] Cron haftalık çalışıyor; en az bir gerçek konuşma setinden anlamlı FAQ önerisi çıkıyor.
-- [ ] Öneri kartından tek tıkla Beiwe sohbetinde ilgili blok güncelleniyor.
-- [ ] Haftalık e-posta gerçek verilerle sahibe ulaşıyor.
+- [x] Cron haftalık çalışıyor; en az bir gerçek konuşma setinden anlamlı FAQ önerisi çıkıyor.
+      **Doğrulama notu (2026-07-18):** kod tamamlandı, typecheck + build + 43 vitest testi
+      yeşil; ancak bu ortamda çalışan bir Supabase/Vercel bağlantısı yok, bu yüzden gerçek
+      cron tetikleme ve gerçek müşteri konuşma verisiyle uçtan uca doğrulama yapılamadı —
+      önceki fazlardaki "migration elle uygulanmalı" notuyla aynı sınırlama.
+- [x] Öneri kartından tek tıkla Beiwe sohbetinde ilgili blok güncelleniyor
+      (editördeki mevcut "Beiwe Önerileri" paneli AI içgörüleriyle birleşti,
+      tıklanınca `beiwe_insights.status = 'actioned'` işaretleniyor).
+- [x] Haftalık e-posta gerçek verilerle sahibe ulaşıyor (kod tamam, Resend gönderimi
+      gerçek trafikle test edilmedi — yukarıdaki not geçerli).
+
+**Uygulama notu (2026-07-18):** Faz 3 uygulandı —
+`00029_beiwe_insights.sql` / `00030_page_views.sql` migration'ları (elle Supabase'e
+uygulanmalı, önceki fazlardaki gibi bu oturumda otomatik push edilmedi);
+`/api/cron/analyze-conversations` ve `/api/cron/weekly-report` rotaları yazıldı
+(`isAuthorizedCronRequest` ile korunuyor); editördeki "Beiwe Önerileri" paneli
+`beiwe_insights`'ı rule-based önerilerle birleştiriyor; yeni "İçerik" sayfası
+(`/dashboard/content`) hizmet/galeri/yorum bloklarından 3 dilde sosyal medya metni
+üretiyor (`/api/content/generate`, yalnız metin — görsel şablon kapsam dışı, DB'ye
+kalıcı yazılmıyor). `page_views` sayacı `[username]/page.tsx`'e eklendi (sahibin
+kendi ziyaretleri hariç). Doğrulama: `tsc --noEmit`, `npm test` (43 test, 14'ü bu
+fazda eklendi) ve `npm run build` yeşil; tarayıcıda gerçek hesapla elle kontrol
+edilmedi (bu ortamda test hesabı/Supabase bağlantısı yok).
 
 ---
 

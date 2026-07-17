@@ -77,6 +77,23 @@ export default async function BusinessProfilePage({ params }: any) {
     notFound();
   }
 
+  // Faz 3.3: haftalık özet e-postasının ön koşulu — günlük tekilleştirilmiş sayfa
+  // görüntülenme sayacı. Sahibin kendi ziyaretleri sayılmaz.
+  if (!isOwner) {
+    try {
+      const cookieStore = await cookies();
+      const visitorSessionId = cookieStore.get('visitor_session_id')?.value;
+      if (visitorSessionId) {
+        await supabase.from('page_views').upsert(
+          { business_id: business.id, visitor_session_id: visitorSessionId, view_date: new Date().toISOString().slice(0, 10) },
+          { onConflict: 'business_id,view_date,visitor_session_id', ignoreDuplicates: true }
+        );
+      }
+    } catch (err) {
+      console.error('Failed to record page view', err);
+    }
+  }
+
   // 2. Fetch Blocks
   // Note: fetch all blocks (not just is_visible) — the invisible `settings` block carries
   // layoutMode, which ArchetypeRenderer needs to decide website vs. linktree rendering.
