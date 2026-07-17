@@ -37,7 +37,7 @@ export default async function LeadsDashboardPage() {
   // Fetch conversations (Faz 1.1 — transkript ekranı; is_preview'lar da gelir, "Test" rozetiyle ayrışır — Faz 1.7)
   const { data: conversations } = await supabase
     .from('conversations')
-    .select('id, visitor_session_id, last_message_at, is_read, is_preview, created_at')
+    .select('id, visitor_session_id, last_message_at, is_read, is_preview, is_archived, created_at')
     .eq('business_id', business.id)
     .order('last_message_at', { ascending: false, nullsFirst: false });
 

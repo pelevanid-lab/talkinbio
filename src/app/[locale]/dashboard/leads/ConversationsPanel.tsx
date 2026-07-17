@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { Bot, Loader2, MessageCircle, User as UserIcon } from 'lucide-react';
+import { Archive, ArchiveRestore, Bot, Loader2, MessageCircle, Trash2, User as UserIcon } from 'lucide-react';
 
 type ConversationRow = {
   id: string;
@@ -12,6 +12,7 @@ type ConversationRow = {
   last_message_at: string | null;
   is_read: boolean;
   is_preview: boolean;
+  is_archived: boolean;
   created_at: string;
 };
 
@@ -37,14 +38,45 @@ export default function ConversationsPanel({
   conversations: ConversationRow[];
   leads: LeadRow[];
   selectedConversationId: string | null;
-  onSelectConversation: (id: string) => void;
+  onSelectConversation: (id: string | null) => void;
 }) {
   const supabase = createClient();
   const [readMap, setReadMap] = useState<Record<string, boolean>>(
     Object.fromEntries(conversations.map((c) => [c.id, c.is_read]))
   );
+  const [archivedMap, setArchivedMap] = useState<Record<string, boolean>>(
+    Object.fromEntries(conversations.map((c) => [c.id, c.is_archived]))
+  );
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+  const [showArchived, setShowArchived] = useState(false);
   const [messages, setMessages] = useState<MessageRow[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+
+  const handleToggleArchive = async (conversationId: string, archived: boolean) => {
+    setArchivedMap((prev) => ({ ...prev, [conversationId]: archived }));
+    const { error } = await supabase.from('conversations').update({ is_archived: archived }).eq('id', conversationId);
+    if (error) {
+      console.error(error);
+      setArchivedMap((prev) => ({ ...prev, [conversationId]: !archived }));
+      alert('İşlem sırasında bir hata oluştu.');
+    }
+  };
+
+  const handleDeleteConversation = async (conversationId: string) => {
+    if (!window.confirm('Bu konuşmayı kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) return;
+    setDeletedIds((prev) => new Set(prev).add(conversationId));
+    if (selectedConversationId === conversationId) onSelectConversation(null);
+    const { error } = await supabase.from('conversations').delete().eq('id', conversationId);
+    if (error) {
+      console.error(error);
+      setDeletedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(conversationId);
+        return next;
+      });
+      alert('Silinirken bir hata oluştu.');
+    }
+  };
 
   const leadByConversationId = Object.fromEntries(
     leads.filter((l) => l.conversation_id).map((l) => [l.conversation_id, l.name])
@@ -92,7 +124,12 @@ export default function ConversationsPanel({
     };
   }, [selectedConversationId]);
 
-  if (conversations.length === 0) {
+  const liveConversations = conversations.filter((c) => !deletedIds.has(c.id));
+  const isArchived = (c: ConversationRow) => archivedMap[c.id] ?? c.is_archived;
+  const archivedCount = liveConversations.filter(isArchived).length;
+  const visibleConversations = liveConversations.filter((c) => (showArchived ? isArchived(c) : !isArchived(c)));
+
+  if (liveConversations.length === 0) {
     return (
       <div className="bg-white border border-[rgba(20,35,31,0.10)] rounded-[20px] p-12 flex flex-col items-center text-center">
         <div className="w-16 h-16 bg-[#F4F2ED] rounded-full flex items-center justify-center text-[#8A8880] mb-4">
@@ -104,21 +141,31 @@ export default function ConversationsPanel({
     );
   }
 
-  const selectedConversation = conversations.find((c) => c.id === selectedConversationId);
+  const selectedConversation = visibleConversations.find((c) => c.id === selectedConversationId);
 
   return (
     <div className="bg-white border border-[rgba(20,35,31,0.10)] rounded-[20px] shadow-sm overflow-hidden flex flex-col md:flex-row h-[70vh]">
       {/* Left: conversation list */}
-      <div className="w-full md:w-72 border-b md:border-b-0 md:border-r border-[rgba(20,35,31,0.10)] overflow-y-auto shrink-0">
-        {conversations.map((c) => {
+      <div className="w-full md:w-72 border-b md:border-b-0 md:border-r border-[rgba(20,35,31,0.10)] overflow-y-auto shrink-0 flex flex-col">
+        {archivedCount > 0 && (
+          <button
+            onClick={() => setShowArchived(!showArchived)}
+            className="text-left px-4 py-2.5 text-xs font-medium text-[#8A8880] hover:text-[#14231F] transition flex items-center gap-1.5 border-b border-[rgba(20,35,31,0.06)] shrink-0"
+          >
+            {showArchived ? <><ArchiveRestore className="w-3.5 h-3.5" /> Aktif konuşmalara dön</> : <><Archive className="w-3.5 h-3.5" /> Arşivlenenleri gör ({archivedCount})</>}
+          </button>
+        )}
+        {visibleConversations.length === 0 ? (
+          <p className="px-4 py-6 text-sm text-[#8A8880] text-center">{showArchived ? 'Arşivlenmiş konuşma yok.' : 'Aktif konuşma yok.'}</p>
+        ) : visibleConversations.map((c) => {
           const isSelected = c.id === selectedConversationId;
           const isRead = readMap[c.id];
           const leadName = leadByConversationId[c.id];
           return (
-            <button
+            <div
               key={c.id}
+              className={`group px-4 py-3 border-b border-[rgba(20,35,31,0.06)] transition-colors cursor-pointer ${isSelected ? 'bg-[#FFEDE9]' : 'hover:bg-[#F4F2ED]'}`}
               onClick={() => onSelectConversation(c.id)}
-              className={`w-full text-left px-4 py-3 border-b border-[rgba(20,35,31,0.06)] transition-colors ${isSelected ? 'bg-[#FFEDE9]' : 'hover:bg-[#F4F2ED]'}`}
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-semibold text-[#14231F] truncate">
@@ -131,12 +178,30 @@ export default function ConversationsPanel({
                   {!isRead && <span className="w-2 h-2 rounded-full bg-[#FF6A5C]" />}
                 </div>
               </div>
-              <p className="text-xs text-[#8A8880] mt-1 font-mono">
-                {c.last_message_at
-                  ? formatDistanceToNow(new Date(c.last_message_at), { addSuffix: true, locale: tr })
-                  : formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: tr })}
-              </p>
-            </button>
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-xs text-[#8A8880] font-mono">
+                  {c.last_message_at
+                    ? formatDistanceToNow(new Date(c.last_message_at), { addSuffix: true, locale: tr })
+                    : formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: tr })}
+                </p>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleToggleArchive(c.id, !isArchived(c)); }}
+                    title={isArchived(c) ? 'Arşivden çıkar' : 'Arşivle'}
+                    className="p-1 text-[#8A8880] hover:text-[#14231F] rounded"
+                  >
+                    {isArchived(c) ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteConversation(c.id); }}
+                    title="Kalıcı olarak sil"
+                    className="p-1 text-[#8A8880] hover:text-red-600 rounded"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
           );
         })}
       </div>

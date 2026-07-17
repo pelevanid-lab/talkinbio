@@ -129,6 +129,24 @@ alter table conversations add column is_preview boolean default false; -- sahibi
 - RLS zaten sahip select'ine izin veriyor (00001'deki policy'ler) — ek policy gerekmez,
   client-side Supabase sorgusu yeterli.
 
+**1.1.1 Arşivleme & silme (2026-07-18, kullanıcı talebi):** işletme sahibi kendi talep
+(lead) ve konuşma kayıtlarını arşivleyebilmeli ya da kalıcı olarak silebilmeli — bir
+ziyaretçi verisinin silinmesini istediğinde bu, legal metnin (H.2) vaat ettiği "talep
+işletme sahibine yönlendirilir" akışının fiili karşılığı.
+- **Migration `00027_leads_conversations_archive.sql`:** `leads.is_archived` ve
+  `conversations.is_archived` (`default false`) eklendi; `leads`'te zaten "for all" RLS
+  policy vardı (00001), `conversations`'a update+delete policy eklendi (önceden yalnızca
+  select vardı). `messages.conversation_id` `on delete cascade` olduğundan konuşma
+  silinince mesajlar da otomatik gidiyor. **Elle Supabase'e uygulanmalı** (önceki
+  fazlardaki gibi, bu oturumda otomatik push edilmedi).
+- UI: Talepler ve Konuşmalar listelerinde her kayda arşivle/arşivden çıkar (📦) ve kalıcı
+  sil (🗑, `window.confirm` onaylı) ikon butonları; arşivlenenler varsayılan listeden
+  gizlenir, "Arşivlenenleri gör (N)" linkiyle ayrı görünüme geçilir
+  ([LeadsClient.tsx](src/app/[locale]/dashboard/leads/LeadsClient.tsx),
+  [ConversationsPanel.tsx](src/app/[locale]/dashboard/leads/ConversationsPanel.tsx)).
+- Doğrulama: typecheck + 29 test yeşil. Tarayıcıda gerçek tıklama testi yapılmadı —
+  yalnızca kullanıcı isterse.
+
 ### 1.2 Sunucu tarafı mesaj geçmişi (güvenlik)
 `/api/chat` şu an `messages` dizisini istemciden alıyor → ziyaretçi sahte
 assistant mesajı enjekte edebilir.
@@ -191,10 +209,10 @@ sistemdeki bir işletme kaydı olur ve mevcut akış aynen kullanılır.
 > `onFinish`'i artık araç hiç çağrılmadan onay-benzeri bir metin üretildiğinde
 > `console.warn` ile sunucu loguna düşürüyor (testli, `run.test.ts`). Bu, modelin
 > güvenilirliğini garanti etmez — sadece bir daha sessizce fark edilmeden geçmesini önler.
-> **Açık iş:** Receyp Ayaz ve Recep Aslan'a manuel olarak ulaşılmalı (ikisi de kayıtlı
-> sanıyor, hiçbir yerde kayıtları yok); üretim loglarının (Vercel) bu warning için
-> izlenmesi gerekiyor — henüz otomatik bir uyarı/alarm mekanizması yok (Faz 4.4'ün
-> hata izleme maddesiyle birleştirilebilir).
+> **Doğrulama (2026-07-18, Enes):** düzeltme sonrası elle tekrar test edildi, capture_access_request
+> artık güvenilir şekilde çalışıyor — şu an bilinen bir sorun yok.
+> **Hâlâ açık:** üretim loglarının (Vercel) bu warning için izlenmesi — henüz otomatik bir
+> uyarı/alarm mekanizması yok (Faz 4.4'ün hata izleme maddesiyle birleştirilebilir).
 
 **Kurulum:**
 - Rezerve `talkinbio` username'iyle özel bir business kaydı (seed migration
@@ -605,9 +623,9 @@ Meta entegrasyonunun v2'ye alınmasıyla v1'in ana farklılaştırıcısı bu fa
 - Vercel Cron (`/api/cron/weekly-report`, `vercel.json`'da schedule hazır — bkz.
   Faz 3 hazırlık notu) + Resend (doğrulanmış domain hazır ✅):
   yeni lead sayısı, konuşma sayısı, en sık sorular, Beiwe'nin haftanın önerisi.
-- Ön koşul: basit sayfa görüntülenme sayacı — **migration `00027_page_views.sql`**
-  (planda 00022 yazıyordu ama o numara alındı; ikiz `00024` numarası 2026-07-17'de
-  çözüldü — bkz. Faz 3 hazırlık notu; business_id, günlük tekilleştirilmiş sayaç;
+- Ön koşul: basit sayfa görüntülenme sayacı — **migration `00028_page_views.sql`**
+  (planda 00022, sonra 00027 yazıyordu; 00027'yi 1.1.1'in arşiv/silme migration'ı aldı
+  (2026-07-18) — bkz. Faz 3 hazırlık notu; business_id, günlük tekilleştirilmiş sayaç;
   `[username]/page.tsx` server-side artırır).
 
 ### Kabul kriterleri

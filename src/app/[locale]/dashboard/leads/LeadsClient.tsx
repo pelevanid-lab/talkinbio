@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Send, MessageCircle } from 'lucide-react';
+import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Send, MessageCircle, Archive, ArchiveRestore, Trash2 } from 'lucide-react';
 import ConversationsPanel from './ConversationsPanel';
 import KnowledgeBasePanel from './KnowledgeBasePanel';
 
@@ -14,6 +14,7 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
   const [leads, setLeads] = useState(initialLeads);
   const [conversations] = useState(initialConversations);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [showArchivedLeads, setShowArchivedLeads] = useState(false);
   
   // Settings state
   const [settings, setSettings] = useState(business.saule_settings || {});
@@ -28,6 +29,29 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
       console.error(error);
       // Revert on error
       setLeads(leads);
+    }
+  };
+
+  const handleArchiveLead = async (leadId: string, archived: boolean) => {
+    const prev = leads;
+    setLeads(leads.map(l => l.id === leadId ? { ...l, is_archived: archived } : l));
+    const { error } = await supabase.from('leads').update({ is_archived: archived }).eq('id', leadId);
+    if (error) {
+      console.error(error);
+      setLeads(prev);
+      alert('İşlem sırasında bir hata oluştu.');
+    }
+  };
+
+  const handleDeleteLead = async (leadId: string) => {
+    if (!window.confirm('Bu talebi kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) return;
+    const prev = leads;
+    setLeads(leads.filter(l => l.id !== leadId));
+    const { error } = await supabase.from('leads').delete().eq('id', leadId);
+    if (error) {
+      console.error(error);
+      setLeads(prev);
+      alert('Silinirken bir hata oluştu.');
     }
   };
 
@@ -88,18 +112,30 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-['Inter']">
-        {activeTab === 'leads' ? (
-          !leads || leads.length === 0 ? (
+        {activeTab === 'leads' ? (() => {
+          const visibleLeads = (leads || []).filter((l: any) => showArchivedLeads ? l.is_archived : !l.is_archived);
+          const archivedCount = (leads || []).filter((l: any) => l.is_archived).length;
+          return (
+          <>
+          {archivedCount > 0 && (
+            <button
+              onClick={() => setShowArchivedLeads(!showArchivedLeads)}
+              className="mb-4 text-sm font-medium text-[#8A8880] hover:text-[#14231F] transition flex items-center gap-1.5"
+            >
+              {showArchivedLeads ? <><ArchiveRestore className="w-4 h-4" /> Aktif taleplere dön</> : <><Archive className="w-4 h-4" /> Arşivlenenleri gör ({archivedCount})</>}
+            </button>
+          )}
+          {visibleLeads.length === 0 ? (
             <div className="bg-white border border-[rgba(20,35,31,0.10)] rounded-[20px] p-12 flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-[#F4F2ED] rounded-full flex items-center justify-center text-[#8A8880] mb-4">
                 <UserIcon className="w-8 h-8" />
               </div>
-              <h2 className="text-lg font-[800] text-[#14231F] mb-2 font-['Bricolage_Grotesque']">Henüz hiç talep almadınız</h2>
-              <p className="text-[#4B5A55] max-w-sm">Ziyaretçileriniz asistanınız Saule ile konuşup bir hizmet talep ettiğinde burada görünecekler.</p>
+              <h2 className="text-lg font-[800] text-[#14231F] mb-2 font-['Bricolage_Grotesque']">{showArchivedLeads ? 'Arşivlenmiş talep yok' : 'Henüz hiç talep almadınız'}</h2>
+              <p className="text-[#4B5A55] max-w-sm">{showArchivedLeads ? 'Arşivlediğiniz talepler burada görünecek.' : 'Ziyaretçileriniz asistanınız Saule ile konuşup bir hizmet talep ettiğinde burada görünecekler.'}</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {leads.map((lead: any) => (
+              {visibleLeads.map((lead: any) => (
                 <div key={lead.id} className="bg-white border border-[rgba(20,35,31,0.10)] rounded-[20px] p-6 shadow-sm hover:shadow-md transition">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3 mb-4">
@@ -165,13 +201,29 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                           <CheckCircle2 className="w-4 h-4 mr-1.5" /> İncelendi
                         </div>
                       )}
+                      <button
+                        onClick={() => handleArchiveLead(lead.id, !lead.is_archived)}
+                        title={lead.is_archived ? 'Arşivden çıkar' : 'Arşivle'}
+                        className="p-2 text-[#8A8880] hover:text-[#14231F] hover:bg-[#F4F2ED] rounded-full transition"
+                      >
+                        {lead.is_archived ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteLead(lead.id)}
+                        title="Kalıcı olarak sil"
+                        className="p-2 text-[#8A8880] hover:text-red-600 hover:bg-red-50 rounded-full transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-          )
-        ) : activeTab === 'conversations' ? (
+          )}
+          </>
+          );
+        })() : activeTab === 'conversations' ? (
           <ConversationsPanel
             conversations={conversations}
             leads={leads}
