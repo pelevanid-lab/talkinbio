@@ -203,43 +203,43 @@
     "signature": "You're chatting with Saule"
   },
   "Stakeholders": {
-    "title": "For Our Stakeholders",
-    "intro": "Dear team members, users, and investors, on this page I will explain both talkinbio and our working principles;",
+    "title": "To Our Stakeholders",
+    "intro": "Dear team members, users, and investors; on this page I will tell you about both talkinbio and how we work together.",
     "q1": {
-      "title": "1. Why Now?",
-      "content": "The increased accessibility of WhatsApp Business API and the unmanageable volume of DM traffic flowing through Instagram for individual sellers have created the perfect timing."
+      "title": "Why Now",
+      "content": "For individual service providers running their business through social media, something changed in the last three years: DMs went from being a content channel to a sales channel. Booking appointments, asking about prices, negotiating, deciding. All of this flows through Instagram DMs. And sellers are no longer able to manage this volume.\n\nThe opening of WhatsApp Business API to individual accounts added a new layer: a seller can now technically access an infrastructure to operate all their channels from behind a single link, in a single voice. But there is no tool to set this up, manage it, and grow with it.\n\nLinktree didn't see this gap. Salesforce didn't care about this segment. The CRM giants sold their packages to SMBs, not to individuals. This gap was left empty intentionally. We are building the solution inside it."
     },
     "q2": {
-      "title": "2. What happens if we do nothing?",
-      "content": "If we don't provide a solution, hundreds of thousands of social media sellers will continue to lose potential customers due to late replies, and limit their growth by tracking appointments in notebooks and spreadsheets."
+      "title": "What Happens If Nothing Changes",
+      "content": "A customer asks a question. The reply comes 4 hours later. The customer already went somewhere else. The seller doesn't even notice.\n\nThis scenario plays out every day across tens of thousands of the 600,000 individual sellers in Turkey alone. The revenue loss is invisible because nobody says 'I missed them.' The customer left. It doesn't get counted.\n\nFor investors, let's make this concrete: A seller receives an average of 10 DMs per day. 40% of those come with buying intent. Due to response delays, 2 of those 4 customers are lost. Average transaction value: $20. That's $14,600 in annual losses for a single seller. Multiply across the market and the damage is incalculable.\n\nFor the team, a simpler truth: We are here to solve this problem. And if we can't, then what needs to stop, stops."
     },
     "q3": {
-      "title": "3. What is the problem?",
-      "content": "Tools like Linktree only share links, they don't answer the customer's questions. Large CRM softwares are too complex, expensive, and require technical knowledge. The 'talking bio' gap in between remains empty."
+      "title": "Why Existing Alternatives Fall Short",
+      "content": "Linktree: It doesn't answer the visitor's question. Someone clicking a seller's link wants to learn about a service, but there's no match. Linktree is a storefront, not a representative.\n\nManyChat and similar chatbot tools: Complex setup, fixed and brittle scenarios. Designing a separate flow for each question requires technical knowledge. Individual sellers don't have the time or capacity.\n\nLarge CRMs (HubSpot, Pipedrive): Overly complex for a coach or beauty professional. Onboarding takes weeks, pricing is annual subscription-based, integration requires technical knowledge. These products were designed for businesses with IT departments inside their walls.\n\nWhatsApp Business alone: Questions come in, they reply manually. No automation, no follow-up, no analytics. Just slightly more organized messaging.\n\nNone of them combine 24/7 availability, question-answering, customer classification, lead list generation, and marketing recommendations in one place. That gap is talkinbio."
     },
     "q4": {
-      "title": "4. What is the solution?",
-      "content": "talkinbio turns your bio page into a 24/7 working assistant. It answers visitors' questions in seconds, books appointments, and presents a ready-made lead list to the seller the next morning."
+      "title": "What We Do",
+      "content": "talkinbio consists of two components.\n\nSaule is the 24/7 AI assistant on your bio page. A visitor asks a question, Saule listens, understands, and responds like a representative who knows your services. It collects appointments, records interested visitors, and flags follow-up situations. When you wake up in the morning, you don't find missed DMs — you find a sorted and labeled lead list.\n\nBeiwe is the agent that analyzes these conversations and produces weekly marketing recommendations. 'Which question was asked most this week? Which service got the most interest? What hours saw the most visitors?' — Beiwe answers these questions and lets you base your next content decision on data.\n\nSetup takes 10 minutes. No coding required. Once the system starts running, it works even when you don't."
     },
     "q5": {
-      "title": "5. What will make us unique?",
-      "content": "Our uncopyable advantages are the viral growth loop created by every conversation of the Saule assistant turning into an organic brand promotion, and our localization architecture (especially for rapid adaptation to regions like MENA/LatAm)."
+      "title": "What Makes Us Different",
+      "content": "At the bottom of every Saule conversation is a small signature: 'You're chatting with Saule — talkinbio.com.' This signature is seen by every user who visits the seller's page. The user thinks 'I want this for my page too' and signs up. That means the product grows itself. CAC stays organic without paid acquisition.\n\nFirst advantage: The viral loop. Every active assistant becomes a channel for acquiring new users.\n\nSecond advantage: Accumulated conversation data. The more Beiwe is used, the more personalized it becomes. A new competitor cannot immediately copy this data advantage. Early users carry strategic value in terms of data richness.\n\nThird: Turkish-first architecture. We're building the localization skeleton from the ground up — one that adapts to markets with different languages and payment infrastructures (MENA, LatAm). This means a v2 expansion that doesn't have to start from scratch."
     },
     "q6": {
-      "title": "6. How do we generate revenue?",
-      "content": "Our service is offered with credit-based monthly or annual subscription packages ($9 / $29 / $79) at a fixed dollar rate. We do not offer free trials, even to our initial pilot customers."
+      "title": "Our Revenue Model",
+      "content": "We operate a credit-based subscription system. Three tiers.\n\nStarter ($9/month, 200 credits): For the individual seller receiving 3–5 DMs per day, setting up an assistant for the first time. Users at this tier are learning what Saule is and testing the system's value.\n\nPro ($29/month, 700 credits): For sellers receiving 30+ DMs per week with a regular customer base who use Beiwe analytics. This tier is our core revenue engine.\n\nBusiness ($79/month, 1,800 credits): For sellers managing multiple service lines, high-volume DM traffic, and mature automation needs.\n\nPricing is dollar-fixed. TL collection is at the current exchange rate. Annual payment comes with a 20% discount — savings for the customer and a buffer against currency risk for us.\n\nEffective ARPU: $15 (early-stage Starter-heavy mix + annual discount effect). LTV: $300 (at 5% churn assumption). CAC target: below $100 — the viral signature loop should keep this organic."
     },
     "q7": {
-      "title": "7. Important milestones",
-      "content": "Our short-term goal is to validate problem/solution fit with our first 10 paying customers. Then, the $100K ARR (550 customers) validation threshold, and finally, global v2 scaling with direct WhatsApp/IG integration."
+      "title": "Where We're Headed",
+      "content": "Today we're at Stage 1: Problem/Solution Fit. Our OMTM is number of paying customers. The counter is currently at 0/10. Goal: complete 20 problem interviews, validate the recurring pain points, launch the first 10 pilots at $9/month paid.\n\nStage 2 (550 customers, $100K ARR): Crossing this threshold is proof of Problem/Solution Fit. By then we'll have measured whether the viral loop works. The investor conversation starts from here.\n\nStage 3 (v2 Global, ~4,500 customers, $810K ARR base case): Direct WhatsApp and Instagram DM integration. MENA and LatAm localization. Language expansion. At this point Saule no longer only lives on the bio page — it works across every channel.\n\nStretch scenario (6% global capture): ~9,000 customers, ~$1.6M ARR.\n\nEvery step requires proof from the previous one. Right now we're doing what's next: the first 10 payments."
     },
     "q8": {
-      "title": "8. How we work? Our continuous improvement principle",
-      "content": "We apply the Running Lean methodology: Problem validation first, real payment testing without free trials, and data-driven pivots. For us, price is the ultimate test of the value hypothesis."
+      "title": "How We Work",
+      "content": "We follow the Running Lean methodology. This isn't a slogan — it's a framework that directly determines how we work.\n\nProblem validation before product. We complete customer interviews before building. If a recurring pain point doesn't emerge from 20 interviews, we increase the number.\n\nNo free trials. This isn't just a preference — it's a methodological decision. In Ash Maurya's Running Lean this is clear: free early access collects the curious, not customers. The first 10 to pay are the test of the value hypothesis — payment is commitment.\n\nContinuous Improvement dashboard: Lean Canvas, Fermi Estimation, Traction Roadmap, and Lean Pitch — all of these, including the page you're reading now, are living documents. They update as we change, and every update is saved with a version. Version discipline is a standard.\n\nEvidence classes are transparent. What's been validated is stated clearly. So is what hasn't. Inflated claims of proof are not accepted."
     },
     "q9": {
-      "title": "9. What we want (join us)",
-      "content": "We want you to test this 10-minute setup experience, and if you think it creates value, to join us among our team, users, or investors."
+      "title": "What We're Asking For",
+      "content": "To our users: Setup takes 10 minutes. Connect your bio link to talkinbio and see how many leads Saule collects in a month. If it creates no value, don't continue. If it does, you now know.\n\nTo our investors: We're currently in early-stage bootstrapped mode. The time for an investment conversation is when we cross $100K ARR. But rather than introducing ourselves only at that point, we wanted you to know us now. The numbers are real, the model is honest, the open questions are open. We'll be in touch when we're ready.\n\nTo our team: When you need to remember why building this matters, come back to this page. We believe what we're doing is right. That's the only thing left to prove."
     }
   }
 }
