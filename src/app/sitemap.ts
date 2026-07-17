@@ -18,7 +18,7 @@ function generateAlternates(path: string) {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 1. Static Routes
-  const staticRoutes = ['', '/legal'].map(route => ({
+  const staticRoutes = ['', '/legal', '/stakeholders'].map(route => ({
     url: `${baseUrl}/en${route}`, // Use 'en' as the default canonical for the base URL in the sitemap listing
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,

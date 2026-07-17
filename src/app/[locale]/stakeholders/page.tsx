@@ -82,7 +82,7 @@ export default function StakeholdersPage() {
             textTransform: 'uppercase',
             marginBottom: '1rem',
           }}>
-            Manifesto · 2026
+            {t('eyebrow')}
           </p>
           <h1 style={{
             fontFamily: 'var(--font-bricolage)',
@@ -184,7 +184,7 @@ export default function StakeholdersPage() {
             color: '#fff',
             marginBottom: '1rem',
           }}>
-            Bio linkini çalışmaya başlat.
+            {t('ctaTitle')}
           </h3>
           <p style={{
             fontFamily: 'var(--font-inter)',
@@ -195,7 +195,7 @@ export default function StakeholdersPage() {
             maxWidth: '420px',
             margin: '0 auto 2rem',
           }}>
-            Kurulum 10 dakika. İlk ay sonunda veriye bakarsın, karar verirsin.
+            {t('ctaBody')}
           </p>
           <Link href="/request-access" className="btn btn-primary" style={{
             background: 'var(--coral)',
@@ -220,7 +220,7 @@ export default function StakeholdersPage() {
           color: 'var(--muted)',
           letterSpacing: '0.04em',
         }}>
-          © {new Date().getFullYear()} talkinbio · Manifesto
+          © {new Date().getFullYear()} talkinbio · {t('footerNote')}
         </p>
       </footer>
     </div>

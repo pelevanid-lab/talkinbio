@@ -20,7 +20,9 @@
 > marketing agent'a ilk evrimi ile satışa çıkar. Meta başvuru evrakları (Business
 > Verification vb.) geliştirmeden bağımsız olarak v1 sırasında başlatılır.
 >
-> Son güncelleme: 2026-07-17 (Faz 2 tamamlandı)
+> Son güncelleme: 2026-07-17 (Faz 2 tamamlandı; Faz H eklendi; SEO canonical/hreflang
+> bug'ı düzeltildi; Faz 3 hazırlığı — migration numarası, cron altyapısı, `generateText`
+> yolu, `/legal` revizyonu — tamamlandı)
 
 ## v1 — Faz özeti ve bağımlılıklar
 
@@ -31,6 +33,8 @@
 | 2 | Agent çekirdeği refactor'u (hafif) | Agent'ların modülerleşmesi + taşınabilirlik kuralları, AI SDK güncellemesi, test altyapısı | Faz 1 |
 | S | SEO & marka temelleri (~2 gün) | Favicon/metadata/sitemap/schema, Search Console, marka tescil taraması | — (herhangi bir faza paralel, erken yapılmalı) |
 | P | Pilot & müşteri geliştirme (sürekli) | 20 problem görüşmesi, 10 ücretli pilot, manuel tahsilat — Aşama 1 OMTM'ini besleyen TEK iş | — (tüm fazlara paralel; kod işi değil takvim işi) |
+| R | Takım & büyüme kaynakları (sürekli) | Lokal partnerler (UA/KZ, sonra MENA/LatAm), AI/Next.js danışmanlığı | — (paralel) |
+| H | Hukuk & kurumsallaşma (sürekli) | Şirket kuruluşu, KVKK/GDPR revizyonu, kullanım şartları, çerez/saklama politikaları | — (paralel; **Faz P tahsilatının ve Faz 4 lansmanının ön koşulu**; Meta Business Verification tüzel kişilik ister) |
 | 3 | Beiwe → Marketing Agent | Konuşma madenciliği, içerik üretimi, haftalık rapor | Faz 2 |
 | 4 | Satılabilir v1 kapısı | Maliyet koruması, kullanım ölçümü, faturalandırma | Lansman öncesi zorunlu |
 
@@ -174,7 +178,9 @@ sistemdeki bir işletme kaydı olur ve mevcut akış aynen kullanılır.
 
 **Kurulum:**
 - Rezerve `talkinbio` username'iyle özel bir business kaydı (seed migration
-  `00021_talkinbio_demo_business.sql`; ID sabit env: `TALKINBIO_BUSINESS_ID`).
+  `00023_talkinbio_demo_business.sql` — planda 00021 yazıyordu, 00021-00022'yi
+  1.5'in `preferred_datetime` ve `onboarding_requests.source` migration'ları aldı;
+  ID sabit env: `TALKINBIO_BUSINESS_ID`).
 - İçeriği Beiwe ile kur (dogfooding #2): Hakkında = ürün tanıtımı, Hizmetler = özellikler
   /planlar, SSS = "Saule nedir, nasıl çalışır, fiyat ne olacak" tarzı satış soruları.
   Faz 1.4 bilgi tabanına satış senaryoları eklenir ("fiyat sorulursa erken erişimin
@@ -294,7 +300,9 @@ overengineering yapmadan, iki ucuz tasarım kuralıyla garanti altına alıyoruz
   değeri ne olursa olsun reddediyor ("`temperature` is deprecated for this model", 400).
   Eski SDK'da bunu atlamanın yolu yok — bu yüzden `.env.local`'da `AI_MODEL` geçici olarak
   `claude-sonnet-4-5-20250929`'a sabitlendi. **`claude-sonnet-5`'e geçiş bu SDK güncellemesini
-  bekliyor**; güncelleme sonrası tekrar denenmeli.
+  bekliyor**; güncelleme sonrası tekrar denenmeli. *(Durum 2026-07-17: SDK v7'ye geçildi
+  ama deneme henüz yapılmadı — `ai.ts` varsayılanı hâlâ Sonnet 4.5. Takip maddesi
+  Faz 4.2'ye taşındı; maliyet ölçümüyle birlikte denenecek.)*
 - `streamText`/`tool`/`useChat` API'leri major sürümlerde değişti — migration rehberi
   takip edilerek yapılır; refactor'la aynı PR'da olmasın (ayrı, önce SDK sonra modül taşıma).
 - Kazanımlar: `@ts-ignore`'lu Zod tip uyumsuzlukları çözülür, daha iyi tool-streaming,
@@ -362,8 +370,10 @@ uygulanmalı — bu oturumda otomatik push edilmedi.
 Talkinbio'nun görünürlüğünü, arama motoru otoritesini ve sosyal kanıtını inşa eden yapı taşı. Yalnızca organik trafik değil, aynı zamanda işletmelerin kendi müşterilerini çekeceği "vitrin" (Linktree büyüme modeli) işlevini de içerir.
 
 ### S.1 SEO ve Büyüme Temelleri
-- **Sitemap & Otomatik İndeksleme:** Yayınlanan her yeni işletme profili (`is_published = true`) sitemap'e otomatik olarak eklenir. 
+- **Sitemap & Otomatik İndeksleme:** Yayınlanan her yeni işletme profili (`is_published = true`) sitemap'e otomatik olarak eklenir; `/legal` ve `/stakeholders` de statik rota olarak eklendi (2026-07-17 — önceden `/stakeholders` sitemap'te yoktu, yatırımcı/partner-hedefli sayfa hiç indexlenmiyordu).
 - **Locale-Bazlı Metadata (i18n):** Türkçe, İngilizce ve Rusça dilleri için özel `title` ve `description` tagleri üretilir. Hreflang etiketleriyle arama motorlarına doğru dil versiyonları sunulur.
+  - **Düzeltilen bug (2026-07-17):** `[locale]/layout.tsx`'teki `alternates` (canonical + hreflang) her zaman `/${locale}` köküne sabitti; alt sayfalar (`[username]`, `/legal`, `/stakeholders`) kendi `alternates`'ini tanımlamadığı için Next.js bunu **olduğu gibi miras alıyordu** — yani her yayınlanan işletme sayfası Google'a "canonical'ım ana sayfa" sinyali veriyordu. Google böyle bir sayfayı ana sayfanın kopyası sanıp indexlemeyebilir; bu, sitemap'in doğru üretilmesine rağmen gerçek indexlenmeyi baltalıyordu. Düzeltme: `[username]/page.tsx`'in `generateMetadata`'sına ve `/legal`, `/stakeholders` için eklenen `layout.tsx` dosyalarına kendi rotasına özel `alternates.canonical` + `alternates.languages` eklendi; sunucudan render edilen HTML'de üç rota da doğrulandı.
+  - **Eklenen OG/Twitter meta:** hiçbir rotada `og:image`/Twitter Card yoktu (WhatsApp/Instagram'da paylaşılan bio linkleri görselsiz çıkıyordu). Geçici çözüm: mevcut `saule-avatar-v1.png` (512×512) site geneli ve işletme sayfalarında varsayılan OG/Twitter görseli olarak bağlandı. **Açık iş:** 1200×630 oranında özel bir OG banner tasarımı hâlâ gerekiyor — bu geçici görsel onun yerini almaz.
 - **Marka Araması Optimizasyonu:** Google Search Console ve Bing Webmaster entegrasyonu; marka (Talkinbio) aramalarında logo ve doğru site açıklaması (site-links) çıkartılması.
 - **Microdata & JSON-LD:**
   - `Organization` şeması (Talkinbio'nun kendi kurumsal otoritesi için. **Not:** Sosyal medya hesapları açıldığında bu şemaya eklenecektir).
@@ -429,6 +439,78 @@ Mühendislik işlerinden bağımsız, Çekim Gücü (Traction) Yol Haritasının
 
 ---
 
+## Faz H — Hukuk & Kurumsallaşma (Sürekli, Paralel — Faz P tahsilatı ve Faz 4 lansmanının ön koşulu)
+
+Ücretli pilot (Faz P) ilk günden para alıyor ve Saule gerçek müşteri konuşmaları
+(kişisel veri) kaydediyor; bu fazın işleri kod işi değil ama lansmanı bloke etme
+gücü en yüksek kalemler. Meta evrakları gibi erken başlatılır, paralel yürür.
+
+### H.1 Şirket kuruluşu (her şeyin ön koşulu — henüz kurulmadı, 2026-07-17)
+- **Karar:** şahıs şirketi (hızlı, düşük maliyet, genç girişimci vergi muafiyeti
+  değerlendirilebilir) ile başlayıp limited'e dönüşme vs. doğrudan limited —
+  mali müşavirle netleştirilecek ayrı araştırma maddesi.
+- **Bloke ettiği işler (bu yüzden erken):**
+  - Ödeme sağlayıcı hesabı (iyzico/Stripe) tüzel kişilik/vergi levhası ister → Faz 4.3.
+  - **Meta Business Verification tüzel kişilik ve resmi evrak ister** → v2 kanal
+    takviminin v1 sırasında başlaması gereken evrak süreci şirketsiz başlayamaz.
+  - Legal metinlerdeki "Veri Sorumlusu" kimliği (H.2) resmi unvan gerektirir;
+    şu an metin var olmayan bir "Şirket"e atıf yapıyor.
+  - Fatura kesme: Faz P "manuel tahsilat" bile yasal olarak fatura/makbuz gerektirir.
+- Marka tescili (Faz S'teki tarama sonrası başvuru) şirket üzerinden yapılır.
+
+### H.2 Legal metin revizyonu (`/legal`) — içerik düzeltmesi tamamlandı (2026-07-17)
+Denetim bulguları (2026-07-17) ve düzeltmeler üç dilde (tr/en/ru) uygulandı:
+- [x] **Google Firebase → gerçek işleyen listesi.** Metin artık Supabase (DB/auth/depolama),
+  Vercel (hosting), **Anthropic (Saule/Beiwe yanıt üretimi — ABD merkezli, yurt dışı
+  aktarım olarak açıkça belirtildi)**, Resend (e-posta) listeliyor.
+- [x] **Gerçek veri envanteri.** Madde 2, hesap sahibi verisi ile ziyaretçi/son müşteri
+  verisi (Saule transkriptleri, lead bilgileri, `visitor_session_id` çerezi) olarak iki
+  ayrı grupta yeniden yazıldı.
+- [x] **AI şeffaflığı eklendi.** Madde 2'ye "Saule bir yapay zeka asistanıdır; ziyaretçi
+  doğrudan sorduğunda bu durum kendisine dürüstçe belirtilir" cümlesi eklendi (Faz 0.5
+  kuralı + 1.8 imzasıyla tutarlı).
+- [x] **İki katmanlı veri sorumluluğu Madde 1'e netleştirildi:** ziyaretçi verisi için
+  işletme sahibi veri sorumlusu/talkinbio veri işleyen; hesap sahibi verisi için
+  veri sorumlusu talkinbio. **Açık iş:** bu ilişkiyi resmi bir belgeye (DPA) bağlamak
+  hâlâ H.3'ün işi — madde 1 bunu şimdilik yalnızca metinde tarif ediyor, ayrı imzalı
+  bir ek henüz yok.
+- [x] **Saklama süreleri somutlandı** (hesap/konuşma verisi: aktifken + kapanıştan
+  90 gün; fatura kayıtları: VUK gereği 5 yıl; güvenlik logları: 12 aya kadar) ve
+  ziyaretçi silme talebi akışı (işletme sahibine yönlendirme) Madde 5'e eklendi.
+- [x] Madde 1, henüz kurulmamış şirket için sahte bir unvan/kişi adı **uydurmuyor** —
+  "şahıs girişimi olarak yürütülüyor, kuruluş tamamlanınca güncellenecek" diyor.
+  Şirket kurulunca (H.1) bu madde gerçek unvan/MERSİS no ile güncellenmeli.
+- [x] `lastUpdated` → "Temmuz 2026" olarak güncellendi.
+- **Hâlâ açık:** VERBİS kayıt yükümlülüğü kriterleri kontrol edilmedi (mali
+  müşavir/hukuk danışmanı gerektirir — bu metin taslağı bir hukuki görüş yerine
+  geçmez, şirket kuruluşuyla birlikte gözden geçirilmeli).
+
+### H.3 Sözleşmeler (ödeme almadan önce zorunlu)
+- **Kullanım Şartları (ToS):** hizmet tanımı, kredi modeli, kabul edilebilir
+  kullanım, sorumluluk sınırı (AI çıktıları için), fesih.
+- **Mesafeli Satış Sözleşmesi + iade/cayma politikası:** TR tüketici mevzuatı
+  (abonelik ürünlerinde cayma hakkı istisnaları dahil) — ödeme sayfası yayına
+  girmeden hazır olmalı; Faz P'nin manuel tahsilatında da basit bir hizmet
+  sözleşmesi/onay maili kullanılmalı.
+- DPA (H.2) — işletme sahibi onboarding akışına onay adımı olarak eklenir.
+
+### H.4 Çerez ve izleme tutarlılığı
+- Mevcut metin "analitik/pazarlama çerezleri yalnızca açık rızayla" diyor; şu an
+  rıza banner'ı yok. Kural: yalnızca zorunlu çerez (`visitor_session_id`, oturum)
+  kullanıldığı sürece banner gerekmez — Faz S'te analitik (Search Console dışında
+  sayfa-içi izleme/UTM analitiği) eklenirse önce rıza mekanizması kurulur.
+- Landing demo Saule'si için de aynı şeffaflık: konuşmanın kaydedildiği bilgisi
+  widget'ta/metinde yer almalı.
+
+### Kabul Kriterleri
+- [ ] Şirket kuruldu; vergi levhası ve resmi unvan alındı.
+- [x] `/legal` metni gerçek veri envanteri ve işleyen listesiyle (Anthropic dahil,
+      Firebase çıkarılmış) üç dilde güncellendi (2026-07-17); veri sorumlusu kimliği
+      şirket kuruluncaya kadar "şahıs girişimi" olarak dürüstçe işaretli — **gerçek
+      tüzel kişi bilgisiyle güncellenmesi hâlâ H.1'in sonucuna bağlı.**
+- [ ] ToS + mesafeli satış/iade metinleri yayında; ilk ödeme bu metinler olmadan alınmıyor.
+- [ ] Meta Business Verification başvurusu şirket evrakıyla yapıldı (v2 saatini başlatır).
+
 ---
 
 ## Faz 3 — Beiwe → Marketing Agent (~2-3 hafta)
@@ -437,9 +519,26 @@ Beiwe'nin "kurulum sihirbazı"ndan "pazarlama danışmanı"na ilk gerçek adıml
 Üç ayak — hepsi Beiwe'nin zaten sahip olduğu yapılandırılmış veriden beslenir.
 Meta entegrasyonunun v2'ye alınmasıyla v1'in ana farklılaştırıcısı bu faz oldu.
 
+**Başlamadan önce tamamlanan hazırlık (2026-07-17):**
+1. İkiz migration numarası çözüldü: `00024_demo_business_paid_pricing.sql` →
+   `00024b_demo_business_paid_pricing.sql` (kronolojik sıra `git log` ile doğrulandı;
+   ikisi de zaten elle uygulanmıştı, yeniden adlandırma salt repo hijyeni).
+2. Cron altyapısı hazırlandı: `vercel.json`'a 3.1/3.3'ün rotaları için haftalık
+   schedule eklendi (`/api/cron/analyze-conversations` Pazartesi 06:00 UTC,
+   `/api/cron/weekly-report` Pazartesi 08:00 UTC — rotalar henüz yazılmadı, iskelet
+   hazır); `src/utils/cronAuth.ts` ile `CRON_SECRET` bearer-token doğrulaması eklendi
+   (testli) — bu iki rota canlıya çıkarken ilk satırda çağrılmalı, yoksa gerçek
+   müşteri konuşma verisini işleyen uç dışarıdan tetiklenebilir hale gelir.
+3. `generateText` (stream-dışı) yolu kanıtlandı: Faz 2.2'nin "Faz 3'te hazır olacak"
+   varsayımı doğrulanmamıştı — `src/agents/shared/generateOnce.ts` + testleri eklendi,
+   `getModel('analysis')` ile birlikte çalıştığı gösterildi. 3.1/3.3 bunun üzerine inşa eder.
+4. `/legal` metni gerçek veri/işleyen envanterine güncellendi (H.2) — Faz 3.1'in
+   konuşma içeriğini toplu analiz için işlemeye başlamasından önce bu açıklanmış olmalıydı.
+
 ### 3.1 Konuşma madenciliği → içerik önerileri (iki agent'ı bağlayan döngü)
-- Haftalık arka plan işi (Vercel Cron → `/api/cron/analyze-conversations`):
-  - Son 7 günün Saule konuşmalarını `analysis` modeliyle işler:
+- Haftalık arka plan işi (Vercel Cron → `/api/cron/analyze-conversations`,
+  `isAuthorizedCronRequest` ile korunur — bkz. yukarıdaki hazırlık notu):
+  - Son 7 günün Saule konuşmalarını `analysis` modeliyle (`generateOnce`) işler:
     cevaplanamayan sorular, sık sorulan konular, kaçan lead'ler.
   - Çıktı: `beiwe_insights` tablosu (business_id, type: 'faq-suggestion' | 'content-gap' | 'trend', payload jsonb, status).
 - Editor'de "Beiwe Önerileri" paneli: "Müşterileriniz bu hafta 4 kez fiyat listesi sordu —
@@ -454,10 +553,13 @@ Meta entegrasyonunun v2'ye alınmasıyla v1'in ana farklılaştırıcısı bu fa
 - v1'de yalnız metin; görsel şablon üretimi bilinçli olarak kapsam dışı.
 
 ### 3.3 Haftalık özet e-postası
-- Vercel Cron + Resend (doğrulanmış domain hazır ✅):
+- Vercel Cron (`/api/cron/weekly-report`, `vercel.json`'da schedule hazır — bkz.
+  Faz 3 hazırlık notu) + Resend (doğrulanmış domain hazır ✅):
   yeni lead sayısı, konuşma sayısı, en sık sorular, Beiwe'nin haftanın önerisi.
-- Ön koşul: basit sayfa görüntülenme sayacı — **migration `00022_page_views.sql`**
-  (business_id, günlük tekilleştirilmiş sayaç; `[username]/page.tsx` server-side artırır).
+- Ön koşul: basit sayfa görüntülenme sayacı — **migration `00027_page_views.sql`**
+  (planda 00022 yazıyordu ama o numara alındı; ikiz `00024` numarası 2026-07-17'de
+  çözüldü — bkz. Faz 3 hazırlık notu; business_id, günlük tekilleştirilmiş sayaç;
+  `[username]/page.tsx` server-side artırır).
 
 ### Kabul kriterleri
 - [ ] Cron haftalık çalışıyor; en az bir gerçek konuşma setinden anlamlı FAQ önerisi çıkıyor.
@@ -497,6 +599,9 @@ gerçek kullanıcının hiç karşılaşmayacağı hız sınırlarındadır.
 - Admin analytics'e maliyet panosu (işletme başı aylık token/₺ tahmini).
 - Kritik: **model-bazlı fiyat farkını görünür kılar** — Beiwe'ye güçlü model verme
   kararı (Faz 0.1) veriyle test edilir.
+- **Faz 2.2'den devreden açık iş:** `claude-sonnet-5` denemesi (SDK v7'ye geçildi,
+  temperature engeli kalkmış olmalı) — maliyet/kalite karşılaştırması bu ölçüm
+  altyapısıyla yapılır; sonuç Faz 0.1 model stratejisine işlenir.
 
 ### 4.3 Plan/faturalandırma — kredi modeli (kanvasla hizalandı, gerçek maliyetle doğrulandı)
 Kanvasın kilitli "Gelir Kalemleri" kutusundaki model uygulanır:
@@ -549,10 +654,20 @@ Kanvasın kilitli "Gelir Kalemleri" kutusundaki model uygulanır:
   güncel kur üzerinden yapılır, lokal sabit TL fiyat yoktur (girdi maliyetleri dolar).
   Birim ekonomi hesapları ($0,045/kredi) dolar bazında geçerliliğini korur; kur riski
   gelir tarafında değil churn tarafındadır (Fermi V.1.1 risk tablosu). Kanvastaki
-  açık fiyat sorusu bu kararla kapandı — Gelir Kalemleri kutusuna işlenmeli.
+  açık fiyat sorusu bu kararla kapandı — Gelir Kalemleri kutusuna işlendi ✅
+  (kanvas `page.tsx` satır 66/73, 2026-07-17).
 - Ödeme sağlayıcı kararı (iyzico vs Stripe) hâlâ açık — dolar-sabit fiyat + TL tahsilat
   kombinasyonunu destekleyen sağlayıcı seçilmeli (ayrı araştırma maddesi).
+  **Ön koşul: Faz H.1 şirket kuruluşu** — sağlayıcı hesabı tüzel kişilik ister;
+  araştırma şimdi yapılabilir ama hesap açılışı şirketi bekler. Faz 4 süre tahmini
+  (1-2 hafta) sağlayıcı entegrasyonunu İÇERMEZ — entegrasyon +1 hafta sayılmalı.
 - Mevcut admin "subscriptions" sayfası gerçek veriye bağlanır.
+
+### 4.4 Operasyonel gözlemleme (lansman kapısının parçası)
+- Hata izleme (Sentry veya Vercel'in hazır error tracking'i): prod hatasını
+  müşteriden önce duymak — özellikle webhook'suz tek geliştiricili üründe kritik.
+- Uptime kontrolü (basit bir sağlık ucu + ücretsiz bir izleyici, ör. UptimeRobot).
+- Cron işleri (Faz 3) için başarısızlık bildirimi (çalışmadıysa e-posta).
 
 ### Kabul kriterleri
 - [ ] Oturum tavanı dolunca tek tıkla yeni sohbete geçilebiliyor; sert blokaj yalnızca
@@ -668,7 +783,8 @@ kendisi" ise dil genişlemesi onun ön koşuludur. Kapsam (detaylandırılacak):
 
 | Risk | Etki | Önlem |
 |------|------|-------|
-| Meta evrak süreci v1 sırasında ihmal edilirse | v2 başlangıcı haftalarca bloke | Business Verification / Tech Provider başvurusu v1'in ilk haftalarında yapılır (Faz 0-1 sırasında, geliştirmesiz) |
+| Şirket kuruluşu (H.1) gecikirse | Ödeme sağlayıcı hesabı, fatura kesme VE Meta Business Verification zincirleme bloke — hem Faz P tahsilatı hem v2 saati durur | Mali müşavir görüşmesi + kuruluş, Faz P'nin ilk pilot tahsilatından önce tamamlanır; en uzun teslim süreli kalem olarak ilk sıraya alınır |
+| Meta evrak süreci v1 sırasında ihmal edilirse | v2 başlangıcı haftalarca bloke | Business Verification / Tech Provider başvurusu şirket kurulur kurulmaz yapılır (geliştirmesiz; ön koşulu H.1) |
 | AI SDK major migration (2.2) | Widget/stream regresyonları | Ayrı PR; Faz 1'deki transkript ekranı + landing demo regresyon testi olarak kullanılır |
 | Landing demosu anonim trafiğe açık | Token maliyeti | Faz 1.6'daki oturum başına mesaj tavanı; Faz 4'te genel altyapıyla değiştirilir |
 | Tek geliştirici bant genişliği | Fazların uzaması | Faz 3 (marketing) bağımsız modüller halinde; gerekirse 3.2/3.3 lansman sonrasına kayabilir |

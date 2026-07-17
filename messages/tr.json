@@ -215,13 +215,17 @@
   "Stakeholders": {
     "title": "Paydaşlarımıza",
     "intro": "Değerli takım üyelerimiz, kullanıcılarımız ve yatırımcılarımız; bu sayfada size hem talkinbio'yu hem de birlikte nasıl çalıştığımızı anlatacağım.",
+    "eyebrow": "Manifesto · 2026",
+    "ctaTitle": "Bio linkini çalışmaya başlat.",
+    "ctaBody": "Kurulum 10 dakika. İlk ay sonunda veriye bakarsın, karar verirsin.",
+    "footerNote": "Manifesto",
     "q1": {
       "title": "Neden Şimdi",
       "content": "Sosyal medya üzerinden iş yapan bireysel hizmet sahipleri için son üç yılda bir şey değişti: DM'ler bir içerik kanalıyken birer satış kanalına dönüştü. Randevu alan, fiyat soran, pazarlık yapan, karar veren. Tüm bunlar Instagram DM'den akıyor. Ve satıcılar bu trafikle başa çıkamaz hale geldi.\n\nWhatsApp Business API'nin bireysel hesaplara açılması bu tabloya yeni bir kat ekledi: Satıcı artık teknik olarak tüm kanallarında tek bir sesten konuşabileceği bir altyapıya erişebiliyor. Ancak bunu kuracak, yönetecek ve işiyle büyütecek bir araç yok.\n\nLinktree bu boşluğu görmedi. Salesforce bu segmenti umursamadı. CRM devleri paketlerini KOBİ'lere sattı, bireylere değil. Bu boşluk kasıtlı olarak boş bırakıldı. Biz bu boşlukta çözüm üretiyoruz."
     },
     "q2": {
       "title": "Hiçbir Şey Değişmezse",
-      "content": "Bir müşteri soru soruyor. Cevap 4 saat sonra geliyor. Müşteri çoktan başka birine gitti. Satıcı bunu fark etmiyor bile.\n\nBu senaryo her gün, Türkiye'deki 600.000 bireysel satıcıdan on binlercesinde yaşanıyor. Gelir kaybı görünmez çünkü kimse 'kaçırdım' demiyor. Müşteri gitti, sayılmıyor.\n\nYatırımcılar için somutlaştıralım: Bir satıcı günde ortalama 10 DM alıyor. Bunun %40'ı satın alma niyetiyle geliyor. Cevap gecikmesi nedeniyle bu 4 potansiyel müşteriden 2'sini kaybediyor. Ortalama işlem değeri 800 TL. Bu yılda 300.000 TL kayıp, düzinelerce satıcı için. Birleştirince pazar hasarı hesaplanamıyor.\n\nTakım için ise daha sade bir gerçek: Bu problemi çözmek için buradayız. Ve çözemezsek bırakılması gereken şey gerçekten bırakılıyor demektir."
+      "content": "Bir müşteri soru soruyor. Cevap 4 saat sonra geliyor. Müşteri çoktan başka birine gitti. Satıcı bunu fark etmiyor bile.\n\nBu senaryo her gün, Türkiye'deki 600.000 bireysel satıcıdan on binlercesinde yaşanıyor. Gelir kaybı görünmez çünkü kimse 'kaçırdım' demiyor. Müşteri gitti, sayılmıyor.\n\nYatırımcılar için somutlaştıralım (Fermi modelimizden bir tahmin — henüz sahada doğrulanmadı): Bir satıcı günde ortalama 10 DM alıyor. Bunun %40'ı satın alma niyetiyle geliyor. Cevap gecikmesi nedeniyle bu 4 potansiyel müşteriden 2'sini kaybediyor. Ortalama işlem değeri 800 TL. Bu, tek bir satıcı için yılda yaklaşık 584.000 TL kayıp demek. Birleştirince pazar hasarı hesaplanamıyor.\n\nTakım için ise daha sade bir gerçek: Bu problemi çözmek için buradayız. Ve çözemezsek bırakılması gereken şey gerçekten bırakılıyor demektir."
     },
     "q3": {
       "title": "Mevcut Alternatifler Neden Yetersiz",
@@ -237,7 +241,7 @@
     },
     "q6": {
       "title": "Gelir Modelimiz",
-      "content": "Kredi bazlı abonelik sistemi işletiyoruz. Üç paket var.\n\nStarter ($9/ay, 200 kredi): Günde 3-5 DM alan, ilk kez asistan kuran bireysel satıcı için. Bu kademedeki kullanıcı Saule'nin ne olduğunu öğreniyor ve sistemin değerini test ediyor.\n\nPro ($29/ay, 700 kredi): Haftada 30+ DM alan, düzenli müşteri kitlesi olan, Beiwe analizini kullanan satıcı için. Bu kademe asıl gelir motorumuz.\n\nBusiness ($79/ay, 1.800 kredi): Birden fazla hizmet hattı olan, yüksek hacimli DM trafiği yöneten ve otomasyon ihtiyacı olgunlaşmış satıcı için.\n\nFiyat dolar-sabit. TL tahsilatı güncel kur üzerinden yapılıyor. Yıllık ödeme seçeneğinde %20 indirim sunuyoruz — hem müşteri için tasarruf, hem bizim için kur riskine karşı bariyer.\n\nEfektif ARPU: $15. LTV: $300 (%5 churn varsayımıyla). CAC hedefi: $100 altında — viral imza döngüsü bunu organik tutacak."
+      "content": "Gelir modelimiz kredi bazlı abonelik. Faturalandırma altyapısı yol haritamızda lansman kapısının parçası; ilk pilotlarda tahsilat manuel yapılıyor. Üç paket var.\n\nStarter ($9/ay, 200 kredi): Günde 3-5 DM alan, ilk kez asistan kuran bireysel satıcı için. Bu kademedeki kullanıcı Saule'nin ne olduğunu öğreniyor ve sistemin değerini test ediyor.\n\nPro ($29/ay, 700 kredi): Haftada 30+ DM alan, düzenli müşteri kitlesi olan, Beiwe analizini kullanan satıcı için. Bu kademe asıl gelir motorumuz.\n\nBusiness ($79/ay, 1.800 kredi): Birden fazla hizmet hattı olan, yüksek hacimli DM trafiği yöneten ve otomasyon ihtiyacı olgunlaşmış satıcı için.\n\nFiyat dolar-sabit. TL tahsilatı güncel kur üzerinden yapılıyor. Yıllık ödeme seçeneğinde %20 indirim sunuyoruz — hem müşteri için tasarruf, hem bizim için kur riskine karşı bariyer.\n\nEfektif ARPU: $15. LTV: $300 (%5 churn varsayımıyla). CAC hedefi: $100 altında — viral imza döngüsü bunu organik tutacak."
     },
     "q7": {
       "title": "Nereye Gidiyoruz",
@@ -249,34 +253,34 @@
     },
     "q9": {
       "title": "Sizden Ne İstiyoruz",
-      "content": "Kullanıcılarımıza: Kurulumu 10 dakika. Bio linkini talkinbio'ya bağla, bir ay boyunca Saule'nin kaç lead topladığını gör. Eğer değer yaratmadıysa devam etme. Eğer yarattıysa, artık bunu biliyorsun.\n\nYatırımcılarımıza: Şu an erken evre bootstrapped bir başlangıçtayız. Yatırım konuşması için doğru zaman $100K ARR'yi geçtiğimizde. Ama sizi o noktada beklemek yerine şimdiden tanıştırmak istedik. Numaralar gerçek, model dürüst, açık sorular açık. Hazır olduğumuzda iletişime geçeceğiz.\n\nTakımımıza: Bu işi inşa etmenin neden önemli olduğunu hatırlamak istediğinizde bu sayfaya dönün. Yaptığımız şeyin doğru olduğuna inanıyoruz; ispatlamamız gereken tek şey bu."
+      "content": "Kullanıcılarımıza: Kurulumu 10 dakika. Bio linkini talkinbio'ya bağla, bir ay boyunca Saule'nin kaç lead topladığını gör. Eğer değer yaratmadıysa devam etme. Eğer yarattıysa, artık bunu biliyorsun.\n\nYatırımcılarımıza: Şu an erken evre bootstrapped bir başlangıçtayız. Yatırım konuşması için doğru zaman $100K ARR'yi geçtiğimizde. Ama sizi o noktada beklemek yerine şimdiden tanıştırmak istedik. Rakamlarımız kanıt sınıfına göre işaretli — doğrulanmış olan doğrulanmış, tahmin olan tahmin; model dürüst, açık sorular açık. Hazır olduğumuzda iletişime geçeceğiz.\n\nTakımımıza: Bu işi inşa etmenin neden önemli olduğunu hatırlamak istediğinizde bu sayfaya dönün. Yaptığımız şeyin doğru olduğuna inanıyoruz; ispatlamamız gereken tek şey bu."
     }
   },
   "Legal": {
     "eyebrow": "Hukuki Bilgilendirme",
     "title": "KVKK Aydınlatma Metni ve Gizlilik Politikası",
     "copy": "talkinbio olarak kişisel verilerinizin güvenliğini ve gizliliğini ciddiye alıyoruz. Bu sayfa, 6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında sizi bilgilendirmek amacıyla hazırlanmıştır.",
-    "lastUpdated": "Son güncelleme: Haziran 2026",
+    "lastUpdated": "Son güncelleme: Temmuz 2026",
     "sections": [
       {
         "title": "1. Veri Sorumlusu",
-        "body": "Veri sorumlusu sıfatıyla talkinbio (bundan böyle 'Şirket' veya 'talkinbio' olarak anılacaktır), talkinbio platformu aracılığıyla toplanan kişisel verileri 6698 sayılı Kişisel Verilerin Korunması Kanunu'na (KVKK) uygun olarak işlemektedir. Şirket iletişim bilgileri: info@talkinbio.com"
+        "body": "talkinbio, şirket kuruluşu tamamlanana kadar şahıs girişimi olarak yürütülmektedir; resmi veri sorumlusu kimliği (unvan, MERSİS/vergi numarası) kuruluş tamamlandığında bu sayfada güncellenecektir. Platform üzerinden toplanan kişisel veriler 6698 sayılı Kişisel Verilerin Korunması Kanunu'na (KVKK) uygun olarak işlenmektedir. İletişim: info@talkinbio.com\n\nÖnemli ayrım: talkinbio platformunu kullanan işletme sahipleri (müşterilerimiz), kendi ziyaretçilerinden/son müşterilerinden topladıkları veriler (ör. Saule ile yapılan konuşmalar, lead bilgileri) için KVKK anlamında veri sorumlusudur — talkinbio bu veriler için veri işleyen sıfatıyla hareket eder. Hesap sahibinin kendi verileri (ad, e-posta, hesap bilgileri) için ise veri sorumlusu talkinbio'dur."
       },
       {
         "title": "2. İşlenen Kişisel Veriler",
-        "body": "talkinbio platformunu kullanımınız kapsamında aşağıdaki kişisel veriler işlenmektedir:\n\n• Kimlik verileri: Ad, soyad\n• İletişim verileri: E-posta adresi\n• Hesap verileri: Çalışma alanı adı, kullanıcı rolü, iş unvanı\n• Kullanım verileri: Giriş zamanları, platform içi eylemler, özellik kullanım kayıtları\n• İçerik verileri: Platforma girilen müşteri etkileşim notları, talepler ve ilgili iş verileri\n\ntalkinbio platformuna girdiğiniz müşteri verileri de sizin sorumluluğunuzda olmak üzere sistemde işlenmektedir. Bu kapsamda şirketiniz de KVKK açısından veri sorumlusu konumundadır."
+        "body": "talkinbio, sosyal medya bio sayfanızdaki ziyaretçilerle 7/24 sohbet eden bir yapay zeka asistanı (Saule) sunar. Platformu kullanımınız kapsamında iki ayrı veri grubu işlenir:\n\nİşletme sahibi (hesap sahibi) olarak sizin verileriniz:\n• Kimlik verileri: Ad, soyad\n• İletişim verileri: E-posta adresi\n• Hesap verileri: İşletme adı, kullanıcı adı (username), sektör/kategori\n• Kullanım ve ölçüm verileri: Giriş zamanları, platform içi eylemler, yapay zeka kullanım hacmi (kredi/token tüketimi)\n\nSayfanızı ziyaret eden kişilerin (son müşterilerinizin) verileri — bu veriler için siz veri sorumlususunuz, talkinbio veri işleyendir:\n• Saule ile yapılan konuşma transkriptleri (ziyaretçinin yazdığı mesajlar dahil)\n• Lead (potansiyel müşteri) bilgileri: ad, iletişim bilgisi, tercih edilen randevu zamanı\n• visitor_session_id adlı oturum çerezi (ziyaretçiyi kendi konuşma geçmişiyle eşlemek için)\n\nSaule bir yapay zeka asistanıdır; ziyaretçi doğrudan sorduğunda bu durum kendisine dürüstçe belirtilir. Bu konuşmalar hizmeti sağlayan işletme sahibi tarafından okunabilir ve yanıt üretme sürecinde bir yapay zeka sağlayıcısına iletilir (bkz. Madde 4)."
       },
       {
         "title": "3. Kişisel Verilerin İşlenme Amaçları ve Hukuki Dayanakları",
-        "body": "Kişisel verileriniz aşağıdaki amaçlarla ve hukuki dayanaklarla işlenmektedir:\n\n• Hesap oluşturma ve kimlik doğrulama → Sözleşmenin ifası (KVKK m.5/2-c)\n• Platform hizmetlerinin sunulması → Sözleşmenin ifası (KVKK m.5/2-c)\n• Güvenlik ve denetim kayıtları → Meşru menfaat (KVKK m.5/2-f)\n• Ürün geliştirme ve hata analizi → Meşru menfaat (KVKK m.5/2-f)\n• Yasal yükümlülüklerin yerine getirilmesi → Kanuni yükümlülük (KVKK m.5/2-ç)\n• Ticari elektronik ileti gönderimi → Açık rıza (KVKK m.5/1) — Yalnızca rızanız bulunması halinde"
+        "body": "Kişisel verileriniz aşağıdaki amaçlarla ve hukuki dayanaklarla işlenmektedir:\n\n• Hesap oluşturma ve kimlik doğrulama → Sözleşmenin ifası (KVKK m.5/2-c)\n• Platform hizmetlerinin sunulması (sayfa barındırma, Saule/Beiwe asistanları) → Sözleşmenin ifası (KVKK m.5/2-c)\n• Yapay zeka destekli ziyaretçi iletişimi (Saule'nin soruları yanıtlaması, randevu/lead toplaması) → Sözleşmenin ifası + meşru menfaat (KVKK m.5/2-c, m.5/2-f)\n• Güvenlik ve denetim kayıtları → Meşru menfaat (KVKK m.5/2-f)\n• Ürün geliştirme, hata analizi ve kullanım ölçümü (kredi/token tüketimi) → Meşru menfaat (KVKK m.5/2-f)\n• Yasal yükümlülüklerin yerine getirilmesi (fatura, muhasebe kayıtları) → Kanuni yükümlülük (KVKK m.5/2-ç)\n• Ticari elektronik ileti gönderimi → Açık rıza (KVKK m.5/1) — Yalnızca rızanız bulunması halinde"
       },
       {
         "title": "4. Kişisel Verilerin Aktarımı",
-        "body": "Kişisel verileriniz; hizmet altyapısını sağlamak amacıyla Google Firebase ve Supabase (veri işleyen sıfatıyla) gibi teknik altyapı sağlayıcılarına, yasal zorunluluk halinde yetkili kamu kurum ve kuruluşlarına aktarılmaktadır. Yurt dışına veri aktarımı söz konusu olduğunda KVKK'nın 9. maddesi kapsamındaki güvenceler gözetilmektedir."
+        "body": "Kişisel verileriniz, hizmeti sağlayabilmek amacıyla aşağıdaki teknik altyapı sağlayıcılarına (veri işleyen sıfatıyla) aktarılmaktadır:\n\n• Supabase — veritabanı, kimlik doğrulama ve dosya depolama\n• Vercel — uygulama barındırma (hosting)\n• Anthropic — Saule ve Beiwe'nin yanıt üretmesini sağlayan yapay zeka modeli sağlayıcısı; bu kapsamda konuşma içerikleri Anthropic'e (Amerika Birleşik Devletleri merkezli) iletilir\n• Resend — sistem ve bildirim e-postalarının gönderimi\n\nBu sağlayıcıların bir kısmı Avrupa Ekonomik Alanı veya Türkiye dışında yer almaktadır. Yurt dışına veri aktarımı söz konusu olduğunda KVKK'nın 9. maddesi kapsamındaki güvenceler (sağlayıcıların standart sözleşme hükümleri, güvenlik sertifikaları vb.) gözetilmektedir. Yasal zorunluluk halinde veriler yetkili kamu kurum ve kuruluşlarına da aktarılabilir."
       },
       {
         "title": "5. Kişisel Verilerin Saklanma Süresi",
-        "body": "Kişisel verileriniz; hesabınızın aktif olduğu süre boyunca ve hesap silinmesinden itibaren yasal saklama yükümlülükleri dikkate alınarak belirlenen süreler içinde saklanmaktadır. Saklama süresi sona eren veriler güvenli yöntemlerle imha edilmektedir."
+        "body": "Kişisel verileriniz aşağıdaki sürelerle saklanmaktadır:\n\n• Hesap ve platform verileri: hesabınız aktif olduğu sürece; hesap kapatıldıktan sonra 90 gün içinde silinir veya anonimleştirilir.\n• Saule konuşma transkriptleri ve lead verileri: ilgili işletme hesabı aktif olduğu sürece saklanır (işletme sahibinin erişimine açık); hesap kapatıldıktan sonra 90 gün içinde silinir.\n• Fatura ve muhasebe kayıtları: Vergi Usul Kanunu gereği 5 yıl saklanır.\n• Güvenlik ve denetim logları: en fazla 12 ay saklanır.\n\nBir ziyaretçi kendisiyle ilgili konuşma kaydının silinmesini talep ederse, talep ilgili işletme sahibine (veri sorumlusuna) yönlendirilir; talkinbio veri işleyen sıfatıyla bu talebi teknik olarak yerine getirir."
       },
       {
         "title": "6. KVKK Kapsamındaki Haklarınız",
@@ -284,7 +288,7 @@
       },
       {
         "title": "7. Çerez Politikası",
-        "body": "talkinbio platformu, oturum yönetimi ve güvenlik amacıyla zorunlu çerezler kullanmaktadır. Analitik ve pazarlama çerezleri yalnızca açık rızanız alınması durumunda kullanılmaktadır. Çerez tercihlerinizi tarayıcı ayarlarınızdan yönetebilirsiniz."
+        "body": "talkinbio platformu, oturum yönetimi ve güvenlik amacıyla yalnızca zorunlu çerez kullanmaktadır (ör. ziyaretçiyi kendi konuşma geçmişiyle eşleyen visitor_session_id çerezi ve oturum açma çerezleri). Şu an analitik veya pazarlama amaçlı çerez kullanılmamaktadır; bu değiştiğinde açık rıza almak üzere bir çerez bildirimi eklenecektir. Çerez tercihlerinizi tarayıcı ayarlarınızdan yönetebilirsiniz."
       },
       {
         "title": "8. Gizlilik Politikası Değişiklikleri",

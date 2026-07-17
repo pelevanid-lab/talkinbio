@@ -250,7 +250,7 @@ export default async function HomePage({ params }: any) {
             <p>{t('cta.sub')}</p>
             <div className="cta-buttons">
               <Link href="/request-access" className="btn btn-primary">{t('cta.startFree')}</Link>
-              <Link href="/uliana" className="btn btn-ghost">{t('cta.demo')}</Link>
+              <Link href="/talkinbio" className="btn btn-ghost">{t('cta.demo')}</Link>
             </div>
           </div>
         </section>

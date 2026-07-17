@@ -44,6 +44,21 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         'x-default': '/en',
       },
     },
+    openGraph: {
+      title: meta.title,
+      description: meta.description,
+      url: `/${locale}`,
+      siteName: 'Talkinbio',
+      images: [{ url: '/saule-avatar-v1.png', width: 512, height: 512 }],
+      locale,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary',
+      title: meta.title,
+      description: meta.description,
+      images: ['/saule-avatar-v1.png'],
+    },
   };
 }
 

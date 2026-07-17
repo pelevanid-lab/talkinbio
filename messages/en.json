@@ -215,13 +215,17 @@
   "Stakeholders": {
     "title": "To Our Stakeholders",
     "intro": "Dear team members, users, and investors; on this page I will tell you about both talkinbio and how we work together.",
+    "eyebrow": "Manifesto · 2026",
+    "ctaTitle": "Put your bio link to work.",
+    "ctaBody": "Setup takes 10 minutes. At the end of the first month, look at the data and decide.",
+    "footerNote": "Manifesto",
     "q1": {
       "title": "Why Now",
       "content": "For individual service providers running their business through social media, something changed in the last three years: DMs went from being a content channel to a sales channel. Booking appointments, asking about prices, negotiating, deciding. All of this flows through Instagram DMs. And sellers are no longer able to manage this volume.\n\nThe opening of WhatsApp Business API to individual accounts added a new layer: a seller can now technically access an infrastructure to operate all their channels from behind a single link, in a single voice. But there is no tool to set this up, manage it, and grow with it.\n\nLinktree didn't see this gap. Salesforce didn't care about this segment. The CRM giants sold their packages to SMBs, not to individuals. This gap was left empty intentionally. We are building the solution inside it."
     },
     "q2": {
       "title": "What Happens If Nothing Changes",
-      "content": "A customer asks a question. The reply comes 4 hours later. The customer already went somewhere else. The seller doesn't even notice.\n\nThis scenario plays out every day across tens of thousands of the 600,000 individual sellers in Turkey alone. The revenue loss is invisible because nobody says 'I missed them.' The customer left. It doesn't get counted.\n\nFor investors, let's make this concrete: A seller receives an average of 10 DMs per day. 40% of those come with buying intent. Due to response delays, 2 of those 4 customers are lost. Average transaction value: $20. That's $14,600 in annual losses for a single seller. Multiply across the market and the damage is incalculable.\n\nFor the team, a simpler truth: We are here to solve this problem. And if we can't, then what needs to stop, stops."
+      "content": "A customer asks a question. The reply comes 4 hours later. The customer already went somewhere else. The seller doesn't even notice.\n\nThis scenario plays out every day across tens of thousands of the 600,000 individual sellers in Turkey alone. The revenue loss is invisible because nobody says 'I missed them.' The customer left. It doesn't get counted.\n\nFor investors, let's make this concrete (an estimate from our Fermi model — not yet field-validated): A seller receives an average of 10 DMs per day. 40% of those come with buying intent. Due to response delays, 2 of those 4 customers are lost. Average transaction value: $20. That's $14,600 in annual losses for a single seller. Multiply across the market and the damage is incalculable.\n\nFor the team, a simpler truth: We are here to solve this problem. And if we can't, then what needs to stop, stops."
     },
     "q3": {
       "title": "Why Existing Alternatives Fall Short",
@@ -237,7 +241,7 @@
     },
     "q6": {
       "title": "Our Revenue Model",
-      "content": "We operate a credit-based subscription system. Three tiers.\n\nStarter ($9/month, 200 credits): For the individual seller receiving 3–5 DMs per day, setting up an assistant for the first time. Users at this tier are learning what Saule is and testing the system's value.\n\nPro ($29/month, 700 credits): For sellers receiving 30+ DMs per week with a regular customer base who use Beiwe analytics. This tier is our core revenue engine.\n\nBusiness ($79/month, 1,800 credits): For sellers managing multiple service lines, high-volume DM traffic, and mature automation needs.\n\nPricing is dollar-fixed. TL collection is at the current exchange rate. Annual payment comes with a 20% discount — savings for the customer and a buffer against currency risk for us.\n\nEffective ARPU: $15 (early-stage Starter-heavy mix + annual discount effect). LTV: $300 (at 5% churn assumption). CAC target: below $100 — the viral signature loop should keep this organic."
+      "content": "Our revenue model is a credit-based subscription. The billing infrastructure ships at the launch gate on our roadmap; early pilots pay manually. Three tiers.\n\nStarter ($9/month, 200 credits): For the individual seller receiving 3–5 DMs per day, setting up an assistant for the first time. Users at this tier are learning what Saule is and testing the system's value.\n\nPro ($29/month, 700 credits): For sellers receiving 30+ DMs per week with a regular customer base who use Beiwe analytics. This tier is our core revenue engine.\n\nBusiness ($79/month, 1,800 credits): For sellers managing multiple service lines, high-volume DM traffic, and mature automation needs.\n\nPricing is dollar-fixed. TL collection is at the current exchange rate. Annual payment comes with a 20% discount — savings for the customer and a buffer against currency risk for us.\n\nEffective ARPU: $15 (early-stage Starter-heavy mix + annual discount effect). LTV: $300 (at 5% churn assumption). CAC target: below $100 — the viral signature loop should keep this organic."
     },
     "q7": {
       "title": "Where We're Headed",
@@ -249,34 +253,34 @@
     },
     "q9": {
       "title": "What We're Asking For",
-      "content": "To our users: Setup takes 10 minutes. Connect your bio link to talkinbio and see how many leads Saule collects in a month. If it creates no value, don't continue. If it does, you now know.\n\nTo our investors: We're currently in early-stage bootstrapped mode. The time for an investment conversation is when we cross $100K ARR. But rather than introducing ourselves only at that point, we wanted you to know us now. The numbers are real, the model is honest, the open questions are open. We'll be in touch when we're ready.\n\nTo our team: When you need to remember why building this matters, come back to this page. We believe what we're doing is right. That's the only thing left to prove."
+      "content": "To our users: Setup takes 10 minutes. Connect your bio link to talkinbio and see how many leads Saule collects in a month. If it creates no value, don't continue. If it does, you now know.\n\nTo our investors: We're currently in early-stage bootstrapped mode. The time for an investment conversation is when we cross $100K ARR. But rather than introducing ourselves only at that point, we wanted you to know us now. Our numbers are labeled by evidence class — validated where validated, estimates where estimated; the model is honest, the open questions are open. We'll be in touch when we're ready.\n\nTo our team: When you need to remember why building this matters, come back to this page. We believe what we're doing is right. That's the only thing left to prove."
     }
   },
   "Legal": {
     "eyebrow": "Legal",
     "title": "Privacy Policy & GDPR Notice",
     "copy": "talkinbio takes the privacy and security of your personal data seriously. This page explains how we collect, use and protect your data in accordance with the General Data Protection Regulation (GDPR) and applicable privacy laws.",
-    "lastUpdated": "Last updated: June 2026",
+    "lastUpdated": "Last updated: July 2026",
     "sections": [
       {
         "title": "1. Data Controller",
-        "body": "talkinbio (referred to as 'Company', 'talkinbio', 'we' or 'us') is the data controller for personal data collected through the talkinbio platform. Contact: info@talkinbio.com"
+        "body": "talkinbio is currently operated as a sole proprietorship while formal company incorporation is in progress; the registered data controller identity (company name, registration number) will be updated on this page once incorporation is complete. Personal data collected through the platform is processed in accordance with applicable data protection law, including the GDPR. Contact: info@talkinbio.com\n\nImportant distinction: business owners using the talkinbio platform (our customers) are the data controller for data they collect from their own visitors/end customers (e.g. conversations with Saule, lead information) — talkinbio acts as a data processor for that data. For the account holder's own data (name, email, account information), talkinbio is the data controller."
       },
       {
         "title": "2. Personal Data We Collect",
-        "body": "When you use the talkinbio platform, we collect the following categories of personal data:\n\n• Identity data: Full name\n• Contact data: Email address\n• Account data: Workspace name, user role, job title\n• Usage data: Login timestamps, in-platform actions, feature usage logs\n• Content data: Customer interaction notes, tickets and related business data entered into the platform\n\nCustomer data you enter into talkinbio is processed on your behalf. In this context, your company also acts as a data controller for that data."
+        "body": "talkinbio provides an AI assistant (Saule) that chats 24/7 with visitors to your social media bio page. Two separate categories of data are processed:\n\nYour data as a business owner (account holder):\n• Identity data: Full name\n• Contact data: Email address\n• Account data: Business name, username, industry/category\n• Usage and metering data: Login timestamps, in-platform actions, AI usage volume (credit/token consumption)\n\nData belonging to visitors to your page (your end customers) — for this data, you are the data controller and talkinbio is the data processor:\n• Transcripts of conversations with Saule (including messages the visitor writes)\n• Lead information: name, contact details, preferred appointment time\n• A session cookie named visitor_session_id (used to match a visitor to their own conversation history)\n\nSaule is an AI assistant; when a visitor asks directly, it honestly discloses this. These conversations may be read by the business owner providing the service and are sent to an AI provider to generate responses (see Section 4)."
       },
       {
         "title": "3. Legal Basis for Processing",
-        "body": "We process your personal data under the following legal bases under GDPR Article 6:\n\n• Account creation and authentication → Performance of a contract (Art. 6(1)(b))\n• Providing platform services → Performance of a contract (Art. 6(1)(b))\n• Security and audit logs → Legitimate interests (Art. 6(1)(f))\n• Product development and error analysis → Legitimate interests (Art. 6(1)(f))\n• Legal compliance → Legal obligation (Art. 6(1)(c))\n• Marketing communications → Consent (Art. 6(1)(a)) — only where you have given explicit consent"
+        "body": "We process your personal data under the following legal bases under GDPR Article 6:\n\n• Account creation and authentication → Performance of a contract (Art. 6(1)(b))\n• Providing platform services (page hosting, Saule/Beiwe assistants) → Performance of a contract (Art. 6(1)(b))\n• AI-assisted visitor communication (Saule answering questions, collecting appointments/leads) → Performance of a contract + legitimate interests (Art. 6(1)(b), 6(1)(f))\n• Security and audit logs → Legitimate interests (Art. 6(1)(f))\n• Product development, error analysis and usage metering (credit/token consumption) → Legitimate interests (Art. 6(1)(f))\n• Legal compliance (invoicing, accounting records) → Legal obligation (Art. 6(1)(c))\n• Marketing communications → Consent (Art. 6(1)(a)) — only where you have given explicit consent"
       },
       {
         "title": "4. Data Transfers",
-        "body": "Your personal data may be transferred to Google Firebase and Supabase (acting as a data processor) to provide our technical infrastructure. Where data is transferred outside the European Economic Area, we ensure appropriate safeguards are in place in accordance with GDPR Chapter V, including Standard Contractual Clauses where applicable."
+        "body": "To provide our service, your personal data is transferred to the following technical infrastructure providers (acting as data processors):\n\n• Supabase — database, authentication and file storage\n• Vercel — application hosting\n• Anthropic — the AI model provider powering Saule's and Beiwe's responses; conversation content is sent to Anthropic (based in the United States) for this purpose\n• Resend — sending system and notification emails\n\nSome of these providers are located outside the European Economic Area. Where data is transferred outside the EEA, we ensure appropriate safeguards are in place in accordance with GDPR Chapter V, including Standard Contractual Clauses where applicable. Data may also be transferred to competent public authorities where legally required."
       },
       {
         "title": "5. Data Retention",
-        "body": "We retain your personal data for as long as your account is active and for a defined period thereafter to meet legal obligations. Data that is no longer required is securely deleted or anonymized."
+        "body": "We retain your personal data as follows:\n\n• Account and platform data: for as long as your account is active; deleted or anonymized within 90 days of account closure.\n• Saule conversation transcripts and lead data: retained for as long as the related business account is active (accessible to the business owner); deleted within 90 days of account closure.\n• Invoicing and accounting records: retained for the period required by applicable tax law.\n• Security and audit logs: retained for up to 12 months.\n\nIf a visitor requests deletion of their conversation data, the request is directed to the relevant business owner (the data controller); talkinbio, as data processor, carries out the technical deletion."
       },
       {
         "title": "6. Your Rights Under GDPR",
@@ -284,7 +288,7 @@
       },
       {
         "title": "7. Cookies",
-        "body": "The talkinbio platform uses strictly necessary cookies for session management and security. Analytics and marketing cookies are only used where you have given explicit consent. You can manage your cookie preferences through your browser settings."
+        "body": "The talkinbio platform currently uses only strictly necessary cookies for session management and security (e.g. the visitor_session_id cookie used to match a visitor to their own conversation history, and login session cookies). We do not currently use analytics or marketing cookies; if this changes, a consent banner will be added before any such cookie is set. You can manage your cookie preferences through your browser settings."
       },
       {
         "title": "8. Changes to This Policy",

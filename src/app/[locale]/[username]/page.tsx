@@ -8,8 +8,8 @@ import { googleFontsHref } from '@/utils/googleFonts';
 import { isConversationActive } from '@/utils/conversationWindow';
 
 export async function generateMetadata({ params }: any) {
-  const { username } = await params;
-  
+  const { username, locale } = await params;
+
   // Use anon client for metadata
   const { createClient: createAnonClient } = await import('@supabase/supabase-js');
   const supabase = createAnonClient(
@@ -17,16 +17,40 @@ export async function generateMetadata({ params }: any) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
   const { data: business } = await supabase.from('businesses').select('name, category').eq('username', username).single();
-  
+
   if (!business) return { title: 'Not Found' };
 
+  const path = `/${username}`;
+  const title = `${business.name} | Talkinbio`;
+  const description = business.category || 'Sohbet et, randevu al, bilgi al.';
+
   return {
-    title: `${business.name} | Talkinbio`,
-    description: business.category,
+    title,
+    description,
+    alternates: {
+      canonical: `/${locale}${path}`,
+      languages: {
+        en: `/en${path}`,
+        tr: `/tr${path}`,
+        ru: `/ru${path}`,
+        'x-default': `/en${path}`,
+      },
+    },
     openGraph: {
-      title: `${business.name} | Talkinbio`,
-      description: `Sohbet et, randevu al, bilgi al.`,
-    }
+      title,
+      description,
+      url: `/${locale}${path}`,
+      siteName: 'Talkinbio',
+      images: [{ url: '/saule-avatar-v1.png', width: 512, height: 512 }],
+      locale,
+      type: 'profile',
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
+      images: ['/saule-avatar-v1.png'],
+    },
   };
 }
 
