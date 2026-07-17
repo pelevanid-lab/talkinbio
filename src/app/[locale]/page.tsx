@@ -30,16 +30,26 @@ export default async function HomePage({ params }: any) {
   // Faz 1.6: landing'deki Saule önizlemesi gerçek demo işletmeye bağlanır (dogfooding).
   const demoBusinessId = process.env.TALKINBIO_BUSINESS_ID || null;
   let demoInitialMessages: any[] = [];
+  let demoBlocks: any[] = [];
+  let demoTheme: any = null;
   if (demoBusinessId) {
     try {
+      const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+      const supabaseAdmin = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const [{ data: blocks }, { data: business }] = await Promise.all([
+        supabaseAdmin.from('blocks').select('*').eq('business_id', demoBusinessId).eq('is_visible', true).order('order', { ascending: true }),
+        supabaseAdmin.from('businesses').select('theme').eq('id', demoBusinessId).single(),
+      ]);
+      demoBlocks = blocks || [];
+      demoTheme = business?.theme || null;
+
       const cookieStore = await cookies();
       const visitorSessionId = cookieStore.get('visitor_session_id')?.value;
       if (visitorSessionId) {
-        const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-        const supabaseAdmin = createSupabaseClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
         const { data: conv } = await supabaseAdmin
           .from('conversations')
           .select('last_message_at, created_at, messages(id, role, content, created_at)')
@@ -139,6 +149,8 @@ export default async function HomePage({ params }: any) {
               businessName="Talkinbio"
               locale={locale}
               initialMessages={demoInitialMessages}
+              blocks={demoBlocks}
+              theme={demoTheme}
             />
           </div>
         </section>
