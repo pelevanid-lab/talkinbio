@@ -657,6 +657,7 @@
 
 #landing-page .foot-links {
   display: flex;
+  flex-wrap: wrap;
   gap: 22px;
   font-size: 14px;
   color: var(--ink-soft);

@@ -230,7 +230,7 @@ export default async function HomePage({ params }: any) {
             </div>
           </div>
           <div className="footer-bar">
-            <span>talkinbio.com/sen</span>
+            <span>{t('footer.brandLink')}</span>
             <div className="dot-btn"></div>
           </div>
         </div>

@@ -95,7 +95,8 @@
     "footer": {
       "privacy": "Конфиденциальность",
       "terms": "Условия использования",
-      "contact": "Контакты"
+      "contact": "Контакты",
+      "brandLink": "talkinbio.com/vy"
     }
   },
   "RequestAccess": {

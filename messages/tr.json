@@ -87,7 +87,8 @@
     "footer": {
       "privacy": "Gizlilik",
       "terms": "Kullanım şartları",
-      "contact": "İletişim"
+      "contact": "İletişim",
+      "brandLink": "talkinbio.com/sen"
     }
   },
   "RequestAccess": {
