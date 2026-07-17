@@ -36,7 +36,7 @@ const perspectives = [
     problem: 'Instagram veya WhatsApp üzerinden iş yapan hizmet sahipleri, potansiyel müşteri sorularını zamanında yanıtlayamıyor. Bir soruya saatlerce cevap gelmeyince müşteri başka birine gidiyor — lead kayboldu.',
     solution: 'talkinbio sayfanı canlı bir asistana dönüştürür. Ziyaretçi istediği soruyu sorar, Saule cevaplar, randevu alır, lead kaydeder. Sen sabah kalkınca hazır bir liste bulursun.',
     cta: '"Ücretsiz 30 günlük deneme — kurulum 10 dakika."',
-    objection: '"Neden bir chatbot kurmayayım?" → Chatbot kurulumu teknik bilgi ister. Saule\'yi Beiwe ile 10 dakikada konuşturmaya başlarsın — kod yok, form yok.',
+    objection: '"Neden bir chatbot kurmayayım ?" → Chatbot kurulumu teknik bilgi ister. Saule\'yi Beiwe ile 10 dakikada konuşturmaya başlarsın — kod yok, form yok.',
   },
   {
     id: 'investor',
