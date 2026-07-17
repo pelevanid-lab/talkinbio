@@ -96,10 +96,10 @@ oturum "DB'deki en yeni oturum" seçildiği için eski konuşma geri geliyor. Ay
   bot beyanı zaten zorunlu — şimdiden uyumlu olalım).
 
 ### Kabul kriterleri
-- [ ] Beiwe ve Saule farklı env modelleriyle çalıştırılabiliyor.
-- [ ] Öneri kartları gerçek veriyle doğru tetikleniyor (kısa about → uyarı; tema varken tema uyarısı yok).
-- [ ] Özel karşılama açıkken widget ilk mesajı sahibin yazdığı metin.
-- [ ] Editörde yeni sohbet açıp sayfayı yenileyince yeni (boş) oturum aktif kalıyor;
+- [x] Beiwe ve Saule farklı env modelleriyle çalıştırılabiliyor.
+- [x] Öneri kartları gerçek veriyle doğru tetikleniyor (kısa about → uyarı; tema varken tema uyarısı yok).
+- [x] Özel karşılama açıkken widget ilk mesajı sahibin yazdığı metin.
+- [x] Editörde yeni sohbet açıp sayfayı yenileyince yeni (boş) oturum aktif kalıyor;
       arşivlenen oturum bir daha kendiliğinden açılmıyor.
 
 ---
@@ -233,15 +233,15 @@ altına küçük, zarif bir "Saule ile konuşuyorsunuz — talkinbio.com" imzas�
 satırlık iş, dönüşüm ölçümü Faz S'teki Search Console + UTM ile yapılır.
 
 ### Kabul kriterleri
-- [ ] Sahip tüm konuşma transkriptlerini dashboard'dan okuyabiliyor, lead ↔ konuşma geçişi çalışıyor.
-- [ ] İstemciden gönderilen sahte geçmiş sunucuda yok sayılıyor (elle test: bozuk messages body'si).
-- [ ] Bilgi tabanına eklenen not, Saule'nin cevabında etkisini gösteriyor.
-- [ ] Landing'de ziyaretçi 3 dilde Saule ile konuşup ürün sorularına cevap alabiliyor.
-- [ ] Saule'nin topladığı erişim talebi admin/requests'te `saule` kaynağıyla görünüyor;
+- [x] Sahip tüm konuşma transkriptlerini dashboard'dan okuyabiliyor, lead ↔ konuşma geçişi çalışıyor.
+- [x] İstemciden gönderilen sahte geçmiş sunucuda yok sayılıyor (elle test: bozuk messages body'si).
+- [x] Bilgi tabanına eklenen not, Saule'nin cevabında etkisini gösteriyor.
+- [x] Landing'de ziyaretçi 3 dilde Saule ile konuşup ürün sorularına cevap alabiliyor.
+- [x] Saule'nin topladığı erişim talebi admin/requests'te `saule` kaynağıyla görünüyor;
       onaylayınca mevcut davet e-postası akışı çalışıyor.
-- [ ] Demo mesaj tavanı dolunca Saule "yeni sohbet" veya `request-access` daveti yapıyor, sert blokaj yok.
-- [ ] Ziyaretçi widget'tan yeni sohbet başlatabiliyor; eski konuşma sahibin transkriptinde duruyor.
-- [ ] Editör önizlemesinde sahip kendi Saule'siyle gerçekten konuşabiliyor; bu test
+- [x] Demo mesaj tavanı dolunca Saule "yeni sohbet" veya `request-access` daveti yapıyor, sert blokaj yok.
+- [x] Ziyaretçi widget'tan yeni sohbet başlatabiliyor; eski konuşma sahibin transkriptinde duruyor.
+- [x] Editör önizlemesinde sahip kendi Saule'siyle gerçekten konuşabiliyor; bu test
       konuşmaları lead e-postası üretmiyor ve raporlarda "Test" olarak ayrışıyor.
 
 ---
@@ -329,92 +329,66 @@ bu veriyle kalibre edilir.
 - CI: GitHub Actions ile `lint + test + build` (repo GitHub'da zaten).
 
 ### Kabul kriterleri
-- [ ] Web widget ve landing demo davranışı refactor öncesiyle birebir aynı
+- [x] Web widget ve landing demo davranışı refactor öncesiyle birebir aynı
       (manuel regresyon: karşılama, lead akışı, geçmiş, erişim talebi).
 - [ ] `runSauleTurn` web dışı bir bağlamdan (test harness) çağrılabiliyor.
-- [ ] CI yeşil; agent modülleri için temel test kapsamı var.
+- [x] CI yeşil; agent modülleri için temel test kapsamı var.
 
 ---
 
-## Faz S — SEO & marka temelleri (~2 gün, herhangi bir faza paralel)
+## Faz S — Marketing (Sürekli, Paralel)
 
-Mevcut durum: tek statik İngilizce title/description var (`[locale]/layout.tsx`);
-sitemap, robots, OG görseli, hreflang ve yapılandırılmış veri yok. Google,
-markayı eski/ölü bir "TalkInBio" projesiyle ilişkilendiriyor ve arama sonucunda
-favicon yerine jenerik ikon gösteriyor. Erken yapılmalı — domain otoritesi zamanla
-birikir, geciktikçe eski projenin gölgesi uzar.
+Talkinbio'nun görünürlüğünü, arama motoru otoritesini ve sosyal kanıtını inşa eden yapı taşı. Yalnızca organik trafik değil, aynı zamanda işletmelerin kendi müşterilerini çekeceği "vitrin" (Linktree büyüme modeli) işlevini de içerir.
 
-### S.1 Teknik SEO
-- **Favicon seti:** `app/icon.svg` mevcut ama yetersiz — çoklu boyut PNG/ICO +
-  `apple-icon` eklenir; arama sonucunda logo görünürlüğünün ön koşulu.
-- **Locale-bazlı metadata:** `generateMetadata` ile 3 dilde title/description,
-  `metadataBase`, title template, hreflang alternates (next-intl ile).
-- **OG görseli:** landing paylaşım kartı (`opengraph-image`).
-- **`sitemap.ts` + `robots.ts`:** locale rotaları + **yayınlanmış tüm işletme
-  profilleri** — her müşteri sayfası domain'e çalışan indekslenebilir içerik
-  (Linktree büyüme modeli). `is_published = false` profiller hariç.
-- **http→https 301 + canonical** kontrolü (arama sonucu http gösteriyor).
+### S.1 SEO ve Büyüme Temelleri
+- **Sitemap & Otomatik İndeksleme:** Yayınlanan her yeni işletme profili (`is_published = true`) sitemap'e otomatik olarak eklenir. 
+- **Locale-Bazlı Metadata (i18n):** Türkçe, İngilizce ve Rusça dilleri için özel `title` ve `description` tagleri üretilir. Hreflang etiketleriyle arama motorlarına doğru dil versiyonları sunulur.
+- **Marka Araması Optimizasyonu:** Google Search Console ve Bing Webmaster entegrasyonu; marka (Talkinbio) aramalarında logo ve doğru site açıklaması (site-links) çıkartılması.
+- **Microdata & JSON-LD:**
+  - `Organization` şeması (Talkinbio'nun kendi kurumsal otoritesi için).
+  - `LocalBusiness` şeması (Kullanıcıların kendi sayfalarının Google yerel aramalarda çıkması için — ürüne doğrudan satış argümanıdır).
 
-### S.2 Yapılandırılmış veri (JSON-LD)
-- Ana sayfa: `Organization` (logo + `sameAs` sosyal profiller) + `WebSite` —
-  Google'ın site adı/logo tanıması ve AI özetlerinin doğru bilgi çekmesi için.
-- İşletme profilleri: `LocalBusiness` şeması (ad, kategori, çalışma saatleri
-  bloktan üretilir) — müşterilerin kendi Google görünürlüğünü artırır,
-  ürüne satış argümanı olur.
+### S.2 İçerik ve Otorite İnşası
+- **Örnek Müşteri Hikayeleri:** Ücretli pilotların (`Faz P`) başarı hikayelerinin blog formatında yayınlanması.
+- **Kullanım Senaryoları (Use Cases):** "Kuaförler için AI", "Danışmanlar için Randevu Asistanı" gibi sektörel dikey açılış sayfaları (Landing Page'ler) hazırlanması.
+- **Backlink Stratejisi:** Dizinler, Product Hunt lansmanı ve indie-hacker forumlarında aktif görünürlük.
 
-### S.3 Marka & dış sinyaller
-- Google Search Console: domain doğrulama, sitemap gönderimi, ana sayfa için
-  manuel indeksleme talebi (AI özetinin tazelenmesini hızlandırır). Bing Webmaster da ucuz.
-- Sosyal profiller (Instagram/X/LinkedIn) açılıp domain'e bağlanır; Organization
-  şemasında `sameAs` ile ilişkilendirilir.
-- **Marka tescil taraması:** TÜRKPATENT (+ hedef pazarlara göre EUIPO) üzerinde
-  "talkinbio" araması; temizse kendi başvurusu değerlendirilir. Eski proje ölü
-  görünüyor ve `talkinbio.com` bizde — pratik risk düşük, ama markaya harcama
-  büyümeden önce bu kontrol yapılmalı.
-- Lansmanda: Product Hunt + dizinler + geri bağlantılar (Faz 4 sonrası).
+### S.3 Dönüşüm Oranı Optimizasyonu (CRO)
+- **A/B Testleri:** Landing page üzerindeki "Erken Erişim" butonlarının yerleşimi ve metinlerinin dönüşüme etkisinin ölçülmesi.
+- **Saule İmzası:** Müşterilerin widget'larında yer alan "Saule ile konuşuyorsunuz" imzasından gelen trafiğin (UTM parametreleri ile) ölçümlenmesi ve viral büyüme katsayısının (K-factor) izlenmesi.
 
-### Kabul kriterleri
-- [ ] Google'da site logo + doğru dilde açıklama ile listeleniyor (Search Console'da izlenir).
-- [ ] Sitemap'te yayınlanmış profiller var; yeni yayınlanan profil sitemap'e otomatik giriyor.
-- [ ] Zengin sonuç testi (Rich Results Test) Organization ve LocalBusiness şemalarını doğruluyor.
+### Kabul Kriterleri
+- [ ] Zengin sonuç testi (Rich Results Test) tüm şemaları doğruluyor.
+- [ ] Yayınlanan her profil sitemap'te yer alıyor ve Search Console'da indeksleniyor.
+- [ ] UTM ile gelen trafik ve widget imzası dönüşümleri admin panelinde izlenebiliyor.
 
 ---
 
-## Faz P — Pilot & müşteri geliştirme (sürekli, tüm fazlara paralel)
+## Faz P — Customer Operations (Sürekli, Paralel)
 
-Çekim Gücü Yol Haritası'nın Aşama 1 OMTM'i (ödeme yapan müşteri) hiçbir mühendislik
-fazından beslenmiyor — bu faz o boşluğu kapatır. **Kod işi değil, takvim işi**; Faz 2-4
-geliştirmeleriyle paralel yürür ve onlardan önceliklidir: en riskli varsayım ("hizmet
-sahipleri kaçan lead için öder") yalnızca burada test edilir.
+Mühendislik işlerinden bağımsız, Çekim Gücü (Traction) Yol Haritasının kalbini oluşturan ve "Müşteri ödemeye hazır mı?" riskini test eden operasyonel aşama. Ürün geliştirmeyi beklemek yerine, erken aşama manuel operasyonlarla döngüyü tamamlar.
 
-**Fiyat kuralı (2026-07-17, Enes):** Ücretsiz deneme YOK. İlk 10 müşterinin tamamı öder
-(Starter $9/ay, dolar-sabit, TL karşılığı kur üzerinden). Tek ücretsiz hesap, test
-kullanıcısı **Uliana Pehlivan**'dır. Faz 4 faturalandırması gelene kadar tahsilat
-manueldir (havale/elden) — ödeme almak için altyapı beklenmez.
+### P.1 Problem Görüşmeleri & Geri Bildirim Döngüsü
+- **Hedef Kitle Teması:** Sürekli olarak hedef segmentle (randevu bazlı, DM'den müşteri alan hizmet verenler) görüşmeler yapılması.
+- **Kanıt Toplama:** Çözüm göstermeden, yaşanan mevcut DM yükünün ve kaçan potansiyel müşterilerin acı noktasının dinlenmesi.
+- **Fiyat Testi:** Görüşme sonunda doğrudan "$9/ay öder miydin?" sorusuyla fiyat hassasiyetinin ölçülmesi ve Pivot Günlüğü'ne işlenmesi.
 
-### P.1 Problem görüşmeleri (hedef: 20)
-- Hedef segment: randevuyla çalışan, Instagram DM'den müşteri alan hizmet verenler
-  (kuaför, güzellik, koç, eğitmen — kanvasın erken benimseyen profili).
-- Running Lean problem interview formatı: çözüm gösterme yok; DM yükü, kaçan lead,
-  bugünkü çözümleri dinle. Fiyat sorusu görüşmenin sonunda: "$9/ay ≈ TL karşılığı öder miydin?"
-- Çıktılar Çekim Gücü sayfasındaki sayaca işlenir (görüşme n/20) ve öğrenilenler
-  pivot günlüğüne "Müşteri Kanıtı" etiketiyle girer.
+### P.2 Ücretli Pilot (Concierge Onboarding)
+- **Ücretsiz Deneme YOK:** Ürünün gerçek değerini test etmek için ilk günden ücret alınması. 
+- **Manuel Tahsilat & Kurulum:** Fatura altyapısı (Stripe/Iyzico) hazır olana kadar tahsilatların manuel yapılması.
+- **Birlikte Kurulum:** İlk 10 müşterinin Beiwe kurulumunun doğrudan ekibimiz eşliğinde (Concierge Onboarding) 10 dakika içinde yapılması.
+- **Değer İspatı:** 30 günün sonunda müşteriye "gerçekte kaç lead toplandığı" ve "zaman tasarrufu" metrikleriyle ROI (Yatırım Getirisi) gösterimi.
 
-### P.2 Ücretli pilot (hedef: 10 işletme)
-- Teklif: "İlk 10 pilot işletme — $9/ay, kurulumu birlikte yapıyoruz (10 dakika),
-  30 gün sonunda gerçek lead listenle değerlendiriyoruz."
-- Kurulum Beiwe ile birlikte yapılır (dogfooding + kurulum süresi varsayımının testi).
-- Pilot işletmelerin Saule konuşmaları ve lead'leri haftalık gözden geçirilir
-  (Faz 1.1 transkript ekranı tam da bunun için var).
+### P.3 Sürekli Denetim ve Ritim
+- **Ayna-Odası Kuralı:** Mühendislik illüzyonuna düşmemek için her ay sorulan kritik soru: "Bu ay hangi varsayım GERÇEK müşteriyle test edildi?"
+- **Haftalık Gözden Geçirme:** Pilot işletmelerin Saule üzerinden aldıkları konuşma transkriptlerinin ve lead verilerinin kalitesinin haftalık olarak incelenmesi.
 
-### P.3 Ritim
-- Haftalık sabit blok: en az 2-3 görüşme/pilot teması — Faz 2-4 kod işleri bu bloğu yemez.
-- Aylık denetim sorusu (ayna-odası kuralı): "Bu ay hangi varsayım GERÇEK müşteriyle test edildi?"
+### Kabul Kriterleri
+- [ ] 20 problem görüşmesi tamamlandı, bulgular pivot günlüğüne eklendi.
+- [ ] İlk 10 ücretli pilot işletme yayında ve ödemeleri manuel olarak tahsil edildi.
+- [ ] "Müşteri para öder mi?" varsayımı (Çekim Gücü Aşama 1) kesin olarak Doğrulandı/Çürütüldü olarak işaretlendi.
 
-### Kabul kriterleri
-- [ ] 20 problem görüşmesi tamamlandı, bulgular pivot günlüğünde.
-- [ ] 10 ücretli pilot işletme yayında; ödemeler manuel tahsil edildi.
-- [ ] "Ödeme yapar mı?" varsayımı Doğrulandı/Çürütüldü olarak işaretlendi (Çekim Gücü Aşama 1).
+---
 
 ---
 

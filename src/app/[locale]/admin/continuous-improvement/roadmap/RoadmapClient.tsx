@@ -123,7 +123,22 @@ const mdComponents = {
 /* ------------------------------------------------------------------ */
 
 export default function RoadmapClient({ content }: { content: string }) {
-  const blocks = splitBlocks(content);
+  // Extract Phase S and Phase P to place them in the sidebar
+  const phaseSIndex = content.indexOf('\n## Faz S');
+  const phase3Index = content.indexOf('\n## Faz 3');
+
+  let mainContent = content;
+  let sidebarContent = '';
+
+  if (phaseSIndex !== -1 && phase3Index !== -1) {
+    const mainPart1 = content.substring(0, phaseSIndex);
+    sidebarContent = content.substring(phaseSIndex, phase3Index);
+    const mainPart2 = content.substring(phase3Index);
+    mainContent = mainPart1 + mainPart2;
+  }
+
+  const mainBlocks = splitBlocks(mainContent);
+  const sidebarBlocks = splitBlocks(sidebarContent);
 
   return (
     <AdminLayout>
@@ -141,11 +156,26 @@ export default function RoadmapClient({ content }: { content: string }) {
           Kanvas (&quot;neden&quot;) · Fermi (&quot;ne kadar&quot;) · Çekim Gücü (&quot;ne zaman&quot;) · Yol Haritası (&quot;nasıl&quot;)
         </p>
 
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm px-6 md:px-10 py-8 max-w-5xl">
-          {blocks.map((block, i) =>
-            block.type === 'table'
-              ? <MdTable key={i} raw={block.content} />
-              : <ReactMarkdown key={i} components={mdComponents}>{block.content}</ReactMarkdown>
+        <div className="flex flex-col xl:flex-row gap-6 items-start max-w-[1400px]">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm px-6 md:px-10 py-8 flex-grow w-full xl:w-2/3">
+            {mainBlocks.map((block, i) =>
+              block.type === 'table'
+                ? <MdTable key={i} raw={block.content} />
+                : <ReactMarkdown key={i} components={mdComponents}>{block.content}</ReactMarkdown>
+            )}
+          </div>
+          
+          {sidebarBlocks.length > 0 && (
+            <div className="bg-amber-50/40 border border-amber-200/60 rounded-2xl shadow-sm px-6 py-6 w-full xl:w-1/3 xl:sticky xl:top-6">
+              <div className="mb-4 pb-2 border-b border-amber-200/80">
+                <h3 className="text-sm font-bold text-amber-800 uppercase tracking-wider font-mono">Paralel Süreçler</h3>
+              </div>
+              {sidebarBlocks.map((block, i) =>
+                block.type === 'table'
+                  ? <MdTable key={i} raw={block.content} />
+                  : <ReactMarkdown key={i} components={mdComponents}>{block.content}</ReactMarkdown>
+              )}
+            </div>
           )}
         </div>
       </div>
