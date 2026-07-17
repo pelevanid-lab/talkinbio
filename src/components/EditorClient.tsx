@@ -411,14 +411,20 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   const handleLayoutModeChange = async (mode: 'website' | 'linktree') => {
     const settingsBlock = blocks.find(b => b.type === 'settings');
     try {
-      const { data, error } = await supabase.from('blocks').upsert({
-        business_id: business.id,
-        type: 'settings',
-        title: 'Settings',
-        content: { ...settingsBlock?.content, layoutMode: mode },
-        order: 99,
-        is_visible: false,
-      }, { onConflict: 'business_id,type' }).select().single();
+      // 'settings' isn't one of the singleton-key block types (00008_fix_blocks_singleton_constraint.sql),
+      // so there's no unique constraint an upsert's onConflict can target — select-then-write instead.
+      const { data, error } = settingsBlock
+        ? await supabase.from('blocks').update({
+            content: { ...settingsBlock.content, layoutMode: mode },
+          }).eq('id', settingsBlock.id).select().single()
+        : await supabase.from('blocks').insert({
+            business_id: business.id,
+            type: 'settings',
+            title: 'Settings',
+            content: { layoutMode: mode },
+            order: 99,
+            is_visible: false,
+          }).select().single();
       if (error) throw error;
       setBlocks(settingsBlock ? blocks.map(b => b.id === settingsBlock.id ? data : b) : [...blocks, data]);
       await markNeedsRepublish();
@@ -1008,13 +1014,13 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleLayoutModeChange('website')}
-                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border ${blocks.find(b => b.type === 'settings')?.content?.layoutMode !== 'linktree' ? 'bg-[var(--coral)] text-white border-[var(--coral)]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border ${blocks.find(b => b.type === 'settings')?.content?.layoutMode === 'website' ? 'bg-[var(--coral)] text-white border-[var(--coral)]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
                   >
                     Web Sitesi
                   </button>
                   <button
                     onClick={() => handleLayoutModeChange('linktree')}
-                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border ${blocks.find(b => b.type === 'settings')?.content?.layoutMode === 'linktree' ? 'bg-[var(--coral)] text-white border-[var(--coral)]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border ${blocks.find(b => b.type === 'settings')?.content?.layoutMode !== 'website' ? 'bg-[var(--coral)] text-white border-[var(--coral)]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
                   >
                     Blok (Linktree)
                   </button>

@@ -920,7 +920,7 @@ export default function ArchetypeRenderer({
 
   const layoutMode = useMemo(() => {
     const settingsBlock = blocks.find(b => b.type === 'settings');
-    return settingsBlock?.content?.layoutMode || 'website';
+    return settingsBlock?.content?.layoutMode || 'linktree';
   }, [blocks]);
 
   const radiusClass = useMemo(() => {
