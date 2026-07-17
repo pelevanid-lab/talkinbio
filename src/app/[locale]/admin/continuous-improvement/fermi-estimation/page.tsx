@@ -384,8 +384,8 @@ export default function FermiEstimationPage() {
             </h2>
             <div className="bg-slate-900 rounded-xl p-6 text-white h-full flex flex-col">
               <p className="text-sm leading-relaxed text-slate-300 mb-4 flex-1">
-                Türkiye pazarı (~30K adreslenebilir, $15 ARPU) kendi başına bir VC ölçeği veya devasa bir çıkış yaratmaz. 
-                Pazarın %7'sini yakalamak gibi uçuk bir senaryoda bile <strong>tavan ~$400K-500K ARR</strong> civarındadır.
+                Türkiye pazarı (~30K adreslenebilir, $15 ARPU) kendi başına bir VC ölçeği veya devasa bir çıkış yaratmaz.
+                Pazarın %7'sini yakalamak gibi uçuk bir senaryoda bile <strong>tavan ~$400K ARR</strong> civarındadır.
               </p>
               <div className="bg-white/10 rounded-lg p-4 border border-white/10">
                 <p className="text-emerald-400 font-semibold text-sm mb-1 flex items-center gap-2">

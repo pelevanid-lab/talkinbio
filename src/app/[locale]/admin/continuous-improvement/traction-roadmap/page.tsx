@@ -123,7 +123,7 @@ const milestones: Milestone[] = [
     status: 'locked',
     timeHorizon: '18 – 36. ay',
     successCriteria:
-      '~$810K ARR (Global 4.5K ödeme yapan müşteri, $15 ARPU) + öngörülebilir büyüme (CAC < LTV / 3) + WhatsApp & Instagram DM aktif + TR + MENA kanalları tekrarlanabilir. Türkiye tavanı ~$400K-$500K ARR — v2 global genişleme ana büyüme motorudur.',
+      '~$810K ARR (Global 4.5K ödeme yapan müşteri, $15 ARPU) + öngörülebilir büyüme (CAC < LTV / 3) + WhatsApp & Instagram DM aktif + Faz 7 dil genişlemesi (ar/es/pt) yayında + TR + MENA kanalları tekrarlanabilir. Türkiye tavanı ~$400K ARR — v2 global genişleme ana büyüme motorudur.',
     omtm: 'Net yeni MRR (yeni + expansion − churn)',
     omtmNote:
       'Türkiye tavanını aştıktan sonra büyüme yalnızca yeni pazardan gelir. v2 kanallar çalışmıyorsa büyüme durur — bu aşamada en büyük varsayım budur.',
@@ -392,7 +392,7 @@ export default function TractionRoadmapPage() {
           </div>
           <p className="text-slate-400 text-sm mb-5">
             Maurya: "Geriye doğru çalış. Hedefini bilmeden yol haritası çizemezsin."
-            Fermi Tahmini V.1 (muhafazakâr revizyon) baz alındı.
+            Fermi Tahmini V.1.1 (dolar-sabit fiyat, muhafazakâr) baz alındı.
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[

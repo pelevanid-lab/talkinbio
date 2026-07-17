@@ -5,15 +5,15 @@
 > evrilecek; **Saule** web widget'ından gerçek sosyal medya kanallarına (WhatsApp → Instagram)
 > taşınacak müşteri hizmetleri agent'ı.
 >
-> **Pusula belgeler:** Stratejinin "neden"i admin panelindeki Yalın Kanvas'ta yaşar
-> (Admin > Sürekli Gelişim; Supabase `lean_canvas` tablosu). 2026-07-17'den beri iki
-> kardeş belge eşlik eder (ikisi de statik TSX olarak kodda): **Fermi Tahmini**
-> ("ne kadar" — pazar boyutu, efektif ARPU, senaryolar;
-> `admin/continuous-improvement/fermi-estimation`) ve **Çekim Gücü Yol Haritası**
-> ("ne zaman, hangi sırayla" — Maurya aşamaları, OMTM, varsayımlar, pivot günlüğü;
-> `.../traction-roadmap`). Bu yol haritasındaki her faz üç belgeyle tutarlı olmalı;
-> çelişki görüldüğünde ya plan ya ilgili belge güncellenir — sessizce ıraksamaya
-> izin verilmez.
+> **Pusula belgeler** (hepsi Admin > Sürekli Gelişim sekmelerinde, statik olarak kodda —
+> 2026-07-17'de kanvasın DB/AI-düzenleme katmanı kaldırıldı): **Yalın Kanvas** ("neden";
+> `admin/continuous-improvement/page.tsx`), **Fermi Tahmini** ("ne kadar" — pazar boyutu,
+> efektif ARPU, senaryolar; `.../fermi-estimation`), **Çekim Gücü Yol Haritası** ("ne
+> zaman" — Maurya aşamaları, OMTM, pivot günlüğü; `.../traction-roadmap`) ve bu dosyanın
+> kendisi ("nasıl" — `.../roadmap` sekmesi ROADMAP.md'yi render eder). Her faz dört
+> belgeyle tutarlı olmalı; çelişki görüldüğünde ya plan ya ilgili belge güncellenir —
+> sessizce ıraksamaya izin verilmez. Aylık denetim sorusu tutarlılık değil, "bu ay hangi
+> varsayım GERÇEK müşteriyle test edildi?"dir (ayna-odası kuralı, 2026-07-17).
 >
 > Kapsam kararı (2026-07-16): Meta entegrasyonları (WhatsApp + Instagram DM) **v2'ye alındı**.
 > v1, mevcut `ig.me`/`wa.me` handoff köprüsü + landing'de canlı Saule demosu + Beiwe'nin
