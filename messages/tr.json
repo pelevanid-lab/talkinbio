@@ -200,104 +200,46 @@
     "placeholder": "Bir mesaj yazın...",
     "defaultPreview": "Size nasıl yardımcı olabilirim?",
     "newChat": "Yeni sohbet",
+    "signature": "Saule ile konuşuyorsunuz"
+  },
   "Stakeholders": {
     "title": "Paydaşlarımıza",
-    "intro": "Değerli takım üyelerimiz, kullanıcılarımız ve yatırımcılarımız; bu sayfada size hem talkinbio’yu hem de birlikte nasıl çalıştığımızı anlatacağım.",
+    "intro": "Değerli takım üyelerimiz, kullanıcılarımız ve yatırımcılarımız; bu sayfada size hem talkinbio'yu hem de birlikte nasıl çalıştığımızı anlatacağım.",
     "q1": {
       "title": "Neden Şimdi",
-      "content": "Sosyal medya üzerinden iş yapan bireysel hizmet sahipleri için son üç yılda bir şey değişti: DM’ler isteyen bir içerik kanaliyken birer satış kanalına dönüştU. Randevu alan, fiyat soran, müstırlik yapan, karar veren. Tüm bunlar Instagram DM’den aklıyor. Ve satıcılar bu trafikle başa çıkamaz hale geldi.
-
-WhatsApp Business API’nin bireysel hesaplara açılması ise bu tabloya yeni bir kat ekledi: Müstahsil, tek bir link’in arkasına çekilip tüm kanallarında tek bir sesten konuşabileceği bir altyapıya artık teknik olarak erişabiliyor. Ancak bunu kuracak, yönetecek, işinle bütyütecek bir araç yok.
-
-Linktree bu boşluğu görmedi. Salesforce bu segmenti umursamadı. CRM devleri paketlerini KOBİ’lere sattı, bireylere değil. Bu boşluk kasıtlı olarak boş bırakıldı. Biz bu boşlukta çözüm üretiyoruz."
+      "content": "Sosyal medya üzerinden iş yapan bireysel hizmet sahipleri için son üç yılda bir şey değişti: DM'ler bir içerik kanalıyken birer satış kanalına dönüştü. Randevu alan, fiyat soran, pazarlık yapan, karar veren. Tüm bunlar Instagram DM'den akıyor. Ve satıcılar bu trafikle başa çıkamaz hale geldi.\n\nWhatsApp Business API'nin bireysel hesaplara açılması bu tabloya yeni bir kat ekledi: Satıcı artık teknik olarak tüm kanallarında tek bir sesten konuşabileceği bir altyapıya erişebiliyor. Ancak bunu kuracak, yönetecek ve işiyle büyütecek bir araç yok.\n\nLinktree bu boşluğu görmedi. Salesforce bu segmenti umursamadı. CRM devleri paketlerini KOBİ'lere sattı, bireylere değil. Bu boşluk kasıtlı olarak boş bırakıldı. Biz bu boşlukta çözüm üretiyoruz."
     },
     "q2": {
-      "title": "Hiçbir şey Değişmezse",
-      "content": "Bir müşteri soru soruyor. Cevap 4 saat sonra geliyor. Müşteri çoktan başka birine gitti. Satıcı bunu fark etmiyor bile.
-
-Bu senaryo her gün, Türkiye’deki 600.000 bireysel satıcıdan on binlercesinde yaşanıyor. Gelir kaybı görünmez çünkü kimse ‘kaçırdım’ demiyor. Müşteri gitti, sayılmıyor.
-
-Yatırımcılar için bunu somutlaştıralım: Bir satıcı günde ortalama 10 DM alıyor. Bunun %40’ı satın alma niyetiyle geliyor. Cevap gecikmesi nedeniyle bu 4 müşteriden 2’sini kaybediyor. Ortalama işlem değeri 800 TL. Bu yılda 300.000 TL kaybı düzine düzine satıcı için demek. Birleştirince pazar hasarı hesaplanamıyor.
-
-Takım için ise daha sade bir gerçek: Bu problemi çözmek için buradayız. Ve çözemezsek bırakılması gereken şey gerçekten bırakılıyor demektir."
+      "title": "Hiçbir Şey Değişmezse",
+      "content": "Bir müşteri soru soruyor. Cevap 4 saat sonra geliyor. Müşteri çoktan başka birine gitti. Satıcı bunu fark etmiyor bile.\n\nBu senaryo her gün, Türkiye'deki 600.000 bireysel satıcıdan on binlercesinde yaşanıyor. Gelir kaybı görünmez çünkü kimse 'kaçırdım' demiyor. Müşteri gitti, sayılmıyor.\n\nYatırımcılar için somutlaştıralım: Bir satıcı günde ortalama 10 DM alıyor. Bunun %40'ı satın alma niyetiyle geliyor. Cevap gecikmesi nedeniyle bu 4 potansiyel müşteriden 2'sini kaybediyor. Ortalama işlem değeri 800 TL. Bu yılda 300.000 TL kayıp, düzinelerce satıcı için. Birleştirince pazar hasarı hesaplanamıyor.\n\nTakım için ise daha sade bir gerçek: Bu problemi çözmek için buradayız. Ve çözemezsek bırakılması gereken şey gerçekten bırakılıyor demektir."
     },
     "q3": {
       "title": "Mevcut Alternatifler Neden Yetersiz",
-      "content": "Linktree: Ziyaretçinin sorusunu yanıtlamıyor. Satıcının linkini tıklayan biri hizmet öğrenmek istiyor ama hiçbir eşleşme yok. Linktree bir vitrin, temsilci değil.
-
-ManyChat ve benzer chatbot’lar: Kurulumu karmaşık, senaryoları sabit ve kırılgan. Her soru için ayrı akış tasarlamak teknik bilgi istiyor. Bireyin zamanı ve kapasitesi yok.
-
-Büyük CRM’ler (HubSpot, Pipedrive): Bir koç ya da güzellik uzmanı için aşırı karmaşık. Onboarding haftalar, fiyat yıllık abonelik, entegrasyon teknik bilgi. Bu ürünler sınırları ve içinde IT departmanı olan işletmeler için tasarlandı.
-
-WhatsApp Business (tek başına): Soru geliyor, elle cevap veriyor. Otomasyon yok, takip yok, analiz yok. Sadece biraz daha organize bir mesajlaşma.
-
-Hiçbiri 7/24 çalışan, soruya cevap veren, müşteriyi sınıflandıran, lead listesi çıkaran ve satıcıya pazarlama önerisi üretenini bir arada sunmuyor. İşte bu boşluk talkinbio."
+      "content": "Linktree: Ziyaretçinin sorusunu yanıtlamıyor. Satıcının linkini tıklayan biri hizmet öğrenmek istiyor ama hiçbir eşleşme yok. Linktree bir vitrin, temsilci değil.\n\nManyChat ve benzer chatbot'lar: Kurulumu karmaşık, senaryoları sabit ve kırılgan. Her soru için ayrı akış tasarlamak teknik bilgi istiyor. Bireyin zamanı ve kapasitesi yok.\n\nBüyük CRM'ler (HubSpot, Pipedrive): Bir koç ya da güzellik uzmanı için aşırı karmaşık. Onboarding haftalar sürer, fiyat yıllık abonelik bazlı, entegrasyon teknik bilgi gerektirir. Bu ürünler içinde IT departmanı olan işletmeler için tasarlandı.\n\nWhatsApp Business tek başına: Soru geliyor, elle cevap veriliyor. Otomasyon yok, takip yok, analiz yok. Sadece biraz daha organize bir mesajlaşma.\n\nHiçbiri 7/24 çalışan, soruya cevap veren, müşteriyi sınıflandıran, lead listesi çıkaran ve satıcıya pazarlama önerisi üreten bir yapıyı bir arada sunmuyor. İşte bu boşluk talkinbio."
     },
     "q4": {
       "title": "Ne Yapıyoruz",
-      "content": "talkinbio iki bileşenden oluşuyor.
-
-Saule, bio sayfanızdaki 7/24 çalışan yapay zeka asistanıdır. Ziyaretçi soru sorar, Saule dinler, anlar ve hizmetinizi bilen bir temsilci gibi yanıtlar. Randevu toplar, ilgilenen ziyaretçiyi kaydeder, takip gerektiren durumları işaretler. Sabah kalktığınızda kaçırdığınız DM değil, sıralanmış ve etiketlenmiş bir lead listesi bulursunuz.
-
-Beiwe, bu konuşmaları analiz ederek haftalık pazarlama önerileri üreten ajandır. 'Bu hafta hangi soru en çok soruldu? Hangi hizmet daha çok ilgi gördü? Hangi saatlerde daha fazla ziyaretçi geldi?' — Beiwe bu soruları yanıtlıyor ve bir sonraki içerik kararınızı veriye dayandırmanızı sağlıyor.
-
-Kurulum 10 dakika. Kod yazmak gerekmiyor. Sistem çalışmaya başladığında siz çalışmasanız da çalışıyor."
+      "content": "talkinbio iki bileşenden oluşuyor.\n\nSaule, bio sayfanızdaki 7/24 çalışan yapay zeka asistanıdır. Ziyaretçi soru sorar, Saule dinler, anlar ve hizmetinizi bilen bir temsilci gibi yanıtlar. Randevu toplar, ilgilenen ziyaretçiyi kaydeder, takip gerektiren durumları işaretler. Sabah kalktığınızda kaçırdığınız DM değil, sıralanmış ve etiketlenmiş bir lead listesi bulursunuz.\n\nBeiwe, bu konuşmaları analiz ederek haftalık pazarlama önerileri üreten ajandır. 'Bu hafta hangi soru en çok soruldu? Hangi hizmet daha çok ilgi gördü? Hangi saatlerde daha fazla ziyaretçi geldi?' — Beiwe bu soruları yanıtlıyor ve bir sonraki içerik kararınızı veriye dayandırmanızı sağlıyor.\n\nKurulum 10 dakika. Kod yazmak gerekmiyor. Sistem çalışmaya başladığında siz çalışmasanız da çalışıyor."
     },
     "q5": {
       "title": "Farkımız",
-      "content": "Her Saule konuşmasının altında küçük bir imza var: 'Saule ile konuşuyorsunuz — talkinbio.com.' Bu imza satıcının sayfasını ziyaret eden her kullanıcı tarafından görülüyor. Kullanıcı bunu kendi sayfasında da isterim diyor ve sisteme giriyor. Bu, ürünün büyümesini ürünün kendisi sağlıyor demektir. Paid acquisition olmadan CAC organik kalıyor.
-
-Birinci avantaj bu: Viral döngü. Her aktif asistan, yeni kullanıcı kazanma kanalına dönüşüyor.
-
-İkinci avantaj: Konuşma verisi birikimi. Beiwe ne kadar kullanılırsa o kadar özelleşiyor. Yeni giren bir rakip bu veri avantajını hemen kopyalayamaz. Erken kullanıcılar veri zenginliği anlamında stratejik değer taşıyor.
-
-Üçüncüsü: Türkçe-ilk mimari. Farklı dil ve ödeme altyapısına sahip pazarlara (MENA, LatAm) uyum sağlayan lokalizasyon iskeletini baştan kuruyoruz. Bu sıfırdan başlamak zorunda kalmayan bir v2 genişlemesi anlamına geliyor."
+      "content": "Her Saule konuşmasının altında küçük bir imza var: 'Saule ile konuşuyorsunuz — talkinbio.com.' Bu imza satıcının sayfasını ziyaret eden her kullanıcı tarafından görülüyor. Kullanıcı 'bunu kendi sayfamda da isterim' diyor ve sisteme giriyor. Bu, ürünün büyümesini ürünün kendisinin sağladığı anlamına geliyor. Ücretli pazarlama yapmadan CAC organik kalıyor.\n\nBirinci avantaj: Viral döngü. Her aktif asistan, yeni kullanıcı kazanma kanalına dönüşüyor.\n\nİkinci avantaj: Konuşma verisi birikimi. Beiwe ne kadar kullanılırsa o kadar özelleşiyor. Yeni giren bir rakip bu veri avantajını hemen kopyalayamaz. Erken kullanıcılar veri zenginliği anlamında stratejik değer taşıyor.\n\nÜçüncüsü: Türkçe-ilk mimari. Farklı dil ve ödeme altyapısına sahip pazarlara (MENA, LatAm) uyum sağlayan lokalizasyon iskeletini baştan kuruyoruz. Bu, sıfırdan başlamak zorunda kalmayan bir v2 genişlemesi anlamına geliyor."
     },
     "q6": {
       "title": "Gelir Modelimiz",
-      "content": "Kredi bazlı abonelik sistemi işletiyoruz. Üç paket var.
-
-Starter ($9/ay, 200 kredi): Günde 3-5 DM alan, ilk kez asistan kuran bireysel satıcı için. Bu kademedeki kullanıcı Saule'nin ne olduğunu öğreniyor, sistemin değerini test ediyor.
-
-Pro ($29/ay, 700 kredi): Haftada 30+ DM alan, düzenli müşteri kitlesi olan, Beiwe analizini kullanan satıcı için. Bu kademe asıl gelir motorumuz.
-
-Business ($79/ay, 1.800 kredi): Birden fazla hizmet hattı olan, yüksek hacimli DM trafiği yöneten, otomasyon ihtiyacı olgunlaşmış satıcı için.
-
-Fiyat dolar-sabit. TL tahsilatı güncel kur üzerinden yapılıyor. Yıllık ödeme seçeneğinde %20 indirim sunuyoruz — bu hem müşteri için tasarruf, hem bizim için kur riskine karşı bir bariyer.
-
-Efektif ARPU: $15 (erken dönem Starter ağırlıklı karma + yıllık indirim etkisi). LTV: $300 (%5 churn varsayımıyla). CAC hedefi: $100 altında — viral imza döngüsü bunu organik tutmayı sağlayacak."
+      "content": "Kredi bazlı abonelik sistemi işletiyoruz. Üç paket var.\n\nStarter ($9/ay, 200 kredi): Günde 3-5 DM alan, ilk kez asistan kuran bireysel satıcı için. Bu kademedeki kullanıcı Saule'nin ne olduğunu öğreniyor ve sistemin değerini test ediyor.\n\nPro ($29/ay, 700 kredi): Haftada 30+ DM alan, düzenli müşteri kitlesi olan, Beiwe analizini kullanan satıcı için. Bu kademe asıl gelir motorumuz.\n\nBusiness ($79/ay, 1.800 kredi): Birden fazla hizmet hattı olan, yüksek hacimli DM trafiği yöneten ve otomasyon ihtiyacı olgunlaşmış satıcı için.\n\nFiyat dolar-sabit. TL tahsilatı güncel kur üzerinden yapılıyor. Yıllık ödeme seçeneğinde %20 indirim sunuyoruz — hem müşteri için tasarruf, hem bizim için kur riskine karşı bariyer.\n\nEfektif ARPU: $15. LTV: $300 (%5 churn varsayımıyla). CAC hedefi: $100 altında — viral imza döngüsü bunu organik tutacak."
     },
     "q7": {
       "title": "Nereye Gidiyoruz",
-      "content": "Bugün Aşama 1'deyiz: Problem/Çözüm Uyumu. OMTM'imiz ödeme yapan müşteri sayısı. Sayaç şu an 0/10. Hedef: 20 problem görüşmesi tamamla, görüşmelerden gelen sert ağrı noktalarını doğrula, ilk 10 pilotu $9/ay ücretli başlat.
-
-Aşama 2 (550 müşteri, $100K ARR): Bu eşiği geçmek Problem/Çözüm Uyumu'nun kanıtıdır. Viral döngünün çalışıp çalışmadığı ölçülmüş olur. Yatırımcı konuşması buradan başlar.
-
-Aşama 3 (v2 Global, ~4.500 müşteri, $810K ARR baz senaryo): WhatsApp ve Instagram DM doğrudan entegrasyonu. MENA ve LatAm lokalizasyonu. Dil genişlemesi. Bu noktada Saule artık bio sayfasında değil, her kanalda çalışıyor.
-
-Stretch senaryo (%6 global yakalama): ~9.000 müşteri, ~$1,6M ARR.
-
-Her adım öncekinin kanıtını gerektirir. Şu an sıradakini yapıyoruz: İlk 10 ödeme."
+      "content": "Bugün Aşama 1'deyiz: Problem/Çözüm Uyumu. OMTM'imiz ödeme yapan müşteri sayısı. Sayaç şu an 0/10. Hedef: 20 problem görüşmesi tamamla, tekrar eden ağrı noktalarını doğrula, ilk 10 pilotu $9/ay ücretli başlat.\n\nAşama 2 (550 müşteri, $100K ARR): Bu eşiği geçmek Problem/Çözüm Uyumu'nun kanıtıdır. Viral döngünün çalışıp çalışmadığı ölçülmüş olur. Yatırımcı konuşması buradan başlar.\n\nAşama 3 (v2 Global, ~4.500 müşteri, $810K ARR baz senaryo): WhatsApp ve Instagram DM doğrudan entegrasyonu. MENA ve LatAm lokalizasyonu. Dil genişlemesi. Bu noktada Saule artık yalnızca bio sayfasında değil, her kanalda çalışıyor.\n\nStretch senaryo (%6 global yakalama): ~9.000 müşteri, ~$1,6M ARR.\n\nHer adım öncekinin kanıtını gerektirir. Şu an sıradakini yapıyoruz: İlk 10 ödeme."
     },
     "q8": {
       "title": "Nasıl Çalışıyoruz",
-      "content": "Running Lean metodolojisini takip ediyoruz. Bu sloganik bir ifade değil; çalışma biçimini doğrudan belirleyen bir çerçeve.
-
-Önce problem doğrulaması, sonra ürün. Müşteri görüşmelerini ürünü geliştirmeden önce tamamlıyoruz. 20 görüşmede tekrar eden ağrı noktası netleşmezse sayıyı artırıyoruz.
-
-Ücretsiz deneme yok. Bu sadece bir tercih değil, metodolojik bir karar. Ash Maurya'nın 'Running Lean'inde bu net: Ücretsiz erken erişim meraklı toplar, müşteri değil. İlk 10 ödeyen, değer hipotezinin testidir — ödeme taahhüttür.
-
-Sürekli Gelişim paneli: Yalın Kanvas, Fermi Tahmini, Çekim Gücü Yol Haritası ve Yalın Satış Konuşması — bunların hepsi, şu an okumakta olduğunuz bu sayfa dahil, canlı belgeler. Değiştikçe güncelleniyor, güncellenince kaydediliyor. Versiyon disiplini bir standart.
-
-Kanıt sınıfları açık. Doğrulanmış olan açıkça belirtiliyor; doğrulanmamış olan da. Şişirilmiş kanıt iddiası kabul görmüyor."
+      "content": "Running Lean metodolojisini takip ediyoruz. Bu sloganik bir ifade değil; çalışma biçimini doğrudan belirleyen bir çerçeve.\n\nÖnce problem doğrulaması, sonra ürün. Müşteri görüşmelerini ürünü geliştirmeden önce tamamlıyoruz. 20 görüşmede tekrar eden ağrı noktası netleşmezse sayıyı artırıyoruz.\n\nÜcretsiz deneme yok. Bu sadece bir tercih değil, metodolojik bir karar. Ash Maurya'nın Running Lean metodolojisinde bu net: Ücretsiz erken erişim meraklı toplar, müşteri değil. İlk 10 ödeyen, değer hipotezinin testidir — ödeme taahhüttür.\n\nSürekli Gelişim paneli: Yalın Kanvas, Fermi Tahmini, Çekim Gücü Yol Haritası ve Yalın Satış Konuşması — bunların hepsi, şu an okuduğunuz bu sayfa dahil, canlı belgeler. Değiştikçe güncelleniyor, güncellenince kaydediliyor. Versiyon disiplini bir standarttır.\n\nKanıt sınıfları açık tutulur. Doğrulanmış olan açıkça belirtilir; doğrulanmamış olan da. Şişirilmiş kanıt iddiası kabul görmez."
     },
     "q9": {
       "title": "Sizden Ne İstiyoruz",
-      "content": "Kullanıcılarımıza: Kurulumu 10 dakika. Bio linkini talkinbio'ya bağla, bir ay boyunca Saule'nin kaç lead topladığını gör. Eğer değer yaratmadıysa devam etme. Eğer yarattıysa, artık bunu biliyorsun.
-
-Yatırımcılarımıza: Şu an erken evre bootstrapped bir başlangıçtayız. Yatırım konuşması için zamanımız $100K ARR'yi geçtiğimizde. Ama sizi o noktada beklemek yerine şimdiden tanıştırmak istedik. Numaralar gerçek, model dürüst, açık sorular açık. Hazır olduğumuzda iletişime geçeceğiz.
-
-Takımımıza: Bu işi inşa etmenin neden önemli olduğunu hatırlamak istediğinizde bu sayfaya dönün. Yaptığımız şeyin doğru olduğuna inanıyoruz; ispatlamamız gereken tek şey bu."
+      "content": "Kullanıcılarımıza: Kurulumu 10 dakika. Bio linkini talkinbio'ya bağla, bir ay boyunca Saule'nin kaç lead topladığını gör. Eğer değer yaratmadıysa devam etme. Eğer yarattıysa, artık bunu biliyorsun.\n\nYatırımcılarımıza: Şu an erken evre bootstrapped bir başlangıçtayız. Yatırım konuşması için doğru zaman $100K ARR'yi geçtiğimizde. Ama sizi o noktada beklemek yerine şimdiden tanıştırmak istedik. Numaralar gerçek, model dürüst, açık sorular açık. Hazır olduğumuzda iletişime geçeceğiz.\n\nTakımımıza: Bu işi inşa etmenin neden önemli olduğunu hatırlamak istediğinizde bu sayfaya dönün. Yaptığımız şeyin doğru olduğuna inanıyoruz; ispatlamamız gereken tek şey bu."
     }
   }
 }
