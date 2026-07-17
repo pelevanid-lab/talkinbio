@@ -255,12 +255,12 @@
   "Legal": {
     "eyebrow": "Hukuki Bilgilendirme",
     "title": "KVKK Aydınlatma Metni ve Gizlilik Politikası",
-    "copy": "PEH olarak kişisel verilerinizin güvenliğini ve gizliliğini ciddiye alıyoruz. Bu sayfa, 6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında sizi bilgilendirmek amacıyla hazırlanmıştır.",
+    "copy": "talkinbio olarak kişisel verilerinizin güvenliğini ve gizliliğini ciddiye alıyoruz. Bu sayfa, 6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında sizi bilgilendirmek amacıyla hazırlanmıştır.",
     "lastUpdated": "Son güncelleme: Haziran 2026",
     "sections": [
       {
         "title": "1. Veri Sorumlusu",
-        "body": "Veri sorumlusu sıfatıyla PEH Solutions (bundan böyle 'Şirket' veya 'PEH' olarak anılacaktır), talkinbio platformu aracılığıyla toplanan kişisel verileri 6698 sayılı Kişisel Verilerin Korunması Kanunu'na (KVKK) uygun olarak işlemektedir. Şirket iletişim bilgileri: info@talkinbio.com"
+        "body": "Veri sorumlusu sıfatıyla talkinbio (bundan böyle 'Şirket' veya 'talkinbio' olarak anılacaktır), talkinbio platformu aracılığıyla toplanan kişisel verileri 6698 sayılı Kişisel Verilerin Korunması Kanunu'na (KVKK) uygun olarak işlemektedir. Şirket iletişim bilgileri: info@talkinbio.com"
       },
       {
         "title": "2. İşlenen Kişisel Veriler",
@@ -288,7 +288,7 @@
       },
       {
         "title": "8. Gizlilik Politikası Değişiklikleri",
-        "body": "PEH, bu metni gerektiğinde güncelleme hakkını saklı tutar. Önemli değişiklikler kayıtlı e-posta adresinize bildirilecektir. Güncel metne her zaman bu sayfadan ulaşabilirsiniz."
+        "body": "talkinbio, bu metni gerektiğinde güncelleme hakkını saklı tutar. Önemli değişiklikler kayıtlı e-posta adresinize bildirilecektir. Güncel metne her zaman bu sayfadan ulaşabilirsiniz."
       },
       {
         "title": "9. İletişim",
@@ -296,6 +296,6 @@
       }
     ],
     "contactTitle": "Veri Sorumlusu İletişim",
-    "contactBody": "PEH Solutions\ninfo@talkinbio.com\ntalkinbio Platformu — talkinbio.com"
+    "contactBody": "talkinbio\ninfo@talkinbio.com\ntalkinbio Platformu — talkinbio.com"
   }
 }
