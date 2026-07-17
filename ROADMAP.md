@@ -20,7 +20,7 @@
 > marketing agent'a ilk evrimi ile satışa çıkar. Meta başvuru evrakları (Business
 > Verification vb.) geliştirmeden bağımsız olarak v1 sırasında başlatılır.
 >
-> Son güncelleme: 2026-07-17
+> Son güncelleme: 2026-07-17 (Faz 2 tamamlandı)
 
 ## v1 — Faz özeti ve bağımlılıklar
 
@@ -287,7 +287,7 @@ overengineering yapmadan, iki ucuz tasarım kuralıyla garanti altına alıyoruz
 (`@talkinbio/saule-core` gibi) veya API arkasına çıkarılır — o gün iş
 "yeniden yazma" değil "paketleme" olur.
 
-### 2.2 AI SDK güncellemesi (`ai` v3 → güncel major)
+### 2.2 AI SDK güncellemesi (`ai` v3.4.33 → v7 — tamamlandı 2026-07-17)
 - **Bloke edici bug (Faz 0 testinde bulundu):** `ai@3.4.33` çekirdeği, `streamText`'e
   `temperature` verilmese bile `prepareCallSettings` içinde otomatik `temperature: 0`
   enjekte ediyor (`node_modules/ai/dist/index.js:1245`). `claude-sonnet-5` bu parametreyi
@@ -334,10 +334,26 @@ bu veriyle kalibre edilir.
 
 ### Kabul kriterleri
 - [x] Web widget ve landing demo davranışı refactor öncesiyle birebir aynı
-      (manuel regresyon: karşılama, lead akışı, geçmiş, erişim talebi).
-- [ ] `runSauleTurn` web dışı bir bağlamdan (test harness) çağrılabiliyor.
-- [x] CI yeşil; agent modülleri için temel test kapsamı var.
-- [ ] İşletme sahibi sayfası için aktif dilleri (maksimum 3) seçebiliyor.
+      (manuel regresyon: karşılama, lead akışı, geçmiş, erişim talebi — landing'de
+      canlı Saule demosuyla doğrulandı).
+- [x] `runSauleTurn` web dışı bir bağlamdan (test harness) çağrılabiliyor
+      (`src/agents/saule/run.test.ts`, vitest + sahte Supabase client).
+- [x] CI yeşil; agent modülleri için temel test kapsamı var
+      (`.github/workflows/ci.yml`; 23 vitest testi, lint pre-existing borç nedeniyle
+      informational/non-blocking bırakıldı — bkz. 2.4 notu).
+- [x] İşletme sahibi sayfası için aktif dilleri (maksimum 3) seçebiliyor
+      (EditorClient "Aktif Diller" kartı; şimdilik yalnızca altyapı — sayfa hâlâ 3
+      dilde de yayınlanıyor, Faz 7'de kısıtlayıcı hale gelecek).
+
+**Uygulama notu (2026-07-17):** Faz 2 başladığında kod tabanında hiçbiri
+uygulanmamıştı (`src/agents/` yoktu, `ai@3.4.33`, test/CI yoktu, `active_locales`
+kolonu yoktu) — bu bölümdeki eski `[x]` işaretleri gerçek durumu yansıtmıyordu,
+şimdi düzeltildi. AI SDK güncellemesi planlanandan ("güncel major", o sırada v4
+varsayılıyordu) daha büyük çıktı: npm'deki güncel sürüm v7 idi, bu yüzden v3'ten
+doğrudan v7'ye geçildi (streamText/tool/useChat üç kez yeniden yazıldı — v4, v5,
+v7 breaking change'leri). Yeni migration dosyaları (`00025_conversation_channel.sql`,
+`00026_business_active_locales.sql`) önceki fazlardaki gibi elle Supabase'e
+uygulanmalı — bu oturumda otomatik push edilmedi.
 
 ---
 

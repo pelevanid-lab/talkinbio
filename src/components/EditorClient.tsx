@@ -8,12 +8,23 @@ import ChatWidget from './ChatWidget';
 import BlockEditorModal from './BlockEditorModal';
 import SetPasswordModal from './SetPasswordModal';
 import LanguageSwitcher from './LanguageSwitcher';
-import { useChat } from '@ai-sdk/react';
+import { useChat, UIMessage } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import { useTranslations, useLocale } from 'next-intl';
 import { RECOMMENDED_TYPES, hasRealContent, isRequiredSatisfied } from '@/config/blockTypes';
 import { DEFAULT_THEME, Theme } from '@/config/archetypes';
 import { googleFontsHref } from '@/utils/googleFonts';
 import { useBeiweSuggestions } from '@/hooks/useBeiweSuggestions';
+
+type LegacyMessage = { id: string; role: string; content: string };
+
+function toUIMessage(m: LegacyMessage): UIMessage {
+  return { id: m.id, role: m.role as UIMessage['role'], parts: [{ type: 'text', text: m.content }] };
+}
+
+function getMessageText(m: UIMessage): string {
+  return m.parts.filter((p) => p.type === 'text').map((p) => (p as { text: string }).text).join('');
+}
 
 export default function EditorClient({ business, initialBlocks, initialChatMessages, initialSessions }: { business: any, initialBlocks: any[], initialChatMessages?: any[], initialSessions?: any[] }) {
   const [blocks, setBlocks] = useState(initialBlocks);
@@ -36,6 +47,9 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   const [usernameError, setUsernameError] = useState('');
   const [pageTitle, setPageTitle] = useState(business.page_title || '');
   const [isEditingPageTitle, setIsEditingPageTitle] = useState(false);
+  const ALL_LOCALES = ['tr', 'en', 'ru'] as const;
+  const [activeLocales, setActiveLocales] = useState<string[]>(business.active_locales || ['tr', 'en', 'ru']);
+  const MAX_ACTIVE_LOCALES = 3;
   const [isPublished, setIsPublished] = useState<boolean>(business.is_published || false);
   const [isTogglingPublish, setIsTogglingPublish] = useState(false);
   const [needsRepublish, setNeedsRepublish] = useState<boolean>(business.needs_republish || false);
@@ -78,17 +92,35 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   // Setup AI Agent — resumes from the persisted setup_messages history when there is one,
   // so returning to this tab (or reloading the page) doesn't lose the conversation's context.
   // Setup AI Agent
-  const { messages, setMessages, input, handleInputChange, handleSubmit, isLoading: isChatLoading, append, stop } = useChat({
+  const [input, setInput] = useState('');
+
+  const setupTransport = useMemo(() => new DefaultChatTransport({
     api: '/api/setup-agent',
-    body: { businessId: business.id, locale, sessionId: activeSessionId },
-    initialMessages: initialChatMessages && initialChatMessages.length > 0
-      ? initialChatMessages.filter((m) => m.session_id === activeSessionId).map((m) => ({ id: m.id, role: m.role, content: m.content }))
+    prepareSendMessagesRequest: ({ id, messages }) => ({
+      body: { id, messages, businessId: business.id, locale, sessionId: activeSessionId },
+    }),
+  }), [business.id, locale, activeSessionId]);
+
+  const { messages, setMessages, sendMessage, status, stop } = useChat({
+    transport: setupTransport,
+    messages: initialChatMessages && initialChatMessages.length > 0
+      ? initialChatMessages.filter((m) => m.session_id === activeSessionId).map((m) => toUIMessage({ id: m.id, role: m.role, content: m.content }))
       : [],  // Boş başlıyor — Sayfa Durumu Kartı sahte mesaj yerine geçiyor
     onError: (error) => {
       console.error('Setup agent chat error:', error);
       alert('Mesaj gönderilirken bir hata oluştu. Çok uzun bir metin gönderdiyseniz, birkaç parçaya bölüp tekrar deneyin.');
     },
   });
+  const isChatLoading = status === 'streaming' || status === 'submitted';
+
+  const sendUserText = (text: string) => sendMessage({ text });
+
+  const handleChatFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isChatLoading) return;
+    sendUserText(input);
+    setInput('');
+  };
 
   const archiveCurrentAndNewSession = async () => {
     if (activeSessionId) {
@@ -132,9 +164,9 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     }
     const { data } = await supabase.from('setup_messages').select('*').eq('session_id', sessionId).order('created_at', { ascending: true });
     if (data && data.length > 0) {
-      setMessages(data.map((m: any) => ({ id: m.id, role: m.role, content: m.content })));
+      setMessages(data.map((m: any) => toUIMessage({ id: m.id, role: m.role, content: m.content })));
     } else {
-      setMessages([{ id: '1', role: 'assistant', content: t('aiWelcome', { name: business.name }) }]);
+      setMessages([toUIMessage({ id: '1', role: 'assistant', content: t('aiWelcome', { name: business.name }) })]);
     }
   };
 
@@ -165,10 +197,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       
       const { data: { publicUrl } } = supabase.storage.from('media').getPublicUrl(fileName);
       
-      append({
-        role: 'user',
-        content: `[Kullanıcı sisteme bir medya yükledi: ${publicUrl}]`
-      });
+      sendUserText(`[Kullanıcı sisteme bir medya yükledi: ${publicUrl}]`);
 
     } catch (err: any) {
       alert("Dosya yüklenirken hata oluştu: " + err.message);
@@ -411,6 +440,22 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     }
   };
 
+  // Faz 2.5: her işletme en fazla 3 (şu an sistemdeki tüm) dil arasından en az 1'ini aktif
+  // tutmalı — Faz 7'de dil sayısı 6'ya çıktığında bu seçim maliyeti/karmaşıklığı sınırlayacak.
+  const toggleActiveLocale = async (locale: string) => {
+    const isSelected = activeLocales.includes(locale);
+    if (isSelected && activeLocales.length === 1) return; // en az 1 dil kalmalı
+    const next = isSelected
+      ? activeLocales.filter((l) => l !== locale)
+      : activeLocales.length >= MAX_ACTIVE_LOCALES
+      ? activeLocales
+      : [...activeLocales, locale];
+    if (next === activeLocales) return; // max doldu, değişiklik yok
+    setActiveLocales(next);
+    await supabase.from('businesses').update({ active_locales: next }).eq('id', business.id);
+    business.active_locales = next;
+  };
+
   // Reads the current business.contact_method/contact_value into the checkbox+input form shape,
   // then opens the editor — done on open (not on mount) so it always reflects the latest value
   // even if the AI chat updated it via updateContact since the page loaded.
@@ -447,10 +492,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
 
   const handleBulkSubmit = () => {
     if (!bulkText.trim()) return;
-    append({
-      role: 'user',
-      content: `[BULK]\nİşte işletmemle ilgili tüm detaylar. Lütfen soru sormak yerine, elindeki bütün bilgiyi analiz et ve eksik olan tüm blokları (Hakkımda, Hizmetler vb.) arka arkaya araçları çağırarak tek seferde oluştur:\n\n${bulkText}`
-    });
+    sendUserText(`[BULK]\nİşte işletmemle ilgili tüm detaylar. Lütfen soru sormak yerine, elindeki bütün bilgiyi analiz et ve eksik olan tüm blokları (Hakkımda, Hizmetler vb.) arka arkaya araçları çağırarak tek seferde oluştur:\n\n${bulkText}`);
     setBulkText('');
     setViewMode('chat');
   };
@@ -499,7 +541,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                             onClick={() => {
                               setShowSuggestions(false);
                               setViewMode('chat');
-                              append({ role: 'user', content: s.triggerMessage });
+                              sendUserText(s.triggerMessage);
                             }}
                             className="text-left w-full p-3 rounded-lg border border-slate-100 hover:border-yellow-200 hover:bg-yellow-50 transition-colors flex items-start gap-3 group"
                           >
@@ -633,7 +675,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
 
                       {hasMissing ? (
                         <button
-                          onClick={() => append({ role: 'user', content: '__DEVAM__' })}
+                          onClick={() => sendUserText('__DEVAM__')}
                           disabled={isChatLoading}
                           className="w-full mt-1 py-2 px-4 bg-[var(--coral)] text-white text-xs font-bold rounded-full hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                         >
@@ -651,9 +693,9 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 {messages.map((m, idx) => (
                   <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${m.role === 'user' ? 'bg-[var(--ink)] text-white' : 'bg-white border border-slate-200 text-slate-800 shadow-sm'}`}>
-                      {m.content === '__DEVAM__' ? (
+                      {getMessageText(m) === '__DEVAM__' ? (
                         <span className="italic text-white/70 text-xs">Sayfamı analiz et...</span>
-                      ) : m.content}
+                      ) : getMessageText(m)}
                     </div>
                   </div>
                 ))}
@@ -670,7 +712,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
               </div>
 
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent">
-                <form onSubmit={handleSubmit} className="flex items-end gap-2">
+                <form onSubmit={handleChatFormSubmit} className="flex items-end gap-2">
                   <button 
                     type="button" 
                     title="Geçmiş Konuşmalar"
@@ -694,7 +736,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                     <textarea
                       value={input}
                       onChange={(e) => {
-                        handleInputChange(e);
+                        setInput(e.target.value);
                         e.target.style.height = 'auto';
                         e.target.style.height = `${e.target.scrollHeight}px`;
                       }}
@@ -883,6 +925,34 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                     {(contactMethod || '').split(',').filter(Boolean).map((m: string) => t(`contactMethods.${m}`)).join(', ') || t('noContent')}
                   </div>
                 )}
+              </div>
+
+              {/* Aktif Diller — Faz 2.5 (Faz 7 dil genişlemesi altyapısı) */}
+              <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs font-medium text-slate-500">Aktif Diller</span>
+                  <span className="text-[10px] text-slate-400">en fazla {MAX_ACTIVE_LOCALES}</span>
+                </div>
+                <div className="flex gap-2 mt-1">
+                  {ALL_LOCALES.map((l) => {
+                    const selected = activeLocales.includes(l);
+                    const disabled = !selected && activeLocales.length >= MAX_ACTIVE_LOCALES;
+                    return (
+                      <button
+                        key={l}
+                        type="button"
+                        onClick={() => toggleActiveLocale(l)}
+                        disabled={disabled}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${selected ? 'bg-[var(--coral)] text-white border-[var(--coral)]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                      >
+                        {l}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-2">
+                  Ziyaretçilerinize sunulacak diller. Sayfanız şimdilik her zaman 3 dilde de yayınlanır — bu seçim ileride diller çoğaldığında devreye girecek.
+                </p>
               </div>
 
               {/* Publish Checklist */}

@@ -12,9 +12,11 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
+    } else {
+      // Pass the specific error message for debugging
+      return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`);
     }
   }
 
-  // return the user to an error page with some instructions
   return NextResponse.redirect(`${origin}/login?error=Invalid+or+expired+code`);
 }

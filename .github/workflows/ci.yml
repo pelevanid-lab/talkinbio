@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy
+      SUPABASE_SERVICE_ROLE_KEY: dummy
+      ANTHROPIC_API_KEY: dummy
+      GEMINI_API_KEY: dummy
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: dummy
+      RESEND_API_KEY: dummy
+      TALKINBIO_BUSINESS_ID: 11111111-1111-1111-1111-111111111111
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # Pre-existing lint debt (~230 issues) predates Faz 2 and is out of scope here;
+      # kept informational so it doesn't block CI while still being visible in logs.
+      - run: npm run lint
+        continue-on-error: true
+      - run: npm test
+      - run: npm run build

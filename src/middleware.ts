@@ -6,11 +6,16 @@ import { createServerClient } from '@supabase/ssr';
 const intlMiddleware = createIntlMiddleware(routing);
 
 export async function middleware(request: NextRequest) {
-  // Intercept auth code from Supabase (e.g. password resets that fall back to site URL)
+  // Intercept auth code from Supabase (e.g. password resets).
+  // We redirect to the CLIENT-SIDE callback page so the browser Supabase client
+  // can exchange the code using its own PKCE code verifier (stored in browser cookies).
   if (request.nextUrl.searchParams.has('code')) {
     const callbackUrl = request.nextUrl.clone();
-    callbackUrl.pathname = '/api/auth/callback';
-    // keep search params intact
+    // Use the locale from the URL if present and valid, otherwise default to defaultLocale
+    const possibleLocale = request.nextUrl.pathname.split('/')[1];
+    const locale = routing.locales.includes(possibleLocale as any) ? possibleLocale : routing.defaultLocale;
+    callbackUrl.pathname = `/${locale}/auth/callback`;
+    // keep ?code= param intact
     return NextResponse.redirect(callbackUrl);
   }
 

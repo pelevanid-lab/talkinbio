@@ -13,31 +13,43 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const handleAuth = async () => {
       try {
+        // --- PKCE flow: ?code= in URL (password reset, magic link) ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+
+        if (code) {
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) throw exchangeError;
+
+          // After exchanging the code we have a session — go to editor to set new password
+          router.replace('/dashboard/editor?reset_password=true');
+          return;
+        }
+
+        // --- Implicit flow: #access_token= in hash (legacy / magic link) ---
         const hash = window.location.hash;
         if (hash && hash.includes('access_token')) {
           const params = new URLSearchParams(hash.replace('#', ''));
           const access_token = params.get('access_token');
           const refresh_token = params.get('refresh_token');
-          
+
           if (access_token && refresh_token) {
-            const { error: setSessionError } = await supabase.auth.setSession({ 
-              access_token, 
-              refresh_token 
+            const { error: setSessionError } = await supabase.auth.setSession({
+              access_token,
+              refresh_token,
             });
             if (setSessionError) throw setSessionError;
           }
         }
 
+        // Check if we ended up with a session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          throw sessionError;
-        }
+        if (sessionError) throw sessionError;
 
         if (session) {
-          router.push('/dashboard/editor');
+          router.replace('/dashboard/editor');
         } else {
-          router.push('/login');
+          router.replace('/login');
         }
       } catch (err: any) {
         console.error('Auth callback error:', err);
@@ -55,7 +67,7 @@ export default function AuthCallbackPage() {
           <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">!</div>
           <h1 className="text-xl font-bold text-slate-900 mb-2">Giriş Başarısız</h1>
           <p className="text-slate-500 mb-6">{error}</p>
-          <button 
+          <button
             onClick={() => router.push('/login')}
             className="bg-slate-900 text-white px-6 py-2 rounded-lg font-medium hover:bg-slate-800"
           >
@@ -69,7 +81,7 @@ export default function AuthCallbackPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
       <div className="flex flex-col items-center">
-        <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+        <Loader2 className="w-10 h-10 text-[var(--coral)] animate-spin mb-4" />
         <h1 className="text-xl font-medium text-slate-900">Giriş yapılıyor...</h1>
         <p className="text-slate-500 mt-2">Lütfen bekleyin, yönlendiriliyorsunuz.</p>
       </div>
