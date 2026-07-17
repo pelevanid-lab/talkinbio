@@ -30,6 +30,7 @@
 | 1 | Güven & denetim (Saule v1) | Sahibin konuşmaları görmesi, güvenli geçmiş, bilgi tabanı, landing'de canlı Saule demosu | Faz 0 |
 | 2 | Agent çekirdeği refactor'u (hafif) | Agent'ların modülerleşmesi + taşınabilirlik kuralları, AI SDK güncellemesi, test altyapısı | Faz 1 |
 | S | SEO & marka temelleri (~2 gün) | Favicon/metadata/sitemap/schema, Search Console, marka tescil taraması | — (herhangi bir faza paralel, erken yapılmalı) |
+| P | Pilot & müşteri geliştirme (sürekli) | 20 problem görüşmesi, 10 ücretli pilot, manuel tahsilat — Aşama 1 OMTM'ini besleyen TEK iş | — (tüm fazlara paralel; kod işi değil takvim işi) |
 | 3 | Beiwe → Marketing Agent | Konuşma madenciliği, içerik üretimi, haftalık rapor | Faz 2 |
 | 4 | Satılabilir v1 kapısı | Maliyet koruması, kullanım ölçümü, faturalandırma | Lansman öncesi zorunlu |
 
@@ -376,6 +377,44 @@ birikir, geciktikçe eski projenin gölgesi uzar.
 - [ ] Google'da site logo + doğru dilde açıklama ile listeleniyor (Search Console'da izlenir).
 - [ ] Sitemap'te yayınlanmış profiller var; yeni yayınlanan profil sitemap'e otomatik giriyor.
 - [ ] Zengin sonuç testi (Rich Results Test) Organization ve LocalBusiness şemalarını doğruluyor.
+
+---
+
+## Faz P — Pilot & müşteri geliştirme (sürekli, tüm fazlara paralel)
+
+Çekim Gücü Yol Haritası'nın Aşama 1 OMTM'i (ödeme yapan müşteri) hiçbir mühendislik
+fazından beslenmiyor — bu faz o boşluğu kapatır. **Kod işi değil, takvim işi**; Faz 2-4
+geliştirmeleriyle paralel yürür ve onlardan önceliklidir: en riskli varsayım ("hizmet
+sahipleri kaçan lead için öder") yalnızca burada test edilir.
+
+**Fiyat kuralı (2026-07-17, Enes):** Ücretsiz deneme YOK. İlk 10 müşterinin tamamı öder
+(Starter $9/ay, dolar-sabit, TL karşılığı kur üzerinden). Tek ücretsiz hesap, test
+kullanıcısı **Uliana Pehlivan**'dır. Faz 4 faturalandırması gelene kadar tahsilat
+manueldir (havale/elden) — ödeme almak için altyapı beklenmez.
+
+### P.1 Problem görüşmeleri (hedef: 20)
+- Hedef segment: randevuyla çalışan, Instagram DM'den müşteri alan hizmet verenler
+  (kuaför, güzellik, koç, eğitmen — kanvasın erken benimseyen profili).
+- Running Lean problem interview formatı: çözüm gösterme yok; DM yükü, kaçan lead,
+  bugünkü çözümleri dinle. Fiyat sorusu görüşmenin sonunda: "$9/ay ≈ TL karşılığı öder miydin?"
+- Çıktılar Çekim Gücü sayfasındaki sayaca işlenir (görüşme n/20) ve öğrenilenler
+  pivot günlüğüne "Müşteri Kanıtı" etiketiyle girer.
+
+### P.2 Ücretli pilot (hedef: 10 işletme)
+- Teklif: "İlk 10 pilot işletme — $9/ay, kurulumu birlikte yapıyoruz (10 dakika),
+  30 gün sonunda gerçek lead listenle değerlendiriyoruz."
+- Kurulum Beiwe ile birlikte yapılır (dogfooding + kurulum süresi varsayımının testi).
+- Pilot işletmelerin Saule konuşmaları ve lead'leri haftalık gözden geçirilir
+  (Faz 1.1 transkript ekranı tam da bunun için var).
+
+### P.3 Ritim
+- Haftalık sabit blok: en az 2-3 görüşme/pilot teması — Faz 2-4 kod işleri bu bloğu yemez.
+- Aylık denetim sorusu (ayna-odası kuralı): "Bu ay hangi varsayım GERÇEK müşteriyle test edildi?"
+
+### Kabul kriterleri
+- [ ] 20 problem görüşmesi tamamlandı, bulgular pivot günlüğünde.
+- [ ] 10 ücretli pilot işletme yayında; ödemeler manuel tahsil edildi.
+- [ ] "Ödeme yapar mı?" varsayımı Doğrulandı/Çürütüldü olarak işaretlendi (Çekim Gücü Aşama 1).
 
 ---
 

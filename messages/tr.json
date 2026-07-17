@@ -1,7 +1,7 @@
 {
   "Landing": {
     "nav": {
-      "startFree": "Ücretsiz başla",
+      "startFree": "Erken erişim",
       "login": "Giriş Yap"
     },
     "hero": {
@@ -10,9 +10,9 @@
       "headlineStrike": "bak",
       "headlineSuffix": "artık ",
       "sub": "Ziyaretçilerin linkine tıklayınca statik bir sayfa görmek yerine, işini tanıyan bir temsilciyle konuşsun. Kurulumu 10 dakika, kod yazmaya gerek yok.",
-      "startFree": "Ücretsiz başla",
+      "startFree": "Erken erişime başvur",
       "howItWorks": "Nasıl çalışır ↓",
-      "note": "Kredi kartı gerekmez · 10 dakikada yayında"
+      "note": "Sınırlı erken erişim · 10 dakikada yayında"
     },
     "statement": {
       "text": "Link in bio sizce de eskimedi mi? Web formundan kalma eski düzen ile müşterilerinizi labirentlere sokmayın. İşinizi talkinbio'ya bırakın, sorsun, yönlendirsin, cevap versin."
@@ -79,8 +79,8 @@
     },
     "cta": {
       "title": "Bio'ndaki link, bugün konuşmaya başlasın.",
-      "sub": "Kurulum 10 dakika sürer, kart bilgisi istemez.",
-      "startFree": "Ücretsiz başla",
+      "sub": "Kurulum 10 dakika sürer · erken erişim kontenjanı sınırlı.",
+      "startFree": "Erken erişime başvur",
       "demo": "Örnek bir sayfa gör"
     },
     "footer": {

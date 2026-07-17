@@ -1,264 +1,133 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Play, Edit2, Trash2, Wand2, Save, X, Loader2, Lock, Unlock } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import ContinuousImprovementTabs from '@/components/ContinuousImprovementTabs';
 
-interface LeanCanvasData {
-  problem: string[];
-  existingAlternatives: string[];
-  solution: string[];
-  keyMetrics: string[];
-  uniqueValueProposition: string;
-  highLevelConcept: string;
-  unfairAdvantage: string;
-  channels: string[];
-  customerSegments: string[];
-  earlyAdopters: string[];
-  costStructure: string[];
-  revenueStreams: string[];
-  _locks?: string[];
-}
+/* ------------------------------------------------------------------ */
+/* Static data — Yalın Kanvas V.1                                     */
+/* Fermi Tahmini (V.1.1) ve Çekim Gücü Yol Haritası (V.1.1) ile hizalı. */
+/* Statik — yenilikler oldukça kod bazında güncellenir.                */
+/* ------------------------------------------------------------------ */
 
-type FieldKey = keyof LeanCanvasData;
+const canvas = {
+  problem: [
+    'Küçük işletmeler ve serbest çalışanlar bio linklerine trafik alıyor ama trafik ölü: Linktree tarzı sayfalar statik — soru cevaplamaz, randevu talebi almaz, lead toplamaz.',
+    'Ziyaretçi soruları (fiyat, uygunluk, süre, "grup mu bireysel mi?") DM\'yi dolduruyor; işletme sahibi mesajlara yetişemiyor, geç cevap müşteri kaybettiriyor.',
+    'Formlar yüksek terk oranıyla çalışıyor; ziyaretçi form doldurmak değil, soru sormak istiyor.',
+  ],
+  existingAlternatives: [
+    'Linktree, Bio.fm gibi statik link toplama araçları (ücretsiz ama etkileşimsiz)',
+    'DM/WhatsApp üzerinden manuel cevaplama (ölçeklenmiyor; geç cevap = kayıp müşteri)',
+    "Intercom, Tidio gibi chatbot widget'ları (kurumsal, pahalı, web sitesi gerektiriyor — bio ekosistemine yabancı)",
+  ],
+  solution: [
+    "Saule — bio linkinde 7/24 konuşan asistan: soruları YALNIZCA işletmenin doğrulanmış verisinden cevaplar (uydurmaz), lead toplar, yapılandırılmış randevu talebi alır (Faz 1.5'te eklendi: tercih edilen gün/saat alanı; gerçek takvim entegrasyonu v2).",
+    "Beiwe — kurulum sohbetle: işletme sahibiyle röportaj yapar, bloklar halinde kurar, içeriği 3 dilde üretir, işletmeye özgün tema tasarlar. (Yol haritası: hizmet şemasına süre/kontenjan/grup-bireysel alanları eklenecek — kanvasın vaadiyle kod henüz eşit değil.)",
+    'Sayfa ürün ambalajı, asistan ürünün kendisi: profil sayfası asistan etrafında otomatik oluşur.',
+    '(v2) Saule gerçek DM kanallarına taşınır — önce WhatsApp, sonra Instagram: sohbet, müşterinin zaten olduğu yerde gerçekleşir.',
+  ],
+  keyMetrics: [
+    'Aylık aktif işletme (MAU) ve kurulum tamamlama oranı',
+    "Ziyaretçi→sohbet etkileşim oranı; sohbet→lead dönüşümü; ilk lead'e geçen süre (landing demo hunisi admin/analytics'te canlı ölçülüyor — Faz 1.6)",
+    'MRR, churn, LTV/CAC',
+    "Birim maliyet — GERÇEK ÖLÇÜM (2026-07-16, Sonnet 4.5): Saule mesajı $0,026 | Beiwe güncelleme $0,121 | Beiwe tam kurulum $0,147. Beiwe'nin ~18-19K token'lık sabit sistem prompt yükü, küçük güncellemeleri tam kurulum kadar maliyetli kılıyor — kredi çarpanları (1:3:10) uyuşmuyor, Faz 4'te yeniden kalibre edilecek.",
+    'Kredi çarpanlarının doğrulanması (Saule 1 / Beiwe güncelleme 3 / kurulum 10) — usage_events ölçümüyle, ilk 100 kullanıcıda haftalık takip; ilk çarpanların yanlış olduğu zaten gösterildi (bkz. yukarı)',
+    'Kredi tüketim dağılımı (kullanıcılar krediyi neye harcıyor?) ve devir bakiyesi toplamı (kredi borcu riski)',
+  ],
+  uniqueValueProposition:
+    "Bio linkin artık cevap veriyor. Linktree ziyaretçiye liste gösterir; Talkinbio'da Saule ziyaretçiyle konuşur, sorusunu işletmenin doğrulanmış bilgisiyle cevaplar ve onu lead'e/randevu talebine dönüştürür.",
+  highLevelConcept:
+    '"Linktree + resepsiyonist" — ya da: "Bio\'ndaki 7/24 çalışan asistan."',
+  unfairAdvantage: [
+    "Katman 1 (bugün, Faz 1.8'de tamamlandı — 2026-07-17'de yayında): her Saule widget'ının altında \"Saule ile konuşuyorsunuz — talkinbio.com\" imzası; müşterinin her ziyaretçisi potansiyel müşteri, ürün kullanıldıkça kendini pazarlar. Dürüst not: bu kopyalanabilir bir döngü, tek başına haksız avantaj değil — Linktree aynı modele büyüdü. Dönüşüm etkisi henüz doğrulanmadı (Faz S UTM'leriyle ölçülecek).",
+    'Katman 2 — Gerçek hendek (zamanla birikir): işletme başına konuşma geçmişi + Saule bilgi tabanı (Faz 1.4, yayında) + konuşmalardan öğrenen sayfa geliştirme öneri döngüsü (Faz 3). Asistan her sohbette işletmeye daha akıllanır; rakibe geçmek sıfırdan demek — geçiş maliyeti burada yatıyor.',
+    "Katman 3 — Konumlanma: \"konuşarak kurulan + konuşan sayfa\" bütünlüğü; Linktree'nin sayfası var ama konuşmuyor, Intercom'un botu var ama bio ekosisteminde değil.",
+  ].join('\n\n'),
+  channels: [
+    'Ana kanal: ürün içi viral döngü (Saule imzası — Faz 1.8, yayında) + niş topluluklar (koç/eğitmen Facebook grupları, Discord)',
+    '"Linktree alternatifi", "konuşan bio linki" içerikleri + yayınlanan her müşteri profili domain\'e çalışan indekslenebilir sayfa (teknik temel: Faz S, henüz yapılmadı)',
+    'Product Hunt lansmanı (erken benimseyici dalgası — Faz 4 sonrası)',
+    'Ücretli reklam yok (LTV/CAC kanıtlanana kadar)',
+  ],
+  customerSegments: [
+    'Randevu bazlı çalışan profesyoneller (koç, terapist, eğitmen, güzellik uzmanı) — birincil kama',
+    'Serbest çalışanlar ve danışmanlar',
+    'Küçük yerel işletmeler (kuaför, butik, kafe)',
+    "İçerik üreticileri ve mikro-influencer'lar (ikincil — değer önerisi farklı, ayrıca doğrulanmalı)",
+  ],
+  earlyAdopters: [
+    'Instagram/TikTok\'tan müşteri kazanan, DM yükünden bunalan, randevuyla çalışan 25-40 yaş profesyoneller',
+    'Halihazırda Linktree kullanan ama "statik" bulanlar',
+    "Gerçek ilk dogfooding vakası: Talkinbio'nun kendi demo işletmesi (Faz 1.6, landing'de canlı) — Saule kendi ürününü satıyor. \"Uliana Studio\", landing mockup'ındaki hayali örnek profildir, gerçek bir müşteri değildir; karıştırılmamalı.",
+  ],
+  costStructure: [
+    "Claude API: Sonnet 4.5 (Saule sohbetleri + Beiwe standart görevleri); daha güçlü model yalnız Beiwe ağır görevlerinde (AI SDK güncellemesi sonrası — Faz 2). GERÇEK ÖLÇÜM: Saule $0,026/mesaj, Beiwe güncelleme $0,121, Beiwe kurulum $0,147 — Beiwe'nin sabit ~18-19K token sistem prompt yükü küçük işlemleri de pahalı kılıyor, prompt caching + bağlam diyeti (Faz 2.3) bu yüzden öncelikli.",
+    'Kredisiz onboarding\'in API maliyeti müşteri edinme maliyetine (CAC) yazılır.',
+    "Altyapı: Vercel + Supabase; ödeme komisyonu ~%3. Sağlayıcı kararı (iyzico/Stripe) hâlâ açık — dolar-sabit fiyat kararı (2026-07-17) TR/USD fiyat çelişkisini kapattı, artık net gereksinim: dolar fiyat + TL tahsilatı birlikte destekleyen sağlayıcı seçilmeli.",
+    'Geliştirme/destek — tek kurucu bant genişliği (bkz. ROADMAP riskler).',
+  ],
+  revenueStreams: [
+    'Starter $9/ay → 200 kredi (yıllık %20 indirim: $7,2/ay)',
+    'Pro $29/ay → 700 kredi (yıllık %20 indirim: $23,2/ay)',
+    'Business $79/ay → 1.800 kredi (yıllık %20 indirim: $63,2/ay)',
+    'Fiyatlar dolara sabit; TL tahsilat güncel kur üzerinden yapılır, lokal sabit TL fiyat yoktur (karar 2026-07-17 — girdi maliyetleri dolar).',
+    'Ek kredi paketi: $5 → 100 kredi (birim pahalı — plana yükseltme teşviki)',
+    'Kredi devri: kullanılmayan krediler devreder, bakiye tavanı 2 aylık kota',
+    'Kredi bitince asistan kapanmaz — sayfa + "mesaj bırakın" modu yaşar (fiili ücretsiz katman etkisi)',
+    "Birim ekonomi: $0,045/kredi; Starter marjı tipik kullanımda %69, en dar senaryoda (yalnızca güncelleme) %11 — kredi tavanı doğal zarar-durdurucu.",
+  ],
+};
 
-// Hoisted out of the page component on purpose: defined inline, React saw a brand-new
-// component type on every render, so each keystroke in the textarea unmounted and
-// remounted the whole box (focus loss + caret jump).
-function FieldBox({
-  field,
-  title,
-  desc,
-  isArray = false,
-  data,
-  isEditing,
-  isLoading,
-  editValue,
-  onEditValueChange,
-  onToggleLock,
-  onRegenerate,
-  onStartEdit,
-  onClear,
-  onCancelEdit,
-  onSaveEdit,
-}: {
-  field: FieldKey,
-  title: string,
-  desc: string,
-  isArray?: boolean,
-  data: Partial<LeanCanvasData>,
-  isEditing: boolean,
-  isLoading: boolean,
-  editValue: string,
-  onEditValueChange: (v: string) => void,
-  onToggleLock: (field: FieldKey) => void,
-  onRegenerate: (field: FieldKey) => void,
-  onStartEdit: (field: FieldKey, isArray: boolean) => void,
-  onClear: (field: FieldKey, isArray: boolean) => void,
-  onCancelEdit: () => void,
-  onSaveEdit: (field: FieldKey, isArray: boolean) => void,
-}) {
-  const val = data[field];
-  const hasData = isArray ? (val as string[])?.length > 0 : !!val;
-  const isLocked = data._locks?.includes(field) || false;
+/* ------------------------------------------------------------------ */
+/* Sub-components                                                        */
+/* ------------------------------------------------------------------ */
 
+function Cell({ title, desc, children }: { title: string; desc: string; children: React.ReactNode }) {
   return (
-    <div className="p-4 flex-1 flex flex-col group relative">
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex gap-2 items-center">
-          <h3 className="font-bold text-slate-900 leading-tight">{title}</h3>
-          {isLocked && <Lock className="w-4 h-4 text-blue-500" />}
-        </div>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onClick={() => onToggleLock(field)} title={isLocked ? "Kilidi Aç" : "Kilitle (Tüm kanvası doldururken sabit kalır)"} className={`p-1.5 rounded-md transition ${isLocked ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' : 'text-slate-600 hover:bg-slate-100'}`} disabled={isLoading}>
-            {isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-          </button>
-          <button onClick={() => onRegenerate(field)} title="Yapay Zeka ile Yeniden Oluştur" className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition disabled:opacity-50" disabled={isLoading}>
-            <Wand2 className="w-4 h-4" />
-          </button>
-          <button onClick={() => onStartEdit(field, isArray)} title="Düzenle" className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-md transition disabled:opacity-50" disabled={isLoading}>
-            <Edit2 className="w-4 h-4" />
-          </button>
-          <button onClick={() => onClear(field, isArray)} title="Temizle" className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition disabled:opacity-50" disabled={isLoading}>
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
+    <div className="p-4 flex-1 flex flex-col">
+      <h3 className="font-bold text-slate-900 leading-tight mb-1">{title}</h3>
       <p className="text-xs text-slate-500 mb-2">{desc}</p>
-
-      <div className="flex-1 relative">
-        {isLoading ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
-            <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
-          </div>
-        ) : null}
-
-        {isEditing ? (
-          <div className="flex flex-col gap-2 h-full">
-            <textarea
-              value={editValue}
-              onChange={e => onEditValueChange(e.target.value)}
-              className="w-full h-full min-h-[100px] border border-blue-300 focus:ring-2 focus:ring-blue-500 rounded-md p-2 text-sm text-slate-800 outline-none resize-none"
-              placeholder={isArray ? "Her satıra bir madde yazın" : "Metni girin"}
-              autoFocus
-            />
-            <div className="flex justify-end gap-2">
-              <button onClick={onCancelEdit} className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-md transition">
-                İptal
-              </button>
-              <button onClick={() => onSaveEdit(field, isArray)} className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition flex items-center gap-1">
-                <Save className="w-3.5 h-3.5" /> Kaydet
-              </button>
-            </div>
-          </div>
-        ) : hasData ? (
-          isArray ? (
-            <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700">
-              {(val as string[]).map((item, i) => (
-                <li key={i}>{item}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-slate-700 whitespace-pre-wrap">{val as string}</p>
-          )
-        ) : (
-          <div className="h-full flex items-center justify-center border-2 border-dashed border-slate-100 rounded-lg p-4">
-            <p className="text-xs text-slate-400 text-center">İçerik boş.<br/>Oluşturmak için butonları kullanın.</p>
-          </div>
-        )}
-      </div>
+      <div className="flex-1">{children}</div>
     </div>
   );
 }
 
+function ListCell({ title, desc, items }: { title: string; desc: string; items: string[] }) {
+  return (
+    <Cell title={title} desc={desc}>
+      <ul className="list-disc pl-5 space-y-1.5 text-sm text-slate-700">
+        {items.map((item, i) => (
+          <li key={i}>{item}</li>
+        ))}
+      </ul>
+    </Cell>
+  );
+}
+
+function TextCell({ title, desc, text }: { title: string; desc: string; text: string }) {
+  return (
+    <Cell title={title} desc={desc}>
+      <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{text}</p>
+    </Cell>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Page                                                                 */
+/* ------------------------------------------------------------------ */
+
 export default function LeanCanvasPage() {
-  const [data, setData] = useState<Partial<LeanCanvasData>>({});
-  const [loading, setLoading] = useState(false);
-  const [fieldLoading, setFieldLoading] = useState<string | null>(null);
-  const [editingField, setEditingField] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState<string>('');
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const res = await fetch('/api/admin/lean-canvas');
-      if (res.ok) {
-        const json = await res.json();
-        setData(json);
-      }
-    } catch (e) {
-      console.error('Lean canvas fetch failed:', e);
-    }
-  };
-
-  const handleRunAll = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/admin/lean-canvas', { method: 'POST' });
-      if (!res.ok) throw new Error('Bir hata oluştu');
-      const json = await res.json();
-      setData(json);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFieldAction = async (field: FieldKey, action: 'update' | 'regenerate' | 'toggleLock', value?: any) => {
-    if (action !== 'toggleLock') setFieldLoading(field);
-    try {
-      const res = await fetch('/api/admin/lean-canvas', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ field, action, value }),
-      });
-      if (!res.ok) throw new Error('Hata oluştu');
-      const json = await res.json();
-      setData(json);
-      // Only close the editor on success — closing it on a transient failure
-      // would throw away whatever the user just typed.
-      setEditingField(null);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      if (action !== 'toggleLock') setFieldLoading(null);
-    }
-  };
-
-  const startEditing = (field: FieldKey, isArray: boolean) => {
-    setEditingField(field);
-    const val = data[field];
-    if (isArray) {
-      setEditValue(Array.isArray(val) ? val.join('\n') : '');
-    } else {
-      setEditValue((val as string) || '');
-    }
-  };
-
-  const saveEdit = (field: FieldKey, isArray: boolean) => {
-    let finalValue: any = editValue;
-    if (isArray) {
-      finalValue = editValue.split('\n').map(s => s.trim()).filter(s => s.length > 0);
-    }
-    handleFieldAction(field, 'update', finalValue);
-  };
-
-  const clearField = (field: FieldKey, isArray: boolean) => {
-    if (window.confirm('Bu alanı temizlemek istediğinize emin misiniz?')) {
-      handleFieldAction(field, 'update', isArray ? [] : '');
-    }
-  };
-
-  const fieldProps = (field: FieldKey) => ({
-    data,
-    isEditing: editingField === field,
-    isLoading: fieldLoading === field,
-    editValue,
-    onEditValueChange: setEditValue,
-    onToggleLock: (f: FieldKey) => handleFieldAction(f, 'toggleLock'),
-    onRegenerate: (f: FieldKey) => handleFieldAction(f, 'regenerate'),
-    onStartEdit: startEditing,
-    onClear: clearField,
-    onCancelEdit: () => setEditingField(null),
-    onSaveEdit: saveEdit,
-  });
-
   return (
     <AdminLayout>
       <ContinuousImprovementTabs />
-      <div className="flex justify-between items-center mb-8 mt-6">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Yalın Kanvas</h1>
-          <p className="text-slate-500 mt-1">Sürekli Gelişim</p>
-        </div>
-        <button
-          onClick={handleRunAll}
-          disabled={loading}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition disabled:opacity-50 shadow-sm"
-        >
-          {loading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <Play className="w-5 h-5" />
-          )}
-          <span>{loading ? 'Kanvası Oluşturuluyor...' : 'Tüm Kanvası Doldur'}</span>
-        </button>
+      <div className="mb-6 mt-6">
+        <h1 className="text-3xl font-bold text-slate-900">Yalın Kanvas</h1>
+        <p className="text-slate-500 mt-1">Sürekli Gelişim</p>
+        <p className="text-xs text-slate-400 mt-1 font-mono">
+          V.1 · 2026-07-17 — statik anlık görüntü; Fermi Tahmini V.1.1 ve Çekim Gücü Yol Haritası V.1.1 ile hizalı.
+          Yenilikler oldukça kod bazında güncellenir.
+        </p>
       </div>
-
-      {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 border border-red-100 flex justify-between items-start">
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600"><X className="w-5 h-5" /></button>
-        </div>
-      )}
 
       {/* Lean Canvas Grid */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
@@ -266,36 +135,36 @@ export default function LeanCanvasPage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 border-b border-slate-200 lg:min-h-[450px]">
 
           <div className="flex flex-col divide-y divide-slate-200">
-            <FieldBox field="problem" title="Sorun" desc="Müşterilerinizin en büyük 3 sorununu yazın" isArray {...fieldProps('problem')} />
-            <FieldBox field="existingAlternatives" title="Mevcut Alternatifler" desc="Bu sorunların bugün nasıl çözüldüğünü listeleyin" isArray {...fieldProps('existingAlternatives')} />
+            <ListCell title="Sorun" desc="Müşterilerinizin en büyük 3 sorununu yazın" items={canvas.problem} />
+            <ListCell title="Mevcut Alternatifler" desc="Bu sorunların bugün nasıl çözüldüğünü listeleyin" items={canvas.existingAlternatives} />
           </div>
 
           <div className="flex flex-col divide-y divide-slate-200">
-            <FieldBox field="solution" title="Çözüm" desc="Her sorun için olası çözümleri ana hatlarıyla yazın" isArray {...fieldProps('solution')} />
-            <FieldBox field="keyMetrics" title="Önemli Metrikler" desc="İşin bugün nasıl olduğunu ifade eden önemli sayıları listeleyin" isArray {...fieldProps('keyMetrics')} />
+            <ListCell title="Çözüm" desc="Her sorun için olası çözümleri ana hatlarıyla yazın" items={canvas.solution} />
+            <ListCell title="Önemli Metrikler" desc="İşin bugün nasıl olduğunu ifade eden önemli sayıları listeleyin" items={canvas.keyMetrics} />
           </div>
 
           <div className="flex flex-col divide-y divide-slate-200">
-            <FieldBox field="uniqueValueProposition" title="Benzersiz Değer Teklifi" desc="Habersiz bir ziyaretçiyi ilgili bir müşteriye dönüştürecek sade, açık ve ikna edici mesaj" {...fieldProps('uniqueValueProposition')} />
-            <FieldBox field="highLevelConcept" title="Üst Düzey Konsept" desc="X için Y analojilerini listeleyin" {...fieldProps('highLevelConcept')} />
+            <TextCell title="Benzersiz Değer Teklifi" desc="Habersiz bir ziyaretçiyi ilgili bir müşteriye dönüştürecek sade, açık ve ikna edici mesaj" text={canvas.uniqueValueProposition} />
+            <TextCell title="Üst Düzey Konsept" desc="X için Y analojilerini listeleyin" text={canvas.highLevelConcept} />
           </div>
 
           <div className="flex flex-col divide-y divide-slate-200">
-            <FieldBox field="unfairAdvantage" title="Haksız Avantaj" desc="Kolaylıkla kopyalanamayacak ya da satın alınamayacak bir şey" {...fieldProps('unfairAdvantage')} />
-            <FieldBox field="channels" title="Kanallar" desc="Müşterilerinize ulaşma yollarınızı listeleyin" isArray {...fieldProps('channels')} />
+            <TextCell title="Haksız Avantaj" desc="Kolaylıkla kopyalanamayacak ya da satın alınamayacak bir şey" text={canvas.unfairAdvantage} />
+            <ListCell title="Kanallar" desc="Müşterilerinize ulaşma yollarınızı listeleyin" items={canvas.channels} />
           </div>
 
           <div className="flex flex-col divide-y divide-slate-200">
-            <FieldBox field="customerSegments" title="Müşteri Segmentleri" desc="Hedef müşterilerinizi ve kullanıcılarınızı listeleyin" isArray {...fieldProps('customerSegments')} />
-            <FieldBox field="earlyAdopters" title="Erken Benimseyenler" desc="İdeal müşterinizin karakteristik özelliklerini listeleyin" isArray {...fieldProps('earlyAdopters')} />
+            <ListCell title="Müşteri Segmentleri" desc="Hedef müşterilerinizi ve kullanıcılarınızı listeleyin" items={canvas.customerSegments} />
+            <ListCell title="Erken Benimseyenler" desc="İdeal müşterinizin karakteristik özelliklerini listeleyin" items={canvas.earlyAdopters} />
           </div>
 
         </div>
 
         {/* Bottom Section: 2 Columns */}
         <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 min-h-[200px]">
-          <FieldBox field="costStructure" title="Maliyet Yapısı" desc="Sabit ve değişken maliyetlerinizi listeleyin" isArray {...fieldProps('costStructure')} />
-          <FieldBox field="revenueStreams" title="Gelir Kalemleri" desc="Gelir kaynaklarınızı listeleyin" isArray {...fieldProps('revenueStreams')} />
+          <ListCell title="Maliyet Yapısı" desc="Sabit ve değişken maliyetlerinizi listeleyin" items={canvas.costStructure} />
+          <ListCell title="Gelir Kalemleri" desc="Gelir kaynaklarınızı listeleyin" items={canvas.revenueStreams} />
         </div>
       </div>
     </AdminLayout>

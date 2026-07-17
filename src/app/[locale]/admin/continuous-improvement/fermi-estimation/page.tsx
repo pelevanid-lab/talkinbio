@@ -93,10 +93,10 @@ const comparables = [
   },
   {
     name: 'Tidio',
-    customers: '~300K ödeme yapan',
+    customers: '~300K (ödeme yapan sayısı DOĞRULANMADI — kullanıcı sayısı olabilir)',
     arr: '~$20M ARR',
-    note: 'Web chat AI — en gerçekçi karşılaştırma',
-    caveat: false,
+    note: 'Web chat AI — kategori olarak en yakın karşılaştırma, ama rakam teyit edilene kadar kalibrasyon çapası olarak kullanma',
+    caveat: true,
   },
   {
     name: 'Cal.com (bootstrapped)',
@@ -269,6 +269,18 @@ export default function FermiEstimationPage() {
                 <span className="font-mono">~30.000 potansiyel müşteri</span>
               </p>
             </div>
+          </div>
+
+          <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-800 leading-relaxed">
+              <strong>Hata payı dürüstlüğü (2026-07-17):</strong> Zincirdeki her çarpan tahmindir ve tek başına
+              2× yanılabilir; çarpımları bileşik hata üretir — 30K nokta tahmini değil, kabaca
+              <strong> 4K–240K aralığının orta bandıdır</strong>. Bu tablodaki hiçbir sayı henüz tek bir gerçek
+              müşteri kohortuyla doğrulanmadı. Karar testi: adreslenebilir pazar 4K bile çıksa "TR'de başla,
+              kanıtla, globale genişle" stratejisi değişmez — Fermi'nin görevi bu kararı vermektir, kesinlik değil.
+              İlk 20 problem görüşmesi + ücretli pilot dönüşümü geldiğinde çarpanlar gerçek veriyle güncellenecek.
+            </p>
           </div>
 
           <div className="mt-3 bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-start gap-3">

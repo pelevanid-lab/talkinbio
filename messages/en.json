@@ -1,7 +1,7 @@
 {
   "Landing": {
     "nav": {
-      "startFree": "Start for free",
+      "startFree": "Early access",
       "login": "Login"
     },
     "hero": {
@@ -10,9 +10,9 @@
       "headlineStrike": "look",
       "headlineSuffix": "it's now ",
       "sub": "Don't let your visitors see a static page when they click your link — let them talk to an agent that knows your business. Setup takes 10 minutes, no code required.",
-      "startFree": "Start for free",
+      "startFree": "Apply for early access",
       "howItWorks": "How it works ↓",
-      "note": "No credit card required · Live in 10 minutes"
+      "note": "Limited early access · Live in 10 minutes"
     },
     "statement": {
       "text": "Don't you think \"Link in bio\" is getting old? Don't trap your customers in mazes with the old web-form layout. Leave your business to talkinbio; let it ask, guide, and answer."
@@ -79,8 +79,8 @@
     },
     "cta": {
       "title": "Let your bio link start talking today.",
-      "sub": "Setup takes 10 minutes, no credit card required.",
-      "startFree": "Start for free",
+      "sub": "Setup takes 10 minutes · early access spots are limited.",
+      "startFree": "Apply for early access",
       "demo": "See a sample page"
     },
     "footer": {

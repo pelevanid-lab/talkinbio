@@ -46,7 +46,7 @@ const milestones: Milestone[] = [
       '10 ödeme yapan müşteri + sorun görüşmelerinde tekrar eden acı nokta doğrulandı + $9 dolar-sabit fiyat noktasının (TL tahsilat kur üzerinden) kabul gördüğü test edildi',
     omtm: 'Ödeme yapan müşteri sayısı',
     omtmNote:
-      'Sadece kayıt veya deneme değil — gerçek ödeme. Tek rakamlı sayılar bile bu aşamada anlamlı sinyal. Fiyat dolara sabitlendi (karar 2026-07-17); test edilen, $9 noktasının kabulüdür. Faz 4 faturalandırması öncesi ödemeler bilinçli olarak manuel tahsil edilir (havale/elden).',
+      'Sadece kayıt veya deneme değil — gerçek ödeme. Tek rakamlı sayılar bile bu aşamada anlamlı sinyal. Fiyat dolara sabitlendi (karar 2026-07-17); test edilen, $9 noktasının kabulüdür. Faz 4 faturalandırması öncesi ödemeler bilinçli olarak manuel tahsil edilir (havale/elden). ÜCRETSİZ DENEME YOK (karar 2026-07-17): ilk 10 müşterinin tamamı öder; tek ücretsiz hesap test kullanıcısıdır (Uliana Pehlivan). Aşama sayacı (başlangıç 2026-07-17): görüşme 0/20 · ücretli pilot 0/10 · ödeme 0/10.',
     assumptions: [
       {
         text: 'Hizmet sahipleri DM\'den kaçan lead için ödeme yapar',
@@ -67,7 +67,7 @@ const milestones: Milestone[] = [
     ],
     experiments: [
       '20 hedef segment görüşmesi — problem interview scripti, çözüm gösterme yok',
-      '10 kişilik ücretli pilot: Beiwe kurulumu + 30 gün Saule aktif → gerçek lead var mı?',
+      '10 kişilik ÜCRETLİ pilot ($9/ay, manuel tahsilat — ücretsiz deneme yok): Beiwe kurulumu + 30 gün Saule aktif → gerçek lead var mı?',
       'Fiyat kabul testi: $9/ay, kur üzerinden TL karşılığıyla sunulduğunda pilotta direnç görüyor mu?',
       'Landing demo hunisi: Saule konuşması → erişim talebi dönüşüm oranı (admin/analytics\'te canlı ölçülüyor, Faz 1.6)',
     ],
@@ -151,13 +151,25 @@ const milestones: Milestone[] = [
   },
 ];
 
+// evidence: 'internal' = masa başı karar/ölçüm · 'customer' = gerçek müşteriden gelen kanıt.
+// Ayna-odası denetimi (kural, 2026-07-17): bu günlüğün amacı belgeler arası tutarlılık değil,
+// gerçeklikle temastır. Hedef: 6 ay içinde girdilerin çoğunluğu 'customer' olsun.
 const pivotLog = [
+  {
+    date: '2026-07-17',
+    assumption: 'Ücretsiz deneme/erken erişim, pilot müşteri kazanmayı kolaylaştırır',
+    result: 'Karar (Enes): ücretsiz deneme YOK — bedava erken erişim ödeme testinden kaçınmaktır, kanıt değil meraklı toplar. İlk 10 müşterinin tamamı öder; tek ücretsiz hesap test kullanıcısıdır (Uliana Pehlivan).',
+    action: 'Landing/demo/pitch\'teki tüm "ücretsiz" vaatleri kaldırıldı; demo Saule fiyatları dürüstçe söylüyor. Aşama 1 sayacı başlatıldı: görüşme 0/20 · ücretli pilot 0/10 · ödeme 0/10.',
+    type: 'scope',
+    evidence: 'internal',
+  },
   {
     date: '2026-07-17',
     assumption: 'TR pazarı için lokal sabit TL fiyat gerekir; efektif ARPU bu yüzden $15\'e düşer (Fermi V.1)',
     result: 'Karar (Enes): fiyatlar dolara sabit — TL tahsilat güncel kur üzerinden yapılır; girdi maliyetleri dolar olduğu için lokal TL fiyat sürdürülemez. Kur riski gelir tarafından churn tarafına taşındı.',
     action: 'Fermi V.1.1: $15 efektif ARPU korundu ama gerekçesi "Starter-ağırlıklı plan karması + %20 yıllık indirim" olarak revize edildi. Faz 4.3 birim ekonomisi ($0,045/kredi) dolar bazında geçerliliğini korur.',
     type: 'metric',
+    evidence: 'internal',
   },
   {
     date: '2026-07-16',
@@ -165,6 +177,7 @@ const pivotLog = [
     result: 'Geliştirme karmaşıklığı + Meta evrak süreci v1 lansmanını bloklayacak',
     action: 'Kapsam kararı: Meta entegrasyonları v2\'ye alındı. v1 mevcut ig.me/wa.me handoff köprüsüyle çıkar.',
     type: 'scope',
+    evidence: 'internal',
   },
   {
     date: '2026-07-16',
@@ -172,6 +185,7 @@ const pivotLog = [
     result: 'Gerçek ölçüm: oran 1:4.6:5.6. Güncelleme, kurulumla neredeyse aynı maliyette.',
     action: 'Prompt caching (Faz 2.3) önceliklendirildi. Kredi çarpanları Faz 4\'te gerçek veriyle kalibre edilecek.',
     type: 'metric',
+    evidence: 'internal',
   },
 ];
 
@@ -459,10 +473,21 @@ export default function TractionRoadmapPage() {
             <span className="w-6 h-6 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-mono">P</span>
             Pivot Günlüğü
           </h2>
-          <p className="text-slate-500 text-sm mb-4">
+          <p className="text-slate-500 text-sm mb-2">
             Hangi varsayım test edildi, ne öğrenildi, yol haritası nasıl değişti.
             Statik — yenilikler oldukça kod bazında güncellenir.
           </p>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+            <p className="text-xs text-amber-800 leading-relaxed">
+              <strong>Ayna-odası denetimi (kural, 2026-07-17):</strong> Bu belgelerin aylık denetim sorusu
+              "belgeler birbiriyle tutarlı mı?" DEĞİL, "bu ay hangi varsayım GERÇEK müşteriyle test edildi?"dir.
+              Tutarlılığı yazan sağlar; doğruluğu yalnızca müşteri sağlar. Hedef: 6 ay içinde bu günlükteki
+              girdilerin çoğunluğu "Müşteri Kanıtı" olsun — şu an{' '}
+              <span className="font-mono font-semibold">
+                {pivotLog.filter(e => e.evidence === 'customer').length}/{pivotLog.length}
+              </span>.
+            </p>
+          </div>
           <div className="space-y-4">
             {pivotLog.map((entry, i) => (
               <div key={i} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
@@ -472,6 +497,11 @@ export default function TractionRoadmapPage() {
                     entry.type === 'scope' ? 'bg-purple-100 text-purple-700' : 'bg-amber-100 text-amber-700'
                   }`}>
                     {entry.type === 'scope' ? 'Kapsam' : 'Metrik'}
+                  </span>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                    entry.evidence === 'customer' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    {entry.evidence === 'customer' ? 'Müşteri Kanıtı' : 'İç Karar'}
                   </span>
                 </div>
                 <div className="space-y-3">
