@@ -328,11 +328,16 @@ bu veriyle kalibre edilir.
   - `shared/history` pencere mantığı.
 - CI: GitHub Actions ile `lint + test + build` (repo GitHub'da zaten).
 
+### 2.5 Müşteri Dil Seçimi (Faz 7 Altyapısı)
+- Faz 7'de sistem 6 dilli olduğunda maliyet (Beiwe token hacmi) ve editör karmaşasının patlamaması için, her işletme kendi vitrinine **en fazla 3 dil** seçebilecek kuralının altyapısı kurulur.
+- İşletme sahipleri mevcut (tr, en, ru) diller arasından 1, 2 veya 3 dili aktif etme hakkına sahip olur. DB'de `active_locales` (veya benzeri) ile tutulur.
+
 ### Kabul kriterleri
 - [x] Web widget ve landing demo davranışı refactor öncesiyle birebir aynı
       (manuel regresyon: karşılama, lead akışı, geçmiş, erişim talebi).
 - [ ] `runSauleTurn` web dışı bir bağlamdan (test harness) çağrılabiliyor.
 - [x] CI yeşil; agent modülleri için temel test kapsamı var.
+- [ ] İşletme sahibi sayfası için aktif dilleri (maksimum 3) seçebiliyor.
 
 ---
 
@@ -387,6 +392,24 @@ Mühendislik işlerinden bağımsız, Çekim Gücü (Traction) Yol Haritasının
 - [ ] 20 problem görüşmesi tamamlandı, bulgular pivot günlüğüne eklendi.
 - [ ] İlk 10 ücretli pilot işletme yayında ve ödemeleri manuel olarak tahsil edildi.
 - [ ] "Müşteri para öder mi?" varsayımı (Çekim Gücü Aşama 1) kesin olarak Doğrulandı/Çürütüldü olarak işaretlendi.
+
+---
+
+## Faz R — Takım & Büyüme Kaynakları (Sürekli, Paralel)
+
+Ürün (Faz 1-3) ve Pazarlama (Faz S-P) süreçlerinin altından kalkabilmek ve uluslararası ölçeklenmeyi (Faz 7) sağlayabilmek için çekirdek takımın ve stratejik partnerlerin kurgulanması.
+
+### R.1 Lokal Geliştirme Partnerleri
+- **Erken Aşama:** Ukrayna ve Kazakistan (Rusça bölgesi) için ürünün büyümesini, müşteri diyaloglarını ve satışını üstlenecek yerel (local) partnerlerle anlaşılması.
+- **Global Genişleme (Faz 7'ye paralel):** Arapça, İspanyolca ve Portekizce dilleri için; özellikle MENA ve Latin Amerika (LatAm) bölgelerinden o kültürün dinamiklerine hakim "Country Manager" vari yerel partnerlerin bulunması. Müşteri destek ve go-to-market süreçlerinin doğrudan bu partnerler aracılığıyla yerelleştirilmesi.
+
+### R.2 Çekirdek Mühendislik ve AI Uzmanlığı
+- **İhtiyaç:** Faz 2'deki Agent Çekirdeği Refactor'ü ve Faz 3'teki pazarlama asistanı (Marketing Agent) geçişi için, Vercel AI SDK ve LLM prompt mühendisliği (caching, context diyet) konularında uzman, gerektiğinde danışmanlık/yarı zamanlı destek alınabilecek bir AI/Next.js mühendisi.
+- **Hedef:** Kurucunun üzerindeki teknik yükü hafifletip, kurucunun Faz P (Problem Görüşmeleri) ve bizzat yürüteceği müşteri onboarding süreçlerine tam ağırlık verebilmesini sağlamak.
+
+### Kabul Kriterleri
+- [ ] Ukrayna ve Kazakistan pazarında ürün satışını/desteğini üstlenecek ilk partnerlerle anlaşıldı.
+- [ ] Çekirdek teknik yükü hafifletecek AI/Next.js uzmanı/danışmanı ile çalışılmaya başlandı.
 
 ---
 
@@ -608,6 +631,7 @@ kendisi" ise dil genişlemesi onun ön koşuludur. Kapsam (detaylandırılacak):
 - next-intl locale rotalarına ar/es/pt eklenmesi; `messages/*.json` çevirileri.
 - Blok içerik şeması bugün tr/en/ru üçlüsüne gömülü (Beiwe tool'ları 3 dilde üretir,
   ChatWidget imzası 3 dilde) — şema esnetilmeli veya hedef locale seti genişletilmeli.
+- **Maksimum 3 Dil Kuralı:** Sistem toplamda 6 dile çıksa bile, her müşteri/işletme kendi sayfası için en fazla 3 aktif dil seçebilir. Aksi halde Beiwe'nin her işlemde 6 dil üretmesi inanılmaz bir LLM maliyeti yaratır ve editör tarafını kontrol edilemez hale getirir. Bu kuralın altyapısı önceden Faz 2'de (2.5) atılır.
 - Arapça için RTL düzen desteği (ayrı tasarım işi — en maliyetli kalem).
 - Saule zaten model seviyesinde çok dilli; asıl iş UI + içerik şeması tarafında.
 - Kanal işinden (Faz 5-6) bağımsızdır; Meta onayları beklerken paralel yürütülebilir.

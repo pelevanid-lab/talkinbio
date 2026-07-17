@@ -166,15 +166,17 @@ export default function RoadmapClient({ content }: { content: string }) {
           </div>
           
           {sidebarBlocks.length > 0 && (
-            <div className="bg-amber-50/40 border border-amber-200/60 rounded-2xl shadow-sm px-6 py-6 w-full xl:w-1/3 xl:sticky xl:top-6">
-              <div className="mb-4 pb-2 border-b border-amber-200/80">
+            <div className="bg-amber-50/40 border border-amber-200/60 rounded-2xl shadow-sm px-6 py-6 w-full xl:w-1/3 xl:sticky xl:top-6 max-h-[calc(100vh-3rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-amber-200 scrollbar-track-transparent">
+              <div className="mb-4 pb-2 border-b border-amber-200/80 sticky top-0 bg-amber-50/95 backdrop-blur-sm z-10 pt-2 -mt-2">
                 <h3 className="text-sm font-bold text-amber-800 uppercase tracking-wider font-mono">Paralel Süreçler</h3>
               </div>
-              {sidebarBlocks.map((block, i) =>
-                block.type === 'table'
-                  ? <MdTable key={i} raw={block.content} />
-                  : <ReactMarkdown key={i} components={mdComponents}>{block.content}</ReactMarkdown>
-              )}
+              <div className="pr-2">
+                {sidebarBlocks.map((block, i) =>
+                  block.type === 'table'
+                    ? <MdTable key={i} raw={block.content} />
+                    : <ReactMarkdown key={i} components={mdComponents}>{block.content}</ReactMarkdown>
+                )}
+              </div>
             </div>
           )}
         </div>
