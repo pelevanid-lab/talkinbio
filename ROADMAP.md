@@ -20,9 +20,10 @@
 > marketing agent'a ilk evrimi ile satışa çıkar. Meta başvuru evrakları (Business
 > Verification vb.) geliştirmeden bağımsız olarak v1 sırasında başlatılır.
 >
-> Son güncelleme: 2026-07-17 (Faz 2 tamamlandı; Faz H eklendi; SEO canonical/hreflang
+> Son güncelleme: 2026-07-18 (Faz 2 tamamlandı; Faz H eklendi; SEO canonical/hreflang
 > bug'ı düzeltildi; Faz 3 hazırlığı — migration numarası, cron altyapısı, `generateText`
-> yolu, `/legal` revizyonu — tamamlandı)
+> yolu, `/legal` revizyonu — tamamlandı; H.1 "her şeyin ön koşulu" çerçevesi düzeltildi:
+> tetikleyici artık ilk ödeme taahhüdü, Faz P başlamadan önce değil)
 
 ## v1 — Faz özeti ve bağımlılıklar
 
@@ -34,7 +35,7 @@
 | S | SEO & marka temelleri (~2 gün) | Favicon/metadata/sitemap/schema, Search Console, marka tescil taraması | — (herhangi bir faza paralel, erken yapılmalı) |
 | P | Pilot & müşteri geliştirme (sürekli) | 20 problem görüşmesi, 10 ücretli pilot, manuel tahsilat — Aşama 1 OMTM'ini besleyen TEK iş | — (tüm fazlara paralel; kod işi değil takvim işi) |
 | R | Takım & büyüme kaynakları (sürekli) | Lokal partnerler (UA/KZ, sonra MENA/LatAm), AI/Next.js danışmanlığı | — (paralel) |
-| H | Hukuk & kurumsallaşma (sürekli) | Şirket kuruluşu, KVKK/GDPR revizyonu, kullanım şartları, çerez/saklama politikaları | — (paralel; **Faz P tahsilatının ve Faz 4 lansmanının ön koşulu**; Meta Business Verification tüzel kişilik ister) |
+| H | Hukuk & kurumsallaşma (sürekli) | Şirket kuruluşu (tetikleyici: ilk ödeme taahhüdü, ~5 iş günü sürer), KVKK/GDPR revizyonu, kullanım şartları, çerez/saklama politikaları | — (paralel; şirket kuruluşu Faz P *başlamadan önce* değil, P.1'de ilk "evet, öderim" alındığında tetiklenir — ay sonu tahsilatına yetişir; Faz 4 lansmanının ön koşulu) |
 | 3 | Beiwe → Marketing Agent | Konuşma madenciliği, içerik üretimi, haftalık rapor | Faz 2 |
 | 4 | Satılabilir v1 kapısı | Maliyet koruması, kullanım ölçümü, faturalandırma | Lansman öncesi zorunlu |
 
@@ -240,6 +241,9 @@ satırlık iş, dönüşüm ölçümü Faz S'teki Search Console + UTM ile yapı
 
 ### Kabul kriterleri
 - [x] Sahip tüm konuşma transkriptlerini dashboard'dan okuyabiliyor, lead ↔ konuşma geçişi çalışıyor.
+      **Düzeltme notu (2026-07-18):** sayfa çalışıyordu ama erişilemezdi — login/`/dashboard`
+      hep `/dashboard/editor`'a sabitti, editör ile `/dashboard/leads` arasında hiç link yoktu.
+      Kullanıcı denetimde yakaladı; bkz. Faz 3 hazırlık notu.
 - [x] İstemciden gönderilen sahte geçmiş sunucuda yok sayılıyor (elle test: bozuk messages body'si).
 - [x] Bilgi tabanına eklenen not, Saule'nin cevabında etkisini gösteriyor.
 - [x] Landing'de ziyaretçi 3 dilde Saule ile konuşup ürün sorularına cevap alabiliyor.
@@ -405,8 +409,11 @@ Mühendislik işlerinden bağımsız, Çekim Gücü (Traction) Yol Haritasının
 - **Fiyat Testi:** Görüşme sonunda doğrudan "$9/ay öder miydin?" sorusuyla fiyat hassasiyetinin ölçülmesi ve Pivot Günlüğü'ne işlenmesi.
 
 ### P.2 Ücretli Pilot (Concierge Onboarding)
-- **Ücretsiz Deneme YOK:** Ürünün gerçek değerini test etmek için ilk günden ücret alınması. 
+- **Ücretsiz Deneme YOK:** Ürünün gerçek değerini test etmek için ilk günden ücret alınması.
 - **Manuel Tahsilat & Kurulum:** Fatura altyapısı (Stripe/Iyzico) hazır olana kadar tahsilatların manuel yapılması.
+  Ödeme ay sonunda tahsil edileceği için, kurulumla ödeme arasındaki pencerede
+  şirket kuruluşu (Faz H.1, ilk "evet" ile tetiklenir, ~5 iş günü) tamamlanır —
+  pilota "evet" denirken şirket henüz kurulu olmak zorunda değil.
 - **Birlikte Kurulum:** İlk 10 müşterinin Beiwe kurulumunun doğrudan ekibimiz eşliğinde (Concierge Onboarding) 10 dakika içinde yapılması.
 - **Değer İspatı:** 30 günün sonunda müşteriye "gerçekte kaç lead toplandığı" ve "zaman tasarrufu" metrikleriyle ROI (Yatırım Getirisi) gösterimi.
 
@@ -439,24 +446,33 @@ Mühendislik işlerinden bağımsız, Çekim Gücü (Traction) Yol Haritasının
 
 ---
 
-## Faz H — Hukuk & Kurumsallaşma (Sürekli, Paralel — Faz P tahsilatı ve Faz 4 lansmanının ön koşulu)
+## Faz H — Hukuk & Kurumsallaşma (Sürekli, Paralel — tetikleyicisi Faz P'nin ilk "evet"i)
 
-Ücretli pilot (Faz P) ilk günden para alıyor ve Saule gerçek müşteri konuşmaları
-(kişisel veri) kaydediyor; bu fazın işleri kod işi değil ama lansmanı bloke etme
-gücü en yüksek kalemler. Meta evrakları gibi erken başlatılır, paralel yürür.
+Ücretli pilot (Faz P) para alıyor ve Saule gerçek müşteri konuşmaları (kişisel veri)
+kaydediyor; bu fazın işleri kod işi değil ama tahsilatı bloke etme gücü en yüksek
+kalemler. Ama şirket kuruluşunun kendisi Faz P'den ÖNCE gelmez — aşağıya bakın.
 
-### H.1 Şirket kuruluşu (her şeyin ön koşulu — henüz kurulmadı, 2026-07-17)
-- **Karar:** şahıs şirketi (hızlı, düşük maliyet, genç girişimci vergi muafiyeti
-  değerlendirilebilir) ile başlayıp limited'e dönüşme vs. doğrudan limited —
-  mali müşavirle netleştirilecek ayrı araştırma maddesi.
-- **Bloke ettiği işler (bu yüzden erken):**
-  - Ödeme sağlayıcı hesabı (iyzico/Stripe) tüzel kişilik/vergi levhası ister → Faz 4.3.
-  - **Meta Business Verification tüzel kişilik ve resmi evrak ister** → v2 kanal
-    takviminin v1 sırasında başlaması gereken evrak süreci şirketsiz başlayamaz.
-  - Legal metinlerdeki "Veri Sorumlusu" kimliği (H.2) resmi unvan gerektirir;
-    şu an metin var olmayan bir "Şirket"e atıf yapıyor.
-  - Fatura kesme: Faz P "manuel tahsilat" bile yasal olarak fatura/makbuz gerektirir.
-- Marka tescili (Faz S'teki tarama sonrası başvuru) şirket üzerinden yapılır.
+### H.1 Şirket kuruluşu (tetikleyici: ilk ödeme taahhüdü, henüz kurulmadı — 2026-07-18 düzeltildi)
+**Karar (2026-07-18):** Önceki "her şeyin ön koşulu, hemen şimdi kurulmalı" çerçevesi
+kendi ayna-odası kuralımızla çelişiyordu — henüz doğrulanmamış bir varsayım için
+aylık ~5.000 TL sabit gidere (Bağ-Kur primi + muhasebeci, gelirden bağımsız) girmek,
+tam da mühendislik illüzyonunun hukuki versiyonu. Düzeltilmiş plan:
+- P.1'deki 20 görüşmeden biri ödemeye "evet" dediği anda tetiklenir — 10 pilotun
+  tamamı değil, **ilk gerçek taahhüt**.
+- Pilotlara "ödeme ay sonunda tahsil edilecek" denir; şirket kuruluşu (şahıs şirketi,
+  ~5 iş günü sürer) ay bitmeden tamamlanır. Yani gerçek gider, gerçek gelir
+  taahhüdünden SONRA başlar — hiç müşterisiz beklerken para yakmayız.
+- Tür kararı (şahıs şirketi vs. doğrudan limited, genç girişimci vergi muafiyeti)
+  mali müşavirle netleştirilecek ayrı araştırma maddesi; bu görüşme gider yazmadan
+  önceden yapılabilir ki ilk "evet" geldiğinde 5 günlük süreç hemen başlasın.
+- **Artık bloke ettiği tek acil şey:** ay sonunda pilotlardan fatura kesip parayı
+  yasal olarak tahsil edebilmek. Aşağıdakiler H.1'i acilleştirmiyor, çünkü zaten
+  başka fazlara ait:
+  - Ödeme sağlayıcı hesabı (iyzico/Stripe) → Faz 4.3'ün işi, ilk 10 pilotu etkilemiyor
+    (Faz P.2 zaten manuel tahsilat planlıyordu).
+  - Meta Business Verification → v2 işi, Aşama 2/3'e kadar gerekmiyor.
+  - Legal metindeki (H.2) veri sorumlusu kimliği ve marka tescili, şirket kurulunca
+    güncellenir; o ana kadar metin zaten "şahıs girişimi" olarak dürüstçe işaretli.
 
 ### H.2 Legal metin revizyonu (`/legal`) — içerik düzeltmesi tamamlandı (2026-07-17)
 Denetim bulguları (2026-07-17) ve düzeltmeler üç dilde (tr/en/ru) uygulandı:
@@ -503,7 +519,8 @@ Denetim bulguları (2026-07-17) ve düzeltmeler üç dilde (tr/en/ru) uygulandı
   widget'ta/metinde yer almalı.
 
 ### Kabul Kriterleri
-- [ ] Şirket kuruldu; vergi levhası ve resmi unvan alındı.
+- [ ] P.1'de ilk pilot "evet, öderim" dedi; şirket kuruluşu tetiklendi ve ay sonu
+      tahsilatından önce tamamlandı (vergi levhası ve resmi unvan alındı).
 - [x] `/legal` metni gerçek veri envanteri ve işleyen listesiyle (Anthropic dahil,
       Firebase çıkarılmış) üç dilde güncellendi (2026-07-17); veri sorumlusu kimliği
       şirket kuruluncaya kadar "şahıs girişimi" olarak dürüstçe işaretli — **gerçek
@@ -534,6 +551,19 @@ Meta entegrasyonunun v2'ye alınmasıyla v1'in ana farklılaştırıcısı bu fa
    `getModel('analysis')` ile birlikte çalıştığı gösterildi. 3.1/3.3 bunun üzerine inşa eder.
 4. `/legal` metni gerçek veri/işleyen envanterine güncellendi (H.2) — Faz 3.1'in
    konuşma içeriğini toplu analiz için işlemeye başlamasından önce bu açıklanmış olmalıydı.
+5. **Panel/dashboard erişilemezliği düzeltildi.** `/dashboard/leads` (Faz 1.1'in
+   Talepler/Konuşmalar/Ayarlar ekranı) kodda tamamdı ama hiçbir auth yolundan
+   ulaşılamıyordu: `login` sayfası, `/dashboard` kökü hep `/dashboard/editor`'a
+   sabitti; iki sayfa arasında link yoktu. Faz 3.1'in "editör panelinde Beiwe
+   önerisi göster" döngüsü, sahibin konuşma verisini hiç görmediği bir ürün
+   üzerine kuruluyordu. Düzeltme: normal giriş artık Panel'e iniyor (ilk kurulum/
+   şifre sıfırlama akışları bilinçli olarak editöre inmeye devam ediyor — o anda
+   henüz konuşma/lead yok); editör ↔ panel arasına karşılıklı geçiş linki eklendi
+   ([EditorClient.tsx](src/components/EditorClient.tsx), [LeadsClient.tsx](src/app/[locale]/dashboard/leads/LeadsClient.tsx)).
+   Doğrulama: typecheck + 28 test yeşil, `/dashboard` → `/dashboard/leads` →
+   (auth yoksa) `/login` zinciri sunucudan doğrulandı. **Açık iş:** yeni linkler
+   gerçek bir işletme hesabıyla giriş yapılarak görsel olarak henüz doğrulanmadı
+   (bu ortamda güvenli bir test hesabı yoktu) — ilk fırsatta elle kontrol edilmeli.
 
 ### 3.1 Konuşma madenciliği → içerik önerileri (iki agent'ı bağlayan döngü)
 - Haftalık arka plan işi (Vercel Cron → `/api/cron/analyze-conversations`,
@@ -783,7 +813,7 @@ kendisi" ise dil genişlemesi onun ön koşuludur. Kapsam (detaylandırılacak):
 
 | Risk | Etki | Önlem |
 |------|------|-------|
-| Şirket kuruluşu (H.1) gecikirse | Ödeme sağlayıcı hesabı, fatura kesme VE Meta Business Verification zincirleme bloke — hem Faz P tahsilatı hem v2 saati durur | Mali müşavir görüşmesi + kuruluş, Faz P'nin ilk pilot tahsilatından önce tamamlanır; en uzun teslim süreli kalem olarak ilk sıraya alınır |
+| İlk "evet" geldiğinde şirket kuruluşu (H.1) ay sonu tahsilatına yetişmezse | O pilotun ilk ay ödemesi fatura kesilemeden gecikir | Mali müşavir görüşmesi (tür kararı) ilk "evet" beklenmeden önceden yapılır, böylece tetiklendiği an 5 günlük kuruluş süreci hemen başlar |
 | Meta evrak süreci v1 sırasında ihmal edilirse | v2 başlangıcı haftalarca bloke | Business Verification / Tech Provider başvurusu şirket kurulur kurulmaz yapılır (geliştirmesiz; ön koşulu H.1) |
 | AI SDK major migration (2.2) | Widget/stream regresyonları | Ayrı PR; Faz 1'deki transkript ekranı + landing demo regresyon testi olarak kullanılır |
 | Landing demosu anonim trafiğe açık | Token maliyeti | Faz 1.6'daki oturum başına mesaj tavanı; Faz 4'te genel altyapıyla değiştirilir |

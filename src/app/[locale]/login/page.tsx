@@ -40,8 +40,11 @@ export default function LoginPage() {
         throw error;
       }
 
-      // Refresh to update server components and let middleware handle redirect
-      window.location.href = '/dashboard/editor';
+      // Refresh to update server components and let middleware handle redirect.
+      // Panel (leads/conversations) is the daily-use landing; the editor is a
+      // secondary action reached via the nav link, except on first-time setup
+      // (invite/password-reset flows, which intentionally land on the editor).
+      window.location.href = '/dashboard/leads';
     } catch (err: any) {
       setError(err.message === 'Invalid login credentials' ? 'E-posta veya şifre hatalı' : err.message);
     } finally {
