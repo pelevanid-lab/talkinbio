@@ -62,8 +62,34 @@ export default async function HomePage({ params }: any) {
     }
   }
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        '@id': 'https://www.talkinbio.com/#website',
+        url: 'https://www.talkinbio.com/',
+        name: 'Talkinbio',
+        description: t('hero.sub'),
+        inLanguage: locale
+      },
+      {
+        '@type': 'Organization',
+        '@id': 'https://www.talkinbio.com/#organization',
+        name: 'Talkinbio',
+        url: 'https://www.talkinbio.com/',
+        logo: 'https://www.talkinbio.com/icon.svg'
+      }
+    ]
+  };
+
   return (
     <div id="landing-page">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       <header>
         <div className="wrap nav">
           <Link href="/">

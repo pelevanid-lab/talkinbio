@@ -350,7 +350,7 @@ Talkinbio'nun görünürlüğünü, arama motoru otoritesini ve sosyal kanıtın
 - **Locale-Bazlı Metadata (i18n):** Türkçe, İngilizce ve Rusça dilleri için özel `title` ve `description` tagleri üretilir. Hreflang etiketleriyle arama motorlarına doğru dil versiyonları sunulur.
 - **Marka Araması Optimizasyonu:** Google Search Console ve Bing Webmaster entegrasyonu; marka (Talkinbio) aramalarında logo ve doğru site açıklaması (site-links) çıkartılması.
 - **Microdata & JSON-LD:**
-  - `Organization` şeması (Talkinbio'nun kendi kurumsal otoritesi için).
+  - `Organization` şeması (Talkinbio'nun kendi kurumsal otoritesi için. **Not:** Sosyal medya hesapları açıldığında bu şemaya eklenecektir).
   - `LocalBusiness` şeması (Kullanıcıların kendi sayfalarının Google yerel aramalarda çıkması için — ürüne doğrudan satış argümanıdır).
 
 ### S.2 İçerik ve Otorite İnşası

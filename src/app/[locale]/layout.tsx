@@ -25,10 +25,27 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
-export const metadata = {
-  title: "Talkinbio",
-  description: "Transform your Instagram bio into a conversational agent.",
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getMessages({ locale });
+  // @ts-ignore - next-intl server typing
+  const meta = t.Metadata || { title: "Talkinbio", description: "Transform your Instagram bio into a conversational agent." };
+
+  return {
+    title: meta.title,
+    description: meta.description,
+    metadataBase: new URL('https://www.talkinbio.com'),
+    alternates: {
+      canonical: `/${locale}`,
+      languages: {
+        'en': '/en',
+        'tr': '/tr',
+        'ru': '/ru',
+        'x-default': '/en',
+      },
+    },
+  };
+}
 
 export default async function LocaleLayout({
   children,

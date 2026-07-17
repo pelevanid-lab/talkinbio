@@ -102,8 +102,21 @@ export default async function BusinessProfilePage({ params }: any) {
     console.error('Failed to load past messages', err);
   }
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name: business.name,
+    url: `https://www.talkinbio.com/${locale}/${business.username}`,
+    description: business.category,
+    '@id': `https://www.talkinbio.com/${locale}/${business.username}#localbusiness`
+  };
+
   return (
     <div className="flex flex-col min-h-[100dvh] relative">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link href={googleFontsHref(theme.headingFont, theme.bodyFont)} rel="stylesheet" />
