@@ -23,10 +23,10 @@ export default function LandingMockup({
           <div className="phone-topbar"><div className="phone-notch"></div></div>
           <div className="phone-content">
             <div className="profile-row">
-              <div className="avatar">U</div>
+              <div className="avatar">{businessName.charAt(0).toUpperCase()}</div>
               <div>
-                <div className="profile-name">Uliana Studio</div>
-                <div className="profile-handle mono">talkinbio.com/uliana</div>
+                <div className="profile-name">{businessName}</div>
+                <div className="profile-handle mono">talkinbio.com/talkinbio</div>
               </div>
             </div>
             <div className="block">
