@@ -628,7 +628,7 @@ Meta entegrasyonunun v2'ye alınmasıyla v1'in ana farklılaştırıcısı bu fa
     cevaplanamayan sorular, sık sorulan konular, kaçan lead'ler.
   - Çıktı: `beiwe_insights` tablosu (business_id, type: 'faq-suggestion' | 'content-gap' | 'trend', payload jsonb, status).
 - Editor'de "Beiwe Önerileri" paneli: "Müşterileriniz bu hafta 4 kez fiyat listesi sordu —
-  Hizmetler bölümüne fiyat ekleyelim mi?" → tek tıkla Beiwe sohbetine trigger mesajı
+  Hizmetler bölümüne ve ya bilgi tabanına fiyat ekleyelim mi?" → tek tıkla Beiwe sohbetine trigger mesajı
   (mevcut `useBeiweSuggestions` kart altyapısı yeniden kullanılır; rule-based öneriler
   ve AI-insight önerileri aynı panelde birleşir).
 
