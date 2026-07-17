@@ -227,9 +227,11 @@ export default async function HomePage({ params }: any) {
               <Link href="/legal">{t('footer.privacy')}</Link>
             </div>
           </div>
-          <div className="footer-bar" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+          <div className="footer-bar" style={{ justifyContent: 'center', padding: '0' }}>
             <span>{t('footer.brandLink')}</span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{t('footer.rights')} · <a href="mailto:info@talkinbio.com" style={{ color: 'inherit', textDecoration: 'underline' }}>info@talkinbio.com</a></span>
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>{t('footer.rights')} · <a href="mailto:info@talkinbio.com" style={{ color: 'inherit', textDecoration: 'underline' }}>info@talkinbio.com</a></span>
           </div>
         </div>
       </footer>
