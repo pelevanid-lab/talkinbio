@@ -177,6 +177,25 @@ Ziyaretçi, satın alacağı şeyi landing'de bizzat deneyimler; Saule, Talkinbi
 kendi satış asistanı olur. **Yeni bir chat altyapısı YAZILMAZ** — Talkinbio'nun kendisi
 sistemdeki bir işletme kaydı olur ve mevcut akış aynen kullanılır.
 
+> **Üretimde yakalanan kritik bug (2026-07-18):** Kullanıcı, demo ile iki gerçek test
+> konuşması yaptı (Receyp Ayaz, Recep Aslan — isim+e-posta bıraktılar); Saule ikisine de
+> "bilgilerinizi kaydettim" dedi ama **hiçbiri ne `leads` ne `onboarding_requests`
+> tablosuna yazılmadı** — DB'den doğrudan sorguyla doğrulandı. Kök neden: `capture_access_request`
+> aracının (tool) çağrılması modelin kendi takdirine bırakılmıştı; model bazen aracı hiç
+> çağırmadan doğrudan "kaydettim" metnini üretiyor — klasik bir LLM hallüsinasyon deseni.
+> (16 Temmuz'daki tek başarılı kayıt bunun her zaman olmadığını, ama **güvenilmez** olduğunu
+> gösteriyor.) Aynı zafiyet gerçek işletmelerin `capture_lead` akışında da var — yani bu
+> sadece demo değil, **her Saule kurulumunun potansiyel olarak lead kaybettiği** anlamına
+> geliyor. Düzeltme: `prompt.ts`'teki her iki talimat da ("önce araç çağrısı, sonra cevap;
+> aracı çağırmadan onay cümlesi ASLA kurma") zorunlu dille güçlendirildi; `run.ts`'in
+> `onFinish`'i artık araç hiç çağrılmadan onay-benzeri bir metin üretildiğinde
+> `console.warn` ile sunucu loguna düşürüyor (testli, `run.test.ts`). Bu, modelin
+> güvenilirliğini garanti etmez — sadece bir daha sessizce fark edilmeden geçmesini önler.
+> **Açık iş:** Receyp Ayaz ve Recep Aslan'a manuel olarak ulaşılmalı (ikisi de kayıtlı
+> sanıyor, hiçbir yerde kayıtları yok); üretim loglarının (Vercel) bu warning için
+> izlenmesi gerekiyor — henüz otomatik bir uyarı/alarm mekanizması yok (Faz 4.4'ün
+> hata izleme maddesiyle birleştirilebilir).
+
 **Kurulum:**
 - Rezerve `talkinbio` username'iyle özel bir business kaydı (seed migration
   `00023_talkinbio_demo_business.sql` — planda 00021 yazıyordu, 00021-00022'yi
@@ -698,6 +717,10 @@ Kanvasın kilitli "Gelir Kalemleri" kutusundaki model uygulanır:
   müşteriden önce duymak — özellikle webhook'suz tek geliştiricili üründe kritik.
 - Uptime kontrolü (basit bir sağlık ucu + ücretsiz bir izleyici, ör. UptimeRobot).
 - Cron işleri (Faz 3) için başarısızlık bildirimi (çalışmadıysa e-posta).
+- Faz 1.6'da eklenen `[runSauleTurn] possible unconfirmed capture` uyarısı (`console.warn`)
+  şu an yalnızca Vercel fonksiyon loglarında görünür, hiçbir yere bildirim atmıyor —
+  Sentry kurulunca bu log bir hata/uyarı olarak yakalanıp gerçek zamanlı bildirime
+  bağlanmalı (kayıp lead'i keşfetmek günler sürmemeli).
 
 ### Kabul kriterleri
 - [ ] Oturum tavanı dolunca tek tıkla yeni sohbete geçilebiliyor; sert blokaj yalnızca
@@ -818,3 +841,4 @@ kendisi" ise dil genişlemesi onun ön koşuludur. Kapsam (detaylandırılacak):
 | AI SDK major migration (2.2) | Widget/stream regresyonları | Ayrı PR; Faz 1'deki transkript ekranı + landing demo regresyon testi olarak kullanılır |
 | Landing demosu anonim trafiğe açık | Token maliyeti | Faz 1.6'daki oturum başına mesaj tavanı; Faz 4'te genel altyapıyla değiştirilir |
 | Tek geliştirici bant genişliği | Fazların uzaması | Faz 3 (marketing) bağımsız modüller halinde; gerekirse 3.2/3.3 lansman sonrasına kayabilir |
+| Saule, aracı (tool) çağırmadan "kaydettim" diyebiliyor (bkz. Faz 1.6, 2026-07-18) | Gerçek lead/erişim talebi sessizce kaybolur, ziyaretçi kayıtlı sandığı halde hiçbir yerde yok | Prompt zorunlu dille güçlendirildi + `console.warn` eklendi (testli); kalıcı çözüm Faz 4.4'te Sentry'ye bağlanmak — o güne kadar Vercel logları elle izlenmeli |

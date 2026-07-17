@@ -264,14 +264,24 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                   </label>
                 </div>
                 {settings.customGreetingEnabled && (
-                  <div className="bg-[#F4F2ED] p-4 rounded-xl animate-in fade-in slide-in-from-top-2">
-                    <textarea
-                      value={settings.customGreeting || ''}
-                      onChange={(e) => setSettings({ ...settings, customGreeting: e.target.value })}
-                      placeholder="Örn: Merhaba, ben Saule. Size nasıl yardımcı olabilirim?"
-                      className="w-full p-3 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F]"
-                      rows={2}
-                    />
+                  <div className="bg-[#F4F2ED] p-4 rounded-xl animate-in fade-in slide-in-from-top-2 flex flex-col gap-3">
+                    <p className="text-xs text-[#8A8880]">Ziyaretçinin sayfayı görüntülediği dile göre gösterilir; boş bıraktığınız dilde Saule'nin varsayılan karşılaması kullanılır.</p>
+                    {([
+                      { locale: 'tr' as const, label: 'Türkçe', placeholder: 'Örn: Merhaba, ben Saule. Size nasıl yardımcı olabilirim?' },
+                      { locale: 'en' as const, label: 'English', placeholder: "e.g. Hi, I'm Saule. How can I help you?" },
+                      { locale: 'ru' as const, label: 'Русский', placeholder: 'Напр.: Привет, я Saule. Чем могу помочь?' },
+                    ]).map(({ locale, label, placeholder }) => (
+                      <div key={locale}>
+                        <label className="block text-xs font-semibold text-[#8A8880] mb-1 font-mono uppercase tracking-wider">{label}</label>
+                        <textarea
+                          value={settings.customGreeting?.[locale] || ''}
+                          onChange={(e) => setSettings({ ...settings, customGreeting: { ...settings.customGreeting, [locale]: e.target.value } })}
+                          placeholder={placeholder}
+                          className="w-full p-3 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F]"
+                          rows={2}
+                        />
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

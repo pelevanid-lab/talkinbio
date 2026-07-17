@@ -74,6 +74,35 @@ describe('runSauleTurn', () => {
     expect(supabaseAdmin.from).toHaveBeenCalledWith('messages');
   });
 
+  it('warns when the model claims success without calling the capture tool (caught in production, 2026-07-18)', async () => {
+    const { runSauleTurn } = await import('./run');
+    const supabaseAdmin = createFakeSupabase();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const result = (await runSauleTurn({
+      supabaseAdmin,
+      businessId: 'biz-1',
+      channel: 'web',
+      conversationKey: 'visitor-abc',
+      userMessage: 'Adım Test, e-postam test@example.com',
+      locale: 'tr',
+      newConversation: false,
+      isPreview: false,
+    })) as any;
+
+    await result.opts.onFinish({ text: 'Bilgilerinizi kaydettim, teşekkürler!', toolCalls: [] });
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[runSauleTurn] possible unconfirmed capture: model claimed success without calling a tool',
+      expect.objectContaining({ businessId: 'biz-1' })
+    );
+
+    warnSpy.mockClear();
+    await result.opts.onFinish({ text: 'Bilgilerinizi kaydettim!', toolCalls: [{ toolName: 'capture_lead' }] });
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+  });
+
   it('throws a 404 AgentTurnError when the business does not exist', async () => {
     const { runSauleTurn } = await import('./run');
     const { AgentTurnError } = await import('@/agents/shared/errors');

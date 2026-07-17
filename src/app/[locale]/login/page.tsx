@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [mode, setMode] = useState<'login' | 'forgot_password'>('login');
+  const [rememberMe, setRememberMe] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -20,6 +21,12 @@ export default function LoginPage() {
       const urlError = urlParams.get('error');
       if (urlError) {
         setError(urlError === 'Invalid or expired code' ? 'Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş. Lütfen yeni bir bağlantı isteyin.' : urlError);
+      }
+
+      const savedEmail = localStorage.getItem('talkinbio_remembered_email');
+      if (savedEmail) {
+        setEmail(savedEmail);
+        setRememberMe(true);
       }
     }
   }, []);
@@ -38,6 +45,12 @@ export default function LoginPage() {
 
       if (error) {
         throw error;
+      }
+
+      if (rememberMe) {
+        localStorage.setItem('talkinbio_remembered_email', email);
+      } else {
+        localStorage.removeItem('talkinbio_remembered_email');
       }
 
       // Refresh to update server components and let middleware handle redirect.
@@ -102,13 +115,16 @@ export default function LoginPage() {
 
         <form onSubmit={mode === 'login' ? handleLogin : handleResetPassword} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">E-posta Adresi</label>
+            <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">E-posta Adresi</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                 <Mail className="h-5 w-5" />
               </div>
               <input
+                id="email"
+                name="email"
                 type="email"
+                autoComplete="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -119,31 +135,50 @@ export default function LoginPage() {
           </div>
 
           {mode === 'login' && (
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="block text-sm font-medium text-slate-700">Şifre</label>
-                <button 
-                  type="button" 
-                  onClick={() => setMode('forgot_password')}
-                  className="text-sm text-[var(--coral)] hover:underline font-medium"
-                >
-                  Şifremi Unuttum
-                </button>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <Lock className="h-5 w-5" />
+            <>
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label htmlFor="password" className="block text-sm font-medium text-slate-700">Şifre</label>
+                  <button 
+                    type="button" 
+                    onClick={() => setMode('forgot_password')}
+                    className="text-sm text-[var(--coral)] hover:underline font-medium"
+                  >
+                    Şifremi Unuttum
+                  </button>
                 </div>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[var(--coral)] focus:border-transparent focus:outline-none"
-                  placeholder="••••••••"
-                />
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Lock className="h-5 w-5" />
+                  </div>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[var(--coral)] focus:border-transparent focus:outline-none"
+                    placeholder="••••••••"
+                  />
+                </div>
               </div>
-            </div>
+
+              <div className="flex items-center mt-2">
+                <input
+                  id="remember_me"
+                  name="remember_me"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 text-[var(--coral)] focus:ring-[var(--coral)] border-slate-300 rounded cursor-pointer"
+                />
+                <label htmlFor="remember_me" className="ml-2 block text-sm text-slate-700 cursor-pointer">
+                  Beni Hatırla
+                </label>
+              </div>
+            </>
           )}
 
           <button
@@ -171,3 +206,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

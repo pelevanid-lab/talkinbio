@@ -19,7 +19,9 @@ function getMessageText(m: UIMessage): string {
   return m.parts.filter((p) => p.type === 'text').map((p) => (p as { text: string }).text).join('');
 }
 
-export default function ChatWidget({ businessId, businessName, locale, initialMessages = [], customGreeting, variant = 'sheet', preview = false }: { businessId: string, businessName: string, locale: string, initialMessages?: LegacyMessage[], customGreeting?: string | null, variant?: 'sheet' | 'inline', preview?: boolean }) {
+type LocalizedGreeting = Partial<Record<'tr' | 'en' | 'ru', string>>;
+
+export default function ChatWidget({ businessId, businessName, locale, initialMessages = [], customGreeting, variant = 'sheet', preview = false }: { businessId: string, businessName: string, locale: string, initialMessages?: LegacyMessage[], customGreeting?: LocalizedGreeting | null, variant?: 'sheet' | 'inline', preview?: boolean }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -30,7 +32,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
   const welcomeMessage = (): UIMessage => ({
     id: `welcome-${Date.now()}`,
     role: 'assistant',
-    parts: [{ type: 'text', text: customGreeting || t('welcome', { name: businessName }) }],
+    parts: [{ type: 'text', text: customGreeting?.[locale as 'tr' | 'en' | 'ru'] || t('welcome', { name: businessName }) }],
   });
 
   const { messages, sendMessage, status, setMessages } = useChat({

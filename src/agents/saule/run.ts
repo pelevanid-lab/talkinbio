@@ -124,6 +124,9 @@ export async function runSauleTurn({
     { role: 'user' as const, content: userMessage },
   ];
 
+  const captureToolAvailable = isDemoBusiness || sauleSettings.leadCaptureEnabled !== false;
+  const CONFIRMATION_PATTERN = /kaydet|aldım|alındı|iletildi|kaydedildi|saved|recorded|received/i;
+
   return streamText({
     model: getModel('saule'),
     stopWhen: isStepCount(4),
@@ -134,8 +137,20 @@ export async function runSauleTurn({
       : sauleSettings.leadCaptureEnabled !== false
       ? { capture_lead: captureLeadTool({ supabaseAdmin, businessId, conversationId, contactValues, directLinks, isPreview }) }
       : {},
-    onFinish: async ({ text }) => {
+    onFinish: async ({ text, toolCalls }) => {
       await persistAssistantMessage(text);
+      // A tool (capture_lead / capture_access_request) was available this turn, but the model
+      // never invoked it and still wrote a confirmation-sounding reply — i.e. it told the visitor
+      // their info was saved when nothing was written to the DB. Log so this is visible in server
+      // logs instead of silently losing real leads/access requests (caught in production, 2026-07-18).
+      if (captureToolAvailable && toolCalls.length === 0 && CONFIRMATION_PATTERN.test(text || '')) {
+        console.warn('[runSauleTurn] possible unconfirmed capture: model claimed success without calling a tool', {
+          businessId,
+          conversationId,
+          isDemoBusiness,
+          text,
+        });
+      }
     },
   });
 }
