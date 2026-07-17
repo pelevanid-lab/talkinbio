@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Loader2, Mail, Lock } from 'lucide-react';
 
@@ -12,6 +12,17 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [mode, setMode] = useState<'login' | 'forgot_password'>('login');
   const supabase = createClient();
+
+  useEffect(() => {
+    // Read error from URL if present (e.g. from auth callback)
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlError = urlParams.get('error');
+      if (urlError) {
+        setError(urlError === 'Invalid or expired code' ? 'Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş. Lütfen yeni bir bağlantı isteyin.' : urlError);
+      }
+    }
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +57,7 @@ export default function LoginPage() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/api/auth/callback?next=/dashboard/editor`,
+        redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent('/dashboard/editor?reset_password=true')}`,
       });
 
       if (error) throw error;
