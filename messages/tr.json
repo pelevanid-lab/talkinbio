@@ -2,7 +2,8 @@
   "Landing": {
     "nav": {
       "startFree": "Erken erişim",
-      "login": "Giriş Yap"
+      "login": "Giriş Yap",
+      "stakeholders": "Paydaşlarımıza"
     },
     "hero": {
       "eyebrow": "Tüm sosyal medya hesaplarınız için yeni nesil",
@@ -200,5 +201,45 @@
     "defaultPreview": "Size nasıl yardımcı olabilirim?",
     "newChat": "Yeni sohbet",
     "signature": "Saule ile konuşuyorsunuz"
+  },
+  "Stakeholders": {
+    "title": "Paydaşlarımıza",
+    "intro": "Değerli takım üyelerimiz, kullanıcılarımız ve yatırımcılarımız bu sayfada size hem talkinbio'yu hem de çalışma prensiplerimizi anlatacağım;",
+    "q1": {
+      "title": "1. Neden Şimdi?",
+      "content": "WhatsApp Business API erişilebilirliğinin artması ve Instagram üzerinden dönen DM trafiğinin bireysel satıcılar için yönetilemez bir hacme ulaşması, doğru zamanı yarattı."
+    },
+    "q2": {
+      "title": "2. Ne olur?",
+      "content": "Eğer çözüm sunmazsak, sosyal medya üzerinden iş yapan yüz binlerce satıcı potansiyel müşterilerine geç cevap verdikleri için kaybetmeye, randevularını not defterlerinde ve spreadsheet'lerde tutarak büyümelerini sınırlamaya devam edecek."
+    },
+    "q3": {
+      "title": "3. Sorunlu olan ne?",
+      "content": "Linktree gibi araçlar sadece link paylaşıyor, müşterinin sorusunu yanıtlamıyor. Büyük CRM yazılımları ise çok karmaşık, pahalı ve teknik bilgi gerektiriyor. Aradaki 'konuşan bio' boşluğu doldurulamıyor."
+    },
+    "q4": {
+      "title": "4. Çözüm ne?",
+      "content": "talkinbio, bio sayfanızı 7/24 çalışan bir asistana dönüştürüyor. Ziyaretçilerin sorularını saniyeler içinde yanıtlıyor, randevu alıyor ve ertesi sabah satıcının önüne hazır bir lead listesi çıkarıyoruz."
+    },
+    "q5": {
+      "title": "5. Bizi benzersiz kılacak olan ne?",
+      "content": "Saule asistanının her konuşmasının organik bir marka tanıtımına dönüşmesiyle oluşan viral büyüme döngüsü ve yerelleştirme (özellikle MENA/LatAm gibi bölgelere hızlı uyum) mimarimiz kopyalanamaz avantajlarımız."
+    },
+    "q6": {
+      "title": "6. Nasıl gelir elde ediyoruz?",
+      "content": "Hizmetimiz, kredi bazlı aylık veya yıllık abonelik paketleriyle ($9 / $29 / $79) dolar-sabit olarak sunuluyor. İlk pilot müşterilerimizde dahi ücretsiz deneme sunmuyoruz."
+    },
+    "q7": {
+      "title": "7. Önemli kilometre taşları",
+      "content": "Kısa vadede hedefimiz problem/çözüm uyumunu doğrulayan ödeme yapan ilk 10 müşteri. Ardından $100K ARR (550 müşteri) doğrulama eşiği ve son olarak WhatsApp/IG doğrudan entegrasyonuyla global v2 ölçeklenmesi."
+    },
+    "q8": {
+      "title": "8. Nasıl çalışıyoruz? Sürekli gelişim prensibimiz",
+      "content": "Running Lean metodolojisini uyguluyoruz: Önce problem doğrulaması, ücretsiz denemesiz gerçek ödeme testi ve veriye dayalı pivot. Fiyat bizim için değer hipotezinin testidir."
+    },
+    "q9": {
+      "title": "9. Ne istiyoruz (bize katılın)",
+      "content": "Kurulumu 10 dakika süren bu deneyimi test etmenizi, değer yarattığını düşünüyorsanız ekibimizin, kullanıcılarımızın veya yatırımcılarımızın arasına katılmanızı istiyoruz."
+    }
   }
 }

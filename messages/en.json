@@ -2,7 +2,8 @@
   "Landing": {
     "nav": {
       "startFree": "Early access",
-      "login": "Login"
+      "login": "Login",
+      "stakeholders": "For Stakeholders"
     },
     "hero": {
       "eyebrow": "Next-gen for all your social media accounts",
@@ -200,5 +201,45 @@
     "defaultPreview": "How can I help you?",
     "newChat": "New chat",
     "signature": "You're chatting with Saule"
+  },
+  "Stakeholders": {
+    "title": "For Our Stakeholders",
+    "intro": "Dear team members, users, and investors, on this page I will explain both talkinbio and our working principles;",
+    "q1": {
+      "title": "1. Why Now?",
+      "content": "The increased accessibility of WhatsApp Business API and the unmanageable volume of DM traffic flowing through Instagram for individual sellers have created the perfect timing."
+    },
+    "q2": {
+      "title": "2. What happens if we do nothing?",
+      "content": "If we don't provide a solution, hundreds of thousands of social media sellers will continue to lose potential customers due to late replies, and limit their growth by tracking appointments in notebooks and spreadsheets."
+    },
+    "q3": {
+      "title": "3. What is the problem?",
+      "content": "Tools like Linktree only share links, they don't answer the customer's questions. Large CRM softwares are too complex, expensive, and require technical knowledge. The 'talking bio' gap in between remains empty."
+    },
+    "q4": {
+      "title": "4. What is the solution?",
+      "content": "talkinbio turns your bio page into a 24/7 working assistant. It answers visitors' questions in seconds, books appointments, and presents a ready-made lead list to the seller the next morning."
+    },
+    "q5": {
+      "title": "5. What will make us unique?",
+      "content": "Our uncopyable advantages are the viral growth loop created by every conversation of the Saule assistant turning into an organic brand promotion, and our localization architecture (especially for rapid adaptation to regions like MENA/LatAm)."
+    },
+    "q6": {
+      "title": "6. How do we generate revenue?",
+      "content": "Our service is offered with credit-based monthly or annual subscription packages ($9 / $29 / $79) at a fixed dollar rate. We do not offer free trials, even to our initial pilot customers."
+    },
+    "q7": {
+      "title": "7. Important milestones",
+      "content": "Our short-term goal is to validate problem/solution fit with our first 10 paying customers. Then, the $100K ARR (550 customers) validation threshold, and finally, global v2 scaling with direct WhatsApp/IG integration."
+    },
+    "q8": {
+      "title": "8. How we work? Our continuous improvement principle",
+      "content": "We apply the Running Lean methodology: Problem validation first, real payment testing without free trials, and data-driven pivots. For us, price is the ultimate test of the value hypothesis."
+    },
+    "q9": {
+      "title": "9. What we want (join us)",
+      "content": "We want you to test this 10-minute setup experience, and if you think it creates value, to join us among our team, users, or investors."
+    }
   }
 }

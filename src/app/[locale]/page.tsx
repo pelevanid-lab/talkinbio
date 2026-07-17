@@ -72,6 +72,9 @@ export default async function HomePage({ params }: any) {
           <div className="links" style={{ display: 'none' }}></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <LanguageSwitcher />
+            <Link href="/stakeholders" className="btn btn-ghost" style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}>
+              {t('nav.stakeholders')}
+            </Link>
             <Link href="/login" className="btn btn-ghost" style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}>
               {t('nav.login')}
             </Link>
