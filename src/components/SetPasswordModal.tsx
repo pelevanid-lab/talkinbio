@@ -1,16 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Loader2, Lock } from 'lucide-react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 export default function SetPasswordModal({ hasPassword, businessId }: { hasPassword: boolean, businessId: string }) {
-  const [isOpen, setIsOpen] = useState(!hasPassword);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const isResetPassword = searchParams.get('reset_password') === 'true';
+
+  const [isOpen, setIsOpen] = useState(!hasPassword || isResetPassword);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const supabase = createClient();
+
+  // If URL has reset_password, force open
+  useEffect(() => {
+    if (isResetPassword) {
+      setIsOpen(true);
+    }
+  }, [isResetPassword]);
 
   if (!isOpen) return null;
 
@@ -47,6 +60,14 @@ export default function SetPasswordModal({ hasPassword, businessId }: { hasPassw
       if (dbError) throw dbError;
 
       setIsOpen(false);
+      
+      // Remove reset_password from URL if present
+      if (isResetPassword) {
+        const newSearchParams = new URLSearchParams(searchParams.toString());
+        newSearchParams.delete('reset_password');
+        const newUrl = pathname + (newSearchParams.toString() ? `?${newSearchParams.toString()}` : '');
+        router.replace(newUrl);
+      }
     } catch (err: any) {
       setError(err.message || 'Şifre güncellenirken bir hata oluştu.');
     } finally {

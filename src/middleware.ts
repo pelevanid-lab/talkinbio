@@ -6,6 +6,14 @@ import { createServerClient } from '@supabase/ssr';
 const intlMiddleware = createIntlMiddleware(routing);
 
 export async function middleware(request: NextRequest) {
+  // Intercept auth code from Supabase (e.g. password resets that fall back to site URL)
+  if (request.nextUrl.searchParams.has('code')) {
+    const callbackUrl = request.nextUrl.clone();
+    callbackUrl.pathname = '/api/auth/callback';
+    // keep search params intact
+    return NextResponse.redirect(callbackUrl);
+  }
+
   const response = intlMiddleware(request);
 
   const supabase = createServerClient(
