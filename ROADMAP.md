@@ -29,9 +29,9 @@
 > tavanının yerini aldı; Faz 4.2 tamamlandı — usage_events, admin maliyet panosu;
 > Faz 4.3'ün kod kısmı tamamlandı — kredi modeli, fiili ücretsiz katman, /pricing
 > geçici "bize ulaşın" sayfası, admin/subscriptions; ödeme sağlayıcı H.1'i bekliyor;
-> Faz 4.4'ün kod kısmı tamamlandı — Resend tabanlı notifyAdmin, /api/health, cron
-> başarısızlık bildirimi; Sentry ve UptimeRobot kurulumu kullanıcının elle yapması
-> gereken dış adımlar olarak kaldı)
+> Faz 4.4 tamamlandı — Resend tabanlı notifyAdmin, /api/health, cron başarısızlık
+> bildirimi, migrationlar Supabase'e uygulandı, UptimeRobot canlıda doğrulandı,
+> hata izleme Vercel Logs üzerinden; Faz 4 (4.1-4.4) baştan sona tamamlandı)
 
 ## v1 — Faz özeti ve bağımlılıklar
 
@@ -881,14 +881,17 @@ yönlendirilmeli; (2) `cron/analyze-conversations` ve `cron/weekly-report`
 — üst seviye hata veya kısmi başarısızlık (bazı işletmeler işlenemedi) olunca
 admin'e e-posta gider; (3) `[runSauleTurn] possible unconfirmed capture`
 uyarısı artık yalnızca `console.warn` değil, aynı zamanda gerçek zamanlı
-e-posta da tetikliyor. **Kullanıcının elle yapması gereken dış kurulum**
-(iyzico/Stripe seçimi gibi, bu oturumda yapılamaz): Sentry veya Vercel'in
-kendi error tracking'i devreye alınmalı; `/api/health`'i izleyecek bir
-UptimeRobot (veya benzeri) hesabı kurulmalı; `ADMIN_NOTIFICATION_EMAIL` env
-değişkeni (Google iş e-postası) Vercel'e eklenmeli ki bildirimler gerçekten
-gitsin. Doğrulama: `tsc --noEmit`, `npm test` (77 test, 4'ü bu fazda eklendi:
-`notifyAdmin.test.ts`) ve `npm run build` yeşil; tarayıcıda/gerçek Resend
-gönderimiyle elle kontrol edilmedi (bu ortamda Supabase/Resend bağlantısı yok).
+e-posta da tetikliyor. Doğrulama: `tsc --noEmit`, `npm test` (77 test, 4'ü bu
+fazda eklendi: `notifyAdmin.test.ts`) ve `npm run build` yeşil.
+
+**Dış kurulum tamamlandı (2026-07-18, Enes):** migrationlar (`00031`-`00034`)
+Supabase'e uygulandı, `ADMIN_NOTIFICATION_EMAIL` Vercel'e eklendi, değişiklikler
+commit edildi (`f06fbd1`). UptimeRobot `talkinbio.com/api/health`'i 5 dakikada
+bir izliyor — canlıda doğrulandı (%100 uptime, `200` yanıtı). Hata izleme için
+Sentry yerine Vercel'in kendi Logs ekranı (Seçenek A, kod gerektirmez)
+kullanılıyor — `/api/health` isteği Vercel Logs'ta görünür durumda doğrulandı.
+Sentry entegrasyonu (Seçenek B) hâlâ opsiyonel; DSN alınırsa `@sentry/nextjs`
+o zaman eklenir.
 
 ### Kabul kriterleri
 - [x] Oturum tavanı dolunca tek tıkla yeni sohbete geçilebiliyor; sert blokaj yalnızca
@@ -903,9 +906,10 @@ gönderimiyle elle kontrol edilmedi (bu ortamda Supabase/Resend bağlantısı yo
       geçici bir "bize ulaşın" formu, gerçek tarayıcı testi bu ortamda
       yapılamadı.)
 - [x] Cron başarısızlıkları ve kayıp lead riski gerçek zamanlı bildirime bağlı.
-      (4.4, 2026-07-18 — Resend tabanlı `notifyAdmin` ile kod + testlerle
-      doğrulandı; Sentry/Vercel error tracking ve UptimeRobot kurulumu hâlâ
-      kullanıcının elle yapması gereken dış adımlar.)
+      (4.4, 2026-07-18 — Resend tabanlı `notifyAdmin` kod + testlerle
+      doğrulandı; UptimeRobot `talkinbio.com/api/health`'i izliyor, canlıda
+      %100 uptime ile doğrulandı; hata izleme Vercel Logs üzerinden — Sentry
+      opsiyonel, henüz kurulmadı.)
 
 ---
 
