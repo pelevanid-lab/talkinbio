@@ -186,7 +186,7 @@ export default async function BusinessProfilePage({ params }: any) {
       {/* Bottom 30% Chat Widget */}
       <div className="fixed bottom-0 left-0 right-0 h-[30dvh] bg-transparent z-50 pointer-events-none">
         <div className="max-w-md mx-auto w-full h-full relative pointer-events-auto">
-          <ChatWidget businessId={business.id} businessName={business.name} locale={locale} initialMessages={initialMessages} customGreeting={customGreeting} />
+          <ChatWidget businessId={business.id} businessName={business.name} locale={locale} initialMessages={initialMessages} customGreeting={customGreeting} initialCreditsExhausted={(business.credit_balance ?? 0) <= 0} />
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { generateText } from 'ai';
-import { getModel, type AgentTask } from '@/utils/ai';
+import { getModel, getModelName, type AgentTask } from '@/utils/ai';
 
 export type GenerateOnceParams = {
   task: AgentTask;
@@ -19,5 +19,5 @@ export async function generateOnce({ task, system, prompt }: GenerateOnceParams)
     prompt,
   });
 
-  return { text: result.text, usage: result.usage };
+  return { text: result.text, usage: result.usage, model: getModelName(task) };
 }

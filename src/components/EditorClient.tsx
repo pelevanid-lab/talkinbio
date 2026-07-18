@@ -128,7 +128,9 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       : [],  // Boş başlıyor — Sayfa Durumu Kartı sahte mesaj yerine geçiyor
     onError: (error) => {
       console.error('Setup agent chat error:', error);
-      alert('Mesaj gönderilirken bir hata oluştu. Çok uzun bir metin gönderdiyseniz, birkaç parçaya bölüp tekrar deneyin.');
+      // Faz 4.3: kredi bitti / Faz 4.1: mesaj çok uzun gibi sunucudan gelen anlaşılır
+      // mesajları doğrudan göster; boşsa jenerik metne düş.
+      alert(error.message || 'Mesaj gönderilirken bir hata oluştu. Çok uzun bir metin gönderdiyseniz, birkaç parçaya bölüp tekrar deneyin.');
     },
   });
   const isChatLoading = status === 'streaming' || status === 'submitted';

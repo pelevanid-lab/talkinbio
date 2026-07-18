@@ -11,11 +11,21 @@ const TASK_ENV_KEYS = {
 
 export type AgentTask = keyof typeof TASK_ENV_KEYS;
 
+function resolveModelName(task: AgentTask): string {
+  return process.env[TASK_ENV_KEYS[task]] || process.env.AI_MODEL || DEFAULT_MODEL;
+}
+
 export function getModel(task: AgentTask) {
-  const modelName = process.env[TASK_ENV_KEYS[task]] || process.env.AI_MODEL || DEFAULT_MODEL;
+  const modelName = resolveModelName(task);
 
   if (modelName.startsWith('gemini')) {
     return google(modelName);
   }
   return anthropic(modelName);
+}
+
+// Faz 4.2 kullanım ölçümü: usage_events'e yazılacak model adını, ayrı bir
+// model çözümlemesi tekrarlamadan almak için (generateOnce cron call site'ları).
+export function getModelName(task: AgentTask): string {
+  return resolveModelName(task);
 }

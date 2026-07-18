@@ -21,13 +21,44 @@ function getMessageText(m: UIMessage): string {
 
 type LocalizedGreeting = Partial<Record<'tr' | 'en' | 'ru', string>>;
 
-export default function ChatWidget({ businessId, businessName, locale, initialMessages = [], customGreeting, variant = 'sheet', preview = false }: { businessId: string, businessName: string, locale: string, initialMessages?: LegacyMessage[], customGreeting?: LocalizedGreeting | null, variant?: 'sheet' | 'inline', preview?: boolean }) {
+export default function ChatWidget({ businessId, businessName, locale, initialMessages = [], customGreeting, variant = 'sheet', preview = false, initialCreditsExhausted = false }: { businessId: string, businessName: string, locale: string, initialMessages?: LegacyMessage[], customGreeting?: LocalizedGreeting | null, variant?: 'sheet' | 'inline', preview?: boolean, initialCreditsExhausted?: boolean }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const t = useTranslations('ChatWidget');
 
   const pendingNewConversationRef = useRef(false);
+
+  // Faz 4.3: kredi bitince (fiili ücretsiz katman) sohbet yerine LLM'siz bir
+  // isim/iletişim/mesaj formuna dönülür — sohbet kapanmaz, ziyaretçi duvara çarpmaz.
+  const [creditsExhausted, setCreditsExhausted] = useState(initialCreditsExhausted);
+  const [exhaustedMessage, setExhaustedMessage] = useState<string | null>(null);
+  const [formName, setFormName] = useState('');
+  const [formContact, setFormContact] = useState('');
+  const [formMessage, setFormMessage] = useState('');
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const submitDirectCapture = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!formName.trim() || !formContact.trim() || formSubmitting) return;
+    setFormSubmitting(true);
+    setFormError(null);
+    try {
+      const res = await fetch('/api/leads/direct-capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId, name: formName.trim(), contact: formContact.trim(), message: formMessage.trim() }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setFormSubmitted(true);
+    } catch {
+      setFormError(t('formErrorGeneric'));
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
 
   const welcomeMessage = (): UIMessage => ({
     id: `welcome-${Date.now()}`,
@@ -50,6 +81,25 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
       }),
     }),
     messages: initialMessages.length > 0 ? initialMessages.map(toUIMessage) : [welcomeMessage()],
+    // Faz 4.1: sert kalkanlar (flood/oturum açma/günlük tavan) 429 + düz metin döner;
+    // bunu normal bir Saule balonu gibi göster (LLM streami yok, tek seferlik metin).
+    // Faz 4.3: kredi bitince sunucu 402 + JSON payload döner — form moduna geç.
+    onError: (error) => {
+      try {
+        const parsed = JSON.parse(error.message);
+        if (parsed && parsed.code === 'credits_exhausted') {
+          setCreditsExhausted(true);
+          setExhaustedMessage(parsed.message);
+          return;
+        }
+      } catch {
+        // Not a credits_exhausted payload — fall through to the plain-text bubble below.
+      }
+      setMessages((prev) => [
+        ...prev,
+        { id: `error-${Date.now()}`, role: 'assistant', parts: [{ type: 'text', text: error.message }] },
+      ]);
+    },
   });
 
   const isLoading = status === 'streaming' || status === 'submitted';
@@ -149,7 +199,47 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
                 </div>
               </div>
 
-              {/* Messages Area */}
+              {/* Faz 4.3: kredi bitince (fiili ücretsiz katman) sohbet yerine LLM'siz form */}
+              {creditsExhausted ? (
+                <div className="flex-1 overflow-y-auto p-4 bg-[var(--paper)]/50 flex flex-col justify-center">
+                  {formSubmitted ? (
+                    <p className="text-center text-sm text-[var(--ink)]">{t('formSuccess')}</p>
+                  ) : (
+                    <form onSubmit={submitDirectCapture} className="space-y-3">
+                      {exhaustedMessage && <p className="text-sm text-[var(--ink-soft)] mb-2">{exhaustedMessage}</p>}
+                      <input
+                        value={formName}
+                        onChange={(e) => setFormName(e.target.value)}
+                        placeholder={t('formName')}
+                        className="w-full px-4 py-3 bg-white border border-[var(--border-light)] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--coral)]/20 focus:border-[var(--coral)]"
+                        required
+                      />
+                      <input
+                        value={formContact}
+                        onChange={(e) => setFormContact(e.target.value)}
+                        placeholder={t('formContact')}
+                        className="w-full px-4 py-3 bg-white border border-[var(--border-light)] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--coral)]/20 focus:border-[var(--coral)]"
+                        required
+                      />
+                      <textarea
+                        value={formMessage}
+                        onChange={(e) => setFormMessage(e.target.value)}
+                        placeholder={t('formMessage')}
+                        rows={3}
+                        className="w-full px-4 py-3 bg-white border border-[var(--border-light)] rounded-2xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--coral)]/20 focus:border-[var(--coral)]"
+                      />
+                      {formError && <p className="text-xs text-red-500">{formError}</p>}
+                      <button
+                        type="submit"
+                        disabled={formSubmitting || !formName.trim() || !formContact.trim()}
+                        className="w-full py-3 bg-[var(--coral)] text-white rounded-2xl text-sm font-medium hover:bg-orange-600 disabled:opacity-50 transition-colors"
+                      >
+                        {formSubmitting ? t('formSubmitting') : t('formSubmit')}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              ) : (
               <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[var(--paper)]/50">
                 {messages.map((m) => (
                   <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -190,8 +280,10 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
                 )}
                 <div ref={messagesEndRef} />
               </div>
+              )}
 
               <div className="p-4 bg-white border-t border-[var(--border-light)]">
+                {!creditsExhausted && (
                 <form onSubmit={onFormSubmit} className="flex relative items-end">
                   <textarea
                     value={input}
@@ -221,6 +313,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
                     <Send className="w-4 h-4 ml-0.5" />
                   </button>
                 </form>
+                )}
                 <p className="text-center text-[10px] text-[var(--muted)] mt-2">
                   {t('signature')} — <a href="https://talkinbio.com/?utm_source=widget&utm_medium=signature&utm_campaign=saule_signature" target="_blank" rel="noreferrer" className="underline hover:text-[var(--coral)]">talkinbio.com</a>
                 </p>

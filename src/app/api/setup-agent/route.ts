@@ -4,6 +4,9 @@ import { getModel } from '@/utils/ai';
 import { buildBeiwePrompt, buildReadinessSummary } from '@/agents/beiwe/prompt';
 import { createBeiweTools } from '@/agents/beiwe/tools';
 import { getUIMessageText } from '@/agents/shared/uiMessages';
+import { BEIWE_MAX_INPUT_CHARS } from '@/agents/shared/limits';
+import { recordUsageEvent } from '@/agents/shared/usage';
+import { beiweCreditCost, deductCredits } from '@/agents/shared/credits';
 
 // Large pastes (e.g. a business owner dropping in several long service descriptions at once,
 // each needing translation into 3 languages) can take the model well past a minute to finish
@@ -26,14 +29,23 @@ export async function POST(req: Request) {
     // Fetch existing blocks + business to give context to the AI
     const [{ data: blocks }, { data: business }] = await Promise.all([
       supabase.from('blocks').select('*').eq('business_id', businessId).order('order', { ascending: true }),
-      supabase.from('businesses').select('contact_method, contact_value, category, theme, is_published').eq('id', businessId).single(),
+      supabase.from('businesses').select('contact_method, contact_value, category, theme, is_published, credit_balance').eq('id', businessId).single(),
     ]);
+
+    // Faz 4.3: kredi bitince Beiwe (sahip-yüzlü dashboard aracı) düz bir yükseltme
+    // mesajıyla durur — Saule'nin ziyaretçi-yüzlü "fiili ücretsiz katman"ı burada geçerli değil.
+    if (business && business.credit_balance <= 0) {
+      return new Response('Krediniz tükendi. Devam etmek için planınızı yükseltin.', { status: 402 });
+    }
 
     const currentLocale = (locale as string) || 'tr';
 
     // Persist the conversation so returning to this tab (or reloading the page) doesn't lose context.
     const lastUserMessage = messages[messages.length - 1];
     const lastUserText = getUIMessageText(lastUserMessage);
+    if (lastUserMessage && lastUserMessage.role === 'user' && lastUserText.length > BEIWE_MAX_INPUT_CHARS) {
+      return new Response('Message too long', { status: 400 });
+    }
     if (lastUserMessage && lastUserMessage.role === 'user') {
       const meaningfulUserMsgs = messages
         .filter((m: { role: string }) => m.role === 'user')
@@ -81,7 +93,9 @@ export async function POST(req: Request) {
       allowSystemInMessages: true,
       messages: modelMessages,
       tools: createBeiweTools({ supabase, businessId, locale: currentLocale }),
-      onFinish: async ({ text, toolCalls }) => {
+      onFinish: async ({ text, toolCalls, usage, model }) => {
+        await recordUsageEvent(supabase, { businessId, agent: 'beiwe', channel: 'web', model: model.modelId, usage });
+        await deductCredits(supabase, businessId, beiweCreditCost(toolCalls.length));
         if (text) {
           await supabase.from('setup_sessions').upsert({
             id: sessionId,

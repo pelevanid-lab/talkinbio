@@ -24,7 +24,14 @@
 > bug'ı düzeltildi; Faz 3 hazırlığı — migration numarası, cron altyapısı, `generateText`
 > yolu, `/legal` revizyonu — tamamlandı; H.1 "her şeyin ön koşulu" çerçevesi düzeltildi:
 > tetikleyici artık ilk ödeme taahhüdü, Faz P başlamadan önce değil; Faz 3 tamamlandı —
-> konuşma madenciliği, içerik stüdyosu, haftalık özet e-postası)
+> konuşma madenciliği, içerik stüdyosu, haftalık özet e-postası; Faz 4.1 tamamlandı —
+> kötüye kullanım koruması, Supabase tabanlı sayaç, Faz 1.6'nın demo-özel geçici
+> tavanının yerini aldı; Faz 4.2 tamamlandı — usage_events, admin maliyet panosu;
+> Faz 4.3'ün kod kısmı tamamlandı — kredi modeli, fiili ücretsiz katman, /pricing
+> geçici "bize ulaşın" sayfası, admin/subscriptions; ödeme sağlayıcı H.1'i bekliyor;
+> Faz 4.4'ün kod kısmı tamamlandı — Resend tabanlı notifyAdmin, /api/health, cron
+> başarısızlık bildirimi; Sentry ve UptimeRobot kurulumu kullanıcının elle yapması
+> gereken dış adımlar olarak kaldı)
 
 ## v1 — Faz özeti ve bağımlılıklar
 
@@ -700,6 +707,26 @@ gerçek kullanıcının hiç karşılaşmayacağı hız sınırlarındadır.
 - Faz 1.6'daki landing'e özel geçici tavan bu genel altyapıyla değiştirilir.
 - v2 kanalları geldiğinde aynı sayaçlar `conversationKey` üzerinden çalışır.
 
+**Uygulama notu (2026-07-18):** Faz 4.1 uygulandı — Supabase tabanlı sayaç
+seçildi (Upstash/Redis kurulu değildi, yeni ücretli servis gerektirmiyor).
+`00031_messages_business_id.sql` migration'ı `messages`'a denormalize
+`business_id` ekliyor (join'siz sayım için) + iki yeni index (**elle Supabase'e
+uygulanmalı**, önceki fazlardaki gibi bu oturumda otomatik push edilmedi).
+`src/agents/shared/limits.ts` eşikleri, `src/agents/shared/rateLimit.ts` üç
+kontrol fonksiyonunu (`checkShortTermFlood`, `checkSessionOpenRateLimit`,
+`checkBusinessDailyCap`) ve lokalize (tr/en/ru) statik ret mesajlarını taşıyor
+— sert limitler LLM çağırmadan reddediyor. `src/agents/saule/run.ts`'teki
+Faz 1.6'nın demo-özel `DEMO_MESSAGE_CAP`'i kaldırıldı; oturum içi tavan artık
+tüm işletmeler için `SESSION_MESSAGE_CAP` (50) ile çalışıyor (`isPreview`
+muaf). `chat/route.ts` (Saule, 2K karakter) ve `setup-agent/route.ts` (Beiwe,
+50K karakter) girdi sınırlarını uyguluyor. `ChatWidget.tsx`'e eklenen
+`onError` handler'ı sert blokaj mesajlarını (429 + `AgentTurnError`) normal
+bir Saule balonu gibi gösteriyor. Doğrulama: `tsc --noEmit`, `npm test` (55
+test, 8'i bu fazda eklendi: `rateLimit.test.ts` + `run.test.ts`'e iki yeni
+senaryo) ve `npm run build` yeşil; tarayıcıda gerçek hesapla elle kontrol
+edilmedi (bu ortamda Supabase bağlantısı yok — önceki fazlardaki sınırlama
+aynen geçerli).
+
 ### 4.2 Kullanım ölçümü
 - `usage_events` tablosu: business_id, agent ('beiwe'|'saule'), channel, input/output token,
   model, created_at. `streamText`/`generateText` `usage` çıktısından yazılır.
@@ -709,6 +736,28 @@ gerçek kullanıcının hiç karşılaşmayacağı hız sınırlarındadır.
 - **Faz 2.2'den devreden açık iş:** `claude-sonnet-5` denemesi (SDK v7'ye geçildi,
   temperature engeli kalkmış olmalı) — maliyet/kalite karşılaştırması bu ölçüm
   altyapısıyla yapılır; sonuç Faz 0.1 model stratejisine işlenir.
+
+**Uygulama notu (2026-07-18):** Faz 4.2 uygulandı. `00032_usage_events.sql`
+migration'ı `usage_events` tablosunu (roadmap'in istediği alanlara ek olarak
+`cache_read_tokens`/`cache_write_tokens` — Faz 2.3'ün prompt caching getirisini
+görünür kılmak için) ekliyor (**elle Supabase'e uygulanmalı**, önceki
+fazlardaki gibi bu oturumda otomatik push edilmedi). `src/agents/shared/usage.ts`
+(`recordUsageEvent`, hataya dayanıklı — insert başarısız olsa da kullanıcı
+cevabını bozmaz) üç noktadan çağrılıyor: `saule/run.ts` (ana + oturum tavanı
+apology streamText'i), `setup-agent/route.ts` (Beiwe), `cron/analyze-conversations`
+(analysis görevi; `weekly-report` cron'unun kendi LLM çağrısı yok, yalnızca
+mevcut `beiwe_insights`'ı e-postalıyor — kayıt gerektirmiyor). `src/utils/ai.ts`'e
+`getModelName(task)` eklendi, `generateOnce` artık `model` da döndürüyor.
+`src/utils/modelPricing.ts` (`estimateCostUsd`) Faz 4.3'te ölçülen Sonnet 4.5
+fiyatıyla ($3/$15 per MTok) + standart Anthropic cache çarpanlarıyla (write
+≈1,25×, read ≈0,1×) tahmini $ hesaplıyor; bilinmeyen model için `null` döner
+(sessizce yanlış rakam göstermek yerine). `admin/analytics/page.tsx`'e "Maliyet
+(Bu Ay)" paneli eklendi — içinde bulunulan takvim ayı, işletme bazında
+gruplanmış, yalnızca $ (Faz 4.3'ün "fiyatlar dolara sabit" kararıyla tutarlı,
+₺ dönüşümü göstermiyor — bayat kur riski). Doğrulama: `tsc --noEmit`, `npm test`
+(61 test, 6'sı bu fazda eklendi: `usage.test.ts`, `modelPricing.test.ts` +
+`generateOnce.test.ts`'e bir assertion) ve `npm run build` yeşil; tarayıcıda
+gerçek hesapla elle kontrol edilmedi (bu ortamda Supabase bağlantısı yok).
 
 ### 4.3 Plan/faturalandırma — kredi modeli (kanvasla hizalandı, gerçek maliyetle doğrulandı)
 Kanvasın kilitli "Gelir Kalemleri" kutusundaki model uygulanır:
@@ -735,11 +784,14 @@ Kanvasın kilitli "Gelir Kalemleri" kutusundaki model uygulanır:
   (66 işlem × $0,121 = $8,05 gerçek maliyet) $9 fiyata karşı hâlâ pozitif ama çok ince
   bir marj (%11) — zarar değil, ama tampon yok. Kredi tavanı doğal bir zarar-durdurucu
   işlevi görüyor.
-  **Aksiyon:** çarpanlar bu gerçek ölçümle yeniden kalibre edilmeli (ör. güncelleme
-  3→5, kurulum 10→6 gibi gerçek orana yakınsatılmalı) VEYA (tercih edilen) Faz 2.3'teki
-  prompt caching Beiwe'nin ~18K sabit yükünü küçültsün — küçük güncellemelerin asıl
-  sorunu çarpan değil, her çağrıda tekrar ödenen sabit maliyet. `usage_events` (4.2)
-  bu kalibrasyonu üretimde sürekli doğrulayacak.
+  **Karar (2026-07-18, Enes düzeltmesi):** güncelleme çarpanı 3'ten **6'ya**
+  yükseltildi (10'luk kurulum aynen kaldı) — $0,27 satış fiyatına karşı %45
+  maliyet oranı, %55 marj (eski %89/%11'e göre çok daha sağlıklı). Sayılar artık
+  koda gömülü sabit değil, env değişkenleriyle elle ince ayar yapılabiliyor
+  (`CREDIT_COST_SAULE`, `CREDIT_COST_BEIWE_UPDATE`, `CREDIT_COST_BEIWE_INSTALL`
+  — `src/agents/shared/credits.ts`) — Faz 2.3'ün prompt caching optimizasyonu
+  Beiwe'nin sabit yükünü küçülttükçe kod değişikliği gerekmeden yeniden kalibre
+  edilebilir. `usage_events` (4.2) bu kalibrasyonu üretimde sürekli doğrulayacak.
 
 - **Ürün gereksinimi (2026-07-16, Enes onayı) — kabul kriteri:** Starter paketi alan bir
   kullanıcı (a) sayfasını en az bir kez oluşturabilmeli, (b) deneme yanılmayla **birkaç kez**
@@ -748,15 +800,25 @@ Kanvasın kilitli "Gelir Kalemleri" kutusundaki model uygulanır:
   etkileşimli güncelleme (45 kredi, $1,81) + 20 Saule mesajı (20 kredi, $0,53) = 95/200
   kredi, ~$2,78 gerçek maliyet → $9 fiyata karşı %31 maliyet oranı, %69 marj. **Bu senaryo
   200 kredi içinde rahatça ve kârlı şekilde karşılanıyor** — asıl risk yukarıdaki
-  "yalnızca güncelleme" uç senaryosunda, tipik kullanımda değil. Faz 4'te bu senaryo
-  gerçek `usage_events` verisiyle otomatik bir kabul testine dönüştürülmeli (yeni hesap →
-  kurulum + N düzenleme + M Saule mesajı → toplam maliyet fiyatın altında kalıyor mu?).
+  "yalnızca güncelleme" uç senaryosunda, tipik kullanımda değil. **Açık iş (kod değil,
+  gelecekteki bir doğrulama):** yeterli üretim `usage_events` verisi birikince, bu
+  senaryo ("yeni bir hesap sayfasını kurar + birkaç kez düzenler + Saule ile biraz
+  konuşulur — toplam gerçek maliyet ödediği fiyatın altında mı kalıyor") otomatik bir
+  regresyon testine dönüştürülebilir. Şimdi yeterli üretim verisi olmadığı için
+  yapılmadı.
 - **Kredi devri:** kullanılmayan krediler devreder, bakiye tavanı 2 aylık kota.
 - **Fiili ücretsiz katman:** kredi bitince asistan kapanmaz — sayfa + "mesaj bırakın" modu
   (LLM'siz lead toplama) yaşar; ziyaretçi duvara çarpmaz, viral imza döngüsü (1.8) beslenmeye
   devam eder, sahip yükseltmeye nazikçe itilir.
 - `businesses.plan` + kredi bakiyesi kolonları; limit enforcement 4.1 sayaçlarına bağlanır;
   kredi tüketimi dashboard'da şeffaf gösterilir.
+- **İstisna hesaplar (2026-07-18, Enes notu):** kredi düşme sayacı devreye girdiği anda
+  (ilk kredi tüketimi yazımıyla birlikte, kredi kolonları eklenirken bir kerelik seed
+  olarak) iki hesabın bakiyesi **1.000.000.000 (1 milyar) kredi** olarak ayarlanmalı:
+  `enespehlivan@live.com` (talkinbio — kurucu/demo hesabı) ve `pehlivanuliana@gmail.com`
+  (Uliana Pehlivan — mevcut tek ücretsiz test hesabı, bkz. Faz P.2 notu). Fiilen sınırsız
+  kullanım anlamına gelir; ürün gereksinimi kabul testi (yukarıdaki 200 kredi senaryosu)
+  bu iki hesap için geçerli değildir.
 - **Fiyatlama kararı (2026-07-17, Enes):** fiyatlar **dolara sabittir**; TL tahsilat
   güncel kur üzerinden yapılır, lokal sabit TL fiyat yoktur (girdi maliyetleri dolar).
   Birim ekonomi hesapları ($0,045/kredi) dolar bazında geçerliliğini korur; kur riski
@@ -770,6 +832,34 @@ Kanvasın kilitli "Gelir Kalemleri" kutusundaki model uygulanır:
   (1-2 hafta) sağlayıcı entegrasyonunu İÇERMEZ — entegrasyon +1 hafta sayılmalı.
 - Mevcut admin "subscriptions" sayfası gerçek veriye bağlanır.
 
+**Uygulama notu (2026-07-18):** Faz 4.3'ün kod kısmı uygulandı (ödeme sağlayıcı
+hariç — Faz H.1'i bekliyor). `00033_business_credits.sql` migration'ı
+`businesses.credit_balance` + `deduct_credits`/`add_credits` RPC'lerini ekliyor,
+iki istisna hesabı 1 milyar kredi ile seed ediyor (**elle Supabase'e
+uygulanmalı**, önceki fazlardaki gibi). `src/agents/shared/credits.ts` kredi
+mantığını taşıyor; `saule/run.ts` ve `setup-agent/route.ts` hem kontrol
+(`hasCredits`/`credit_balance <= 0`) hem düşüm (`deductCredits`, Beiwe'de araç
+sayısına göre `beiweCreditCost`) noktalarına bağlandı. **Fiili ücretsiz katman**
+tam yazıldı: kredi bitince Saule sunucu tarafında 402 + JSON payload
+(`{code:'credits_exhausted', message, directLinks}`) döner, `ChatWidget.tsx`
+bunu yakalayıp sohbeti kapatmadan LLM'siz bir isim/iletişim/mesaj formuna
+döner (`POST /api/leads/direct-capture` — `insertLeadAndNotify`, eski
+`captureLeadTool`'dan çıkarıldı, aynı e-posta bildirimini kullanır); Beiwe
+(sahip-yüzlü) tarafında düz bir 402 mesajı yeterli görüldü (`EditorClient.tsx`
+artık `error.message`'ı gösteriyor). **Kredi paketleri/plan sayfası** (Enes
+talebi, 2026-07-18) `/pricing` altında yayında — gerçek checkout değil,
+roadmap'teki plan tablosunu (kapasiteyi somut "≈N Saule sohbeti / M Beiwe
+güncellemesi" örneğiyle) şeffaf gösteren, e-posta+telefon alan bir "bize
+ulaşın" formu; H.3 (sözleşmeler) ve ödeme sağlayıcı tamamlanana kadar geçici.
+Talepler yeni `pricing_inquiries` tablosuna düşüyor (`00034` migration),
+admin `admin/subscriptions` sayfasından hem bu talepleri görüp "arandı"
+işaretleyebiliyor hem de bir işletmeye plan+kredi elle atayabiliyor (mevcut
+ama boş `subscriptions` tablosu — migration `00002` — ilk kez kullanılmaya
+başlandı). Doğrulama: `tsc --noEmit`, `npm test` (73 test, 12'si bu fazda
+eklendi: `credits.test.ts` + `run.test.ts`'e iki senaryo) ve `npm run build`
+yeşil; tarayıcıda gerçek hesapla elle kontrol edilmedi (bu ortamda Supabase
+bağlantısı yok).
+
 ### 4.4 Operasyonel gözlemleme (lansman kapısının parçası)
 - Hata izleme (Sentry veya Vercel'in hazır error tracking'i): prod hatasını
   müşteriden önce duymak — özellikle webhook'suz tek geliştiricili üründe kritik.
@@ -780,11 +870,42 @@ Kanvasın kilitli "Gelir Kalemleri" kutusundaki model uygulanır:
   Sentry kurulunca bu log bir hata/uyarı olarak yakalanıp gerçek zamanlı bildirime
   bağlanmalı (kayıp lead'i keşfetmek günler sürmemeli).
 
+**Uygulama notu (2026-07-18):** Faz 4.4'ün kod tarafı, Sentry/Vercel error
+tracking **hariç** uygulandı — Sentry gerçek bir hesap/DSN gerektirdiği ve bu
+ortamda kurulup doğrulanamayacağı için (Enes onayı), bunun yerine projede
+zaten kurulu olan Resend altyapısı admin bildirim kanalı olarak kullanıldı:
+`src/agents/shared/notifyAdmin.ts` (`ADMIN_NOTIFICATION_EMAIL`'e best-effort
+e-posta, hiçbir zaman fırlatmaz). Bağlandığı üç nokta: (1) `GET /api/health`
+— basit sağlık ucu, harici bir uptime izleyici (UptimeRobot vb.) buraya
+yönlendirilmeli; (2) `cron/analyze-conversations` ve `cron/weekly-report`
+— üst seviye hata veya kısmi başarısızlık (bazı işletmeler işlenemedi) olunca
+admin'e e-posta gider; (3) `[runSauleTurn] possible unconfirmed capture`
+uyarısı artık yalnızca `console.warn` değil, aynı zamanda gerçek zamanlı
+e-posta da tetikliyor. **Kullanıcının elle yapması gereken dış kurulum**
+(iyzico/Stripe seçimi gibi, bu oturumda yapılamaz): Sentry veya Vercel'in
+kendi error tracking'i devreye alınmalı; `/api/health`'i izleyecek bir
+UptimeRobot (veya benzeri) hesabı kurulmalı; `ADMIN_NOTIFICATION_EMAIL` env
+değişkeni (Google iş e-postası) Vercel'e eklenmeli ki bildirimler gerçekten
+gitsin. Doğrulama: `tsc --noEmit`, `npm test` (77 test, 4'ü bu fazda eklendi:
+`notifyAdmin.test.ts`) ve `npm run build` yeşil; tarayıcıda/gerçek Resend
+gönderimiyle elle kontrol edilmedi (bu ortamda Supabase/Resend bağlantısı yok).
+
 ### Kabul kriterleri
-- [ ] Oturum tavanı dolunca tek tıkla yeni sohbete geçilebiliyor; sert blokaj yalnızca
-      hız sınırlarında ve token harcamadan devreye giriyor.
-- [ ] Admin panelde işletme başına gerçek token maliyeti görünüyor.
-- [ ] Plan limitleri uçtan uca enforce ediliyor.
+- [x] Oturum tavanı dolunca tek tıkla yeni sohbete geçilebiliyor; sert blokaj yalnızca
+      hız sınırlarında ve token harcamadan devreye giriyor. (4.1, 2026-07-18 — kod +
+      testlerle doğrulandı, gerçek tarayıcı testi bu ortamda yapılamadı.)
+- [x] Admin panelde işletme başına gerçek token maliyeti görünüyor. (4.2,
+      2026-07-18 — kod + testlerle doğrulandı, gerçek tarayıcı testi bu
+      ortamda yapılamadı.)
+- [x] Plan limitleri uçtan uca enforce ediliyor. (4.3, 2026-07-18 — kredi
+      kontrolü/düşümü ve fiili ücretsiz katman kod + testlerle doğrulandı;
+      gerçek ödeme sağlayıcı hâlâ Faz H.1'i bekliyor, `/pricing` bu yüzden
+      geçici bir "bize ulaşın" formu, gerçek tarayıcı testi bu ortamda
+      yapılamadı.)
+- [x] Cron başarısızlıkları ve kayıp lead riski gerçek zamanlı bildirime bağlı.
+      (4.4, 2026-07-18 — Resend tabanlı `notifyAdmin` ile kod + testlerle
+      doğrulandı; Sentry/Vercel error tracking ve UptimeRobot kurulumu hâlâ
+      kullanıcının elle yapması gereken dış adımlar.)
 
 ---
 

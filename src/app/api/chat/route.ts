@@ -5,6 +5,7 @@ import { createClient as createServerSupabase } from '@/utils/supabase/server';
 import { runSauleTurn } from '@/agents/saule/run';
 import { AgentTurnError } from '@/agents/shared/errors';
 import { getUIMessageText } from '@/agents/shared/uiMessages';
+import { SAULE_MAX_INPUT_CHARS } from '@/agents/shared/limits';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -30,6 +31,9 @@ export async function POST(req: Request) {
     const lastUserText = getUIMessageText(lastUserMessage);
     if (!lastUserMessage || lastUserMessage.role !== 'user' || !lastUserText) {
       return new Response('Invalid message', { status: 400 });
+    }
+    if (lastUserText.length > SAULE_MAX_INPUT_CHARS) {
+      return new Response('Message too long', { status: 400 });
     }
 
     // Initialize Supabase client with Service Role Key to bypass RLS for visitor operations

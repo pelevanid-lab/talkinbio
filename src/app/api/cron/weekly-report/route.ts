@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { isAuthorizedCronRequest } from '@/utils/cronAuth';
+import { notifyAdmin } from '@/agents/shared/notifyAdmin';
 
 // Vercel Cron: Pazartesi 08:00 UTC (vercel.json). Faz 3.3 — bkz. ROADMAP.md.
 export const maxDuration = 300;
@@ -59,8 +60,11 @@ export async function POST(request: Request) {
   }
 
   if (!process.env.RESEND_API_KEY) {
+    await notifyAdmin('[weekly-report] cron başarısız oldu', 'RESEND_API_KEY yapılandırılmamış.');
     return NextResponse.json({ error: 'RESEND_API_KEY not configured' }, { status: 500 });
   }
+
+  try {
   const resend = new Resend(process.env.RESEND_API_KEY);
   const since = new Date(Date.now() - SEVEN_DAYS_MS).toISOString();
 
@@ -70,11 +74,13 @@ export async function POST(request: Request) {
     .eq('is_published', true);
 
   if (businessesError) {
+    await notifyAdmin('[weekly-report] cron başarısız oldu', `İşletme listesi çekilemedi: ${businessesError.message}`);
     return NextResponse.json({ error: businessesError.message }, { status: 500 });
   }
 
   let sent = 0;
   let skipped = 0;
+  let failed = 0;
 
   for (const business of businesses || []) {
     try {
@@ -129,9 +135,21 @@ export async function POST(request: Request) {
       sent++;
     } catch (err) {
       console.error('[weekly-report] failed for business', { businessId: business.id, err });
-      skipped++;
+      failed++;
     }
   }
 
-  return NextResponse.json({ sent, skipped });
+  if (failed > 0) {
+    await notifyAdmin(
+      '[weekly-report] cron kısmi hatayla tamamlandı',
+      `${failed} işletmeye e-posta gönderilemedi (toplam ${sent} gönderildi, ${skipped} atlandı). Detaylar için Vercel loglarına bakın.`
+    );
+  }
+
+  return NextResponse.json({ sent, skipped, failed });
+  } catch (err) {
+    console.error('[weekly-report] cron failed', err);
+    await notifyAdmin('[weekly-report] cron başarısız oldu', `Beklenmeyen hata: ${err instanceof Error ? err.message : String(err)}`);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
 }
