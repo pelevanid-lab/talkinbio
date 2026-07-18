@@ -12,7 +12,7 @@ export async function notifyAdmin(subject: string, body: string): Promise<void> 
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
-      from: 'onboarding@resend.dev',
+      from: 'info@talkinbio.com',
       to: process.env.ADMIN_NOTIFICATION_EMAIL,
       subject,
       html: `<p>${body}</p>`,

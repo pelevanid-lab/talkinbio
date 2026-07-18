@@ -31,7 +31,9 @@
 > geçici "bize ulaşın" sayfası, admin/subscriptions; ödeme sağlayıcı H.1'i bekliyor;
 > Faz 4.4 tamamlandı — Resend tabanlı notifyAdmin, /api/health, cron başarısızlık
 > bildirimi, migrationlar Supabase'e uygulandı, UptimeRobot canlıda doğrulandı,
-> hata izleme Vercel Logs üzerinden; Faz 4 (4.1-4.4) baştan sona tamamlandı)
+> hata izleme Vercel Logs üzerinden; Faz 4 (4.1-4.4) baştan sona tamamlandı;
+> Resend gönderici adresi doğrulanmış domaine çevrildi; kod dondurulup Faz T
+> — Uliana pilot test dönemi — başladı, ~3 hafta sürecek)
 
 ## v1 — Faz özeti ve bağımlılıklar
 
@@ -46,6 +48,7 @@
 | H | Hukuk & kurumsallaşma (sürekli) | Şirket kuruluşu (tetikleyici: ilk ödeme taahhüdü, ~5 iş günü sürer), KVKK/GDPR revizyonu, kullanım şartları, çerez/saklama politikaları | — (paralel; şirket kuruluşu Faz P *başlamadan önce* değil, P.1'de ilk "evet, öderim" alındığında tetiklenir — ay sonu tahsilatına yetişir; Faz 4 lansmanının ön koşulu) |
 | 3 | Beiwe → Marketing Agent | Konuşma madenciliği, içerik üretimi, haftalık rapor | Faz 2 |
 | 4 | Satılabilir v1 kapısı | Maliyet koruması, kullanım ölçümü, faturalandırma | Lansman öncesi zorunlu |
+| T | Uliana pilot test dönemi (~3 hafta, paralel) | Kod dondurma; gerçek 3. taraf müşterilerle canlı doğrulama, izleme listesi | Faz 4 (kod tamamlandı, 2026-07-18) |
 
 ## v2 — Kanal genişlemesi
 
@@ -910,6 +913,60 @@ o zaman eklenir.
       doğrulandı; UptimeRobot `talkinbio.com/api/health`'i izliyor, canlıda
       %100 uptime ile doğrulandı; hata izleme Vercel Logs üzerinden — Sentry
       opsiyonel, henüz kurulmadı.)
+
+---
+
+## Faz T — Uliana pilot test dönemi (~3 hafta, paralel, kod dondurma)
+
+**Başlangıç (2026-07-18, Enes kararı):** v1'in kod tarafı tamamlandı (Faz 0-4).
+Tahmini ~3 hafta boyunca **yeni kod yazılmayacak** — Uliana Pehlivan hesabıyla
+gerçek 3. taraf müşteriler test edilecek. Bu, Faz P'nin "20 problem görüşmesi
++ 10 ücretli pilot" çalışmasının fiili başlangıcı; bu bölüm o çalışma
+sırasında **özellikle izlenmesi gereken teknik noktaların** listesidir —
+Faz P'nin genel sürekli akışından ayrı, bu dönemin kendine özgü kontrol listesi.
+
+### T.1 Kod dondurma kuralı
+- Hata çıkmadığı sürece kod tarafına dokunulmayacak. Küçük bug'lar not
+  edilip biriktirilecek, haftada bir toplu değerlendirilecek — tek tek
+  yamalayıp dondurmayı bozmak yok.
+- **İstisna:** gerçek para kaybı, veri kaybı veya güvenlik riski taşıyan
+  bir hata çıkarsa (ör. lead kaydedilmiyor, kredi yanlış düşüyor) hemen
+  müdahale edilir.
+
+### T.2 Bu dönemde bilerek/dolaylı olarak tetiklenecek noktalar
+- **E-posta teslimi (Resend, 2026-07-18 düzeltildi):** gönderici adresi
+  `onboarding@resend.dev`'den doğrulanmış `info@talkinbio.com`'a çevrildi
+  (`tools.ts`, `notifyAdmin.ts`, `weekly-report/route.ts`) — düzeltmeden önce
+  test hesabı dışına giden hiçbir e-posta (lead bildirimi, haftalık rapor,
+  admin uyarısı) ulaşmıyordu. İlk lead testinde e-postanın gerçekten Uliana'ya
+  ulaştığı doğrulanmalı.
+- **Kredi bakiyesi (Faz 4.3):** yeni onaylanan her pilot işletme `credit_balance = 0`
+  ile doğuyor — concierge onboarding'de (P.2) kurulumdan önce
+  `admin/subscriptions`'tan plan+kredi atanmalı, yoksa pilotun Saule'si ilk
+  günden "kredi bitti" formuna düşer.
+- **Rate limit'ler (Faz 4.1):** yoğun elle test sırasında flood limiti (10
+  dakikada 20 mesaj) veya oturum açma hızı sınırına (saatte 4 yeni oturum)
+  çarpılabilir — bu bug değil, tasarım; editör önizlemesi (`isPreview`) tüm
+  limitlerden muaf, sınırsız test için onu kullan.
+- **Haftalık cron'lar** Pazartesi sabahı çalışıyor — Salı günü
+  `beiwe_insights` ve rapor e-postasının gerçekten gittiği kontrol edilmeli.
+- **`/pricing` formu:** gönderilen talep `admin/subscriptions`'ta görünmeli
+  + admin'e bildirim e-postası gitmeli.
+
+### T.3 Ayna-odası ritmi
+Her hafta pivot günlüğüne en az bir "bu hafta hangi varsayım GERÇEK
+müşteriyle test edildi" girişi düşülür (bkz. Faz P.3, ayna-odası kuralı).
+Bu dönem, kanvasın "GERÇEK ÖLÇÜM" etiketli kutularının çoğunun ilk kez
+gerçek talep verisiyle doldurulacağı dönem — maliyet tarafı zaten ölçüldü,
+eksik olan talep tarafı.
+
+### Kabul kriterleri
+- [ ] En az 3 gerçek 3. taraf müşteriyle uçtan uca test tamamlandı (kurulum
+      + Saule konuşması + lead akışı + e-posta teslimi doğrulandı).
+- [ ] Kredi düşümü ve `admin/subscriptions`'tan manuel atama en az bir kez
+      gerçek pilotta doğrulandı.
+- [ ] 3 hafta boyunca biriken bug/iyileştirme listesi hazır — bir sonraki
+      kod dönüşü bu listeyle başlar.
 
 ---
 

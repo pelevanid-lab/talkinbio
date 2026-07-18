@@ -122,7 +122,7 @@ export async function POST(request: Request) {
         .limit(3);
 
       await resend.emails.send({
-        from: 'onboarding@resend.dev',
+        from: 'info@talkinbio.com',
         to: recipientEmail,
         subject: `${business.name} — Haftalık Talkinbio Özetiniz`,
         html: renderReportHtml(business, {

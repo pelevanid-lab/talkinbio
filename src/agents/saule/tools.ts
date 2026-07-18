@@ -55,7 +55,7 @@ export async function insertLeadAndNotify({
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
-        from: 'onboarding@resend.dev',
+        from: 'info@talkinbio.com',
         to: contactValues.email,
         subject: `Yeni Müşteri Talebi: ${name}`,
         html: `
