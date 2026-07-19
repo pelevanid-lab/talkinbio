@@ -108,6 +108,9 @@ export default async function HomePage({ params }: any) {
           <div className="links" style={{ display: 'none' }}></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <LanguageSwitcher />
+            <Link href="/pricing" className="btn btn-ghost" style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}>
+              {t('nav.pricing')}
+            </Link>
             <Link href="/login" className="btn btn-ghost" style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}>
               {t('nav.login')}
             </Link>
@@ -137,6 +140,9 @@ export default async function HomePage({ params }: any) {
                 <a href="#nasil-calisir" className="btn btn-ghost">
                   {t('hero.howItWorks')}
                 </a>
+                <Link href="/pricing" className="btn btn-ghost" style={{ fontSize: '0.9rem' }}>
+                  {t('nav.pricing')}
+                </Link>
                 <Link href="/stakeholders" className="btn btn-ghost" style={{ fontSize: '0.9rem' }}>
                   {t('nav.stakeholders')}
                 </Link>
@@ -261,6 +267,7 @@ export default async function HomePage({ params }: any) {
           <div className="footer-row">
             <LogoSVG />
             <div className="foot-links">
+              <Link href="/pricing">{t('nav.pricing')}</Link>
               <Link href="/admin/login">Admin</Link>
               <Link href="/legal">{t('footer.privacy')}</Link>
             </div>

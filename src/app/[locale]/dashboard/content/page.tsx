@@ -12,7 +12,7 @@ export default async function ContentDashboardPage() {
 
   const { data: business } = await supabase
     .from('businesses')
-    .select('id, name, username, category')
+    .select('id, name, username, category, credit_balance')
     .eq('owner_id', userData.user.id)
     .single();
 

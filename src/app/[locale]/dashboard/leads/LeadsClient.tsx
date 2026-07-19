@@ -7,6 +7,7 @@ import { tr } from 'date-fns/locale';
 import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Send, MessageCircle, Archive, ArchiveRestore, Trash2, StickyNote, Mail } from 'lucide-react';
 import ConversationsPanel from './ConversationsPanel';
 import KnowledgeBasePanel from './KnowledgeBasePanel';
+import CreditBadge from '@/components/CreditBadge';
 
 export default function LeadsClient({ business, initialLeads, initialConversations, initialKnowledge }: { business: any, initialLeads: any[], initialConversations: any[], initialKnowledge: any[] }) {
   const supabase = createClient();
@@ -108,6 +109,7 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                 <Settings className="w-4 h-4" /> Saule Ayarları
               </button>
             </div>
+            <CreditBadge balance={business.credit_balance ?? 0} />
             <a href="/dashboard/content" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
               İçerik
             </a>

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Lightbulb, Inbox, FileText } from 'lucide-react';
+import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Lightbulb, Inbox, FileText, Coins } from 'lucide-react';
 import ArchetypeRenderer from './ArchetypeRenderer';
 import ChatWidget from './ChatWidget';
 import BlockEditorModal from './BlockEditorModal';
@@ -536,6 +536,16 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
               <LanguageSwitcher />
             </div>
             <div className="flex items-center gap-2">
+              <a
+                href="/pricing"
+                className="p-2 bg-slate-100 text-[var(--ink)] hover:bg-slate-200 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-colors"
+                title="Kredi bakiyeniz — plan ve paketler için tıklayın"
+              >
+                <Coins className="w-5 h-5" />
+                <span className="hidden md:inline">
+                  {(business.credit_balance ?? 0) >= 1_000_000_000 ? 'Sınırsız' : `${(business.credit_balance ?? 0).toLocaleString('tr-TR')} kredi`}
+                </span>
+              </a>
               <a
                 href="/dashboard/leads"
                 className="p-2 bg-slate-100 text-[var(--ink)] hover:bg-slate-200 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-colors"
