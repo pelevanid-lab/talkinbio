@@ -649,11 +649,12 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
               status now live inside the "İnce Ayar" tab so Kurulum Ajanı/Toplu aren't buried under
               fixed chrome. */}
             <div className="flex justify-between items-center bg-white p-2 rounded-xl shadow-sm border border-slate-200 gap-1">
-              <button 
+              <button
                 onClick={() => setViewMode('chat')}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'chat' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`flex-1 py-1.5 rounded-lg text-sm font-medium leading-tight transition-all ${viewMode === 'chat' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                {t('tabAgent')}
+                <span className="block">Beiwe</span>
+                <span className="block text-[10px] font-normal opacity-60">{t('tabAgent')}</span>
               </button>
               <button 
                 onClick={() => setViewMode('bulk')}

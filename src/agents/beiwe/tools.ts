@@ -339,6 +339,64 @@ export function addFAQTool({ supabase, businessId, locale }: BeiweToolParams) {
   });
 }
 
+// Sabit tipteki (about/services/hours/links/gallery/testimonials/faq) bölümlerin her biri kendi
+// update/add aracına sahip ve her işletme başına tek satır olarak upsert edilir (bkz. singleton_key
+// kısıtı — 00007/00008 migration'ları). Bu araç bunlardan biri DEĞİL: kullanıcı mevcut bir bölümü
+// değiştirmek yerine tamamen YENİ, ek bir bölüm istediğinde (ör. "Yaklaşım ve Deneyim", "Misyonumuz")
+// çağrılır — 'custom' tipinde, singleton kısıtı olmayan, birden fazlası olabilen yeni bir satır ekler.
+export function addSectionTool({ supabase, businessId }: BeiweToolParams) {
+  const INSERT_AFTER_TYPES = ['about', 'services', 'hours', 'links', 'gallery', 'testimonials', 'faq'] as const;
+  return tool({
+    description: "Sayfaya TAMAMEN YENİ, ayrı bir bölüm ekler (ör. 'Yaklaşım ve Deneyim', 'Misyonumuz', 'Sertifikalar'). SADECE kullanıcı mevcut sabit bölümlerden (Hakkımda/Hizmetler/Çalışma Saatleri/Bağlantılar/Galeri/Yorumlar/SSS) hiçbirine uymayan, gerçekten yeni ve ayrı bir bölüm istediğinde kullan. Kullanıcı var olan bir bölümü DÜZENLEMEK/GENİŞLETMEK isterse bu aracı KULLANMA — o bölümün kendi aracını (updateAbout, addServices, vb.) çağır; aksi halde o bölümün mevcut içeriğini SİLERSİN.",
+    inputSchema: z.object({
+      title: z.string().describe("Yeni bölümün başlığı — aynı kelime üç dilde de kullanılır (ör. 'Yaklaşım ve Deneyim')."),
+      tr: z.object({ text: z.string() }).describe('Türkçe metin'),
+      en: z.object({ text: z.string() }).describe('İngilizce metin'),
+      ru: z.object({ text: z.string() }).describe('Rusça metin'),
+      insertAfterType: z.enum(INSERT_AFTER_TYPES).optional()
+        .describe("Bu yeni bölümün hangi mevcut bölümün HEMEN ARDINDAN gelmesini istediğin (ör. kullanıcı 'Hakkımda'dan sonra' dediyse 'about'). Belirtilmezse sayfanın en sonuna eklenir."),
+    }),
+    execute: async ({ title, tr, en, ru, insertAfterType }) => {
+      const { data: existingBlocks } = await supabase
+        .from('blocks')
+        .select('type, order')
+        .eq('business_id', businessId)
+        .not('type', 'in', '(settings,contact)');
+      const sorted = (existingBlocks || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+      let order: number;
+      const lastOrder = sorted.length ? (sorted[sorted.length - 1].order ?? 0) : 0;
+      if (insertAfterType) {
+        const idx = sorted.findIndex((b) => b.type === insertAfterType);
+        if (idx === -1) {
+          order = lastOrder + 1;
+        } else {
+          const afterOrder = sorted[idx].order ?? 0;
+          const nextOrder = sorted[idx + 1]?.order;
+          order = nextOrder !== undefined ? (afterOrder + nextOrder) / 2 : afterOrder + 1;
+        }
+      } else {
+        order = lastOrder + 1;
+      }
+
+      const { error } = await supabase.from('blocks').insert({
+        business_id: businessId,
+        type: 'custom',
+        title,
+        content: {
+          tr: { text: tr.text, title },
+          en: { text: en.text, title },
+          ru: { text: ru.text, title },
+        },
+        order,
+        is_visible: true,
+      });
+      if (error) return `Error: ${error.message}`;
+      return `"${title}" adında yeni, ayrı bir bölüm eklendi.`;
+    },
+  });
+}
+
 export function updateContactTool({ supabase, businessId }: BeiweToolParams) {
   return tool({
     description: "İşletmenin iletişim yöntemlerini (WhatsApp/Telefon, Instagram, e-posta, Telegram) günceller. Bu bir blok değil, işletmenin genel ayarıdır.",
@@ -378,6 +436,7 @@ export function createBeiweTools(params: BeiweToolParams) {
     addTestimonials: addTestimonialsTool(params),
     addHours: addHoursTool(params),
     addFAQ: addFAQTool(params),
+    addSection: addSectionTool(params),
     updateContact: updateContactTool(params),
   };
 }
