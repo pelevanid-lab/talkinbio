@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Mail, MessageCircle, Phone, Link as LinkIcon, AtSign } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useLocale } from 'next-intl';
+import { renderColoredSegments, toColorMarkdown, colorLinkComponents, stripColorSyntax } from '@/utils/coloredText';
 
 type RenderCtx = {
   locale: string;
@@ -105,10 +106,10 @@ function renderAbout(block: any, ctx: RenderCtx) {
     return (
       <section key={block.id} className="pt-8 pb-4 text-center max-w-2xl mx-auto">
         <h2 className={`text-5xl sm:text-6xl leading-[1.05] mb-6 font-bold ${headingFont}`} style={{ color: 'var(--text)' }}>
-          {blockTitle}
+          {renderColoredSegments(blockTitle)}
         </h2>
         <div className="markdown-body opacity-80 text-lg leading-relaxed">
-          <ReactMarkdown>{aboutText}</ReactMarkdown>
+          <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(aboutText)}</ReactMarkdown>
         </div>
       </section>
     );
@@ -119,7 +120,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
     return (
       <section key={block.id} className="pt-4">
         <h2 className={`text-3xl mb-6 font-bold ${headingFont}`} style={{ color: 'var(--text)' }}>
-          {blockTitle}
+          {renderColoredSegments(blockTitle)}
         </h2>
         {images.length > 0 && (
           <div className={`grid ${images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-3 mb-6`}>
@@ -134,7 +135,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
           </div>
         )}
         <div className="markdown-body opacity-90 text-[15px]">
-          <ReactMarkdown>{aboutText}</ReactMarkdown>
+          <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(aboutText)}</ReactMarkdown>
         </div>
       </section>
     );
@@ -156,9 +157,9 @@ function renderAbout(block: any, ctx: RenderCtx) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
         </div>
         <div className="relative z-10 p-6 sm:p-8 w-full text-white">
-          <h2 className={`text-4xl sm:text-5xl mb-4 font-bold ${headingFont}`}>{blockTitle}</h2>
+          <h2 className={`text-4xl sm:text-5xl mb-4 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
           <div className="markdown-body opacity-90 text-[15px] sm:text-base text-white/90">
-            <ReactMarkdown>{aboutText}</ReactMarkdown>
+            <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(aboutText)}</ReactMarkdown>
           </div>
         </div>
       </section>
@@ -182,10 +183,10 @@ function renderAbout(block: any, ctx: RenderCtx) {
           </div>
           <div className="w-3/5 p-4 sm:p-6 flex flex-col justify-center">
             <h2 className={`text-xl sm:text-2xl mb-2 font-bold ${headingFont}`} style={{ color: 'var(--text)' }}>
-              {blockTitle}
+              {renderColoredSegments(blockTitle)}
             </h2>
             <div className="markdown-body opacity-90 text-sm">
-              <ReactMarkdown>{aboutText}</ReactMarkdown>
+              <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(aboutText)}</ReactMarkdown>
             </div>
           </div>
         </div>
@@ -208,11 +209,11 @@ function renderAbout(block: any, ctx: RenderCtx) {
     <>
       {pos === 'top' && MediaElement}
       <h2 className={`text-3xl mb-6 font-bold ${headingFont}`} style={{ color: 'var(--text)' }}>
-        {blockTitle}
+        {renderColoredSegments(blockTitle)}
       </h2>
       {pos === 'middle' && MediaElement}
       <div className="markdown-body opacity-90 text-[15px]">
-        <ReactMarkdown>{aboutText}</ReactMarkdown>
+        <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(aboutText)}</ReactMarkdown>
       </div>
       {pos === 'bottom' && MediaElement}
     </>,
@@ -233,10 +234,10 @@ function renderTextBlock(block: any, ctx: RenderCtx) {
   return withSectionBackground(
     <>
       <h2 className={`text-3xl mb-6 font-bold ${headingFont}`} style={{ color: 'var(--text)' }}>
-        {blockTitle}
+        {renderColoredSegments(blockTitle)}
       </h2>
       <div className="markdown-body opacity-90 text-[15px]">
-        <ReactMarkdown>{text}</ReactMarkdown>
+        <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(text)}</ReactMarkdown>
       </div>
     </>,
     block.id,
@@ -257,7 +258,7 @@ function renderServices(block: any, ctx: RenderCtx) {
   if (layoutVariant === 'numbered-list') {
     inner = (
       <>
-        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="space-y-6">
           {items.map((item, idx) => {
             const itemLoc = item[locale] || item;
@@ -268,11 +269,11 @@ function renderServices(block: any, ctx: RenderCtx) {
                 </span>
                 <div className="flex-1">
                   <div className="flex justify-between items-start gap-4">
-                    <h4 className={`font-semibold text-lg ${headingFont}`}>{itemLoc.title || item.title}</h4>
+                    <h4 className={`font-semibold text-lg ${headingFont}`}>{renderColoredSegments(itemLoc.title || item.title)}</h4>
                     {item.price && <span className="font-mono text-sm shrink-0" style={{ color: 'var(--text-muted)' }}>{item.price}</span>}
                   </div>
                   {(itemLoc.description || item.description) && (
-                    <p className="text-sm mt-1 opacity-80" style={{ color: 'var(--text-muted)' }}>{itemLoc.description || item.description}</p>
+                    <p className="text-sm mt-1 opacity-80" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(itemLoc.description || item.description)}</p>
                   )}
                 </div>
               </div>
@@ -284,7 +285,7 @@ function renderServices(block: any, ctx: RenderCtx) {
   } else if (layoutVariant === 'feature-split') {
     inner = (
       <>
-        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="flex flex-col gap-8">
           {items.map((item, idx) => {
             const itemLoc = item[locale] || item;
@@ -297,9 +298,9 @@ function renderServices(block: any, ctx: RenderCtx) {
                   </div>
                 )}
                 <div className={item.mediaUrl ? 'w-3/5' : 'w-full'}>
-                  <h4 className={`text-xl font-semibold mb-2 ${headingFont}`}>{itemLoc.title || item.title}</h4>
+                  <h4 className={`text-xl font-semibold mb-2 ${headingFont}`}>{renderColoredSegments(itemLoc.title || item.title)}</h4>
                   {(itemLoc.description || item.description) && (
-                    <p className="text-sm opacity-80 mb-3" style={{ color: 'var(--text-muted)' }}>{itemLoc.description || item.description}</p>
+                    <p className="text-sm opacity-80 mb-3" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(itemLoc.description || item.description)}</p>
                   )}
                   {item.price && (
                     <span className="font-mono px-3 py-1 rounded-full text-sm inline-block" style={{ backgroundColor: 'var(--primary)', color: '#fff' }}>
@@ -316,17 +317,17 @@ function renderServices(block: any, ctx: RenderCtx) {
   } else if (layoutVariant === 'price-table') {
     inner = (
       <>
-        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="space-y-1">
           {items.map((item, idx) => {
             const itemLoc = item[locale] || item;
             return (
               <div key={idx} className="flex items-baseline gap-3 py-3 border-b last:border-0" style={{ borderColor: 'var(--border)' }}>
-                <span className={`font-semibold ${headingFont}`}>{itemLoc.title || item.title}</span>
+                <span className={`font-semibold ${headingFont}`}>{renderColoredSegments(itemLoc.title || item.title)}</span>
                 <span className="flex-1 border-b border-dotted opacity-30 translate-y-[-4px]" style={{ borderColor: 'var(--text-muted)' }} />
                 {item.price && <span className="font-mono text-sm shrink-0">{item.price}</span>}
                 {(itemLoc.description || item.description) && (
-                  <span className="w-full basis-full text-sm mt-1 opacity-70" style={{ color: 'var(--text-muted)' }}>{itemLoc.description || item.description}</span>
+                  <span className="w-full basis-full text-sm mt-1 opacity-70" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(itemLoc.description || item.description)}</span>
                 )}
               </div>
             );
@@ -337,7 +338,7 @@ function renderServices(block: any, ctx: RenderCtx) {
   } else {
     inner = (
       <>
-        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className={layoutVariant === 'grid-cards' ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : "space-y-4"}>
           {items.map((item: any, idx: number) => {
             const itemLoc = item[locale] || item;
@@ -352,10 +353,10 @@ function renderServices(block: any, ctx: RenderCtx) {
                 )}
                 <div className={`flex-1 ${layoutVariant === 'list' ? 'w-full' : 'flex justify-between items-start gap-4'}`}>
                   <div>
-                    <h4 className={`font-semibold text-lg ${headingFont}`}>{itemLoc.title || item.title}</h4>
+                    <h4 className={`font-semibold text-lg ${headingFont}`}>{renderColoredSegments(itemLoc.title || item.title)}</h4>
                     {(itemLoc.description || item.description) && (
                       <p className="text-sm mt-2 opacity-80" style={{ color: 'var(--text-muted)' }}>
-                        {itemLoc.description || item.description}
+                        {renderColoredSegments(itemLoc.description || item.description)}
                       </p>
                     )}
                   </div>
@@ -399,7 +400,7 @@ function renderHours(block: any, ctx: RenderCtx) {
     };
     return (
       <section key={block.id}>
-        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="flex flex-wrap gap-2">
           {DAY_KEYS_BY_JS_INDEX.slice(1).concat(DAY_KEYS_BY_JS_INDEX[0]).map((day) => {
             const data = block.content?.schedule?.[day];
@@ -428,7 +429,7 @@ function renderHours(block: any, ctx: RenderCtx) {
     const todayData = block.content?.schedule?.[todayKey];
     return (
       <section key={block.id}>
-        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <details className={`border ${radiusClass} overflow-hidden`} style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
           <summary className="cursor-pointer list-none p-4 flex items-center justify-between [&::-webkit-details-marker]:hidden">
             <span className="flex items-center gap-2 text-sm font-medium">
@@ -452,7 +453,7 @@ function renderHours(block: any, ctx: RenderCtx) {
 
   return (
     <section key={block.id}>
-      <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+      <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
       <div
         className={`border p-6 ${radiusClass}`}
         style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
@@ -480,7 +481,7 @@ function renderFAQ(block: any, ctx: RenderCtx) {
   if (layoutVariant === 'numbered') {
     return (
       <section key={block.id}>
-        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="space-y-6">
           {(block.content?.items || []).map((item: any, idx: number) => (
             <div key={idx} className="flex items-start gap-4 pb-6 border-b last:border-0 last:pb-0" style={{ borderColor: 'var(--border)' }}>
@@ -488,8 +489,8 @@ function renderFAQ(block: any, ctx: RenderCtx) {
                 {String(idx + 1).padStart(2, '0')}
               </span>
               <div>
-                <h4 className="font-semibold text-base mb-1">{item.question}</h4>
-                <p className="text-sm opacity-80" style={{ color: 'var(--text-muted)' }}>{item.answer}</p>
+                <h4 className="font-semibold text-base mb-1">{renderColoredSegments(item.question)}</h4>
+                <p className="text-sm opacity-80" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(item.answer)}</p>
               </div>
             </div>
           ))}
@@ -501,15 +502,15 @@ function renderFAQ(block: any, ctx: RenderCtx) {
   if (layoutVariant === 'accordion') {
     return (
       <section key={block.id}>
-        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="space-y-2">
           {(block.content?.items || []).map((item: any, idx: number) => (
             <details key={idx} className={`border ${radiusClass} overflow-hidden`} style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
               <summary className="cursor-pointer list-none p-4 font-medium text-sm flex justify-between items-center gap-3 [&::-webkit-details-marker]:hidden">
-                <span>{item.question}</span>
+                <span>{renderColoredSegments(item.question)}</span>
                 <span className="opacity-40 shrink-0" style={{ color: 'var(--primary)' }}>+</span>
               </summary>
-              <div className="px-4 pb-4 text-sm opacity-80" style={{ color: 'var(--text-muted)' }}>{item.answer}</div>
+              <div className="px-4 pb-4 text-sm opacity-80" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(item.answer)}</div>
             </details>
           ))}
         </div>
@@ -519,16 +520,16 @@ function renderFAQ(block: any, ctx: RenderCtx) {
 
   return (
     <section key={block.id}>
-      <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+      <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
       <div className="flex flex-wrap gap-2">
         {(block.content?.items || []).map((item: any, idx: number) => (
           <button
             key={idx}
-            onClick={() => window.dispatchEvent(new CustomEvent('sendToChat', { detail: item.question }))}
+            onClick={() => window.dispatchEvent(new CustomEvent('sendToChat', { detail: stripColorSyntax(item.question) }))}
             className={`text-left px-4 py-2 border transition-all hover:scale-105 ${radiusClass}`}
             style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--primary)' }}
           >
-            <span className="font-medium text-sm">{item.question}</span>
+            <span className="font-medium text-sm">{renderColoredSegments(item.question)}</span>
           </button>
         ))}
       </div>
@@ -544,7 +545,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
   if (layoutVariant === 'fullbleed-carousel') {
     return (
       <section key={block.id} className="pt-4">
-        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="flex overflow-x-auto snap-x gap-0 hide-scrollbar -mx-4" style={{ scrollbarWidth: 'none' }}>
           {(block.content?.items || []).map((item: any, idx: number) => {
             const caption = item.caption?.[locale] || item.caption;
@@ -557,7 +558,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
                 )}
                 {caption && (
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                    <p className="text-white text-xs font-medium">{caption}</p>
+                    <p className="text-white text-xs font-medium">{renderColoredSegments(caption)}</p>
                   </div>
                 )}
               </div>
@@ -571,7 +572,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
   if (layoutVariant === 'stacked-fullwidth') {
     return (
       <section key={block.id} className="pt-4">
-        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="flex flex-col gap-4">
           {(block.content?.items || []).map((item: any, idx: number) => {
             const caption = item.caption?.[locale] || item.caption;
@@ -584,7 +585,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
                 )}
                 {caption && (
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                    <p className="text-white text-sm font-medium">{caption}</p>
+                    <p className="text-white text-sm font-medium">{renderColoredSegments(caption)}</p>
                   </div>
                 )}
               </div>
@@ -598,7 +599,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
   if (layoutVariant === 'masonry') {
     return (
       <section key={block.id} className="pt-4">
-        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="columns-2 gap-3 space-y-3">
           {(block.content?.items || []).map((item: any, idx: number) => {
             const caption = item.caption?.[locale] || item.caption;
@@ -611,7 +612,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
                 )}
                 {caption && (
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <p className="text-white text-xs font-medium">{caption}</p>
+                    <p className="text-white text-xs font-medium">{renderColoredSegments(caption)}</p>
                   </div>
                 )}
               </div>
@@ -624,7 +625,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
 
   return (
     <section key={block.id} className="pt-4">
-      <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+      <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
       <div className="grid grid-cols-2 gap-2 md:gap-4">
         {(block.content?.items || []).map((item: any, idx: number) => {
           const caption = item.caption?.[locale] || item.caption;
@@ -637,7 +638,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
               )}
               {caption && (
                 <div className="absolute inset-x-0 bottom-0 bg-black/60 p-2 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                  <p className="text-white text-xs text-center">{caption}</p>
+                  <p className="text-white text-xs text-center">{renderColoredSegments(caption)}</p>
                 </div>
               )}
             </div>
@@ -659,7 +660,7 @@ function renderTestimonials(block: any, ctx: RenderCtx) {
   if (layoutVariant === 'big-quote') {
     inner = (
       <>
-        <h2 className={`text-2xl mb-8 font-bold text-center ${headingFont}`}>{blockTitle}</h2>
+        <h2 className={`text-2xl mb-8 font-bold text-center ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="flex flex-col gap-12">
           {items.map((item, idx) => {
             const quote = item.quote?.[locale] || item.quote;
@@ -667,9 +668,9 @@ function renderTestimonials(block: any, ctx: RenderCtx) {
             return (
               <div key={idx} className="text-center max-w-lg mx-auto">
                 <div className="text-5xl mb-3 opacity-30 font-serif leading-none" style={{ color: 'var(--primary)' }}>"</div>
-                <p className={`text-2xl leading-snug italic mb-4 ${headingFont}`}>{quote}</p>
+                <p className={`text-2xl leading-snug italic mb-4 ${headingFont}`}>{renderColoredSegments(quote)}</p>
                 <div className="font-semibold text-sm">{item.author}</div>
-                {role && <div className="text-xs opacity-70 mt-1" style={{ color: 'var(--text-muted)' }}>{role}</div>}
+                {role && <div className="text-xs opacity-70 mt-1" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(role)}</div>}
               </div>
             );
           })}
@@ -679,16 +680,16 @@ function renderTestimonials(block: any, ctx: RenderCtx) {
   } else if (layoutVariant === 'grid-quotes') {
     inner = (
       <>
-        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {items.map((item, idx) => {
             const quote = item.quote?.[locale] || item.quote;
             const role = item.role?.[locale] || item.role;
             return (
               <div key={idx} className={`p-4 border ${radiusClass}`} style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-                <p className="text-sm italic mb-3 opacity-90 leading-relaxed">{quote}</p>
+                <p className="text-sm italic mb-3 opacity-90 leading-relaxed">{renderColoredSegments(quote)}</p>
                 <div className="font-semibold text-xs">{item.author}</div>
-                {role && <div className="text-[11px] opacity-70 mt-0.5" style={{ color: 'var(--text-muted)' }}>{role}</div>}
+                {role && <div className="text-[11px] opacity-70 mt-0.5" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(role)}</div>}
               </div>
             );
           })}
@@ -698,7 +699,7 @@ function renderTestimonials(block: any, ctx: RenderCtx) {
   } else {
     inner = (
       <>
-        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="flex overflow-x-auto gap-4 pb-4 snap-x hide-scrollbar" style={{ scrollbarWidth: 'none' }}>
           {items.map((item: any, idx: number) => {
             const quote = item.quote?.[locale] || item.quote;
@@ -710,9 +711,9 @@ function renderTestimonials(block: any, ctx: RenderCtx) {
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
               >
                 <div className="text-[var(--primary)] text-3xl mb-2 opacity-50 leading-none font-serif">"</div>
-                <p className="text-[15px] italic mb-4 opacity-90 leading-relaxed">{quote}</p>
+                <p className="text-[15px] italic mb-4 opacity-90 leading-relaxed">{renderColoredSegments(quote)}</p>
                 <div className="font-bold text-sm">{item.author}</div>
-                {role && <div className="text-xs mt-1 opacity-70" style={{ color: 'var(--text-muted)' }}>{role}</div>}
+                {role && <div className="text-xs mt-1 opacity-70" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(role)}</div>}
               </div>
             );
           })}
@@ -745,7 +746,7 @@ function renderLinks(block: any, ctx: RenderCtx) {
   if (layoutVariant === 'two-col-grid') {
     return (
       <section key={block.id}>
-        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="grid grid-cols-2 gap-3">
           {items.map((item: any, idx: number) => (
             <a
@@ -756,7 +757,7 @@ function renderLinks(block: any, ctx: RenderCtx) {
               className={`p-4 text-center font-semibold border shadow-sm transition hover:scale-[1.02] ${radiusClass}`}
               style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--primary)' }}
             >
-              {item.label}
+              {renderColoredSegments(item.label)}
             </a>
           ))}
         </div>
@@ -767,7 +768,7 @@ function renderLinks(block: any, ctx: RenderCtx) {
   if (layoutVariant === 'icon-row') {
     return (
       <section key={block.id}>
-        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+        <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="flex flex-wrap gap-3 justify-center">
           {items.map((item: any, idx: number) => {
             const Icon = iconForLinkUrl(item.url);
@@ -792,7 +793,7 @@ function renderLinks(block: any, ctx: RenderCtx) {
 
   return (
     <section key={block.id}>
-      <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{blockTitle}</h2>
+      <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
       <div className="flex flex-col gap-3">
         {items.map((item: any, idx: number) => (
           <a
@@ -803,7 +804,7 @@ function renderLinks(block: any, ctx: RenderCtx) {
             className={`w-full p-4 text-center font-semibold border shadow-sm transition hover:scale-[1.02] ${radiusClass}`}
             style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--primary)' }}
           >
-            {item.label}
+            {renderColoredSegments(item.label)}
           </a>
         ))}
       </div>
@@ -1012,7 +1013,7 @@ export default function ArchetypeRenderer({
                   className="w-full p-4 rounded-2xl text-lg font-semibold border shadow-sm transition hover:scale-[1.02]"
                   style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
                 >
-                  {blockTitle}
+                  {renderColoredSegments(blockTitle)}
                 </button>
               );
             })}
