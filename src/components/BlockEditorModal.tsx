@@ -70,7 +70,20 @@ export default function BlockEditorModal({
   }, [block]);
 
   const handleSave = () => {
-    onSave({ title, content });
+    // blockTitleOf() (ArchetypeRenderer) reads content[locale].title first, falling back to the
+    // top-level `title` only when that's unset — Beiwe's tools always populate content[locale].title,
+    // so without this mirroring a manually-typed title here would silently have no visible effect
+    // on any block Beiwe has touched. Same literal string in all 3 languages, matching this field's
+    // single-input (non-per-locale) design.
+    const titledContent = title
+      ? {
+          ...content,
+          tr: { ...content.tr, title },
+          en: { ...content.en, title },
+          ru: { ...content.ru, title },
+        }
+      : content;
+    onSave({ title, content: titledContent });
   };
 
   const LangTabs = () => (

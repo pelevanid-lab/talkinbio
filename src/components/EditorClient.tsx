@@ -65,6 +65,8 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatInputBarRef = useRef<HTMLDivElement>(null);
+  const [chatInputBarHeight, setChatInputBarHeight] = useState(96);
 
   const t = useTranslations('Editor');
   const locale = useLocale();
@@ -233,6 +235,19 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // The floating input bar's height grows with the textarea (multi-line messages) — the message
+  // list's bottom padding needs to track it, otherwise a tall input overlaps the last message(s).
+  useEffect(() => {
+    const el = chatInputBarRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const height = entries[0]?.contentRect.height;
+      if (height) setChatInputBarHeight(height);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [viewMode]);
 
   // Polling to refresh blocks if they change via AI tool calls
   useEffect(() => {
@@ -690,7 +705,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
           )}
           {viewMode === 'chat' ? (
             <div className="flex flex-col h-full relative">
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ paddingBottom: chatInputBarHeight + 16 }}>
                 {/* Sayfa Durumu Kartı — sadece chat boşsa gösterilir */}
                 {messages.length === 0 && !isChatLoading && (() => {
                   const trackedBlocks = [
@@ -770,7 +785,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 <div ref={chatEndRef} />
               </div>
 
-              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent">
+              <div ref={chatInputBarRef} className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent">
                 <form onSubmit={handleChatFormSubmit} className="flex items-end gap-2">
                   <button 
                     type="button" 
@@ -1150,8 +1165,9 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
 
           {/* Top 70% Content Area */}
           <div className="flex-1 flex flex-col relative overflow-hidden bg-slate-50">
-            {/* Compact Header */}
-            <div className="w-full pt-12 pb-4 px-4 flex justify-between items-center z-10 relative">
+            {/* Compact Header — stays fixed above the scrollable blocks below, so the back button
+                (when a block is open) remains reachable instead of scrolling away with the content. */}
+            <div className="w-full pt-12 pb-4 px-4 flex justify-between items-center z-10 relative shrink-0">
               <div className="flex items-center gap-1 min-w-0 max-w-[70%]">
                 {previewActiveBlockId && (
                   <button
@@ -1168,7 +1184,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
             </div>
 
             {/* Blocks (Archetype Preview) */}
-            <div className="w-full">
+            <div className="w-full flex-1 overflow-y-auto">
               <ArchetypeRenderer
                 blocks={blocks}
                 theme={theme}
