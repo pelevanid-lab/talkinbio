@@ -530,22 +530,12 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       {/* Left Sidebar */}
       <div className="w-full md:w-[450px] bg-white border-r border-slate-200 flex flex-col h-full z-10 shrink-0">
         <div className="p-4 md:p-6 border-b border-slate-200 bg-white">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-wrap justify-between items-center gap-y-2 mb-3">
             <div className="flex items-center gap-4">
               <h1 className="text-xl font-bold font-bricolage text-[var(--ink)]">{t('panelTitle')}</h1>
               <LanguageSwitcher />
             </div>
-            <div className="flex items-center gap-2">
-              <a
-                href="/pricing"
-                className="p-2 bg-slate-100 text-[var(--ink)] hover:bg-slate-200 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-colors"
-                title="Kredi bakiyeniz — plan ve paketler için tıklayın"
-              >
-                <Coins className="w-5 h-5" />
-                <span className="hidden md:inline">
-                  {(business.credit_balance ?? 0) >= 1_000_000_000 ? 'Sınırsız' : `${(business.credit_balance ?? 0).toLocaleString('tr-TR')} kredi`}
-                </span>
-              </a>
+            <div className="flex items-center gap-1.5">
               <a
                 href="/dashboard/leads"
                 className="p-2 bg-slate-100 text-[var(--ink)] hover:bg-slate-200 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-colors"
@@ -563,7 +553,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 <span className="hidden md:inline">İçerik</span>
               </a>
               <div className="relative">
-                <button 
+                <button
                   onClick={() => setShowSuggestions(!showSuggestions)}
                   className="p-2 bg-yellow-50 text-yellow-600 hover:bg-yellow-100 rounded-lg font-medium text-sm flex items-center relative transition-colors"
                   title="Beiwe'den İpuçları"
@@ -627,6 +617,17 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
               </button>
             </div>
           </div>
+
+          <a
+            href="/pricing"
+            className="flex items-center justify-between gap-2 px-3 py-2 mb-4 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-[var(--ink)] transition-colors"
+            title="Kredi bakiyeniz — plan ve paketler için tıklayın"
+          >
+            <span className="flex items-center gap-1.5">
+              <Coins className="w-4 h-4" /> Kredi Bakiyesi
+            </span>
+            <span className="font-semibold">{(business.credit_balance ?? 0).toLocaleString('tr-TR')}</span>
+          </a>
 
           {/* Mode Switcher — along with the panel title/language switcher above, this is the only
               thing always visible across all tabs; profile link, page title, contact, and publish

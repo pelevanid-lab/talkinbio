@@ -2,10 +2,10 @@ import { Coins } from 'lucide-react';
 
 // Faz 4.3 ROADMAP taahhüdü: "kredi tüketimi dashboard'da şeffaf gösterilir" —
 // bu bileşen sahibin panelinde bakiyeyi görünür kılar, /pricing'e yükseltme
-// çağrısı yapar. İstisna hesaplar (1 milyar kredi) "Sınırsız" olarak gösterilir.
+// çağrısı yapar. İstisna hesaplar (1 milyar kredi) de dahil gerçek sayı
+// gösterilir (2026-07-19, Enes notu) — düşümün gerçekten çalıştığını test
+// edebilmek için "Sınırsız" yerine görünür bir sayı gerekiyor.
 export default function CreditBadge({ balance }: { balance: number }) {
-  const isUnlimited = balance >= 1_000_000_000;
-
   return (
     <a
       href="/pricing"
@@ -13,7 +13,7 @@ export default function CreditBadge({ balance }: { balance: number }) {
       title="Kredi bakiyeniz — plan ve paketler için tıklayın"
     >
       <Coins className="w-4 h-4" />
-      {isUnlimited ? 'Sınırsız' : `${balance.toLocaleString('tr-TR')} kredi`}
+      {balance.toLocaleString('tr-TR')} kredi
     </a>
   );
 }

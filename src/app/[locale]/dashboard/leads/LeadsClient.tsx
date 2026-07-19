@@ -88,7 +88,7 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
             <h1 className="text-xl font-[800] tracking-[-0.02em] text-[#14231F]">Talepler & Asistan</h1>
             <p className="text-sm text-[#4B5A55] font-['Inter']">{business.name}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="flex bg-[#F4F2ED] p-1 rounded-full border border-[rgba(20,35,31,0.10)]">
               <button
                 onClick={() => setActiveTab('leads')}
