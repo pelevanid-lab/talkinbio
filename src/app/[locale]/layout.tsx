@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   const t = await getMessages({ locale });
   // @ts-ignore - next-intl server typing
-  const meta = t.Metadata || { title: "Talkinbio", description: "Transform your Instagram bio into a conversational agent." };
+  const meta = t.Metadata || { title: "Talkinbio", description: "Transform your bio into a conversational agent." };
 
   return {
     title: meta.title,
