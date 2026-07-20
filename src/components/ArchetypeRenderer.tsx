@@ -6,7 +6,7 @@ import { Mail, MessageCircle, Phone, Link as LinkIcon, AtSign } from 'lucide-rea
 import ReactMarkdown from 'react-markdown';
 import { useLocale } from 'next-intl';
 import { renderColoredSegments, toColorMarkdown, colorLinkComponents, stripColorSyntax, styleUrlTransform } from '@/utils/coloredText';
-import { defaultTitleFor } from '@/config/localeTitles';
+import { defaultTitleFor, getHoursLabels, type DayKey } from '@/config/localeTitles';
 
 type RenderCtx = {
   locale: string;
@@ -376,22 +376,15 @@ function renderServices(block: any, ctx: RenderCtx) {
   return withSectionBackground(inner, block.id, ctx, block.content?.backgroundImage, block.content?.backgroundOverlay);
 }
 
-const DAY_LABELS_TR: Record<string, string> = {
-  monday: 'Pazartesi', tuesday: 'Salı', wednesday: 'Çarşamba', thursday: 'Perşembe',
-  friday: 'Cuma', saturday: 'Cumartesi', sunday: 'Pazar',
-};
-const DAY_KEYS_BY_JS_INDEX = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+const DAY_KEYS_BY_JS_INDEX: DayKey[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 function renderHours(block: any, ctx: RenderCtx) {
   const { locale, radiusClass, headingFont } = ctx;
   const blockTitle = blockTitleOf(block, locale);
   const layoutVariant = block.content?.layoutVariant || 'table';
+  const labels = getHoursLabels(locale);
 
   if (layoutVariant === 'pill-row') {
-    const DAY_ABBR_TR: Record<string, string> = {
-      monday: 'Pzt', tuesday: 'Sal', wednesday: 'Çar', thursday: 'Per',
-      friday: 'Cum', saturday: 'Cts', sunday: 'Paz',
-    };
     return (
       <section key={block.id}>
         <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
@@ -401,7 +394,7 @@ function renderHours(block: any, ctx: RenderCtx) {
             return (
               <span
                 key={day}
-                title={data?.isOpen ? `${data.openTime} - ${data.closeTime}` : 'Kapalı'}
+                title={data?.isOpen ? `${data.openTime} - ${data.closeTime}` : labels.closed}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border ${data?.isOpen ? '' : 'opacity-50'}`}
                 style={{
                   backgroundColor: data?.isOpen ? 'var(--primary)' : 'var(--surface)',
@@ -409,7 +402,7 @@ function renderHours(block: any, ctx: RenderCtx) {
                   borderColor: 'var(--border)',
                 }}
               >
-                {DAY_ABBR_TR[day] || day}
+                {labels.dayAbbr[day] || day}
               </span>
             );
           })}
@@ -428,15 +421,15 @@ function renderHours(block: any, ctx: RenderCtx) {
           <summary className="cursor-pointer list-none p-4 flex items-center justify-between [&::-webkit-details-marker]:hidden">
             <span className="flex items-center gap-2 text-sm font-medium">
               <span className={`w-2 h-2 rounded-full ${todayData?.isOpen ? 'bg-green-500' : 'bg-red-500'}`} />
-              {todayData?.isOpen ? `Bugün Açık · ${todayData.openTime} - ${todayData.closeTime}` : 'Bugün Kapalı'}
+              {todayData?.isOpen ? `${labels.todayOpen} · ${todayData.openTime} - ${todayData.closeTime}` : labels.todayClosed}
             </span>
-            <span className="text-xs opacity-60">Tüm saatler</span>
+            <span className="text-xs opacity-60">{labels.allHours}</span>
           </summary>
           <div className="px-4 pb-4 pt-3 border-t space-y-2 font-mono text-xs" style={{ borderColor: 'var(--border)' }}>
             {Object.entries(block.content?.schedule || {}).map(([day, data]: [string, any]) => (
               <div key={day} className="flex justify-between">
-                <span className="opacity-70">{DAY_LABELS_TR[day] || day}</span>
-                <span>{data.isOpen ? `${data.openTime} - ${data.closeTime}` : 'Kapalı'}</span>
+                <span className="opacity-70">{labels.days[day as DayKey] || day}</span>
+                <span>{data.isOpen ? `${data.openTime} - ${data.closeTime}` : labels.closed}</span>
               </div>
             ))}
           </div>
@@ -455,9 +448,9 @@ function renderHours(block: any, ctx: RenderCtx) {
         <div className="space-y-3 font-mono text-sm">
           {Object.entries(block.content?.schedule || {}).map(([day, data]: [string, any]) => (
             <div key={day} className="flex justify-between border-b pb-3 last:border-0 last:pb-0" style={{ borderColor: 'var(--border)' }}>
-              <span className="capitalize" style={{ color: 'var(--text-muted)' }}>{DAY_LABELS_TR[day] || day}</span>
+              <span className="capitalize" style={{ color: 'var(--text-muted)' }}>{labels.days[day as DayKey] || day}</span>
               <span className={data.isOpen ? 'font-medium' : 'opacity-60'}>
-                {data.isOpen ? `${data.openTime} - ${data.closeTime}` : 'Kapalı'}
+                {data.isOpen ? `${data.openTime} - ${data.closeTime}` : labels.closed}
               </span>
             </div>
           ))}
