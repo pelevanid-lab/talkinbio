@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Mail, MessageCircle, Phone, Link as LinkIcon, AtSign } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useLocale } from 'next-intl';
-import { renderColoredSegments, toColorMarkdown, colorLinkComponents, stripColorSyntax } from '@/utils/coloredText';
+import { renderColoredSegments, toColorMarkdown, colorLinkComponents, stripColorSyntax, styleUrlTransform } from '@/utils/coloredText';
 import { defaultTitleFor } from '@/config/localeTitles';
 
 type RenderCtx = {
@@ -103,7 +103,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
           {renderColoredSegments(blockTitle)}
         </h2>
         <div className="markdown-body opacity-80 text-lg leading-relaxed">
-          <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(aboutText)}</ReactMarkdown>
+          <ReactMarkdown components={colorLinkComponents} urlTransform={styleUrlTransform}>{toColorMarkdown(aboutText)}</ReactMarkdown>
         </div>
       </section>
     );
@@ -129,7 +129,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
           </div>
         )}
         <div className="markdown-body opacity-90 text-[15px]">
-          <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(aboutText)}</ReactMarkdown>
+          <ReactMarkdown components={colorLinkComponents} urlTransform={styleUrlTransform}>{toColorMarkdown(aboutText)}</ReactMarkdown>
         </div>
       </section>
     );
@@ -153,7 +153,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
         <div className="relative z-10 p-6 sm:p-8 w-full text-white">
           <h2 className={`text-4xl sm:text-5xl mb-4 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
           <div className="markdown-body opacity-90 text-[15px] sm:text-base text-white/90">
-            <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(aboutText)}</ReactMarkdown>
+            <ReactMarkdown components={colorLinkComponents} urlTransform={styleUrlTransform}>{toColorMarkdown(aboutText)}</ReactMarkdown>
           </div>
         </div>
       </section>
@@ -180,7 +180,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
               {renderColoredSegments(blockTitle)}
             </h2>
             <div className="markdown-body opacity-90 text-sm">
-              <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(aboutText)}</ReactMarkdown>
+              <ReactMarkdown components={colorLinkComponents} urlTransform={styleUrlTransform}>{toColorMarkdown(aboutText)}</ReactMarkdown>
             </div>
           </div>
         </div>
@@ -207,7 +207,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
       </h2>
       {pos === 'middle' && MediaElement}
       <div className="markdown-body opacity-90 text-[15px]">
-        <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(aboutText)}</ReactMarkdown>
+        <ReactMarkdown components={colorLinkComponents} urlTransform={styleUrlTransform}>{toColorMarkdown(aboutText)}</ReactMarkdown>
       </div>
       {pos === 'bottom' && MediaElement}
     </>,
@@ -231,7 +231,7 @@ function renderTextBlock(block: any, ctx: RenderCtx) {
         {renderColoredSegments(blockTitle)}
       </h2>
       <div className="markdown-body opacity-90 text-[15px]">
-        <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(text)}</ReactMarkdown>
+        <ReactMarkdown components={colorLinkComponents} urlTransform={styleUrlTransform}>{toColorMarkdown(text)}</ReactMarkdown>
       </div>
     </>,
     block.id,

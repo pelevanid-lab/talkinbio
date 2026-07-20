@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { defaultUrlTransform } from 'react-markdown';
 import { Bold, Underline } from 'lucide-react';
 
 // Shared authoring syntax for inline text styling, entered via the manual editor's toolbar
@@ -80,6 +81,15 @@ export const colorLinkComponents = {
     return <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
   },
 };
+
+// react-markdown sanitizes every link/image URL through `urlTransform` before it ever reaches
+// `colorLinkComponents.a` above, and its default only allows http(s)/ircs/mailto/xmpp — our
+// `style:` pseudo-scheme gets silently blanked to `""`, which is why styled runs rendered as
+// plain (unstyled) clickable links to nowhere. Pass our own `style:` URLs through untouched and
+// defer to the default sanitizer for everything else, so real links stay protected.
+export function styleUrlTransform(url: string): string {
+  return url.startsWith('style:') ? url : defaultUrlTransform(url);
+}
 
 // Brand orange (--coral in landing.css / the logo's message-bubble color) always listed first.
 export const TEXT_COLOR_PRESETS = [
@@ -199,6 +209,8 @@ export function ColoredTextField({
   // Wraps the current selection in a span carrying `overlay` merged on top of whatever attrs the
   // selection already had (only inherited when the selection exactly matches one existing styled
   // span — a mixed/plain selection just gets `overlay` applied fresh, same as color always did).
+  // Each key in `overlay` TOGGLES: clicking the same color/bold/underline again on a selection
+  // that already has exactly that value clears it, instead of just re-applying it.
   const applyFormat = (overlay: Attrs) => {
     const root = rootRef.current;
     if (!root) return;
@@ -219,13 +231,28 @@ export function ColoredTextField({
         ? attrsOf(clone.childNodes[0] as HTMLElement)
         : {};
 
-    const span = document.createElement('span');
-    applyAttrsToSpan(span, { ...base, ...overlay });
-    span.textContent = text;
+    const toggle = <K extends keyof Attrs>(key: K, current: Attrs[K]): Attrs[K] =>
+      (base[key] || undefined) === current ? undefined : current;
+    const merged: Attrs = {
+      color: 'color' in overlay ? toggle('color', overlay.color) : base.color,
+      bold: 'bold' in overlay ? toggle('bold', overlay.bold) : base.bold,
+      underline: 'underline' in overlay ? toggle('underline', overlay.underline) : base.underline,
+    };
+
     range.deleteContents();
-    range.insertNode(span);
-    range.setStartAfter(span);
-    range.setEndAfter(span);
+    if (merged.color || merged.bold || merged.underline) {
+      const span = document.createElement('span');
+      applyAttrsToSpan(span, merged);
+      span.textContent = text;
+      range.insertNode(span);
+      range.setStartAfter(span);
+      range.setEndAfter(span);
+    } else {
+      const textNode = document.createTextNode(text);
+      range.insertNode(textNode);
+      range.setStartAfter(textNode);
+      range.setEndAfter(textNode);
+    }
     sel.removeAllRanges();
     sel.addRange(range);
     emitChange();
