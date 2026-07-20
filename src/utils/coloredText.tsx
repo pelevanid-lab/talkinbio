@@ -1,23 +1,49 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { Bold, Underline } from 'lucide-react';
 
-// Shared authoring syntax for inline text color, entered via the manual editor's color picker
-// (ColoredTextField below) or typed by hand: `[[metin|#RRGGBB]]`. Two render paths consume it —
-// plain headings/titles (renderColoredSegments, no markdown) and full markdown bodies
-// (toColorMarkdown + colorLinkComponents, piggybacking on ReactMarkdown's own link syntax so
-// bold/italic/lists inside the same text still work).
-const COLOR_SYNTAX = /\[\[([^\]]+?)\|(#[0-9a-fA-F]{6})\]\]/g;
+// Shared authoring syntax for inline text styling, entered via the manual editor's toolbar
+// (ColoredTextField below) or typed by hand: `[[metin|attrs]]`, where attrs is a `;`-separated
+// mix of an optional `#RRGGBB` color plus `b` (bold) / `u` (underline) flags, e.g. `#FF6A5C`,
+// `b`, `u`, `#FF6A5C;b;u`. Two render paths consume it — plain headings/titles
+// (renderColoredSegments, no markdown) and full markdown bodies (toColorMarkdown +
+// colorLinkComponents, piggybacking on ReactMarkdown's own link syntax so bold/italic/lists
+// inside the same text still work).
+const COLOR_SYNTAX = /\[\[([^\]]+?)\|((?:#[0-9a-fA-F]{6}|b|u)(?:;(?:#[0-9a-fA-F]{6}|b|u))*)\]\]/g;
 
-export function parseColorSegments(text: string): Array<{ text: string; color?: string }> {
+type Attrs = { color?: string; bold?: boolean; underline?: boolean };
+
+function parseAttrs(attrs: string): Attrs {
+  const tokens = attrs.split(';').filter(Boolean);
+  return {
+    color: tokens.find((t) => t.startsWith('#')),
+    bold: tokens.includes('b'),
+    underline: tokens.includes('u'),
+  };
+}
+
+function serializeAttrs(attrs: Attrs): string {
+  return [attrs.color, attrs.bold && 'b', attrs.underline && 'u'].filter(Boolean).join(';');
+}
+
+function styleFor(attrs: Attrs): React.CSSProperties {
+  return {
+    color: attrs.color,
+    fontWeight: attrs.bold ? 700 : undefined,
+    textDecoration: attrs.underline ? 'underline' : undefined,
+  };
+}
+
+export function parseColorSegments(text: string): Array<{ text: string } & Attrs> {
   if (!text) return [];
-  const segments: Array<{ text: string; color?: string }> = [];
+  const segments: Array<{ text: string } & Attrs> = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   const re = new RegExp(COLOR_SYNTAX);
   while ((match = re.exec(text)) !== null) {
     if (match.index > lastIndex) segments.push({ text: text.slice(lastIndex, match.index) });
-    segments.push({ text: match[1], color: match[2] });
+    segments.push({ text: match[1], ...parseAttrs(match[2]) });
     lastIndex = match.index + match[0].length;
   }
   if (lastIndex < text.length) segments.push({ text: text.slice(lastIndex) });
@@ -28,13 +54,15 @@ export function renderColoredSegments(text: string): React.ReactNode {
   if (!text || !text.includes('[[')) return text;
   const segments = parseColorSegments(text);
   return segments.map((seg, i) =>
-    seg.color ? <span key={i} style={{ color: seg.color }}>{seg.text}</span> : <React.Fragment key={i}>{seg.text}</React.Fragment>
+    seg.color || seg.bold || seg.underline
+      ? <span key={i} style={styleFor(seg)}>{seg.text}</span>
+      : <React.Fragment key={i}>{seg.text}</React.Fragment>
   );
 }
 
 export function toColorMarkdown(text: string): string {
   if (!text) return text;
-  return text.replace(COLOR_SYNTAX, (_m, label, hex) => `[${label}](color:${hex})`);
+  return text.replace(COLOR_SYNTAX, (_m, label, attrs) => `[${label}](style:${attrs})`);
 }
 
 // Plain text with the color markup removed — for places that need the raw string, not a rendered
@@ -46,8 +74,8 @@ export function stripColorSyntax(text: string): string {
 
 export const colorLinkComponents = {
   a: ({ href, children }: { href?: string; children?: React.ReactNode }) => {
-    if (typeof href === 'string' && href.startsWith('color:')) {
-      return <span style={{ color: href.slice('color:'.length) }}>{children}</span>;
+    if (typeof href === 'string' && href.startsWith('style:')) {
+      return <span style={styleFor(parseAttrs(href.slice('style:'.length)))}>{children}</span>;
     }
     return <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
   },
@@ -61,15 +89,29 @@ export const TEXT_COLOR_PRESETS = [
   { label: 'Beyaz', hex: '#FFFFFF' },
 ] as const;
 
-// --- DOM <-> `[[text|#hex]]` syntax bridge for ColoredTextField -----------------------------
+// --- DOM <-> `[[text|attrs]]` syntax bridge for ColoredTextField ---------------------------
+
+function attrsOf(el: HTMLElement): Attrs {
+  return {
+    color: el.getAttribute('data-color') || undefined,
+    bold: el.getAttribute('data-bold') === 'true',
+    underline: el.getAttribute('data-underline') === 'true',
+  };
+}
+
+function applyAttrsToSpan(span: HTMLElement, attrs: Attrs) {
+  if (attrs.color) span.setAttribute('data-color', attrs.color);
+  if (attrs.bold) span.setAttribute('data-bold', 'true');
+  if (attrs.underline) span.setAttribute('data-underline', 'true');
+  Object.assign(span.style, styleFor(attrs));
+}
 
 function buildDom(root: HTMLElement, text: string) {
   root.innerHTML = '';
   for (const seg of parseColorSegments(text)) {
-    if (seg.color) {
+    if (seg.color || seg.bold || seg.underline) {
       const span = document.createElement('span');
-      span.setAttribute('data-color', seg.color);
-      span.style.color = seg.color;
+      applyAttrsToSpan(span, seg);
       span.textContent = seg.text;
       root.appendChild(span);
     } else {
@@ -78,8 +120,8 @@ function buildDom(root: HTMLElement, text: string) {
   }
 }
 
-// Recursively flattens one inline node (text node, colored span, or a stray formatting element
-// the browser inserted) back into the `[[text|#hex]]` syntax.
+// Recursively flattens one inline node (text node, styled span, or a stray formatting element
+// the browser inserted) back into the `[[text|attrs]]` syntax.
 function serializeInline(node: ChildNode, parts: string[]) {
   if (node.nodeType === Node.TEXT_NODE) {
     parts.push(node.nodeValue || '');
@@ -91,9 +133,9 @@ function serializeInline(node: ChildNode, parts: string[]) {
     parts.push('\n');
     return;
   }
-  const color = el.getAttribute('data-color');
-  if (color) {
-    parts.push(`[[${el.textContent || ''}|${color}]]`);
+  const attrs = attrsOf(el);
+  if (attrs.color || attrs.bold || attrs.underline) {
+    parts.push(`[[${el.textContent || ''}|${serializeAttrs(attrs)}]]`);
     return;
   }
   el.childNodes.forEach((child) => serializeInline(child, parts));
@@ -120,9 +162,9 @@ function serializeDom(root: HTMLElement): string {
 }
 
 // Drop-in replacement for a plain <input>/<textarea> that lets the user select a run of text and
-// click a swatch to color it — same as before, except the field now shows the actual colored text
-// instead of the raw `[[text|#hex]]` syntax. The stored/emitted value is still that syntax, so
-// nothing downstream (ArchetypeRenderer, saved content) needs to change.
+// click color/bold/underline to style it — the field shows the actual styled text instead of the
+// raw `[[text|attrs]]` syntax. The stored/emitted value still uses that syntax, so nothing
+// downstream (ArchetypeRenderer, saved content) needs to change.
 export function ColoredTextField({
   value,
   onChange,
@@ -154,7 +196,10 @@ export function ColoredTextField({
     onChange(next);
   };
 
-  const applyColor = (hex: string) => {
+  // Wraps the current selection in a span carrying `overlay` merged on top of whatever attrs the
+  // selection already had (only inherited when the selection exactly matches one existing styled
+  // span — a mixed/plain selection just gets `overlay` applied fresh, same as color always did).
+  const applyFormat = (overlay: Attrs) => {
     const root = rootRef.current;
     if (!root) return;
     const sel = window.getSelection();
@@ -163,9 +208,19 @@ export function ColoredTextField({
     if (!root.contains(range.commonAncestorContainer)) return;
     const text = range.toString();
     if (!text) return;
+
+    // Inherit existing attrs when the selection is exactly one styled span (whole or partial —
+    // cloneContents normalizes container-level selections like Ctrl+A the same as a text-node
+    // drag-select, so both resolve to a single cloned element here). A mixed/plain selection
+    // clones to more than one top-level node and falls back to a fresh, unstyled base.
+    const clone = range.cloneContents();
+    const base: Attrs =
+      clone.childNodes.length === 1 && clone.childNodes[0].nodeType === Node.ELEMENT_NODE && (clone.childNodes[0] as HTMLElement).textContent === text
+        ? attrsOf(clone.childNodes[0] as HTMLElement)
+        : {};
+
     const span = document.createElement('span');
-    span.setAttribute('data-color', hex);
-    span.style.color = hex;
+    applyAttrsToSpan(span, { ...base, ...overlay });
     span.textContent = text;
     range.deleteContents();
     range.insertNode(span);
@@ -177,6 +232,8 @@ export function ColoredTextField({
   };
 
   const swatchSize = compact ? 'w-4 h-4' : 'w-6 h-6';
+  const formatBtnSize = compact ? 'w-4 h-4' : 'w-6 h-6';
+  const formatIconSize = compact ? 10 : 14;
 
   return (
     <div>
@@ -188,13 +245,31 @@ export function ColoredTextField({
             type="button"
             title={c.label}
             onMouseDown={(e) => e.preventDefault()}
-            onClick={() => applyColor(c.hex)}
+            onClick={() => applyFormat({ color: c.hex })}
             className={`rounded-full border border-slate-300 shadow-sm shrink-0 ${swatchSize}`}
             style={{ backgroundColor: c.hex }}
           />
         ))}
-        <CustomColorButton compact={compact} onApply={applyColor} />
-        {!compact && <span className="text-[10px] text-slate-400">— metni seçip bir renge tıkla</span>}
+        <CustomColorButton compact={compact} onApply={(hex) => applyFormat({ color: hex })} />
+        <button
+          type="button"
+          title="Kalın"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => applyFormat({ bold: true })}
+          className={`flex items-center justify-center rounded border border-slate-300 shadow-sm shrink-0 text-slate-600 hover:bg-slate-50 ${formatBtnSize}`}
+        >
+          <Bold size={formatIconSize} />
+        </button>
+        <button
+          type="button"
+          title="Altı Çizili"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => applyFormat({ underline: true })}
+          className={`flex items-center justify-center rounded border border-slate-300 shadow-sm shrink-0 text-slate-600 hover:bg-slate-50 ${formatBtnSize}`}
+        >
+          <Underline size={formatIconSize} />
+        </button>
+        {!compact && <span className="text-[10px] text-slate-400">— metni seçip bir renge/biçime tıkla</span>}
       </div>
       <div
         ref={rootRef}
