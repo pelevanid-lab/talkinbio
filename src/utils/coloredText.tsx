@@ -285,7 +285,7 @@ export function ColoredTextField({
           const text = e.clipboardData.getData('text/plain');
           document.execCommand('insertText', false, multiline ? text : text.replace(/\n/g, ' '));
         }}
-        className={`whitespace-pre-wrap empty:before:content-[attr(data-placeholder)] empty:before:text-slate-400 empty:before:pointer-events-none ${className}`}
+        className={`whitespace-pre-wrap overflow-y-auto empty:before:content-[attr(data-placeholder)] empty:before:text-slate-400 empty:before:pointer-events-none ${className}`}
       />
     </div>
   );
