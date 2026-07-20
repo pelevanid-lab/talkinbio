@@ -646,14 +646,14 @@ Meta entegrasyonunun v2'ye alınmasıyla v1'in ana farklılaştırıcısı bu fa
   Hizmetler bölümüne ve ya bilgi tabanına fiyat ekleyelim mi?" → tek tıkla Beiwe sohbetine trigger mesajı
   (mevcut `useBeiweSuggestions` kart altyapısı yeniden kullanılır; rule-based öneriler
   ve AI-insight önerileri aynı panelde birleşir).
-- **Genel kural (2026-07-20):** yukarıdaki fiyat örneği, aslında genel bir kuralın tek
-  bir vakası — özel durum değil. Bir konu haftalık analizde "sık sorulan konu" olarak
-  işaretlendiğinde, Beiwe önerisi her seferinde şunu sorar: bu konunun net bir cevabı
-  talkinbio sayfasında (ilgili blokta) ya da Saule'nin bilgi tabanında (Faz 1.4) zaten
-  var mı? Yoksa, sahibe hangisine (sayfa bloğu mu, bilgi tabanı notu mu) ekleneceğini
-  seçtiren bir ekleme önerisi sunulur. Bu, Saule'nin kendisinin konuşmalardan otomatik
-  öğrenmesi değildir — sahip hâlâ elle onaylıyor/ekliyor; sadece "sık soruluyor ama
-  cevabı nerede belli değil" boşluğunu haftalık olarak yüzeye çıkarıyor.
+- **Bilinen sınırlama (2026-07-20, düzeltme):** yukarıdaki fiyat örneği bir ideal
+  senaryo gibi okunabilir ama gerçek davranış daha dar. `analyzeConversations.ts`'teki
+  analiz prompt'u yalnızca son 7 günün ziyaretçi mesajlarını görüyor; işletmenin
+  mevcut sayfa bloklarını veya bilgi tabanı notlarını **karşılaştırma için almıyor**.
+  Yani bir konu "en az 2 kez" sorulduğunda sistem her zaman ekleme önerisi çıkarıyor —
+  o konunun cevabı sayfada/bilgi tabanında zaten olsa bile. "Cevabı zaten var mı"
+  kontrolü şu an yok (bkz. aşağıda Kapsam dışı — bu, gerçek bir geliştirme gerektiriyor,
+  Faz 3.1'in tamamlanmış kapsamının bir parçası değil).
 
 ### 3.2 İçerik stüdyosu (sosyal medya üretimi)
 - Dashboard'a "İçerik" sayfası: bloklardan (hizmet, yorum, galeri) Instagram
@@ -1080,10 +1080,17 @@ kendisi" ise dil genişlemesi onun ön koşuludur. Kapsam (detaylandırılacak):
   yapılandırılmış randevu talebi (Faz 1.5) yeterli.
 - **RAG / vektör arama** — bilgi tabanı token bütçesini aşarsa gündeme gelir (pgvector hazır).
   - **Not (2026-07-20) — Saule'nin öğrenmesi:** Beiwe konuşma verisiyle özelleşiyor
-    (bkz. Faz 3.1 genel kural), ama Saule'nin kendisi konuşmalardan otomatik
-    öğrenmiyor — bilgisi sahibin elle girdiği notlarla sınırlı (Faz 1.4, `saule_knowledge`).
-    Saule'nin konuşma geçmişinden kendi kendine öğrenmesi kapsamlı bir konu ve RAG
-    altyapısıyla doğrudan ilişkili; RAG gündeme geldiğinde birlikte değerlendirilecek.
+    (bkz. Faz 3.1), ama Saule'nin kendisi konuşmalardan otomatik öğrenmiyor — bilgisi
+    sahibin elle girdiği notlarla sınırlı (Faz 1.4, `saule_knowledge`). Saule'nin
+    konuşma geçmişinden kendi kendine öğrenmesi kapsamlı bir konu ve RAG altyapısıyla
+    doğrudan ilişkili; RAG gündeme geldiğinde birlikte değerlendirilecek.
+- **Beiwe önerilerinde mevcut içerik kontrolü** (2026-07-20) — `analyzeConversations.ts`'teki
+  analiz prompt'una işletmenin güncel sayfa bloklarını ve bilgi tabanı notlarını da
+  vererek, yalnızca cevabı henüz sayfada/bilgi tabanında olmayan konuların önerilmesi
+  sağlanabilir (şu an yalnızca ziyaretçi mesajlarını görüyor, mevcut içerikle
+  karşılaştırmıyor — bkz. Faz 3.1 bilinen sınırlama notu). v1'in kod tarafı tamamlandı
+  ve şu an kod dondurma döneminde (Faz T); bu, dondurma bittikten sonra değerlendirilecek
+  bir v1.1 adayı — Faz 3.1'in kapanmış kapsamına dahil değil.
 - **Görsel içerik üretimi** (story şablonları) — İçerik stüdyosu v2.
 - **Telegram kanalı** — Bot API onay gerektirmediği için v2'nin en ucuz kanal kazanımı;
   `channel_accounts` mimarisi hazır olduğunda hızlıca eklenebilir, hatta Meta onayları
