@@ -1,6 +1,81 @@
 import { describe, it, expect } from 'vitest';
-import { resolveSectionTitles, type SectionTitles } from './tools';
+import { resolveSectionTitles, addSectionTool, type SectionTitles } from './tools';
 import { LOCALE_TITLES } from '@/config/localeTitles';
+
+type FakeBlock = { id: string; type: string; order: number };
+
+// Mimics only the chain shapes addSectionTool actually calls: select().eq().not(),
+// update().eq(), and insert().
+function fakeSupabase(existingBlocks: FakeBlock[]) {
+  const updates: { id: string; order: number }[] = [];
+  const inserted: Record<string, unknown>[] = [];
+  return {
+    client: {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            not: () => Promise.resolve({ data: existingBlocks }),
+          }),
+        }),
+        update: (patch: { order: number }) => ({
+          eq: (_col: string, id: string) => {
+            updates.push({ id, order: patch.order });
+            return Promise.resolve({ error: null });
+          },
+        }),
+        insert: (row: Record<string, unknown>) => {
+          inserted.push(row);
+          return Promise.resolve({ error: null });
+        },
+      }),
+      // Cast away the real SupabaseClient type — the tool only ever calls .from(...) on it.
+    } as unknown as import('@supabase/supabase-js').SupabaseClient,
+    updates,
+    inserted,
+  };
+}
+
+const SECTION_ARGS = {
+  title: { tr: 'Sertifikalar', en: 'Certifications', ru: 'Сертификаты' },
+  tr: { text: 'tr metin' },
+  en: { text: 'en text' },
+  ru: { text: 'ru текст' },
+};
+
+describe('addSectionTool', () => {
+  it('inserting after a block with a direct successor keeps order as a whole integer (no fractional averaging)', async () => {
+    const existingBlocks: FakeBlock[] = [
+      { id: 'about-id', type: 'about', order: 1 },
+      { id: 'services-id', type: 'services', order: 2 },
+      { id: 'links-id', type: 'links', order: 4 },
+    ];
+    const { client, updates, inserted } = fakeSupabase(existingBlocks);
+    const result = await addSectionTool({ supabase: client, businessId: 'biz-1', locale: 'tr' })
+      .execute({ ...SECTION_ARGS, insertAfterType: 'about' }, { toolCallId: 't1', messages: [] });
+
+    expect(result).not.toMatch(/^Error:/);
+    expect(inserted).toHaveLength(1);
+    expect(Number.isInteger(inserted[0].order)).toBe(true);
+    expect(inserted[0].order).toBe(2);
+    // services and links both sit at/after the insertion point and must be bumped, not fractioned.
+    expect(updates).toEqual(
+      expect.arrayContaining([
+        { id: 'services-id', order: 3 },
+        { id: 'links-id', order: 5 },
+      ]),
+    );
+  });
+
+  it('inserting after the last block appends without needing to shift anything', async () => {
+    const existingBlocks: FakeBlock[] = [{ id: 'about-id', type: 'about', order: 1 }];
+    const { client, updates, inserted } = fakeSupabase(existingBlocks);
+    await addSectionTool({ supabase: client, businessId: 'biz-1', locale: 'tr' })
+      .execute({ ...SECTION_ARGS, insertAfterType: 'about' }, { toolCallId: 't2', messages: [] });
+
+    expect(updates).toEqual([]);
+    expect(inserted[0].order).toBe(2);
+  });
+});
 
 const DEFAULTS: SectionTitles = {
   tr: LOCALE_TITLES.tr.about,

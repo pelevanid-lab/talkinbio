@@ -409,11 +409,16 @@ export function addSectionTool({ supabase, businessId, locale }: BeiweToolParams
     execute: async ({ title, tr, en, ru, insertAfterType }) => {
       const { data: existingBlocks } = await supabase
         .from('blocks')
-        .select('type, order')
+        .select('id, type, order')
         .eq('business_id', businessId)
         .not('type', 'in', '(settings,contact)');
       const sorted = (existingBlocks || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
+      // `order` is an integer column, so we can't slot a new block in by averaging two
+      // neighboring order values (e.g. (1+2)/2 = 1.5) — Postgres rejects the fractional
+      // insert every time, which used to make addSection fail whenever insertAfterType
+      // pointed at a block that already had a direct successor. Shift everything from the
+      // insertion point onward up by one instead, keeping all order values integers.
       let order: number;
       const lastOrder = sorted.length ? (sorted[sorted.length - 1].order ?? 0) : 0;
       if (insertAfterType) {
@@ -421,9 +426,13 @@ export function addSectionTool({ supabase, businessId, locale }: BeiweToolParams
         if (idx === -1) {
           order = lastOrder + 1;
         } else {
-          const afterOrder = sorted[idx].order ?? 0;
-          const nextOrder = sorted[idx + 1]?.order;
-          order = nextOrder !== undefined ? (afterOrder + nextOrder) / 2 : afterOrder + 1;
+          order = (sorted[idx].order ?? 0) + 1;
+          const toShift = sorted.filter((b) => (b.order ?? 0) >= order);
+          if (toShift.length > 0) {
+            await Promise.all(toShift.map((b) =>
+              supabase.from('blocks').update({ order: (b.order ?? 0) + 1 }).eq('id', b.id)
+            ));
+          }
         }
       } else {
         order = lastOrder + 1;
