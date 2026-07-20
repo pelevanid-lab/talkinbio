@@ -470,17 +470,21 @@ function renderFAQ(block: any, ctx: RenderCtx) {
       <section key={block.id}>
         <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="space-y-6">
-          {(block.content?.items || []).map((item: any, idx: number) => (
+          {(block.content?.items || []).map((item: any, idx: number) => {
+            const question = item.question?.[locale] || item.question;
+            const answer = item.answer?.[locale] || item.answer;
+            return (
             <div key={idx} className="flex items-start gap-4 pb-6 border-b last:border-0 last:pb-0" style={{ borderColor: 'var(--border)' }}>
               <span className={`text-4xl leading-none opacity-30 shrink-0 ${headingFont}`} style={{ color: 'var(--primary)' }}>
                 {String(idx + 1).padStart(2, '0')}
               </span>
               <div>
-                <h4 className="font-semibold text-base mb-1">{renderColoredSegments(item.question)}</h4>
-                <p className="text-sm opacity-80" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(item.answer)}</p>
+                <h4 className="font-semibold text-base mb-1">{renderColoredSegments(question)}</h4>
+                <p className="text-sm opacity-80" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(answer)}</p>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </section>
     );
@@ -491,15 +495,19 @@ function renderFAQ(block: any, ctx: RenderCtx) {
       <section key={block.id}>
         <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="space-y-2">
-          {(block.content?.items || []).map((item: any, idx: number) => (
+          {(block.content?.items || []).map((item: any, idx: number) => {
+            const question = item.question?.[locale] || item.question;
+            const answer = item.answer?.[locale] || item.answer;
+            return (
             <details key={idx} className={`border ${radiusClass} overflow-hidden`} style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
               <summary className="cursor-pointer list-none p-4 font-medium text-sm flex justify-between items-center gap-3 [&::-webkit-details-marker]:hidden">
-                <span>{renderColoredSegments(item.question)}</span>
+                <span>{renderColoredSegments(question)}</span>
                 <span className="opacity-40 shrink-0" style={{ color: 'var(--primary)' }}>+</span>
               </summary>
-              <div className="px-4 pb-4 text-sm opacity-80" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(item.answer)}</div>
+              <div className="px-4 pb-4 text-sm opacity-80" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(answer)}</div>
             </details>
-          ))}
+            );
+          })}
         </div>
       </section>
     );
@@ -509,16 +517,19 @@ function renderFAQ(block: any, ctx: RenderCtx) {
     <section key={block.id}>
       <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
       <div className="flex flex-wrap gap-2">
-        {(block.content?.items || []).map((item: any, idx: number) => (
+        {(block.content?.items || []).map((item: any, idx: number) => {
+          const question = item.question?.[locale] || item.question;
+          return (
           <button
             key={idx}
-            onClick={() => window.dispatchEvent(new CustomEvent('sendToChat', { detail: stripColorSyntax(item.question) }))}
+            onClick={() => window.dispatchEvent(new CustomEvent('sendToChat', { detail: stripColorSyntax(question) }))}
             className={`text-left px-4 py-2 border transition-all hover:scale-105 ${radiusClass}`}
             style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--primary)' }}
           >
-            <span className="font-medium text-sm">{renderColoredSegments(item.question)}</span>
+            <span className="font-medium text-sm">{renderColoredSegments(question)}</span>
           </button>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

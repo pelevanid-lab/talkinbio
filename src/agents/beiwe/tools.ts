@@ -346,15 +346,23 @@ export function addHoursTool({ supabase, businessId, locale }: BeiweToolParams) 
 
 export function addFAQTool({ supabase, businessId, locale }: BeiweToolParams) {
   return tool({
-    description: "Sıkça sorulan soruları (FAQ) ekler. Bu blok tek dillidir, kullanıcının konuştuğu dilde yaz.",
+    description: "Sıkça sorulan soruları (FAQ) ekler. Soru ve cevapları 3 dilde sağlamalısın.",
     inputSchema: z.object({
       sectionTitle: sectionTitleInput.optional().describe(SECTION_TITLE_DESC),
       resetSectionTitle: resetSectionTitleInput,
       layoutVariant: z.enum(['chips', 'accordion', 'numbered']).optional()
         .describe('Tasarım tipi. chips: Soruya tıklayınca cevabı asistana sorar (etiket görünümlü). accordion: Klasik aç/kapa liste, cevabı doğrudan sayfada gösterir (uzun SSS listeleri veya daha resmi arketipler için iyi). numbered: Büyük numaralı liste, tüm cevaplar her zaman açık/görünür (services numbered-list ile aynı dil).'),
       items: z.array(z.object({
-        question: z.string(),
-        answer: z.string(),
+        question: z.object({
+          tr: z.string(),
+          en: z.string(),
+          ru: z.string(),
+        }),
+        answer: z.object({
+          tr: z.string(),
+          en: z.string(),
+          ru: z.string(),
+        }),
       })),
     }),
     execute: async ({ items, layoutVariant, sectionTitle, resetSectionTitle }) => {

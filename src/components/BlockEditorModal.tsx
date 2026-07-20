@@ -287,9 +287,12 @@ export default function BlockEditorModal({
                 <option value="numbered">{t('faq.variantNumbered')}</option>
               </select>
             </div>
-            {(content.items || []).map((item: any, idx: number) => (
+            {(content.items || []).map((item: any, idx: number) => {
+              const questionLoc = item.question?.[activeLang] || (typeof item.question === 'string' ? item.question : '');
+              const answerLoc = item.answer?.[activeLang] || (typeof item.answer === 'string' ? item.answer : '');
+              return (
               <div key={idx} className="p-4 border border-slate-200 rounded-lg relative space-y-3 bg-slate-50">
-                <button 
+                <button
                   onClick={() => {
                     const newItems = [...content.items];
                     newItems.splice(idx, 1);
@@ -301,31 +304,32 @@ export default function BlockEditorModal({
                 </button>
                 <ColoredTextField
                   compact
-                  value={item.question || ''}
+                  value={questionLoc}
                   onChange={(v) => {
                     const newItems = [...content.items];
-                    newItems[idx].question = v;
+                    newItems[idx].question = { ...(item.question || {}), [activeLang]: v };
                     setContent({...content, items: newItems});
                   }}
-                  placeholder={t('faq.questionPlaceholder')}
+                  placeholder={t('faq.questionPlaceholder', { lang: activeLang })}
                   className="w-full p-2 border border-slate-200 rounded font-medium"
                 />
                 <ColoredTextField
                   compact
                   multiline
-                  value={item.answer || ''}
+                  value={answerLoc}
                   onChange={(v) => {
                     const newItems = [...content.items];
-                    newItems[idx].answer = v;
+                    newItems[idx].answer = { ...(item.answer || {}), [activeLang]: v };
                     setContent({...content, items: newItems});
                   }}
-                  placeholder={t('faq.answerPlaceholder')}
+                  placeholder={t('faq.answerPlaceholder', { lang: activeLang })}
                   className="w-full p-2 border border-slate-200 rounded text-sm"
                 />
               </div>
-            ))}
+              );
+            })}
             <button
-              onClick={() => setContent({...content, items: [...(content.items || []), { question: '', answer: '' }]})}
+              onClick={() => setContent({...content, items: [...(content.items || []), { question: {}, answer: {} }]})}
               className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] font-medium flex items-center justify-center hover:bg-slate-50"
             >
               <Plus className="w-4 h-4 mr-2" /> {t('faq.addBtn')}
