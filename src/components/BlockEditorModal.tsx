@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import MediaUploader from './MediaUploader';
 import { TEXT_COLOR_PRESETS, wrapSelectionWithColor } from '@/utils/coloredText';
+import { defaultTitleFor, type LocaleKey } from '@/config/localeTitles';
 
 // Select some text in the field below this toolbar, then click a swatch — wraps the selection in
 // the `[[text|#hex]]` syntax that ArchetypeRenderer renders as a colored span (title) or colored
@@ -111,11 +112,13 @@ export default function BlockEditorModal({
   const mainTextRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    setTitles({
-      tr: block?.content?.tr?.title || block?.title || '',
-      en: block?.content?.en?.title || block?.title || '',
-      ru: block?.content?.ru?.title || block?.title || '',
-    });
+    // Prefill each language tab from its OWN locale: existing per-locale title, else that
+    // locale's default label for fixed section types, else (AI-authored types like
+    // gallery/testimonials/custom only) the top-level title. Never seed one locale's custom
+    // title into another tab — saving would then stamp the same word into every language.
+    const prefill = (loc: LocaleKey) =>
+      block?.content?.[loc]?.title || defaultTitleFor(block?.type, loc) || block?.title || '';
+    setTitles({ tr: prefill('tr'), en: prefill('en'), ru: prefill('ru') });
 
     if (!block?.content || Object.keys(block.content).length === 0) {
       if (block?.type === 'services' || block?.type === 'pricing') setContent({ items: [] });
@@ -139,12 +142,19 @@ export default function BlockEditorModal({
     // blockTitleOf() (ArchetypeRenderer) reads content[locale].title first, falling back to the
     // top-level `title` only when that's unset — Beiwe's tools always populate content[locale].title,
     // so without writing per-locale here a manually-typed title would silently have no visible effect
-    // on any block Beiwe has touched. Each language tab's title is independent — leaving one blank
-    // keeps whatever that locale already had, it does not clear it.
+    // on any block Beiwe has touched. Each language tab's title is independent. Clearing a tab
+    // removes that locale's stored title so the renderer falls back to the locale's default label —
+    // the manual escape hatch from a bad custom title.
     const titledContent = { ...content };
     (['tr', 'en', 'ru'] as const).forEach((loc) => {
       const val = titles[loc]?.trim();
-      if (val) titledContent[loc] = { ...titledContent[loc], title: val };
+      if (val) {
+        titledContent[loc] = { ...titledContent[loc], title: val };
+      } else if (titledContent[loc]?.title) {
+        const rest = { ...titledContent[loc] };
+        delete rest.title;
+        titledContent[loc] = rest;
+      }
     });
     onSave({ title: titles.tr || titles.en || titles.ru || '', content: titledContent });
   };

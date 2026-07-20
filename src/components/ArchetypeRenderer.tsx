@@ -6,6 +6,7 @@ import { Mail, MessageCircle, Phone, Link as LinkIcon, AtSign } from 'lucide-rea
 import ReactMarkdown from 'react-markdown';
 import { useLocale } from 'next-intl';
 import { renderColoredSegments, toColorMarkdown, colorLinkComponents, stripColorSyntax } from '@/utils/coloredText';
+import { defaultTitleFor } from '@/config/localeTitles';
 
 type RenderCtx = {
   locale: string;
@@ -29,16 +30,6 @@ const SECTION_GAP_CLASS: Record<string, string> = {
 // Each block type is rendered by a small, self-contained function registered below.
 // New block types should only need to add a function + a registry entry here —
 // an unregistered type logs a dev warning instead of silently disappearing (see BLOCK_RENDERERS usage below).
-// Fixed section names for block types whose title is a constant label rather than
-// AI-authored content — covers rows saved before per-locale titles were stored in content.
-const FIXED_TITLES: Record<string, Record<string, string>> = {
-  services: { tr: 'Hizmetler', en: 'Services', ru: 'Услуги' },
-  links: { tr: 'Bağlantılar', en: 'Links', ru: 'Ссылки' },
-  hours: { tr: 'Çalışma Saatleri', en: 'Working Hours', ru: 'Часы работы' },
-  faq: { tr: 'Sıkça Sorulan Sorular', en: 'FAQ', ru: 'Частые вопросы' },
-  contact: { tr: 'İletişim', en: 'Contact', ru: 'Контакты' },
-};
-
 const CONTACT_METHOD_LABELS: Record<string, Record<string, string>> = {
   whatsapp: { tr: 'Telefon & WhatsApp', en: 'Phone & WhatsApp', ru: 'Телефон и WhatsApp' },
   instagram: { tr: 'Instagram', en: 'Instagram', ru: 'Instagram' },
@@ -46,8 +37,11 @@ const CONTACT_METHOD_LABELS: Record<string, Record<string, string>> = {
   telegram: { tr: 'Telegram', en: 'Telegram', ru: 'Telegram' },
 };
 
+// Falls back to the locale's fixed section label (shared with Beiwe's tools and the editor
+// modal) for rows saved before per-locale titles were stored in content, or after a locale's
+// title was cleared in the editor to reset it.
 function blockTitleOf(block: any, locale: string) {
-  return block.content?.[locale]?.title || FIXED_TITLES[block.type]?.[locale] || block.title || block.type;
+  return block.content?.[locale]?.title || defaultTitleFor(block.type, locale) || block.title || block.type;
 }
 
 // Wraps bare content in a surface card when the archetype's layoutStyle calls for it (see RenderCtx.cardWrap).
@@ -844,7 +838,7 @@ function renderContact(block: any, ctx: RenderCtx) {
 
   return (
     <section key={block.id}>
-      <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{FIXED_TITLES.contact[locale] || FIXED_TITLES.contact.tr}</h2>
+      <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{defaultTitleFor('contact', locale)}</h2>
       <div className="flex flex-col gap-3">
         {items.map(({ key, value }) => {
           const Icon = contactIcon(key);
