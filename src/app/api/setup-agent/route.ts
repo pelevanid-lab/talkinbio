@@ -89,7 +89,11 @@ export async function POST(req: Request) {
     const result = await streamText({
       model: getModel('beiwe'),
       stopWhen: isStepCount(20),
-      maxOutputTokens: 8192,
+      // Faz: A single tool call (e.g. addSection with a long product description + full
+      // ingredient list, repeated across tr/en/ru) can run well past 8192 output tokens on
+      // its own — hitting that cap mid-JSON truncates the tool call's arguments, which then
+      // fails to parse and crashes the whole stream. claude-sonnet-4-5 supports up to 64k.
+      maxOutputTokens: 32000,
       allowSystemInMessages: true,
       messages: modelMessages,
       tools: createBeiweTools({ supabase, businessId, locale: currentLocale }),
@@ -117,7 +121,18 @@ export async function POST(req: Request) {
       },
     });
 
-    return createUIMessageStreamResponse({ stream: toUIMessageStream({ stream: result.stream }) });
+    return createUIMessageStreamResponse({
+      stream: toUIMessageStream({
+        stream: result.stream,
+        // Default masks every mid-stream error as "An error occurred." — surface the real
+        // reason (matches the pre-stream error responses above, e.g. the credit-exhausted
+        // message) so failures are diagnosable instead of silently generic.
+        onError: (error) => {
+          console.error('Setup agent stream error:', error);
+          return error instanceof Error ? error.message : 'Bir hata oluştu, lütfen tekrar deneyin.';
+        },
+      }),
+    });
   } catch (error) {
     console.error('Setup agent error:', error);
     const message = error instanceof Error ? error.message : 'Internal Server Error';
