@@ -1,69 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import MediaUploader from './MediaUploader';
-import { TEXT_COLOR_PRESETS, wrapSelectionWithColor } from '@/utils/coloredText';
+import { ColoredTextField } from '@/utils/coloredText';
 import { defaultTitleFor, type LocaleKey } from '@/config/localeTitles';
-
-// Select some text in the field below this toolbar, then click a swatch — wraps the selection in
-// the `[[text|#hex]]` syntax that ArchetypeRenderer renders as a colored span (title) or colored
-// markdown link (body text). No-op if nothing is selected.
-function ColorToolbar({
-  getEl = () => document.activeElement as HTMLTextAreaElement | HTMLInputElement | null,
-  value,
-  onChange,
-  compact = false,
-}: {
-  // Optional: for fields inside a repeated list (services items, FAQ items, ...) refs per row are
-  // overkill — clicking a swatch keeps the just-focused field focused (onMouseDown preventDefault
-  // below), so document.activeElement already points at the right textarea/input.
-  getEl?: () => HTMLTextAreaElement | HTMLInputElement | null;
-  value: string;
-  onChange: (v: string) => void;
-  compact?: boolean;
-}) {
-  const [customHex, setCustomHex] = useState('#FF6A5C');
-
-  const applyColor = (hex: string) => {
-    const next = wrapSelectionWithColor(getEl(), value, hex);
-    if (next !== null) onChange(next);
-  };
-
-  return (
-    <div className={`flex items-center gap-1.5 flex-wrap ${compact ? 'mb-1' : 'mb-2'}`}>
-      {!compact && <span className="text-xs text-slate-400">Renk:</span>}
-      {TEXT_COLOR_PRESETS.map((c) => (
-        <button
-          key={c.hex}
-          type="button"
-          title={c.label}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => applyColor(c.hex)}
-          className={`rounded-full border border-slate-300 shadow-sm shrink-0 ${compact ? 'w-4 h-4' : 'w-6 h-6'}`}
-          style={{ backgroundColor: c.hex }}
-        />
-      ))}
-      <input
-        type="color"
-        value={customHex}
-        onChange={(e) => setCustomHex(e.target.value)}
-        onMouseDown={(e) => e.preventDefault()}
-        className={`rounded border border-slate-300 cursor-pointer p-0 shrink-0 ${compact ? 'w-4 h-4' : 'w-6 h-6'}`}
-        title="Özel renk"
-      />
-      <button
-        type="button"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => applyColor(customHex)}
-        className="text-xs text-[var(--coral)] font-medium hover:underline shrink-0"
-      >
-        Uygula
-      </button>
-      {!compact && <span className="text-[10px] text-slate-400">— metni seçip bir renge tıkla</span>}
-    </div>
-  );
-}
 
 // Shared "background image behind this section" fields, used by about(standard)/services/testimonials/contact/custom.
 function BackgroundImageFields({ content, setContent }: { content: any; setContent: (c: any) => void }) {
@@ -108,8 +49,6 @@ export default function BlockEditorModal({
   const [titles, setTitles] = useState<Record<'tr' | 'en' | 'ru', string>>({ tr: '', en: '', ru: '' });
   const [content, setContent] = useState<any>(block?.content || {});
   const [activeLang, setActiveLang] = useState<'tr'|'en'|'ru'>('tr');
-  const titleInputRef = useRef<HTMLInputElement>(null);
-  const mainTextRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     // Prefill each language tab from its OWN locale: existing per-locale title, else that
@@ -184,15 +123,10 @@ export default function BlockEditorModal({
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Metin İçeriği ({activeLang.toUpperCase()})</label>
-              <ColorToolbar
-                getEl={() => mainTextRef.current}
+              <ColoredTextField
+                multiline
                 value={content[activeLang]?.text || content.text || ''}
                 onChange={(v) => setContent({ ...content, [activeLang]: { ...content[activeLang], text: v } })}
-              />
-              <textarea
-                ref={mainTextRef}
-                value={content[activeLang]?.text || content.text || ''}
-                onChange={(e) => setContent({...content, [activeLang]: { ...content[activeLang], text: e.target.value }})}
                 className="w-full p-3 border border-slate-200 rounded-lg h-40 focus:border-[var(--coral)] focus:outline-none"
                 placeholder="İçeriğinizi buraya yazın..."
               />
@@ -269,7 +203,7 @@ export default function BlockEditorModal({
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  <ColorToolbar
+                  <ColoredTextField
                     compact
                     value={itemLoc.title || ''}
                     onChange={(v) => {
@@ -277,31 +211,16 @@ export default function BlockEditorModal({
                       newItems[idx] = { ...item, [activeLang]: { ...itemLoc, title: v } };
                       setContent({...content, items: newItems});
                     }}
-                  />
-                  <input
-                    value={itemLoc.title || ''}
-                    onChange={e => {
-                      const newItems = [...content.items];
-                      newItems[idx] = { ...item, [activeLang]: { ...itemLoc, title: e.target.value } };
-                      setContent({...content, items: newItems});
-                    }}
                     placeholder="Hizmet Adı"
                     className="w-full p-2 border border-slate-200 rounded focus:border-[var(--coral)] focus:outline-none"
                   />
-                  <ColorToolbar
+                  <ColoredTextField
                     compact
+                    multiline
                     value={itemLoc.description || ''}
                     onChange={(v) => {
                       const newItems = [...content.items];
                       newItems[idx] = { ...item, [activeLang]: { ...itemLoc, description: v } };
-                      setContent({...content, items: newItems});
-                    }}
-                  />
-                  <textarea
-                    value={itemLoc.description || ''}
-                    onChange={e => {
-                      const newItems = [...content.items];
-                      newItems[idx] = { ...item, [activeLang]: { ...itemLoc, description: e.target.value } };
                       setContent({...content, items: newItems});
                     }}
                     placeholder="Açıklama"
@@ -370,7 +289,7 @@ export default function BlockEditorModal({
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
-                <ColorToolbar
+                <ColoredTextField
                   compact
                   value={item.question || ''}
                   onChange={(v) => {
@@ -378,31 +297,16 @@ export default function BlockEditorModal({
                     newItems[idx].question = v;
                     setContent({...content, items: newItems});
                   }}
-                />
-                <input
-                  value={item.question || ''}
-                  onChange={e => {
-                    const newItems = [...content.items];
-                    newItems[idx].question = e.target.value;
-                    setContent({...content, items: newItems});
-                  }}
                   placeholder="Soru"
                   className="w-full p-2 border border-slate-200 rounded font-medium"
                 />
-                <ColorToolbar
+                <ColoredTextField
                   compact
+                  multiline
                   value={item.answer || ''}
                   onChange={(v) => {
                     const newItems = [...content.items];
                     newItems[idx].answer = v;
-                    setContent({...content, items: newItems});
-                  }}
-                />
-                <textarea
-                  value={item.answer || ''}
-                  onChange={e => {
-                    const newItems = [...content.items];
-                    newItems[idx].answer = e.target.value;
                     setContent({...content, items: newItems});
                   }}
                   placeholder="Cevap (Opsiyonel - Ajan bunu context olarak kullanabilir)"
@@ -446,20 +350,12 @@ export default function BlockEditorModal({
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
-                <ColorToolbar
+                <ColoredTextField
                   compact
                   value={item.label || ''}
                   onChange={(v) => {
                     const newItems = [...content.items];
                     newItems[idx].label = v;
-                    setContent({...content, items: newItems});
-                  }}
-                />
-                <input
-                  value={item.label || ''}
-                  onChange={e => {
-                    const newItems = [...content.items];
-                    newItems[idx].label = e.target.value;
                     setContent({...content, items: newItems});
                   }}
                   placeholder="Etiket (Örn: Instagram)"
@@ -528,20 +424,12 @@ export default function BlockEditorModal({
                         label="Medya Yükle"
                       />
                     </div>
-                    <ColorToolbar
+                    <ColoredTextField
                       compact
                       value={captionLoc}
                       onChange={(v) => {
                         const newItems = [...content.items];
                         newItems[idx].caption = { ...(item.caption || {}), [activeLang]: v };
-                        setContent({...content, items: newItems});
-                      }}
-                    />
-                    <input
-                      value={captionLoc}
-                      onChange={e => {
-                        const newItems = [...content.items];
-                        newItems[idx].caption = { ...(item.caption || {}), [activeLang]: e.target.value };
                         setContent({...content, items: newItems});
                       }}
                       placeholder={`Açıklama (${activeLang})`}
@@ -590,20 +478,13 @@ export default function BlockEditorModal({
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  <ColorToolbar
+                  <ColoredTextField
                     compact
+                    multiline
                     value={quoteLoc}
                     onChange={(v) => {
                       const newItems = [...content.items];
                       newItems[idx].quote = { ...(item.quote || {}), [activeLang]: v };
-                      setContent({...content, items: newItems});
-                    }}
-                  />
-                  <textarea
-                    value={quoteLoc}
-                    onChange={e => {
-                      const newItems = [...content.items];
-                      newItems[idx].quote = { ...(item.quote || {}), [activeLang]: e.target.value };
                       setContent({...content, items: newItems});
                     }}
                     placeholder={`Müşteri Yorumu (${activeLang})...`}
@@ -729,15 +610,9 @@ export default function BlockEditorModal({
           <LangTabs />
           <div className="mb-5">
             <label className="block text-sm font-medium mb-1 text-[var(--ink)]">Blok Başlığı ({activeLang.toUpperCase()})</label>
-            <ColorToolbar
-              getEl={() => titleInputRef.current}
+            <ColoredTextField
               value={titles[activeLang]}
               onChange={(v) => setTitles({ ...titles, [activeLang]: v })}
-            />
-            <input
-              ref={titleInputRef}
-              value={titles[activeLang]}
-              onChange={(e) => setTitles({ ...titles, [activeLang]: e.target.value })}
               className="w-full p-3 border border-slate-200 rounded-lg font-semibold focus:border-[var(--coral)] focus:outline-none"
               placeholder="Örn: Hakkımda"
             />
