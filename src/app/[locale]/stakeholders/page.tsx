@@ -4,6 +4,12 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { ChevronLeft } from 'lucide-react';
+
+const LinkedInIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+    <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85 0-2.14 1.44-2.14 2.94v5.66H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.13 2.07 2.07 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45z"/>
+  </svg>
+);
 import '../landing.css';
 
 const LogoSVG = () => (
@@ -106,6 +112,42 @@ export default function StakeholdersPage() {
           }}>
             {t('intro')}
           </p>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            marginTop: '1.5rem',
+          }}>
+            <div>
+              <p style={{
+                margin: 0,
+                fontFamily: 'var(--font-inter)',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                color: 'var(--ink)',
+              }}>
+                Enes Pehlivan
+              </p>
+              <p style={{
+                margin: 0,
+                fontFamily: 'var(--font-ibm-plex-mono)',
+                fontSize: '0.75rem',
+                color: 'var(--ink-soft)',
+                letterSpacing: '0.03em',
+              }}>
+                CCO
+              </p>
+            </div>
+            <a
+              href="https://www.linkedin.com/in/enes-pehlivan"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+              style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--teal)' }}
+            >
+              <LinkedInIcon />
+            </a>
+          </div>
         </div>
 
         {/* Divider */}
