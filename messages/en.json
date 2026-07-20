@@ -335,8 +335,8 @@
       "variantChips": "Chips (Tap to Ask the Assistant)",
       "variantAccordion": "Expandable List (Shows the Answer)",
       "variantNumbered": "Numbered List (Always Expanded)",
-      "questionPlaceholder": "Question",
-      "answerPlaceholder": "Answer (optional - the agent can use this as context)",
+      "questionPlaceholder": "Question ({lang})",
+      "answerPlaceholder": "Answer ({lang}) - optional, the agent can use this as context",
       "addBtn": "Add New Question"
     },
     "links": {

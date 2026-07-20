@@ -335,8 +335,8 @@
       "variantChips": "Etiket (Tıklayınca Asistana Sorar)",
       "variantAccordion": "Aç/Kapa Liste (Cevabı Gösterir)",
       "variantNumbered": "Numaralı Liste (Her Zaman Açık)",
-      "questionPlaceholder": "Soru",
-      "answerPlaceholder": "Cevap (Opsiyonel - Ajan bunu context olarak kullanabilir)",
+      "questionPlaceholder": "Soru ({lang})",
+      "answerPlaceholder": "Cevap ({lang}) - Opsiyonel, Ajan bunu context olarak kullanabilir",
       "addBtn": "Yeni Soru Ekle"
     },
     "links": {
