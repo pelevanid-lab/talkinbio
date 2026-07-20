@@ -144,8 +144,13 @@ function serializeInline(node: ChildNode, parts: string[]) {
     return;
   }
   const attrs = attrsOf(el);
-  if (attrs.color || attrs.bold || attrs.underline) {
-    parts.push(`[[${el.textContent || ''}|${serializeAttrs(attrs)}]]`);
+  // A styled span can end up empty — contentEditable keeps a dangling `<span>` around after every
+  // character inside it is deleted, so the formatting "sticks" for whatever gets typed next. With
+  // no text to carry, `[[|b]]` would otherwise get written into the stored string as literal,
+  // unparseable content (the syntax requires a non-empty label) — so this drops the marker rather
+  // than serializing it, matching the fact that there's nothing there to format.
+  if ((attrs.color || attrs.bold || attrs.underline) && el.textContent) {
+    parts.push(`[[${el.textContent}|${serializeAttrs(attrs)}]]`);
     return;
   }
   el.childNodes.forEach((child) => serializeInline(child, parts));

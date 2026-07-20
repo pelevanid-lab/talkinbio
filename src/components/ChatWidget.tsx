@@ -351,7 +351,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
 
           <form onSubmit={(e) => { e.preventDefault(); toggleExpand(); }} className="flex relative items-center pointer-events-none">
             <input
-              placeholder="Bir mesaj yazın..."
+              placeholder={t('placeholder')}
               className="w-full pl-4 pr-12 py-3.5 bg-[var(--paper)] border border-[var(--border-light)] rounded-full text-sm placeholder-[var(--muted)]"
               readOnly
             />

@@ -1218,11 +1218,12 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       </div>
 
       {editingBlock && (
-        <BlockEditorModal 
-          block={editingBlock} 
-          onClose={() => setEditingBlock(null)} 
+        <BlockEditorModal
+          block={editingBlock}
+          onClose={() => setEditingBlock(null)}
           onSave={handleSaveBlock}
           onDelete={handleDeleteBlock}
+          locale={locale}
         />
       )}
       {isSaving && (

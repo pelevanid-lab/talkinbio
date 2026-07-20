@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import MediaUploader from './MediaUploader';
 import { ColoredTextField } from '@/utils/coloredText';
-import { defaultTitleFor, type LocaleKey } from '@/config/localeTitles';
+import { defaultTitleFor, LOCALE_KEYS, type LocaleKey } from '@/config/localeTitles';
 
 // Shared "background image behind this section" fields, used by about(standard)/services/testimonials/contact/custom.
 function BackgroundImageFields({ content, setContent }: { content: any; setContent: (c: any) => void }) {
@@ -35,20 +35,27 @@ function BackgroundImageFields({ content, setContent }: { content: any; setConte
   );
 }
 
-export default function BlockEditorModal({ 
-  block, 
-  onSave, 
+export default function BlockEditorModal({
+  block,
+  onSave,
   onClose,
-  onDelete
-}: { 
-  block: any; 
-  onSave: (data: any) => void; 
+  onDelete,
+  locale,
+}: {
+  block: any;
+  onSave: (data: any) => void;
   onClose: () => void;
   onDelete: () => void;
+  // Dashboard's current UI language (from EditorClient's useLocale(), a plain string) — the modal
+  // should open on this language's content tab, not always default to Turkish regardless of
+  // what's selected.
+  locale?: string;
 }) {
   const [titles, setTitles] = useState<Record<'tr' | 'en' | 'ru', string>>({ tr: '', en: '', ru: '' });
   const [content, setContent] = useState<any>(block?.content || {});
-  const [activeLang, setActiveLang] = useState<'tr'|'en'|'ru'>('tr');
+  const [activeLang, setActiveLang] = useState<LocaleKey>(
+    LOCALE_KEYS.includes(locale as LocaleKey) ? (locale as LocaleKey) : 'tr'
+  );
 
   useEffect(() => {
     // Prefill each language tab from its OWN locale: existing per-locale title, else that
