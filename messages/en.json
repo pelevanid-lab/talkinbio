@@ -487,6 +487,90 @@
     "contactTitle": "Data Controller Contact",
     "contactBody": "talkinbio\ninfo@talkinbio.com\ntalkinbio Platform — talkinbio.com"
   },
+  "Login": {
+    "loginTitle": "Log in to Talkinbio",
+    "forgotTitle": "Forgot Password",
+    "loginSubtitle": "Log in to manage your business.",
+    "forgotSubtitle": "Enter your email address and we'll send you a password reset link.",
+    "resetLinkInvalid": "This password reset link is invalid or has expired. Please request a new one.",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "you@company.com",
+    "passwordLabel": "Password",
+    "forgotPasswordLink": "Forgot password?",
+    "rememberMe": "Remember me",
+    "loginButton": "Log In",
+    "loginButtonLoading": "Logging in...",
+    "sendLinkButton": "Send Link",
+    "sendLinkButtonLoading": "Sending...",
+    "backToLogin": "Back to login",
+    "invalidCredentials": "Incorrect email or password",
+    "resetLinkSent": "A password reset link has been sent to your email address. Please check your inbox.",
+    "genericError": "Something went wrong"
+  },
+  "AuthCallback": {
+    "errorTitle": "Login Failed",
+    "retryButton": "Try Again",
+    "loadingTitle": "Logging in...",
+    "loadingSubtitle": "Please wait, you're being redirected.",
+    "genericError": "Something went wrong while logging in."
+  },
+  "Onboarding": {
+    "step1": {
+      "title": "Let's Get to Know Your Business",
+      "subtitle": "First, let's enter your business name and industry.",
+      "businessNameLabel": "Business Name",
+      "businessNamePlaceholder": "e.g. X Hair Salon",
+      "categoryLabel": "Industry / Category",
+      "categoryPlaceholder": "e.g. Hair Salon, Beauty Salon, Therapist..."
+    },
+    "step2": {
+      "title": "How Should Customers Reach You?",
+      "subtitle": "How would you like your customers to get in touch?",
+      "contactMethodsLabel": "Contact Methods (you can select more than one)",
+      "contacts": {
+        "whatsapp": "WhatsApp",
+        "phone": "Phone Call",
+        "instagram": "Instagram DM",
+        "email": "Email"
+      },
+      "contactPlaceholders": {
+        "whatsapp": "e.g. +1 555 123 4567",
+        "phone": "e.g. +1 555 123 4567",
+        "instagram": "e.g. @username",
+        "email": "e.g. contact@company.com"
+      }
+    },
+    "step3": {
+      "title": "Services & Pricing (Optional)",
+      "subtitle": "Add your main services and, if you'd like, starting prices.",
+      "note": "MVP version: you can also handle this later by simply telling the AI assistant. For now, feel free to skip this step."
+    },
+    "step4": {
+      "title": "Business Hours",
+      "subtitle": "Which days and hours are you open?",
+      "note": "MVP version: once set up, you can share these details directly with your AI assistant."
+    },
+    "step5": {
+      "title": "Frequently Asked Questions",
+      "note": "MVP version: you can add frequently asked questions after your profile is created."
+    },
+    "step6": {
+      "title": "Great, everything's ready!",
+      "subtitle": "Your profile is ready to be created. Now let's put your AI assistant to work."
+    },
+    "back": "Back",
+    "next": "Next",
+    "create": "Create Profile",
+    "creating": "Creating...",
+    "loginRequiredAlert": "Please log in first.",
+    "genericErrorAlert": "Something went wrong.",
+    "businessCreationFailedError": "Failed to create business.",
+    "servicesBlockTitle": "Services",
+    "hoursBlockTitle": "Business Hours"
+  },
+  "PublicPage": {
+    "unpublishedBanner": "Your profile isn't open to visitors yet. Complete the missing steps to publish it."
+  },
   "Metadata": {
     "title": "Talkinbio | Turn Your Bio Into a Smart Assistant",
     "description": "Talkinbio is your AI-powered digital sales assistant that talks with your social media followers 24/7 in their language, collects leads, and books appointments."

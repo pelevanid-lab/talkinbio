@@ -487,6 +487,90 @@
     "contactTitle": "Veri Sorumlusu İletişim",
     "contactBody": "talkinbio\ninfo@talkinbio.com\ntalkinbio Platformu — talkinbio.com"
   },
+  "Login": {
+    "loginTitle": "Talkinbio'ya Giriş Yap",
+    "forgotTitle": "Şifremi Unuttum",
+    "loginSubtitle": "İşletmenizi yönetmek için giriş yapın.",
+    "forgotSubtitle": "E-posta adresinizi girin, size şifre sıfırlama bağlantısı gönderelim.",
+    "resetLinkInvalid": "Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş. Lütfen yeni bir bağlantı isteyin.",
+    "emailLabel": "E-posta Adresi",
+    "emailPlaceholder": "ornek@sirket.com",
+    "passwordLabel": "Şifre",
+    "forgotPasswordLink": "Şifremi Unuttum",
+    "rememberMe": "Beni Hatırla",
+    "loginButton": "Giriş Yap",
+    "loginButtonLoading": "Giriş Yapılıyor...",
+    "sendLinkButton": "Bağlantıyı Gönder",
+    "sendLinkButtonLoading": "Gönderiliyor...",
+    "backToLogin": "Giriş ekranına dön",
+    "invalidCredentials": "E-posta veya şifre hatalı",
+    "resetLinkSent": "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Lütfen kutunuzu kontrol edin.",
+    "genericError": "Bir hata oluştu"
+  },
+  "AuthCallback": {
+    "errorTitle": "Giriş Başarısız",
+    "retryButton": "Tekrar Dene",
+    "loadingTitle": "Giriş yapılıyor...",
+    "loadingSubtitle": "Lütfen bekleyin, yönlendiriliyorsunuz.",
+    "genericError": "Giriş yapılırken bir hata oluştu."
+  },
+  "Onboarding": {
+    "step1": {
+      "title": "İşletmenizi Tanıyalım",
+      "subtitle": "Öncelikle işletmenizin adı ve sektörünü girelim.",
+      "businessNameLabel": "İşletme Adı",
+      "businessNamePlaceholder": "Örn: X Kuaför",
+      "categoryLabel": "Sektör / Kategori",
+      "categoryPlaceholder": "Örn: Kuaför, Güzellik Salonu, Terapist..."
+    },
+    "step2": {
+      "title": "Nasıl İletişim Kurulacak?",
+      "subtitle": "Müşterileriniz sizinle nasıl iletişime geçsin?",
+      "contactMethodsLabel": "İletişim Yöntemleri (Birden fazla seçebilirsiniz)",
+      "contacts": {
+        "whatsapp": "WhatsApp",
+        "phone": "Telefon Araması",
+        "instagram": "Instagram DM",
+        "email": "E-posta"
+      },
+      "contactPlaceholders": {
+        "whatsapp": "Örn: +90 5XX XXX XX XX",
+        "phone": "Örn: +90 5XX XXX XX XX",
+        "instagram": "Örn: @kullaniciadi",
+        "email": "Örn: iletisim@sirket.com"
+      }
+    },
+    "step3": {
+      "title": "Hizmetler & Fiyatlar (Opsiyonel)",
+      "subtitle": "Sunduğunuz ana hizmetleri ve isterseniz başlangıç fiyatlarını ekleyin.",
+      "note": "MVP Sürüm: Şu anki arayüzde doğrudan AI'a söyleyerek de bu kısımları yönetebilirsiniz. Şimdilik bu adımı geçebilirsiniz."
+    },
+    "step4": {
+      "title": "Çalışma Saatleri",
+      "subtitle": "Hangi günler ve saatler arasında açıksınız?",
+      "note": "MVP Sürüm: Bu detayları oluşturduktan sonra AI asistanınıza direkt yazarak belirtebilirsiniz."
+    },
+    "step5": {
+      "title": "Sıkça Sorulan Sorular",
+      "note": "MVP Sürüm: Profilinizi oluşturduktan sonra sık sorulan soruları ekleyebilirsiniz."
+    },
+    "step6": {
+      "title": "Harika, her şey hazır!",
+      "subtitle": "Profiliniz oluşturulmaya hazır. Şimdi AI asistanınızı devreye alabiliriz."
+    },
+    "back": "Geri",
+    "next": "İleri",
+    "create": "Profili Oluştur",
+    "creating": "Oluşturuluyor...",
+    "loginRequiredAlert": "Lütfen önce giriş yapın.",
+    "genericErrorAlert": "Bir hata oluştu.",
+    "businessCreationFailedError": "İşletme oluşturulamadı.",
+    "servicesBlockTitle": "Hizmetler",
+    "hoursBlockTitle": "Çalışma Saatleri"
+  },
+  "PublicPage": {
+    "unpublishedBanner": "Profiliniz henüz ziyaretçilere kapalı. Yayınlamak için eksikleri tamamlayın."
+  },
   "Metadata": {
     "title": "Talkinbio | Biyografinizi Akıllı Asistana Dönüştürün",
     "description": "Talkinbio, sosyal medya takipçilerinizle 7/24 kendi dilinde görüşen, randevu ve talep toplayan yapay zeka tabanlı dijital satış asistanınızdır."
