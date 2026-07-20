@@ -646,6 +646,14 @@ Meta entegrasyonunun v2'ye alınmasıyla v1'in ana farklılaştırıcısı bu fa
   Hizmetler bölümüne ve ya bilgi tabanına fiyat ekleyelim mi?" → tek tıkla Beiwe sohbetine trigger mesajı
   (mevcut `useBeiweSuggestions` kart altyapısı yeniden kullanılır; rule-based öneriler
   ve AI-insight önerileri aynı panelde birleşir).
+- **Genel kural (2026-07-20):** yukarıdaki fiyat örneği, aslında genel bir kuralın tek
+  bir vakası — özel durum değil. Bir konu haftalık analizde "sık sorulan konu" olarak
+  işaretlendiğinde, Beiwe önerisi her seferinde şunu sorar: bu konunun net bir cevabı
+  talkinbio sayfasında (ilgili blokta) ya da Saule'nin bilgi tabanında (Faz 1.4) zaten
+  var mı? Yoksa, sahibe hangisine (sayfa bloğu mu, bilgi tabanı notu mu) ekleneceğini
+  seçtiren bir ekleme önerisi sunulur. Bu, Saule'nin kendisinin konuşmalardan otomatik
+  öğrenmesi değildir — sahip hâlâ elle onaylıyor/ekliyor; sadece "sık soruluyor ama
+  cevabı nerede belli değil" boşluğunu haftalık olarak yüzeye çıkarıyor.
 
 ### 3.2 İçerik stüdyosu (sosyal medya üretimi)
 - Dashboard'a "İçerik" sayfası: bloklardan (hizmet, yorum, galeri) Instagram
@@ -1071,6 +1079,11 @@ kendisi" ise dil genişlemesi onun ön koşuludur. Kapsam (detaylandırılacak):
 - **Takvim entegrasyonu** (Google Calendar randevu yazma) — v2 adayı; şimdilik
   yapılandırılmış randevu talebi (Faz 1.5) yeterli.
 - **RAG / vektör arama** — bilgi tabanı token bütçesini aşarsa gündeme gelir (pgvector hazır).
+  - **Not (2026-07-20) — Saule'nin öğrenmesi:** Beiwe konuşma verisiyle özelleşiyor
+    (bkz. Faz 3.1 genel kural), ama Saule'nin kendisi konuşmalardan otomatik
+    öğrenmiyor — bilgisi sahibin elle girdiği notlarla sınırlı (Faz 1.4, `saule_knowledge`).
+    Saule'nin konuşma geçmişinden kendi kendine öğrenmesi kapsamlı bir konu ve RAG
+    altyapısıyla doğrudan ilişkili; RAG gündeme geldiğinde birlikte değerlendirilecek.
 - **Görsel içerik üretimi** (story şablonları) — İçerik stüdyosu v2.
 - **Telegram kanalı** — Bot API onay gerektirmediği için v2'nin en ucuz kanal kazanımı;
   `channel_accounts` mimarisi hazır olduğunda hızlıca eklenebilir, hatta Meta onayları
