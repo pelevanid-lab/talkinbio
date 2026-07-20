@@ -1,13 +1,60 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getLocaleTitles, LOCALE_TITLES } from './prompt';
+import { LOCALE_TITLES, type LocaleKey } from '@/config/localeTitles';
 
 export type BeiweToolParams = {
   supabase: SupabaseClient;
   businessId: string;
   locale: string;
 };
+
+export type SectionTitles = Record<LocaleKey, string>;
+
+// Custom section titles are per-locale: the model translates the user's wording into each
+// language (or repeats the same word when the user explicitly asks for that).
+const sectionTitleInput = z.object({
+  tr: z.string().describe('Başlığın Türkçesi'),
+  en: z.string().describe('Başlığın İngilizcesi'),
+  ru: z.string().describe('Başlığın Rusçası'),
+});
+
+const resetSectionTitleInput = z.boolean().optional()
+  .describe("true gönderilirse özel başlık silinir ve her dil kendi varsayılan başlığına döner. Kullanıcı 'varsayılan başlığa dön' dediğinde bunu kullan; sectionTitle ile birlikte gönderme.");
+
+function defaultTitlesFor(type: string): SectionTitles {
+  return { tr: LOCALE_TITLES.tr[type], en: LOCALE_TITLES.en[type], ru: LOCALE_TITLES.ru[type] };
+}
+
+// Decides the final per-locale titles for a section write. Priority per locale:
+// explicit reset → tool-provided translation → whatever that locale already had
+// (a manual edit from the editor or an earlier custom title) → the locale's default.
+// Crucially there is no cross-locale copying: one locale's custom title never leaks into another.
+export function resolveSectionTitles(
+  existingContent: Record<string, { title?: string } | undefined> | null | undefined,
+  defaults: SectionTitles,
+  sectionTitle: SectionTitles | undefined,
+  resetSectionTitle: boolean | undefined,
+): SectionTitles {
+  const pick = (loc: LocaleKey): string => {
+    if (resetSectionTitle) return defaults[loc];
+    if (sectionTitle) return sectionTitle[loc]?.trim() || defaults[loc];
+    return existingContent?.[loc]?.title || defaults[loc];
+  };
+  return { tr: pick('tr'), en: pick('en'), ru: pick('ru') };
+}
+
+// Echoed back in every tool result so the model reasons from the actually-saved state
+// instead of assuming its request took effect (see prompt rule 5c).
+function describeSavedTitles(titles: SectionTitles): string {
+  return `Kayıtlı bölüm başlıkları — TR: "${titles.tr}", EN: "${titles.en}", RU: "${titles.ru}".`;
+}
+
+function titleForLocale(titles: SectionTitles, locale: string): string {
+  return titles[locale as LocaleKey] || titles.tr;
+}
+
+const SECTION_TITLE_DESC = "Kullanıcı bu bölüm için varsayılan yerine özel bir başlık istediyse, o başlığın ÜÇ DİLDEKİ karşılıklarını ver — her dile çevir (ör. {tr: 'Merhaba', en: 'Hello', ru: 'Привет'}); kullanıcı açıkça aynı kelimeyi her dilde istiyorsa üçüne de aynı kelimeyi yaz. Belirtilmezse mevcut başlıklar dil bazında aynen korunur.";
 
 export function setThemeTool({ supabase, businessId }: BeiweToolParams) {
   return tool({
@@ -38,14 +85,14 @@ export function setThemeTool({ supabase, businessId }: BeiweToolParams) {
 }
 
 export function updateAboutTool({ supabase, businessId, locale }: BeiweToolParams) {
-  const locTitles = getLocaleTitles(locale);
   return tool({
     description: 'Hakkında (About) bloğunu günceller veya oluşturur. Metinleri 3 dilde sağlamalısın.',
     inputSchema: z.object({
       tr: z.object({ text: z.string() }).describe('Türkçe hakkında metni'),
       en: z.object({ text: z.string() }).describe('İngilizce hakkında metni'),
       ru: z.object({ text: z.string() }).describe('Rusça hakkında metni'),
-      sectionTitle: z.string().optional().describe("Kullanıcı bu bölüm için 'Hakkımda' yerine özel bir başlık istediyse (örn. 'Merhaba') buraya yaz — aynı kelime üç dilde de kullanılır. Belirtilmezse varsayılan 'Hakkımda/About/Обо мне' kullanılır; daha önce ayarlanmış özel bir başlık varsa (boş bırakılsa bile) o korunur."),
+      sectionTitle: sectionTitleInput.optional().describe(SECTION_TITLE_DESC),
+      resetSectionTitle: resetSectionTitleInput,
       mediaUrl: z.string().optional().describe('Kullanıcının yüklediği görsel URL adresi'),
       mediaPosition: z.enum(['top', 'middle', 'bottom']).optional()
         .describe("SADECE 'standard' varyantındayken (veya varyant belirtilmediğinde) anlamlı: mediaUrl görselini metnin NORMAL AKIŞI İÇİNE, başlığın öncesine ('top'), başlık ile metin arasına ('middle', varsayılan) veya metnin sonrasına ('bottom') yerleştirir. Kullanıcı 'görseli üste/yukarı koy' derse — arka plana koy DEMEDİYSE — bu alanı kullan, layoutVariant'ı 'hero-overlay' YAPMA: o, görseli tüm bölümün ARKA PLANI yapıp üstüne beyaz yazı bindiren tamamen farklı bir tasarımdır."),
@@ -55,19 +102,18 @@ export function updateAboutTool({ supabase, businessId, locale }: BeiweToolParam
       backgroundImage: z.string().optional().describe("Sadece 'standard' varyantındayken: bölümün arkasına konacak opsiyonel bir arka plan görseli."),
       backgroundOverlay: z.enum(['dark', 'light', 'tint', 'none']).optional().describe('backgroundImage üzerindeki karartma/renk katmanı. dark: siyah karartma (varsayılan). light: açık/beyaz. tint: arketipin ana rengiyle yarı saydam katman. none: katmansız.'),
     }),
-    execute: async ({ tr, en, ru, sectionTitle, mediaUrl, mediaPosition, extraImages, layoutVariant, backgroundImage, backgroundOverlay }) => {
+    execute: async ({ tr, en, ru, sectionTitle, resetSectionTitle, mediaUrl, mediaPosition, extraImages, layoutVariant, backgroundImage, backgroundOverlay }) => {
       const { data: existing } = await supabase.from('blocks').select('content').eq('business_id', businessId).eq('type', 'about').single();
-      const existingCustomTitle = existing?.content?.tr?.title && existing.content.tr.title !== LOCALE_TITLES.tr.about ? existing.content.tr.title : undefined;
-      const customTitle = sectionTitle || existingCustomTitle;
+      const titles = resolveSectionTitles(existing?.content, defaultTitlesFor('about'), sectionTitle, resetSectionTitle);
 
       const { error } = await supabase.from('blocks').upsert({
         business_id: businessId,
         type: 'about',
-        title: customTitle || locTitles.about,
+        title: titleForLocale(titles, locale),
         content: {
-          tr: { text: tr.text, title: customTitle || LOCALE_TITLES.tr.about },
-          en: { text: en.text, title: customTitle || LOCALE_TITLES.en.about },
-          ru: { text: ru.text, title: customTitle || LOCALE_TITLES.ru.about },
+          tr: { text: tr.text, title: titles.tr },
+          en: { text: en.text, title: titles.en },
+          ru: { text: ru.text, title: titles.ru },
           mediaUrl: mediaUrl || undefined,
           mediaPosition: mediaPosition || 'middle',
           items: (extraImages || []).map((url) => ({ url })),
@@ -80,17 +126,17 @@ export function updateAboutTool({ supabase, businessId, locale }: BeiweToolParam
       }, { onConflict: 'business_id,singleton_key' });
 
       if (error) return `Error: ${error.message}`;
-      return 'Hakkında bloğu güncellendi. Lütfen sıradaki bölüme geçerek sohbete devam et.';
+      return `Hakkında bloğu güncellendi. ${describeSavedTitles(titles)} Lütfen sıradaki bölüme geçerek sohbete devam et.`;
     },
   });
 }
 
 export function addServicesTool({ supabase, businessId, locale }: BeiweToolParams) {
-  const locTitles = getLocaleTitles(locale);
   return tool({
     description: 'Yeni hizmetleri (services) ekler. Metinleri 3 dilde sağlamalısın.',
     inputSchema: z.object({
-      sectionTitle: z.string().optional().describe("Kullanıcı bu bölüm için 'Hizmetler' yerine özel bir başlık istediyse buraya yaz — aynı kelime üç dilde de kullanılır. Belirtilmezse varsayılan 'Hizmetler/Services/Услуги' korunur (önceden ayarlanmış özel bir başlık varsa o da korunur)."),
+      sectionTitle: sectionTitleInput.optional().describe(SECTION_TITLE_DESC),
+      resetSectionTitle: resetSectionTitleInput,
       layoutVariant: z.enum(['list', 'grid-cards', 'numbered-list', 'feature-split', 'price-table']).optional()
         .describe('Tasarım tipi. list: Alt alta. grid-cards: Yan yana kutucuklar. numbered-list: Büyük sıra numaralı zarif liste (az sayıda, premium hizmet için iyi). feature-split: Sağ-sol dönüşümlü büyük görsel+metin satırları (görseli olan az sayıda öne çıkan hizmet için). price-table: Klasik menü/fiyat listesi görünümü (restoran/kafe için iyi).'),
       backgroundImage: z.string().optional().describe('Bölümün arkasına konacak opsiyonel bir arka plan görseli (seçilen varyanttan bağımsız, tüm bölümü kaplar).'),
@@ -107,17 +153,16 @@ export function addServicesTool({ supabase, businessId, locale }: BeiweToolParam
       const { data: existing } = await supabase.from('blocks').select('*').eq('business_id', businessId).eq('type', 'services').single();
       const oldItems = existing?.content?.items || [];
       const newItems = [...oldItems, ...args.items];
-      const existingCustomTitle = existing?.content?.tr?.title && existing.content.tr.title !== LOCALE_TITLES.tr.services ? existing.content.tr.title : undefined;
-      const customTitle = args.sectionTitle || existingCustomTitle;
+      const titles = resolveSectionTitles(existing?.content, defaultTitlesFor('services'), args.sectionTitle, args.resetSectionTitle);
 
       const { error } = await supabase.from('blocks').upsert({
         business_id: businessId,
         type: 'services',
-        title: customTitle || locTitles.services,
+        title: titleForLocale(titles, locale),
         content: {
-          tr: { title: customTitle || LOCALE_TITLES.tr.services },
-          en: { title: customTitle || LOCALE_TITLES.en.services },
-          ru: { title: customTitle || LOCALE_TITLES.ru.services },
+          tr: { title: titles.tr },
+          en: { title: titles.en },
+          ru: { title: titles.ru },
           items: newItems,
           layoutVariant: args.layoutVariant || existing?.content?.layoutVariant || 'grid-cards',
           backgroundImage: args.backgroundImage || existing?.content?.backgroundImage || undefined,
@@ -127,17 +172,17 @@ export function addServicesTool({ supabase, businessId, locale }: BeiweToolParam
         is_visible: true,
       }, { onConflict: 'business_id,singleton_key' });
       if (error) return `Error: ${error.message}`;
-      return `Hizmetler bloğu başarıyla kaydedildi.`;
+      return `Hizmetler bloğu başarıyla kaydedildi. ${describeSavedTitles(titles)}`;
     },
   });
 }
 
 export function addLinksTool({ supabase, businessId, locale }: BeiweToolParams) {
-  const locTitles = getLocaleTitles(locale);
   return tool({
     description: "İşletmenin sosyal medya veya iletişim linklerini ekler.",
     inputSchema: z.object({
-      sectionTitle: z.string().optional().describe("Kullanıcı bu bölüm için 'Bağlantılar' yerine özel bir başlık istediyse buraya yaz — aynı kelime üç dilde de kullanılır. Belirtilmezse varsayılan 'Bağlantılar/Links/Ссылки' korunur (önceden ayarlanmış özel bir başlık varsa o da korunur)."),
+      sectionTitle: sectionTitleInput.optional().describe(SECTION_TITLE_DESC),
+      resetSectionTitle: resetSectionTitleInput,
       layoutVariant: z.enum(['stacked', 'icon-row', 'two-col-grid']).optional()
         .describe('Tasarım tipi. stacked: Alt alta tam genişlik butonlar (uzun etiketli linkler için iyi). icon-row: Yan yana yuvarlak ikon butonları (çoğunlukla sosyal medya linkleri için, kısa/etiketsiz görünüm ister). two-col-grid: 2 sütunlu etiketli kart ızgarası (stacked ile icon-row arası orta yol).'),
       items: z.array(z.object({
@@ -149,24 +194,23 @@ export function addLinksTool({ supabase, businessId, locale }: BeiweToolParams) 
       const { data: existing } = await supabase.from('blocks').select('*').eq('business_id', businessId).eq('type', 'links').single();
       const oldItems = existing?.content?.items || [];
       const newItems = [...oldItems, ...args.items];
-      const existingCustomTitle = existing?.content?.tr?.title && existing.content.tr.title !== LOCALE_TITLES.tr.links ? existing.content.tr.title : undefined;
-      const customTitle = args.sectionTitle || existingCustomTitle;
+      const titles = resolveSectionTitles(existing?.content, defaultTitlesFor('links'), args.sectionTitle, args.resetSectionTitle);
 
       const { error } = await supabase.from('blocks').upsert({
         business_id: businessId,
         type: 'links',
-        title: customTitle || locTitles.links || 'Links',
+        title: titleForLocale(titles, locale),
         content: {
-          tr: { title: customTitle || LOCALE_TITLES.tr.links },
-          en: { title: customTitle || LOCALE_TITLES.en.links },
-          ru: { title: customTitle || LOCALE_TITLES.ru.links },
+          tr: { title: titles.tr },
+          en: { title: titles.en },
+          ru: { title: titles.ru },
           items: newItems,
           layoutVariant: args.layoutVariant || existing?.content?.layoutVariant || 'stacked',
         },
         order: 4,
       }, { onConflict: 'business_id,singleton_key' });
       if (error) return `Error saving links: ${error.message}`;
-      return `Sosyal medya / link bloğu kaydedildi.`;
+      return `Sosyal medya / link bloğu kaydedildi. ${describeSavedTitles(titles)}`;
     },
   });
 }
@@ -261,11 +305,11 @@ export function addTestimonialsTool({ supabase, businessId }: BeiweToolParams) {
 }
 
 export function addHoursTool({ supabase, businessId, locale }: BeiweToolParams) {
-  const locTitles = getLocaleTitles(locale);
   return tool({
     description: "İşletmenin haftalık çalışma saatlerini oluşturur veya günceller.",
     inputSchema: z.object({
-      sectionTitle: z.string().optional().describe("Kullanıcı bu bölüm için 'Çalışma Saatleri' yerine özel bir başlık istediyse buraya yaz — aynı kelime üç dilde de kullanılır. Belirtilmezse varsayılan korunur (önceden ayarlanmış özel bir başlık varsa o da korunur)."),
+      sectionTitle: sectionTitleInput.optional().describe(SECTION_TITLE_DESC),
+      resetSectionTitle: resetSectionTitleInput,
       layoutVariant: z.enum(['table', 'compact-badge', 'pill-row']).optional()
         .describe("Tasarım tipi. table: Tüm haftayı sabit bir liste olarak gösterir. compact-badge: 'Bugün Açık/Kapalı' rozeti + tıklayınca açılan tam liste (daha app-like, spor/güzellik gibi enerjik arketipler için iyi). pill-row: Haftanın 7 gününü küçük renkli hap'ler halinde tek satırda özetler (çok kompakt)."),
       schedule: z.object({
@@ -278,35 +322,34 @@ export function addHoursTool({ supabase, businessId, locale }: BeiweToolParams) 
         sunday: z.object({ isOpen: z.boolean(), openTime: z.string().optional(), closeTime: z.string().optional() }),
       }),
     }),
-    execute: async ({ schedule, layoutVariant, sectionTitle }) => {
+    execute: async ({ schedule, layoutVariant, sectionTitle, resetSectionTitle }) => {
       const { data: existing } = await supabase.from('blocks').select('content').eq('business_id', businessId).eq('type', 'hours').single();
-      const existingCustomTitle = existing?.content?.tr?.title && existing.content.tr.title !== LOCALE_TITLES.tr.hours ? existing.content.tr.title : undefined;
-      const customTitle = sectionTitle || existingCustomTitle;
+      const titles = resolveSectionTitles(existing?.content, defaultTitlesFor('hours'), sectionTitle, resetSectionTitle);
 
       const { error } = await supabase.from('blocks').upsert({
         business_id: businessId,
         type: 'hours',
-        title: customTitle || locTitles.hours,
+        title: titleForLocale(titles, locale),
         content: {
-          tr: { title: customTitle || LOCALE_TITLES.tr.hours },
-          en: { title: customTitle || LOCALE_TITLES.en.hours },
-          ru: { title: customTitle || LOCALE_TITLES.ru.hours },
+          tr: { title: titles.tr },
+          en: { title: titles.en },
+          ru: { title: titles.ru },
           schedule, layoutVariant: layoutVariant || 'table',
         },
         order: 3,
       }, { onConflict: 'business_id,singleton_key' });
       if (error) return `Error: ${error.message}`;
-      return 'Çalışma saatleri kaydedildi.';
+      return `Çalışma saatleri kaydedildi. ${describeSavedTitles(titles)}`;
     },
   });
 }
 
 export function addFAQTool({ supabase, businessId, locale }: BeiweToolParams) {
-  const locTitles = getLocaleTitles(locale);
   return tool({
     description: "Sıkça sorulan soruları (FAQ) ekler. Bu blok tek dillidir, kullanıcının konuştuğu dilde yaz.",
     inputSchema: z.object({
-      sectionTitle: z.string().optional().describe("Kullanıcı bu bölüm için 'Sıkça Sorulan Sorular' yerine özel bir başlık istediyse buraya yaz. Belirtilmezse varsayılan korunur (önceden ayarlanmış özel bir başlık varsa o da korunur)."),
+      sectionTitle: sectionTitleInput.optional().describe(SECTION_TITLE_DESC),
+      resetSectionTitle: resetSectionTitleInput,
       layoutVariant: z.enum(['chips', 'accordion', 'numbered']).optional()
         .describe('Tasarım tipi. chips: Soruya tıklayınca cevabı asistana sorar (etiket görünümlü). accordion: Klasik aç/kapa liste, cevabı doğrudan sayfada gösterir (uzun SSS listeleri veya daha resmi arketipler için iyi). numbered: Büyük numaralı liste, tüm cevaplar her zaman açık/görünür (services numbered-list ile aynı dil).'),
       items: z.array(z.object({
@@ -314,27 +357,26 @@ export function addFAQTool({ supabase, businessId, locale }: BeiweToolParams) {
         answer: z.string(),
       })),
     }),
-    execute: async ({ items, layoutVariant, sectionTitle }) => {
+    execute: async ({ items, layoutVariant, sectionTitle, resetSectionTitle }) => {
       const { data: existing } = await supabase.from('blocks').select('*').eq('business_id', businessId).eq('type', 'faq').single();
       const oldItems = existing?.content?.items || [];
       const newItems = [...oldItems, ...items];
-      const existingCustomTitle = existing?.content?.tr?.title && existing.content.tr.title !== LOCALE_TITLES.tr.faq ? existing.content.tr.title : undefined;
-      const customTitle = sectionTitle || existingCustomTitle;
+      const titles = resolveSectionTitles(existing?.content, defaultTitlesFor('faq'), sectionTitle, resetSectionTitle);
 
       const { error } = await supabase.from('blocks').upsert({
         business_id: businessId,
         type: 'faq',
-        title: customTitle || locTitles.faq,
+        title: titleForLocale(titles, locale),
         content: {
-          tr: { title: customTitle || LOCALE_TITLES.tr.faq },
-          en: { title: customTitle || LOCALE_TITLES.en.faq },
-          ru: { title: customTitle || LOCALE_TITLES.ru.faq },
+          tr: { title: titles.tr },
+          en: { title: titles.en },
+          ru: { title: titles.ru },
           items: newItems, layoutVariant: layoutVariant || existing?.content?.layoutVariant || 'chips',
         },
         order: 7,
       }, { onConflict: 'business_id,singleton_key' });
       if (error) return `Error: ${error.message}`;
-      return 'SSS bloğu kaydedildi.';
+      return `SSS bloğu kaydedildi. ${describeSavedTitles(titles)}`;
     },
   });
 }
@@ -344,12 +386,12 @@ export function addFAQTool({ supabase, businessId, locale }: BeiweToolParams) {
 // kısıtı — 00007/00008 migration'ları). Bu araç bunlardan biri DEĞİL: kullanıcı mevcut bir bölümü
 // değiştirmek yerine tamamen YENİ, ek bir bölüm istediğinde (ör. "Yaklaşım ve Deneyim", "Misyonumuz")
 // çağrılır — 'custom' tipinde, singleton kısıtı olmayan, birden fazlası olabilen yeni bir satır ekler.
-export function addSectionTool({ supabase, businessId }: BeiweToolParams) {
+export function addSectionTool({ supabase, businessId, locale }: BeiweToolParams) {
   const INSERT_AFTER_TYPES = ['about', 'services', 'hours', 'links', 'gallery', 'testimonials', 'faq'] as const;
   return tool({
     description: "Sayfaya TAMAMEN YENİ, ayrı bir bölüm ekler (ör. 'Yaklaşım ve Deneyim', 'Misyonumuz', 'Sertifikalar'). SADECE kullanıcı mevcut sabit bölümlerden (Hakkımda/Hizmetler/Çalışma Saatleri/Bağlantılar/Galeri/Yorumlar/SSS) hiçbirine uymayan, gerçekten yeni ve ayrı bir bölüm istediğinde kullan. Kullanıcı var olan bir bölümü DÜZENLEMEK/GENİŞLETMEK isterse bu aracı KULLANMA — o bölümün kendi aracını (updateAbout, addServices, vb.) çağır; aksi halde o bölümün mevcut içeriğini SİLERSİN.",
     inputSchema: z.object({
-      title: z.string().describe("Yeni bölümün başlığı — aynı kelime üç dilde de kullanılır (ör. 'Yaklaşım ve Deneyim')."),
+      title: sectionTitleInput.describe("Yeni bölümün başlığı, üç dildeki karşılıklarıyla — her dile çevir (ör. {tr: 'Yaklaşım ve Deneyim', en: 'Approach & Experience', ru: 'Подход и опыт'}). Kullanıcı açıkça aynı kelimeyi her dilde istiyorsa üçüne de aynı kelimeyi yaz."),
       tr: z.object({ text: z.string() }).describe('Türkçe metin'),
       en: z.object({ text: z.string() }).describe('İngilizce metin'),
       ru: z.object({ text: z.string() }).describe('Rusça metin'),
@@ -382,17 +424,17 @@ export function addSectionTool({ supabase, businessId }: BeiweToolParams) {
       const { error } = await supabase.from('blocks').insert({
         business_id: businessId,
         type: 'custom',
-        title,
+        title: titleForLocale(title, locale),
         content: {
-          tr: { text: tr.text, title },
-          en: { text: en.text, title },
-          ru: { text: ru.text, title },
+          tr: { text: tr.text, title: title.tr },
+          en: { text: en.text, title: title.en },
+          ru: { text: ru.text, title: title.ru },
         },
         order,
         is_visible: true,
       });
       if (error) return `Error: ${error.message}`;
-      return `"${title}" adında yeni, ayrı bir bölüm eklendi.`;
+      return `"${titleForLocale(title, locale)}" adında yeni, ayrı bir bölüm eklendi. ${describeSavedTitles(title)}`;
     },
   });
 }
