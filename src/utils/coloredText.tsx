@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { defaultUrlTransform } from 'react-markdown';
-import { Bold, Underline } from 'lucide-react';
+import { Bold, Underline, Eraser } from 'lucide-react';
 
 // Shared authoring syntax for inline text styling, entered via the manual editor's toolbar
 // (ColoredTextField below) or typed by hand: `[[metin|attrs]]`, where attrs is a `;`-separated
@@ -206,20 +206,27 @@ export function ColoredTextField({
     onChange(next);
   };
 
+  // Grabs the current selection, provided it's inside this field and non-empty. Returns the
+  // range and its plain text, or null if there's nothing usable to act on.
+  const currentSelection = (): { sel: Selection; range: Range; text: string } | null => {
+    const root = rootRef.current;
+    if (!root) return null;
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+    const range = sel.getRangeAt(0);
+    if (!root.contains(range.commonAncestorContainer)) return null;
+    const text = range.toString();
+    if (!text) return null;
+    return { sel, range, text };
+  };
+
   // Wraps the current selection in a span carrying `overlay` merged on top of whatever attrs the
   // selection already had (only inherited when the selection exactly matches one existing styled
-  // span — a mixed/plain selection just gets `overlay` applied fresh, same as color always did).
-  // Each key in `overlay` TOGGLES: clicking the same color/bold/underline again on a selection
-  // that already has exactly that value clears it, instead of just re-applying it.
+  // span — a mixed/plain selection just gets `overlay` applied fresh).
   const applyFormat = (overlay: Attrs) => {
-    const root = rootRef.current;
-    if (!root) return;
-    const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
-    const range = sel.getRangeAt(0);
-    if (!root.contains(range.commonAncestorContainer)) return;
-    const text = range.toString();
-    if (!text) return;
+    const picked = currentSelection();
+    if (!picked) return;
+    const { sel, range, text } = picked;
 
     // Inherit existing attrs when the selection is exactly one styled span (whole or partial —
     // cloneContents normalizes container-level selections like Ctrl+A the same as a text-node
@@ -231,28 +238,32 @@ export function ColoredTextField({
         ? attrsOf(clone.childNodes[0] as HTMLElement)
         : {};
 
-    const toggle = <K extends keyof Attrs>(key: K, current: Attrs[K]): Attrs[K] =>
-      (base[key] || undefined) === current ? undefined : current;
-    const merged: Attrs = {
-      color: 'color' in overlay ? toggle('color', overlay.color) : base.color,
-      bold: 'bold' in overlay ? toggle('bold', overlay.bold) : base.bold,
-      underline: 'underline' in overlay ? toggle('underline', overlay.underline) : base.underline,
-    };
-
+    const merged: Attrs = { ...base, ...overlay };
+    const span = document.createElement('span');
+    applyAttrsToSpan(span, merged);
+    span.textContent = text;
     range.deleteContents();
-    if (merged.color || merged.bold || merged.underline) {
-      const span = document.createElement('span');
-      applyAttrsToSpan(span, merged);
-      span.textContent = text;
-      range.insertNode(span);
-      range.setStartAfter(span);
-      range.setEndAfter(span);
-    } else {
-      const textNode = document.createTextNode(text);
-      range.insertNode(textNode);
-      range.setStartAfter(textNode);
-      range.setEndAfter(textNode);
-    }
+    range.insertNode(span);
+    range.setStartAfter(span);
+    range.setEndAfter(span);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    emitChange();
+  };
+
+  // Strips all formatting (color/bold/underline) from the current selection — the reliable
+  // "undo" for the toolbar buttons above, since re-clicking the same button on a reselected run
+  // depends on the selection lining up exactly with an existing styled span, which real
+  // click-and-drag selections don't always do.
+  const clearFormat = () => {
+    const picked = currentSelection();
+    if (!picked) return;
+    const { sel, range, text } = picked;
+    range.deleteContents();
+    const textNode = document.createTextNode(text);
+    range.insertNode(textNode);
+    range.setStartAfter(textNode);
+    range.setEndAfter(textNode);
     sel.removeAllRanges();
     sel.addRange(range);
     emitChange();
@@ -296,7 +307,16 @@ export function ColoredTextField({
         >
           <Underline size={formatIconSize} />
         </button>
-        {!compact && <span className="text-[10px] text-slate-400">— metni seçip bir renge/biçime tıkla</span>}
+        <button
+          type="button"
+          title="Biçimlendirmeyi Kaldır"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={clearFormat}
+          className={`flex items-center justify-center rounded border border-slate-300 shadow-sm shrink-0 text-slate-600 hover:bg-slate-50 ${formatBtnSize}`}
+        >
+          <Eraser size={formatIconSize} />
+        </button>
+        {!compact && <span className="text-[10px] text-slate-400">— metni seçip bir renge/biçime tıkla, kaldırmak için silgiye tıkla</span>}
       </div>
       <div
         ref={rootRef}
