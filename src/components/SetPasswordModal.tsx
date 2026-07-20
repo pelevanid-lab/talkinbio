@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Loader2, Lock } from 'lucide-react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function SetPasswordModal({ hasPassword, businessId }: { hasPassword: boolean, businessId: string }) {
+  const t = useTranslations('SetPasswordModal');
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -32,12 +34,12 @@ export default function SetPasswordModal({ hasPassword, businessId }: { hasPassw
     setError('');
 
     if (password.length < 6) {
-      setError('Şifreniz en az 6 karakter olmalıdır.');
+      setError(t('passwordTooShort'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Şifreler eşleşmiyor.');
+      setError(t('passwordMismatch'));
       return;
     }
 
@@ -69,7 +71,7 @@ export default function SetPasswordModal({ hasPassword, businessId }: { hasPassw
         router.replace(newUrl);
       }
     } catch (err: any) {
-      setError(err.message || 'Şifre güncellenirken bir hata oluştu.');
+      setError(err.message || t('updateErrorGeneric'));
     } finally {
       setIsLoading(false);
     }
@@ -82,9 +84,9 @@ export default function SetPasswordModal({ hasPassword, businessId }: { hasPassw
           <div className="w-12 h-12 bg-[var(--coral-tint)] text-[var(--coral)] rounded-full flex items-center justify-center mx-auto mb-4">
             <Lock className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Hesap Şifrenizi Belirleyin</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('title')}</h2>
           <p className="text-sm text-slate-500">
-            Hesabınızı güvene almak ve sonraki girişlerinizde e-posta ve şifre kullanabilmek için lütfen bir şifre belirleyin.
+            {t('description')}
           </p>
         </div>
 
@@ -96,7 +98,7 @@ export default function SetPasswordModal({ hasPassword, businessId }: { hasPassw
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Yeni Şifre</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">{t('newPasswordLabel')}</label>
             <input
               type="password"
               required
@@ -107,9 +109,9 @@ export default function SetPasswordModal({ hasPassword, businessId }: { hasPassw
               minLength={6}
             />
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Şifre (Tekrar)</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">{t('confirmPasswordLabel')}</label>
             <input
               type="password"
               required
@@ -127,7 +129,7 @@ export default function SetPasswordModal({ hasPassword, businessId }: { hasPassw
             className="w-full bg-[var(--coral)] text-white rounded-lg px-4 py-2 font-medium hover:bg-[#E55A4D] disabled:opacity-50 flex items-center justify-center transition mt-6"
           >
             {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {isLoading ? 'Kaydediliyor...' : 'Şifreyi Kaydet ve Devam Et'}
+            {isLoading ? t('savingBtn') : t('saveBtn')}
           </button>
         </form>
       </div>

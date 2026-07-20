@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { hasRealContent } from '@/config/blockTypes';
 
 export type SuggestionType = 'warning' | 'info' | 'success';
@@ -21,6 +22,7 @@ export function useBeiweSuggestions(
   locale: string,
   hasCustomTheme: boolean
 ) {
+  const t = useTranslations('Editor.ruleBasedSuggestions');
   return useMemo(() => {
     const suggestions: Suggestion[] = [];
 
@@ -38,9 +40,9 @@ export function useBeiweSuggestions(
       if (text.length > 0 && text.length < 60) {
         suggestions.push({
           id: 'short-about',
-          message: 'Hakkımda metniniz oldukça kısa. Biraz daha hikayenizi anlatmak güven verir.',
+          message: t('shortAbout.message'),
           type: 'warning',
-          triggerMessage: 'Hakkımda metnimi genişletmek için bana birkaç soru sorar mısın?',
+          triggerMessage: t('shortAbout.trigger'),
           icon: '✍️'
         });
       }
@@ -55,9 +57,9 @@ export function useBeiweSuggestions(
       if (items.length > 0 && (!hasImage && !hasPrice)) {
         suggestions.push({
           id: 'bland-services',
-          message: 'Hizmetlerinizde görsel veya fiyat bilgisi yok. Bunları eklemek dönüşümü artırabilir.',
+          message: t('blandServices.message'),
           type: 'info',
-          triggerMessage: 'Mevcut hizmetlerime fiyat ve detay eklemek istiyorum.',
+          triggerMessage: t('blandServices.trigger'),
           icon: '🛍️'
         });
       }
@@ -67,9 +69,9 @@ export function useBeiweSuggestions(
     if (businessCategory && VISUAL_SECTORS.includes(businessCategory) && !galleryBlock) {
       suggestions.push({
         id: 'missing-gallery',
-        message: 'Sektörünüz gereği işlerinizi sergilemek önemli. Bir Fotoğraf Galerisi ekleyelim.',
+        message: t('missingGallery.message'),
         type: 'warning',
-        triggerMessage: 'Sayfama bir fotoğraf galerisi eklemek istiyorum.',
+        triggerMessage: t('missingGallery.trigger'),
         icon: '📸'
       });
     }
@@ -78,9 +80,9 @@ export function useBeiweSuggestions(
     if (businessCategory && TRUST_SECTORS.includes(businessCategory) && !testimonialsBlock) {
       suggestions.push({
         id: 'missing-testimonials',
-        message: 'Müşteri yorumları potansiyel müşterilere güven verir. Referanslarınızı eklemeyi düşünün.',
+        message: t('missingTestimonials.message'),
         type: 'info',
-        triggerMessage: 'Sayfama müşteri yorumları (Testimonials) ekleyelim.',
+        triggerMessage: t('missingTestimonials.trigger'),
         icon: '⭐'
       });
     }
@@ -89,9 +91,9 @@ export function useBeiweSuggestions(
     if (!linksBlock) {
       suggestions.push({
         id: 'missing-links',
-        message: 'Sosyal medya hesaplarınızı veya randevu bağlantılarınızı eklemediniz.',
+        message: t('missingLinks.message'),
         type: 'info',
-        triggerMessage: 'Sosyal medya ve randevu bağlantılarımı eklemek istiyorum.',
+        triggerMessage: t('missingLinks.trigger'),
         icon: '🔗'
       });
     }
@@ -100,13 +102,13 @@ export function useBeiweSuggestions(
     if (!hasCustomTheme) {
       suggestions.push({
         id: 'missing-theme',
-        message: 'Sayfanıza henüz özgün bir renk paleti ve font çifti atanmamış.',
+        message: t('missingTheme.message'),
         type: 'warning',
-        triggerMessage: 'İşletmeme uygun özgün bir tasarım (renk ve font) tasarlar mısın?',
+        triggerMessage: t('missingTheme.trigger'),
         icon: '🎨'
       });
     }
 
     return suggestions;
-  }, [blocks, businessCategory, contactValue, locale, hasCustomTheme]);
+  }, [blocks, businessCategory, contactValue, locale, hasCustomTheme, t]);
 }

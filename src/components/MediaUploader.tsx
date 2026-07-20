@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface MediaUploaderProps {
   value: string;
@@ -11,26 +12,28 @@ interface MediaUploaderProps {
   bucket?: string;
 }
 
-export default function MediaUploader({ value, onChange, label = "Görsel Seç veya Sürükle", bucket = "media" }: MediaUploaderProps) {
+export default function MediaUploader({ value, onChange, label, bucket = "media" }: MediaUploaderProps) {
+  const t = useTranslations('MediaUploader');
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
+  const resolvedLabel = label ?? t('defaultLabel');
 
   const handleUpload = async (file: File) => {
     try {
       setIsUploading(true);
       setError(null);
-      
+
       // Valide file type
       if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-        throw new Error('Sadece fotoğraf veya video yükleyebilirsiniz.');
+        throw new Error(t('errorInvalidType'));
       }
 
       // Max size: 10MB
       if (file.size > 10 * 1024 * 1024) {
-        throw new Error('Dosya boyutu 10MB\'dan küçük olmalıdır.');
+        throw new Error(t('errorFileSize'));
       }
 
       // Create unique filename
@@ -56,7 +59,7 @@ export default function MediaUploader({ value, onChange, label = "Görsel Seç v
       onChange(publicUrl);
     } catch (err: any) {
       console.error('Upload Error:', err);
-      setError(err.message || 'Dosya yüklenirken bir hata oluştu.');
+      setError(err.message || t('errorGeneric'));
     } finally {
       setIsUploading(false);
       // Reset input value to allow uploading same file again if needed
@@ -135,15 +138,15 @@ export default function MediaUploader({ value, onChange, label = "Görsel Seç v
           {isUploading ? (
             <div className="flex flex-col items-center text-[var(--coral)]">
               <Loader2 className="w-8 h-8 animate-spin mb-2" />
-              <span className="text-sm font-medium">Yükleniyor...</span>
+              <span className="text-sm font-medium">{t('uploadingLabel')}</span>
             </div>
           ) : (
             <div className="flex flex-col items-center text-slate-500">
               <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mb-2">
                 <Upload className="w-5 h-5 text-slate-400" />
               </div>
-              <span className="text-sm font-medium text-[var(--ink)]">{label}</span>
-              <span className="text-xs text-[var(--ink-soft)] mt-1">10MB'a kadar</span>
+              <span className="text-sm font-medium text-[var(--ink)]">{resolvedLabel}</span>
+              <span className="text-xs text-[var(--ink-soft)] mt-1">{t('maxSizeHint')}</span>
             </div>
           )}
         </div>

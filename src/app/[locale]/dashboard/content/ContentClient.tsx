@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { FileText, Loader2, Copy, Check, Inbox, Sparkles } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import CreditBadge from '@/components/CreditBadge';
 
 type ContentSourceOption = {
@@ -14,19 +15,15 @@ type ContentSourceOption = {
 
 type ContentFormat = 'instagram_post' | 'instagram_story' | 'whatsapp_status';
 
-const FORMAT_OPTIONS: { value: ContentFormat; label: string }[] = [
-  { value: 'instagram_post', label: 'Instagram Gönderisi' },
-  { value: 'instagram_story', label: 'Instagram Hikayesi' },
-  { value: 'whatsapp_status', label: 'WhatsApp Durumu' },
-];
-
-const LOCALE_LABELS: Record<'tr' | 'en' | 'ru', string> = { tr: 'Türkçe', en: 'İngilizce', ru: 'Rusça' };
-
 type GeneratedResult = Record<'tr' | 'en' | 'ru', { caption: string; hashtags?: string[] }>;
 
-function buildSourceOptions(business: { name: string }, blocks: { type: string; content: any }[]): ContentSourceOption[] {
+function buildSourceOptions(
+  business: { name: string },
+  blocks: { type: string; content: any }[],
+  t: (key: string, values?: Record<string, string | number>) => string
+): ContentSourceOption[] {
   const options: ContentSourceOption[] = [
-    { key: 'general', type: 'general', label: 'Genel Tanıtım', title: business.name },
+    { key: 'general', type: 'general', label: t('sourceGeneral'), title: business.name },
   ];
 
   for (const block of blocks) {
@@ -34,17 +31,17 @@ function buildSourceOptions(business: { name: string }, blocks: { type: string; 
     if (block.type === 'services') {
       items.forEach((item: any, i: number) => {
         if (!item.tr?.title) return;
-        options.push({ key: `service-${i}`, type: 'service', label: `Hizmet: ${item.tr.title}`, title: item.tr.title, description: item.tr.description });
+        options.push({ key: `service-${i}`, type: 'service', label: t('sourceServiceLabel', { title: item.tr.title }), title: item.tr.title, description: item.tr.description });
       });
     } else if (block.type === 'gallery') {
       items.forEach((item: any, i: number) => {
-        const title = item.caption?.tr || `Galeri görseli ${i + 1}`;
-        options.push({ key: `gallery-${i}`, type: 'gallery', label: `Galeri: ${title}`, title });
+        const title = item.caption?.tr || t('sourceGalleryDefaultTitle', { index: i + 1 });
+        options.push({ key: `gallery-${i}`, type: 'gallery', label: t('sourceGalleryLabel', { title }), title });
       });
     } else if (block.type === 'testimonials') {
       items.forEach((item: any, i: number) => {
         if (!item.author) return;
-        options.push({ key: `testimonial-${i}`, type: 'testimonial', label: `Yorum: ${item.author}`, title: item.author, description: item.quote?.tr });
+        options.push({ key: `testimonial-${i}`, type: 'testimonial', label: t('sourceTestimonialLabel', { author: item.author }), title: item.author, description: item.quote?.tr });
       });
     }
   }
@@ -53,6 +50,7 @@ function buildSourceOptions(business: { name: string }, blocks: { type: string; 
 }
 
 function CopyButton({ text }: { text: string }) {
+  const t = useTranslations('ContentStudio');
   const [copied, setCopied] = useState(false);
   return (
     <button
@@ -62,7 +60,7 @@ function CopyButton({ text }: { text: string }) {
         setTimeout(() => setCopied(false), 1500);
       }}
       className="p-1.5 rounded-md text-[#8A8880] hover:bg-[#F4F2ED] hover:text-[#14231F] transition-colors shrink-0"
-      title="Kopyala"
+      title={t('copyTooltip')}
     >
       {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
     </button>
@@ -70,7 +68,8 @@ function CopyButton({ text }: { text: string }) {
 }
 
 export default function ContentClient({ business, blocks }: { business: any; blocks: any[] }) {
-  const sourceOptions = useMemo(() => buildSourceOptions(business, blocks), [business, blocks]);
+  const t = useTranslations('ContentStudio');
+  const sourceOptions = useMemo(() => buildSourceOptions(business, blocks, t), [business, blocks, t]);
   const [selectedKey, setSelectedKey] = useState(sourceOptions[0]?.key || '');
   const [format, setFormat] = useState<ContentFormat>('instagram_post');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -78,6 +77,18 @@ export default function ContentClient({ business, blocks }: { business: any; blo
   const [error, setError] = useState<string | null>(null);
 
   const selectedSource = sourceOptions.find((s) => s.key === selectedKey);
+
+  const formatOptions: { value: ContentFormat; label: string }[] = [
+    { value: 'instagram_post', label: t('formatInstagramPost') },
+    { value: 'instagram_story', label: t('formatInstagramStory') },
+    { value: 'whatsapp_status', label: t('formatWhatsappStatus') },
+  ];
+
+  const localeLabels: Record<'tr' | 'en' | 'ru', string> = {
+    tr: t('localeLabelTr'),
+    en: t('localeLabelEn'),
+    ru: t('localeLabelRu'),
+  };
 
   const handleGenerate = async () => {
     if (!selectedSource) return;
@@ -95,10 +106,10 @@ export default function ContentClient({ business, blocks }: { business: any; blo
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'İçerik üretilemedi.');
+      if (!res.ok) throw new Error(data.error || t('generateErrorDefault'));
       setResult(data);
     } catch (err: any) {
-      setError(err.message || 'İçerik üretilirken bir hata oluştu.');
+      setError(err.message || t('generateErrorGeneric'));
     } finally {
       setIsGenerating(false);
     }
@@ -110,17 +121,17 @@ export default function ContentClient({ business, blocks }: { business: any; blo
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           <div>
             <h1 className="text-xl font-[800] tracking-[-0.02em] text-[#14231F] flex items-center gap-2">
-              <FileText className="w-5 h-5" /> İçerik Stüdyosu
+              <FileText className="w-5 h-5" /> {t('pageTitle')}
             </h1>
             <p className="text-sm text-[#4B5A55] font-['Inter']">{business.name}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <CreditBadge balance={business.credit_balance ?? 0} />
             <a href="/dashboard/leads" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap flex items-center gap-1.5">
-              <Inbox className="w-4 h-4" /> Panel
+              <Inbox className="w-4 h-4" /> {t('navPanel')}
             </a>
             <a href="/dashboard/editor" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
-              Editör
+              {t('navEditor')}
             </a>
           </div>
         </div>
@@ -129,7 +140,7 @@ export default function ContentClient({ business, blocks }: { business: any; blo
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
         <div className="bg-white rounded-2xl border border-[rgba(20,35,31,0.10)] p-5 flex flex-col gap-4">
           <div>
-            <label className="text-sm font-semibold text-[#14231F] block mb-2">Ne hakkında içerik üretelim?</label>
+            <label className="text-sm font-semibold text-[#14231F] block mb-2">{t('sourceQuestion')}</label>
             <select
               value={selectedKey}
               onChange={(e) => setSelectedKey(e.target.value)}
@@ -142,9 +153,9 @@ export default function ContentClient({ business, blocks }: { business: any; blo
           </div>
 
           <div>
-            <label className="text-sm font-semibold text-[#14231F] block mb-2">Format</label>
+            <label className="text-sm font-semibold text-[#14231F] block mb-2">{t('formatLabel')}</label>
             <div className="flex flex-wrap gap-2">
-              {FORMAT_OPTIONS.map((opt) => (
+              {formatOptions.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => setFormat(opt.value)}
@@ -162,7 +173,7 @@ export default function ContentClient({ business, blocks }: { business: any; blo
             className="self-start bg-[#FF6A5C] text-white px-5 py-2.5 rounded-full font-medium text-sm flex items-center gap-2 hover:bg-[#FF5847] transition-colors disabled:opacity-50"
           >
             {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {isGenerating ? 'Üretiliyor...' : 'Oluştur'}
+            {isGenerating ? t('generatingBtn') : t('generateBtn')}
           </button>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
@@ -173,7 +184,7 @@ export default function ContentClient({ business, blocks }: { business: any; blo
             {(['tr', 'en', 'ru'] as const).map((loc) => (
               <div key={loc} className="bg-white rounded-2xl border border-[rgba(20,35,31,0.10)] p-5">
                 <div className="flex justify-between items-start gap-3 mb-2">
-                  <h3 className="text-sm font-bold text-[#14231F]">{LOCALE_LABELS[loc]}</h3>
+                  <h3 className="text-sm font-bold text-[#14231F]">{localeLabels[loc]}</h3>
                   <CopyButton text={[result[loc].caption, ...(result[loc].hashtags || []).map((h) => `#${h.replace(/^#/, '')}`)].join('\n\n')} />
                 </div>
                 <p className="text-sm text-[#14231F] whitespace-pre-wrap leading-relaxed">{result[loc].caption}</p>

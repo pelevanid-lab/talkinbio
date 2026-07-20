@@ -258,7 +258,34 @@
     "layoutLinktree": "Blok (Linktree)",
     "layoutDescription": "Web Sitesi tüm içerikleri alt alta gösterir. Blok modu ise menü açarak sadece tıklanan bölümü gösterir.",
     "etcAbbr": "vb.",
-    "bulkPromptTemplate": "[BULK]\nİşte işletmemle ilgili tüm detaylar. Lütfen soru sormak yerine, elindeki bütün bilgiyi analiz et ve eksik olan tüm blokları ({labels}) arka arkaya araçları çağırarak tek seferde oluştur:\n\n{text}"
+    "bulkPromptTemplate": "[BULK]\nİşte işletmemle ilgili tüm detaylar. Lütfen soru sormak yerine, elindeki bütün bilgiyi analiz et ve eksik olan tüm blokları ({labels}) arka arkaya araçları çağırarak tek seferde oluştur:\n\n{text}",
+    "businessNotFound": "İşletme bulunamadı. Lütfen yöneticiyle iletişime geçin.",
+    "ruleBasedSuggestions": {
+      "shortAbout": {
+        "message": "Hakkımda metniniz oldukça kısa. Biraz daha hikayenizi anlatmak güven verir.",
+        "trigger": "Hakkımda metnimi genişletmek için bana birkaç soru sorar mısın?"
+      },
+      "blandServices": {
+        "message": "Hizmetlerinizde görsel veya fiyat bilgisi yok. Bunları eklemek dönüşümü artırabilir.",
+        "trigger": "Mevcut hizmetlerime fiyat ve detay eklemek istiyorum."
+      },
+      "missingGallery": {
+        "message": "Sektörünüz gereği işlerinizi sergilemek önemli. Bir Fotoğraf Galerisi ekleyelim.",
+        "trigger": "Sayfama bir fotoğraf galerisi eklemek istiyorum."
+      },
+      "missingTestimonials": {
+        "message": "Müşteri yorumları potansiyel müşterilere güven verir. Referanslarınızı eklemeyi düşünün.",
+        "trigger": "Sayfama müşteri yorumları (Testimonials) ekleyelim."
+      },
+      "missingLinks": {
+        "message": "Sosyal medya hesaplarınızı veya randevu bağlantılarınızı eklemediniz.",
+        "trigger": "Sosyal medya ve randevu bağlantılarımı eklemek istiyorum."
+      },
+      "missingTheme": {
+        "message": "Sayfanıza henüz özgün bir renk paleti ve font çifti atanmamış.",
+        "trigger": "İşletmeme uygun özgün bir tasarım (renk ve font) tasarlar mısın?"
+      }
+    }
   },
   "BlockEditor": {
     "title": "Bloğu Düzenle",
@@ -574,5 +601,139 @@
   "Metadata": {
     "title": "Talkinbio | Biyografinizi Akıllı Asistana Dönüştürün",
     "description": "Talkinbio, sosyal medya takipçilerinizle 7/24 kendi dilinde görüşen, randevu ve talep toplayan yapay zeka tabanlı dijital satış asistanınızdır."
+  },
+  "ContentStudio": {
+    "noBusinessTitle": "Henüz bir işletme kurmamışsınız",
+    "noBusinessDescription": "İçerik üretebilmek için önce profilinizi oluşturun.",
+    "createProfileBtn": "Profili Oluştur",
+    "pageTitle": "İçerik Stüdyosu",
+    "navPanel": "Panel",
+    "navEditor": "Editör",
+    "sourceGeneral": "Genel Tanıtım",
+    "sourceServiceLabel": "Hizmet: {title}",
+    "sourceGalleryLabel": "Galeri: {title}",
+    "sourceGalleryDefaultTitle": "Galeri görseli {index}",
+    "sourceTestimonialLabel": "Yorum: {author}",
+    "copyTooltip": "Kopyala",
+    "sourceQuestion": "Ne hakkında içerik üretelim?",
+    "formatLabel": "Format",
+    "formatInstagramPost": "Instagram Gönderisi",
+    "formatInstagramStory": "Instagram Hikayesi",
+    "formatWhatsappStatus": "WhatsApp Durumu",
+    "generatingBtn": "Üretiliyor...",
+    "generateBtn": "Oluştur",
+    "generateErrorDefault": "İçerik üretilemedi.",
+    "generateErrorGeneric": "İçerik üretilirken bir hata oluştu.",
+    "localeLabelTr": "Türkçe",
+    "localeLabelEn": "İngilizce",
+    "localeLabelRu": "Rusça"
+  },
+  "Leads": {
+    "noBusinessTitle": "Henüz bir işletme kurmamışsınız",
+    "noBusinessDescription": "Müşteri taleplerini görebilmek için önce profilinizi oluşturun.",
+    "createProfileBtn": "Profili Oluştur",
+    "headerTitle": "Talepler & Asistan",
+    "tabRequests": "Talepler",
+    "tabConversations": "Konuşmalar",
+    "tabSettings": "Saule Ayarları",
+    "navContent": "İçerik",
+    "navEditor": "Editör",
+    "navViewProfile": "Profilimi Gör",
+    "viewArchived": "Arşivlenenleri gör ({count})",
+    "backToActiveLeads": "Aktif taleplere dön",
+    "backToActiveConversations": "Aktif konuşmalara dön",
+    "emptyLeadsTitle": "Henüz hiç talep almadınız",
+    "emptyLeadsDescription": "Ziyaretçileriniz asistanınız Saule ile konuşup bir hizmet talep ettiğinde burada görünecekler.",
+    "emptyArchivedLeadsTitle": "Arşivlenmiş talep yok",
+    "emptyArchivedLeadsDescription": "Arşivlediğiniz talepler burada görünecek.",
+    "statusNew": "Yeni",
+    "statusSeen": "İncelendi",
+    "statusDone": "Tamamlandı",
+    "preferredTime": "Tercih edilen zaman: {time}",
+    "notesLabel": "Notunuz",
+    "notesPlaceholder": "Bu kişi hakkında kendinize not bırakın — yalnızca siz görürsünüz.",
+    "messageBtn": "Mesaj At",
+    "viewConversationBtn": "Konuşmayı Gör",
+    "markSeenBtn": "İşaretle",
+    "archiveTooltip": "Arşivle",
+    "unarchiveTooltip": "Arşivden çıkar",
+    "deleteTooltip": "Kalıcı olarak sil",
+    "archiveError": "İşlem sırasında bir hata oluştu.",
+    "notesSaveError": "Not kaydedilirken bir hata oluştu.",
+    "deleteLeadConfirm": "Bu talebi kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
+    "deleteConversationConfirm": "Bu konuşmayı kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
+    "deleteError": "Silinirken bir hata oluştu.",
+    "settingsSaveError": "Ayarlar kaydedilirken hata oluştu.",
+    "settingsSavedToast": "Ayarlar kaydedildi",
+    "saveSettingsBtn": "Ayarları Kaydet",
+    "sauleSubtitle": "Dijital Ön Masa Asistanınız",
+    "toneSectionTitle": "Kişilik & Ton",
+    "toneFriendlyLabel": "Sıcak & Samimi",
+    "toneFormalLabel": "Resmi & Profesyonel",
+    "toneEnergeticLabel": "Enerjik",
+    "toneFriendlyDesc": "Ziyaretçilerle arkadaş canlısı konuşur.",
+    "toneFormalDesc": "Daha ciddi ve mesafeli bir dil kullanır.",
+    "toneEnergeticDesc": "Heyecanlı ve pozitif bir yaklaşım sergiler.",
+    "leadCaptureTitle": "Lead Yakalama",
+    "leadCaptureDesc": "Ziyaretçilerden iletişim bilgisi istesin mi?",
+    "appointmentTitle": "Randevu Akışı",
+    "appointmentDesc": "Randevu/rezervasyon talebi alsın mı?",
+    "appointmentInstructionsLabel": "Randevu Talimatı",
+    "appointmentInstructionsPlaceholder": "Örn: Hangi gün ve saatte gelmek istediklerini sor.",
+    "appointmentHint": "Bu özellik şu an \"Talepler\" sekmesine lead kaydı oluşturur. Takvim entegrasyonu yakında eklenecektir.",
+    "greetingTitle": "Özel Karşılama",
+    "greetingDesc": "İlk mesajı siz belirleyin.",
+    "greetingHint": "Ziyaretçinin sayfayı görüntülediği dile göre gösterilir; boş bıraktığınız dilde Saule'nin varsayılan karşılaması kullanılır.",
+    "footerTextBeforeEmail": "Talkinbio sürekli gelişen bir uygulama. Geri bildiriminiz, istekleriniz veya şikayetleriniz varsa bize ",
+    "footerTextAfterEmail": " adresinden ulaşabilirsiniz.",
+    "conversations": {
+      "emptyTitle": "Henüz hiç konuşma yok",
+      "emptyDescription": "Ziyaretçileriniz Saule ile konuşmaya başladığında transkriptler burada görünecek.",
+      "noArchived": "Arşivlenmiş konuşma yok.",
+      "noActive": "Aktif konuşma yok.",
+      "testConversationLabel": "Test Konuşması",
+      "visitorLabel": "Ziyaretçi #{id}",
+      "testBadge": "Test",
+      "selectPrompt": "Görüntülemek için soldan bir konuşma seçin."
+    },
+    "knowledgeBase": {
+      "title": "Bilgi Tabanı",
+      "description": "Saule'ye sayfada yazmayan şeyleri öğretin (iptal politikası, özel kurallar vb.).",
+      "addBtn": "Not Ekle",
+      "overBudgetWarning": "Aktif notlarınız yaklaşık {tokens} token'a ulaştı — bu, her Saule mesajının maliyetini artırıyor. Kısaltmayı veya az kullanılan notları pasifleştirmeyi düşünün.",
+      "titlePlaceholder": "Başlık (opsiyonel)",
+      "contentPlaceholder": "Örn: Randevu iptalleri en az 24 saat önceden bildirilmeli.",
+      "cancelBtn": "Vazgeç",
+      "saveBtn": "Kaydet",
+      "addError": "Not eklenirken hata oluştu.",
+      "editError": "Not güncellenirken hata oluştu.",
+      "emptyState": "Henüz not eklenmedi.",
+      "editTooltip": "Düzenle",
+      "deactivateTooltip": "Pasifleştir",
+      "activateTooltip": "Aktifleştir"
+    }
+  },
+  "MediaUploader": {
+    "defaultLabel": "Görsel Seç veya Sürükle",
+    "errorInvalidType": "Sadece fotoğraf veya video yükleyebilirsiniz.",
+    "errorFileSize": "Dosya boyutu 10MB'dan küçük olmalıdır.",
+    "errorGeneric": "Dosya yüklenirken bir hata oluştu.",
+    "uploadingLabel": "Yükleniyor...",
+    "maxSizeHint": "10MB'a kadar"
+  },
+  "SetPasswordModal": {
+    "passwordTooShort": "Şifreniz en az 6 karakter olmalıdır.",
+    "passwordMismatch": "Şifreler eşleşmiyor.",
+    "updateErrorGeneric": "Şifre güncellenirken bir hata oluştu.",
+    "title": "Hesap Şifrenizi Belirleyin",
+    "description": "Hesabınızı güvene almak ve sonraki girişlerinizde e-posta ve şifre kullanabilmek için lütfen bir şifre belirleyin.",
+    "newPasswordLabel": "Yeni Şifre",
+    "confirmPasswordLabel": "Şifre (Tekrar)",
+    "savingBtn": "Kaydediliyor...",
+    "saveBtn": "Şifreyi Kaydet ve Devam Et"
+  },
+  "CreditBadge": {
+    "tooltip": "Kredi bakiyeniz — plan ve paketler için tıklayın",
+    "label": "{balance} kredi"
   }
 }

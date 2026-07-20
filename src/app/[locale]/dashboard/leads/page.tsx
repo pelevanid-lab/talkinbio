@@ -1,5 +1,6 @@
 import { createClient as createServerClient } from '@/utils/supabase/server';
 import { notFound, redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import LeadsClient from './LeadsClient';
 
 export default async function LeadsDashboardPage() {
@@ -18,11 +19,12 @@ export default async function LeadsDashboardPage() {
     .single();
 
   if (!business) {
+    const t = await getTranslations('Leads');
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-4">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Henüz bir işletme kurmamışsınız</h1>
-        <p className="text-slate-500 mb-6">Müşteri taleplerini görebilmek için önce profilinizi oluşturun.</p>
-        <a href="/onboarding" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700">Profili Oluştur</a>
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">{t('noBusinessTitle')}</h1>
+        <p className="text-slate-500 mb-6">{t('noBusinessDescription')}</p>
+        <a href="/onboarding" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700">{t('createProfileBtn')}</a>
       </div>
     );
   }

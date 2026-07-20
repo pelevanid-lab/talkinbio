@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import EditorClient from '@/components/EditorClient';
 
 export default async function EditorPage() {
@@ -18,9 +19,10 @@ export default async function EditorPage() {
     .single();
 
   if (!business) {
-    // If no business, maybe they didn't go through request access? 
+    // If no business, maybe they didn't go through request access?
     // Usually they should have it if they logged in via invite.
-    return <div>İşletme bulunamadı. Lütfen yöneticiyle iletişime geçin.</div>;
+    const t = await getTranslations('Editor');
+    return <div>{t('businessNotFound')}</div>;
   }
 
   // Fetch blocks, setup_sessions, setup_messages, and Beiwe insights (Faz 3.1 — konuşma madenciliği)

@@ -258,7 +258,34 @@
     "layoutLinktree": "Blocks (Linktree)",
     "layoutDescription": "Website mode shows all content stacked one below the other. Block mode opens a menu and shows only the section you tap.",
     "etcAbbr": "etc.",
-    "bulkPromptTemplate": "[BULK]\nHere are all the details about my business. Instead of asking questions, please analyze all the information provided and create every missing block ({labels}) one after another by calling the tools in a single pass:\n\n{text}"
+    "bulkPromptTemplate": "[BULK]\nHere are all the details about my business. Instead of asking questions, please analyze all the information provided and create every missing block ({labels}) one after another by calling the tools in a single pass:\n\n{text}",
+    "businessNotFound": "Business not found. Please contact the administrator.",
+    "ruleBasedSuggestions": {
+      "shortAbout": {
+        "message": "Your About text is quite short. Sharing a bit more of your story builds trust.",
+        "trigger": "Could you ask me a few questions to help expand my About text?"
+      },
+      "blandServices": {
+        "message": "Your services don't have images or pricing. Adding these can boost conversions.",
+        "trigger": "I'd like to add pricing and details to my existing services."
+      },
+      "missingGallery": {
+        "message": "Showcasing your work matters a lot in your industry. Let's add a Photo Gallery.",
+        "trigger": "I'd like to add a photo gallery to my page."
+      },
+      "missingTestimonials": {
+        "message": "Customer reviews build trust with potential clients. Consider adding your testimonials.",
+        "trigger": "Let's add customer testimonials to my page."
+      },
+      "missingLinks": {
+        "message": "You haven't added your social media accounts or booking links yet.",
+        "trigger": "I'd like to add my social media and booking links."
+      },
+      "missingTheme": {
+        "message": "Your page doesn't have a custom color palette and font pairing yet.",
+        "trigger": "Could you design a custom look (colors and fonts) that fits my business?"
+      }
+    }
   },
   "BlockEditor": {
     "title": "Edit Block",
@@ -574,5 +601,139 @@
   "Metadata": {
     "title": "Talkinbio | Turn Your Bio Into a Smart Assistant",
     "description": "Talkinbio is your AI-powered digital sales assistant that talks with your social media followers 24/7 in their language, collects leads, and books appointments."
+  },
+  "ContentStudio": {
+    "noBusinessTitle": "You haven't set up a business yet",
+    "noBusinessDescription": "Create your profile first to start generating content.",
+    "createProfileBtn": "Create Profile",
+    "pageTitle": "Content Studio",
+    "navPanel": "Panel",
+    "navEditor": "Editor",
+    "sourceGeneral": "General Promo",
+    "sourceServiceLabel": "Service: {title}",
+    "sourceGalleryLabel": "Gallery: {title}",
+    "sourceGalleryDefaultTitle": "Gallery image {index}",
+    "sourceTestimonialLabel": "Review: {author}",
+    "copyTooltip": "Copy",
+    "sourceQuestion": "What should we create content about?",
+    "formatLabel": "Format",
+    "formatInstagramPost": "Instagram Post",
+    "formatInstagramStory": "Instagram Story",
+    "formatWhatsappStatus": "WhatsApp Status",
+    "generatingBtn": "Generating...",
+    "generateBtn": "Generate",
+    "generateErrorDefault": "Couldn't generate content.",
+    "generateErrorGeneric": "An error occurred while generating content.",
+    "localeLabelTr": "Turkish",
+    "localeLabelEn": "English",
+    "localeLabelRu": "Russian"
+  },
+  "Leads": {
+    "noBusinessTitle": "You haven't set up a business yet",
+    "noBusinessDescription": "Create your profile first to see customer requests.",
+    "createProfileBtn": "Create Profile",
+    "headerTitle": "Requests & Assistant",
+    "tabRequests": "Requests",
+    "tabConversations": "Conversations",
+    "tabSettings": "Saule Settings",
+    "navContent": "Content",
+    "navEditor": "Editor",
+    "navViewProfile": "View My Profile",
+    "viewArchived": "View archived ({count})",
+    "backToActiveLeads": "Back to active requests",
+    "backToActiveConversations": "Back to active conversations",
+    "emptyLeadsTitle": "You haven't received any requests yet",
+    "emptyLeadsDescription": "Your visitors will show up here once they request a service by chatting with your assistant Saule.",
+    "emptyArchivedLeadsTitle": "No archived requests",
+    "emptyArchivedLeadsDescription": "Requests you archive will appear here.",
+    "statusNew": "New",
+    "statusSeen": "Reviewed",
+    "statusDone": "Completed",
+    "preferredTime": "Preferred time: {time}",
+    "notesLabel": "Your Note",
+    "notesPlaceholder": "Leave a private note about this person — only you can see it.",
+    "messageBtn": "Send Message",
+    "viewConversationBtn": "View Conversation",
+    "markSeenBtn": "Mark Reviewed",
+    "archiveTooltip": "Archive",
+    "unarchiveTooltip": "Unarchive",
+    "deleteTooltip": "Delete permanently",
+    "archiveError": "An error occurred during this action.",
+    "notesSaveError": "An error occurred while saving the note.",
+    "deleteLeadConfirm": "Are you sure you want to permanently delete this request? This action cannot be undone.",
+    "deleteConversationConfirm": "Are you sure you want to permanently delete this conversation? This action cannot be undone.",
+    "deleteError": "An error occurred while deleting.",
+    "settingsSaveError": "An error occurred while saving the settings.",
+    "settingsSavedToast": "Settings saved",
+    "saveSettingsBtn": "Save Settings",
+    "sauleSubtitle": "Your Digital Front Desk Assistant",
+    "toneSectionTitle": "Personality & Tone",
+    "toneFriendlyLabel": "Warm & Friendly",
+    "toneFormalLabel": "Formal & Professional",
+    "toneEnergeticLabel": "Energetic",
+    "toneFriendlyDesc": "Talks to visitors in a friendly, approachable way.",
+    "toneFormalDesc": "Uses a more serious and reserved tone.",
+    "toneEnergeticDesc": "Shows an excited and positive attitude.",
+    "leadCaptureTitle": "Lead Capture",
+    "leadCaptureDesc": "Should it ask visitors for their contact info?",
+    "appointmentTitle": "Appointment Flow",
+    "appointmentDesc": "Should it take appointment/booking requests?",
+    "appointmentInstructionsLabel": "Appointment Instructions",
+    "appointmentInstructionsPlaceholder": "E.g.: Ask which day and time they'd like to come in.",
+    "appointmentHint": "This feature currently creates a lead record in the \"Requests\" tab. Calendar integration is coming soon.",
+    "greetingTitle": "Custom Greeting",
+    "greetingDesc": "Set the first message yourself.",
+    "greetingHint": "Shown based on the language the visitor is viewing the page in; for any language you leave blank, Saule's default greeting is used.",
+    "footerTextBeforeEmail": "Talkinbio is a constantly evolving app. If you have feedback, requests, or complaints, you can reach us at ",
+    "footerTextAfterEmail": ".",
+    "conversations": {
+      "emptyTitle": "No conversations yet",
+      "emptyDescription": "Transcripts will appear here once your visitors start chatting with Saule.",
+      "noArchived": "No archived conversations.",
+      "noActive": "No active conversations.",
+      "testConversationLabel": "Test Conversation",
+      "visitorLabel": "Visitor #{id}",
+      "testBadge": "Test",
+      "selectPrompt": "Select a conversation on the left to view it."
+    },
+    "knowledgeBase": {
+      "title": "Knowledge Base",
+      "description": "Teach Saule things that aren't written on your page (cancellation policy, special rules, etc.).",
+      "addBtn": "Add Note",
+      "overBudgetWarning": "Your active notes have reached about {tokens} tokens — this increases the cost of every Saule message. Consider shortening them or deactivating rarely used notes.",
+      "titlePlaceholder": "Title (optional)",
+      "contentPlaceholder": "E.g.: Appointment cancellations must be reported at least 24 hours in advance.",
+      "cancelBtn": "Cancel",
+      "saveBtn": "Save",
+      "addError": "An error occurred while adding the note.",
+      "editError": "An error occurred while updating the note.",
+      "emptyState": "No notes added yet.",
+      "editTooltip": "Edit",
+      "deactivateTooltip": "Deactivate",
+      "activateTooltip": "Activate"
+    }
+  },
+  "MediaUploader": {
+    "defaultLabel": "Choose or Drag an Image",
+    "errorInvalidType": "You can only upload photos or videos.",
+    "errorFileSize": "File size must be under 10MB.",
+    "errorGeneric": "An error occurred while uploading the file.",
+    "uploadingLabel": "Uploading...",
+    "maxSizeHint": "Up to 10MB"
+  },
+  "SetPasswordModal": {
+    "passwordTooShort": "Your password must be at least 6 characters.",
+    "passwordMismatch": "Passwords don't match.",
+    "updateErrorGeneric": "An error occurred while updating your password.",
+    "title": "Set Your Account Password",
+    "description": "To secure your account and sign in with your email and password next time, please set a password.",
+    "newPasswordLabel": "New Password",
+    "confirmPasswordLabel": "Confirm Password",
+    "savingBtn": "Saving...",
+    "saveBtn": "Save Password and Continue"
+  },
+  "CreditBadge": {
+    "tooltip": "Your credit balance — click for plans and packages",
+    "label": "{balance} credits"
   }
 }
