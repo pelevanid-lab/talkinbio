@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { defaultUrlTransform } from 'react-markdown';
+import { useTranslations } from 'next-intl';
 import { Bold, Underline, Eraser } from 'lucide-react';
 
 // Shared authoring syntax for inline text styling, entered via the manual editor's toolbar
@@ -92,11 +93,14 @@ export function styleUrlTransform(url: string): string {
 }
 
 // Brand orange (--coral in landing.css / the logo's message-bubble color) always listed first.
+// `labelKey` resolves via useTranslations('BlockEditor.colorToolbar') in ColoredTextField below —
+// kept as translation keys rather than raw strings so the swatch tooltips follow the dashboard's
+// selected UI language instead of always showing Turkish.
 export const TEXT_COLOR_PRESETS = [
-  { label: 'Marka Turuncusu', hex: '#FF6A5C' },
-  { label: 'Koyu Lacivert', hex: '#14231F' },
-  { label: 'Yeşil', hex: '#2B6F5C' },
-  { label: 'Beyaz', hex: '#FFFFFF' },
+  { labelKey: 'presetBrand', hex: '#FF6A5C' },
+  { labelKey: 'presetNavy', hex: '#14231F' },
+  { labelKey: 'presetGreen', hex: '#2B6F5C' },
+  { labelKey: 'presetWhite', hex: '#FFFFFF' },
 ] as const;
 
 // --- DOM <-> `[[text|attrs]]` syntax bridge for ColoredTextField ---------------------------
@@ -195,6 +199,7 @@ export function ColoredTextField({
   className?: string;
   compact?: boolean;
 }) {
+  const t = useTranslations('BlockEditor.colorToolbar');
   const rootRef = useRef<HTMLDivElement>(null);
   const lastEmitted = useRef<string | null>(null);
 
@@ -281,12 +286,12 @@ export function ColoredTextField({
   return (
     <div>
       <div className={`flex items-center gap-1.5 flex-wrap ${compact ? 'mb-1' : 'mb-2'}`}>
-        {!compact && <span className="text-xs text-slate-400">Renk:</span>}
+        {!compact && <span className="text-xs text-slate-400">{t('label')}</span>}
         {TEXT_COLOR_PRESETS.map((c) => (
           <button
             key={c.hex}
             type="button"
-            title={c.label}
+            title={t(c.labelKey)}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => applyFormat({ color: c.hex })}
             className={`rounded-full border border-slate-300 shadow-sm shrink-0 ${swatchSize}`}
@@ -296,7 +301,7 @@ export function ColoredTextField({
         <CustomColorButton compact={compact} onApply={(hex) => applyFormat({ color: hex })} />
         <button
           type="button"
-          title="Kalın"
+          title={t('boldTitle')}
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => applyFormat({ bold: true })}
           className={`flex items-center justify-center rounded border border-slate-300 shadow-sm shrink-0 text-slate-600 hover:bg-slate-50 ${formatBtnSize}`}
@@ -305,7 +310,7 @@ export function ColoredTextField({
         </button>
         <button
           type="button"
-          title="Altı Çizili"
+          title={t('underlineTitle')}
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => applyFormat({ underline: true })}
           className={`flex items-center justify-center rounded border border-slate-300 shadow-sm shrink-0 text-slate-600 hover:bg-slate-50 ${formatBtnSize}`}
@@ -314,14 +319,14 @@ export function ColoredTextField({
         </button>
         <button
           type="button"
-          title="Biçimlendirmeyi Kaldır"
+          title={t('clearFormatTitle')}
           onMouseDown={(e) => e.preventDefault()}
           onClick={clearFormat}
           className={`flex items-center justify-center rounded border border-slate-300 shadow-sm shrink-0 text-slate-600 hover:bg-slate-50 ${formatBtnSize}`}
         >
           <Eraser size={formatIconSize} />
         </button>
-        {!compact && <span className="text-[10px] text-slate-400">— metni seçip bir renge/biçime tıkla, kaldırmak için silgiye tıkla</span>}
+        {!compact && <span className="text-[10px] text-slate-400">{t('hint')}</span>}
       </div>
       <div
         ref={rootRef}
@@ -344,6 +349,7 @@ export function ColoredTextField({
 }
 
 function CustomColorButton({ compact, onApply }: { compact: boolean; onApply: (hex: string) => void }) {
+  const t = useTranslations('BlockEditor.colorToolbar');
   const [hex, setHex] = useState('#FF6A5C');
   return (
     <>
@@ -353,7 +359,7 @@ function CustomColorButton({ compact, onApply }: { compact: boolean; onApply: (h
         onChange={(e) => setHex(e.target.value)}
         onMouseDown={(e) => e.preventDefault()}
         className={`rounded border border-slate-300 cursor-pointer p-0 shrink-0 ${compact ? 'w-4 h-4' : 'w-6 h-6'}`}
-        title="Özel renk"
+        title={t('customColorTitle')}
       />
       <button
         type="button"
@@ -361,7 +367,7 @@ function CustomColorButton({ compact, onApply }: { compact: boolean; onApply: (h
         onClick={() => onApply(hex)}
         className="text-xs text-[var(--coral)] font-medium hover:underline shrink-0"
       >
-        Uygula
+        {t('applyBtn')}
       </button>
     </>
   );
