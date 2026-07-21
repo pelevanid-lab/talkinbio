@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
 import ChatWidget from '@/components/ChatWidget';
 import ProfilePageBody from '@/components/ProfilePageBody';
 import { createClient } from '@/utils/supabase/server';
@@ -56,6 +57,7 @@ export async function generateMetadata({ params }: any) {
 
 export default async function BusinessProfilePage({ params }: any) {
   const { username, locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'PublicPage' });
   const supabase = await createClient();
 
   // 1. Fetch Business
@@ -163,7 +165,7 @@ export default async function BusinessProfilePage({ params }: any) {
       <link href={googleFontsHref(theme.headingFont, theme.bodyFont)} rel="stylesheet" />
       {!business.is_published && isOwner && (
         <div className="w-full bg-[var(--coral)] text-white text-center py-2 text-sm font-medium shadow-sm z-50">
-          Profiliniz henüz ziyaretçilere kapalı. Yayınlamak için eksikleri tamamlayın.
+          {t('unpublishedBanner')}
         </div>
       )}
       

@@ -2,15 +2,21 @@
 
 import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { formatDistanceToNow } from 'date-fns';
-import { tr } from 'date-fns/locale';
+import { formatDistanceToNow, type Locale } from 'date-fns';
+import { tr, enUS, ru } from 'date-fns/locale';
+import { useLocale, useTranslations } from 'next-intl';
 import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Send, MessageCircle, Archive, ArchiveRestore, Trash2, StickyNote, Mail } from 'lucide-react';
 import ConversationsPanel from './ConversationsPanel';
 import KnowledgeBasePanel from './KnowledgeBasePanel';
 import CreditBadge from '@/components/CreditBadge';
 
+const DATE_FNS_LOCALES: Record<string, Locale> = { tr, en: enUS, ru };
+
 export default function LeadsClient({ business, initialLeads, initialConversations, initialKnowledge }: { business: any, initialLeads: any[], initialConversations: any[], initialKnowledge: any[] }) {
   const supabase = createClient();
+  const t = useTranslations('Leads');
+  const locale = useLocale();
+  const dateLocale = DATE_FNS_LOCALES[locale] || tr;
   const [activeTab, setActiveTab] = useState<'leads' | 'conversations' | 'settings'>('leads');
   const [leads, setLeads] = useState(initialLeads);
   const [conversations] = useState(initialConversations);
@@ -40,7 +46,7 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
     if (error) {
       console.error(error);
       setLeads(prev);
-      alert('İşlem sırasında bir hata oluştu.');
+      alert(t('archiveError'));
     }
   };
 
@@ -48,19 +54,19 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
     const { error } = await supabase.from('leads').update({ notes }).eq('id', leadId);
     if (error) {
       console.error(error);
-      alert('Not kaydedilirken bir hata oluştu.');
+      alert(t('notesSaveError'));
     }
   };
 
   const handleDeleteLead = async (leadId: string) => {
-    if (!window.confirm('Bu talebi kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) return;
+    if (!window.confirm(t('deleteLeadConfirm'))) return;
     const prev = leads;
     setLeads(leads.filter(l => l.id !== leadId));
     const { error } = await supabase.from('leads').delete().eq('id', leadId);
     if (error) {
       console.error(error);
       setLeads(prev);
-      alert('Silinirken bir hata oluştu.');
+      alert(t('deleteError'));
     }
   };
 
@@ -73,7 +79,7 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
       setTimeout(() => setShowToast(false), 3000);
     } catch (err) {
       console.error(err);
-      alert('Ayarlar kaydedilirken hata oluştu.');
+      alert(t('settingsSaveError'));
     } finally {
       setIsSaving(false);
     }
@@ -85,7 +91,7 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
       <header className="bg-white border-b border-[rgba(20,35,31,0.10)] sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           <div>
-            <h1 className="text-xl font-[800] tracking-[-0.02em] text-[#14231F]">Talepler & Asistan</h1>
+            <h1 className="text-xl font-[800] tracking-[-0.02em] text-[#14231F]">{t('headerTitle')}</h1>
             <p className="text-sm text-[#4B5A55] font-['Inter']">{business.name}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -94,30 +100,30 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                 onClick={() => setActiveTab('leads')}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'leads' ? 'bg-white text-[#14231F] shadow-sm' : 'text-[#8A8880] hover:text-[#4B5A55]'}`}
               >
-                <Inbox className="w-4 h-4" /> Talepler
+                <Inbox className="w-4 h-4" /> {t('tabRequests')}
               </button>
               <button
                 onClick={() => setActiveTab('conversations')}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'conversations' ? 'bg-white text-[#14231F] shadow-sm' : 'text-[#8A8880] hover:text-[#4B5A55]'}`}
               >
-                <MessageCircle className="w-4 h-4" /> Konuşmalar
+                <MessageCircle className="w-4 h-4" /> {t('tabConversations')}
               </button>
               <button
                 onClick={() => setActiveTab('settings')}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'settings' ? 'bg-white text-[#14231F] shadow-sm' : 'text-[#8A8880] hover:text-[#4B5A55]'}`}
               >
-                <Settings className="w-4 h-4" /> Saule Ayarları
+                <Settings className="w-4 h-4" /> {t('tabSettings')}
               </button>
             </div>
             <CreditBadge balance={business.credit_balance ?? 0} />
             <a href="/dashboard/content" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
-              İçerik
+              {t('navContent')}
             </a>
             <a href="/dashboard/editor" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
-              Editör
+              {t('navEditor')}
             </a>
             <a href={`/${business.username}`} className="text-sm text-[#FF6A5C] font-medium bg-[#FFEDE9] px-4 py-2 rounded-full hover:bg-orange-100 transition whitespace-nowrap">
-              Profilimi Gör
+              {t('navViewProfile')}
             </a>
           </div>
         </div>
@@ -135,7 +141,7 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
               onClick={() => setShowArchivedLeads(!showArchivedLeads)}
               className="mb-4 text-sm font-medium text-[#8A8880] hover:text-[#14231F] transition flex items-center gap-1.5"
             >
-              {showArchivedLeads ? <><ArchiveRestore className="w-4 h-4" /> Aktif taleplere dön</> : <><Archive className="w-4 h-4" /> Arşivlenenleri gör ({archivedCount})</>}
+              {showArchivedLeads ? <><ArchiveRestore className="w-4 h-4" /> {t('backToActiveLeads')}</> : <><Archive className="w-4 h-4" /> {t('viewArchived', { count: archivedCount })}</>}
             </button>
           )}
           {visibleLeads.length === 0 ? (
@@ -143,8 +149,8 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
               <div className="w-16 h-16 bg-[#F4F2ED] rounded-full flex items-center justify-center text-[#8A8880] mb-4">
                 <UserIcon className="w-8 h-8" />
               </div>
-              <h2 className="text-lg font-[800] text-[#14231F] mb-2 font-['Bricolage_Grotesque']">{showArchivedLeads ? 'Arşivlenmiş talep yok' : 'Henüz hiç talep almadınız'}</h2>
-              <p className="text-[#4B5A55] max-w-sm">{showArchivedLeads ? 'Arşivlediğiniz talepler burada görünecek.' : 'Ziyaretçileriniz asistanınız Saule ile konuşup bir hizmet talep ettiğinde burada görünecekler.'}</p>
+              <h2 className="text-lg font-[800] text-[#14231F] mb-2 font-['Bricolage_Grotesque']">{showArchivedLeads ? t('emptyArchivedLeadsTitle') : t('emptyLeadsTitle')}</h2>
+              <p className="text-[#4B5A55] max-w-sm">{showArchivedLeads ? t('emptyArchivedLeadsDescription') : t('emptyLeadsDescription')}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -159,31 +165,31 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                         <h3 className="text-lg font-[800] text-[#14231F] font-['Bricolage_Grotesque']">{lead.name}</h3>
                         <div className="flex items-center text-sm text-[#8A8880] mt-0.5 font-mono text-xs">
                           <Clock className="w-3.5 h-3.5 mr-1" />
-                          {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true, locale: tr })}
+                          {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true, locale: dateLocale })}
                         </div>
                       </div>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                      lead.status === 'new' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
+                      lead.status === 'new' ? 'bg-amber-50 text-amber-700 border-amber-200' :
                       lead.status === 'seen' ? 'bg-[#FFEDE9] text-[#FF6A5C] border-[#FFEDE9]' :
                       'bg-green-50 text-green-700 border-green-200'
                     }`}>
-                      {lead.status === 'new' ? 'Yeni' : lead.status === 'seen' ? 'İncelendi' : 'Tamamlandı'}
+                      {lead.status === 'new' ? t('statusNew') : lead.status === 'seen' ? t('statusSeen') : t('statusDone')}
                     </span>
                   </div>
-                  
+
                   <div className="bg-[#F4F2ED] rounded-xl p-4 mb-4">
                     <p className="text-[#4B5A55] text-sm">{lead.summary}</p>
                     {lead.preferred_datetime && (
                       <p className="text-[#14231F] text-xs font-medium mt-2 flex items-center">
-                        <Clock className="w-3.5 h-3.5 mr-1.5" /> Tercih edilen zaman: {lead.preferred_datetime}
+                        <Clock className="w-3.5 h-3.5 mr-1.5" /> {t('preferredTime', { time: lead.preferred_datetime })}
                       </p>
                     )}
                   </div>
 
                   <div className="mb-4">
                     <label className="text-xs font-semibold text-[#8A8880] mb-1.5 flex items-center gap-1.5 font-mono uppercase tracking-wider">
-                      <StickyNote className="w-3.5 h-3.5" /> Notunuz
+                      <StickyNote className="w-3.5 h-3.5" /> {t('notesLabel')}
                     </label>
                     <textarea
                       defaultValue={lead.notes || ''}
@@ -193,7 +199,7 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                           handleUpdateNotes(lead.id, e.target.value);
                         }
                       }}
-                      placeholder="Bu kişi hakkında kendinize not bırakın — yalnızca siz görürsünüz."
+                      placeholder={t('notesPlaceholder')}
                       className="w-full p-2.5 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F] bg-white"
                       rows={2}
                     />
@@ -204,7 +210,7 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                       {lead.source_username && (
                         <a href={`https://ig.me/m/${lead.source_username.replace('@', '')}`} target="_blank" rel="noreferrer" className="flex items-center text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 rounded-full hover:opacity-90 transition shadow-sm">
                           <Send className="w-4 h-4 mr-1.5" />
-                          Mesaj At
+                          {t('messageBtn')}
                         </a>
                       )}
                       <a href={lead.contact.includes('@') ? `mailto:${lead.contact}` : `https://wa.me/${lead.contact.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className={`flex items-center text-sm font-medium ${lead.source_username ? 'text-[#8A8880] hover:text-[#4B5A55]' : 'text-[#14231F] hover:text-[#FF6A5C]'}`}>
@@ -219,29 +225,29 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                           onClick={() => { setActiveTab('conversations'); setSelectedConversationId(lead.conversation_id); }}
                           className="text-sm font-medium text-[#8A8880] hover:text-[#FF6A5C] transition flex items-center"
                         >
-                          <MessageCircle className="w-4 h-4 mr-1.5" /> Konuşmayı Gör
+                          <MessageCircle className="w-4 h-4 mr-1.5" /> {t('viewConversationBtn')}
                         </button>
                       )}
                       {lead.status === 'new' ? (
                         <button onClick={() => handleMarkSeen(lead.id)} className="text-sm font-medium text-white bg-[#FF6A5C] px-4 py-2 rounded-full hover:bg-orange-600 transition flex items-center shadow-sm">
                           <CheckCircle2 className="w-4 h-4 mr-1.5" />
-                          İşaretle
+                          {t('markSeenBtn')}
                         </button>
                       ) : (
                         <div className="flex items-center text-sm text-[#8A8880]">
-                          <CheckCircle2 className="w-4 h-4 mr-1.5" /> İncelendi
+                          <CheckCircle2 className="w-4 h-4 mr-1.5" /> {t('statusSeen')}
                         </div>
                       )}
                       <button
                         onClick={() => handleArchiveLead(lead.id, !lead.is_archived)}
-                        title={lead.is_archived ? 'Arşivden çıkar' : 'Arşivle'}
+                        title={lead.is_archived ? t('unarchiveTooltip') : t('archiveTooltip')}
                         className="p-2 text-[#8A8880] hover:text-[#14231F] hover:bg-[#F4F2ED] rounded-full transition"
                       >
                         {lead.is_archived ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
                       </button>
                       <button
                         onClick={() => handleDeleteLead(lead.id)}
-                        title="Kalıcı olarak sil"
+                        title={t('deleteTooltip')}
                         className="p-2 text-[#8A8880] hover:text-red-600 hover:bg-red-50 rounded-full transition"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -269,14 +275,14 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
               </div>
               <div>
                 <h2 className="text-xl font-[800] text-[#14231F] font-['Bricolage_Grotesque']">Saule</h2>
-                <p className="text-sm text-[#4B5A55]">Dijital Ön Masa Asistanınız</p>
+                <p className="text-sm text-[#4B5A55]">{t('sauleSubtitle')}</p>
               </div>
             </div>
 
             <div className="space-y-8">
               {/* Tone */}
               <div>
-                <h3 className="text-sm font-bold text-[#14231F] mb-3 uppercase tracking-wider font-mono">Kişilik & Ton</h3>
+                <h3 className="text-sm font-bold text-[#14231F] mb-3 uppercase tracking-wider font-mono">{t('toneSectionTitle')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {(['friendly', 'formal', 'energetic'] as const).map(tone => (
                     <button
@@ -285,10 +291,10 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                       className={`p-4 rounded-xl border text-left transition-all ${settings.personalityTone === tone || (!settings.personalityTone && tone === 'friendly') ? 'border-[#FF6A5C] bg-[#FFEDE9] ring-1 ring-[#FF6A5C]' : 'border-[rgba(20,35,31,0.10)] hover:bg-[#F4F2ED]'}`}
                     >
                       <div className="font-semibold text-[#14231F] mb-1">
-                        {tone === 'friendly' ? 'Sıcak & Samimi' : tone === 'formal' ? 'Resmi & Profesyonel' : 'Enerjik'}
+                        {tone === 'friendly' ? t('toneFriendlyLabel') : tone === 'formal' ? t('toneFormalLabel') : t('toneEnergeticLabel')}
                       </div>
                       <div className="text-xs text-[#4B5A55]">
-                        {tone === 'friendly' ? 'Ziyaretçilerle arkadaş canlısı konuşur.' : tone === 'formal' ? 'Daha ciddi ve mesafeli bir dil kullanır.' : 'Heyecanlı ve pozitif bir yaklaşım sergiler.'}
+                        {tone === 'friendly' ? t('toneFriendlyDesc') : tone === 'formal' ? t('toneFormalDesc') : t('toneEnergeticDesc')}
                       </div>
                     </button>
                   ))}
@@ -298,8 +304,8 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
               {/* Lead Capture */}
               <div className="flex items-center justify-between py-4 border-t border-[rgba(20,35,31,0.10)]">
                 <div>
-                  <h3 className="text-base font-semibold text-[#14231F]">Lead Yakalama</h3>
-                  <p className="text-sm text-[#4B5A55]">Ziyaretçilerden iletişim bilgisi istesin mi?</p>
+                  <h3 className="text-base font-semibold text-[#14231F]">{t('leadCaptureTitle')}</h3>
+                  <p className="text-sm text-[#4B5A55]">{t('leadCaptureDesc')}</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" className="sr-only peer" checked={settings.leadCaptureEnabled !== false} onChange={(e) => setSettings({ ...settings, leadCaptureEnabled: e.target.checked })} />
@@ -311,8 +317,8 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
               <div className="py-4 border-t border-[rgba(20,35,31,0.10)]">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-base font-semibold text-[#14231F]">Randevu Akışı</h3>
-                    <p className="text-sm text-[#4B5A55]">Randevu/rezervasyon talebi alsın mı?</p>
+                    <h3 className="text-base font-semibold text-[#14231F]">{t('appointmentTitle')}</h3>
+                    <p className="text-sm text-[#4B5A55]">{t('appointmentDesc')}</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" checked={settings.appointmentEnabled === true} onChange={(e) => setSettings({ ...settings, appointmentEnabled: e.target.checked })} />
@@ -321,15 +327,15 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                 </div>
                 {settings.appointmentEnabled && (
                   <div className="bg-[#F4F2ED] p-4 rounded-xl mt-2 animate-in fade-in slide-in-from-top-2">
-                    <label className="block text-sm font-semibold text-[#14231F] mb-2 font-mono uppercase text-xs tracking-wider">Randevu Talimatı</label>
+                    <label className="block text-sm font-semibold text-[#14231F] mb-2 font-mono uppercase text-xs tracking-wider">{t('appointmentInstructionsLabel')}</label>
                     <textarea
                       value={settings.appointmentInstructions || ''}
                       onChange={(e) => setSettings({ ...settings, appointmentInstructions: e.target.value })}
-                      placeholder="Örn: Hangi gün ve saatte gelmek istediklerini sor."
+                      placeholder={t('appointmentInstructionsPlaceholder')}
                       className="w-full p-3 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F]"
                       rows={3}
                     />
-                    <p className="text-xs text-[#8A8880] mt-2">Bu özellik şu an "Talepler" sekmesine lead kaydı oluşturur. Takvim entegrasyonu yakında eklenecektir.</p>
+                    <p className="text-xs text-[#8A8880] mt-2">{t('appointmentHint')}</p>
                   </div>
                 )}
               </div>
@@ -338,8 +344,8 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
               <div className="py-4 border-t border-[rgba(20,35,31,0.10)]">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-base font-semibold text-[#14231F]">Özel Karşılama</h3>
-                    <p className="text-sm text-[#4B5A55]">İlk mesajı siz belirleyin.</p>
+                    <h3 className="text-base font-semibold text-[#14231F]">{t('greetingTitle')}</h3>
+                    <p className="text-sm text-[#4B5A55]">{t('greetingDesc')}</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" checked={!!settings.customGreetingEnabled} onChange={(e) => setSettings({ ...settings, customGreetingEnabled: e.target.checked })} />
@@ -348,17 +354,20 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                 </div>
                 {settings.customGreetingEnabled && (
                   <div className="bg-[#F4F2ED] p-4 rounded-xl animate-in fade-in slide-in-from-top-2 flex flex-col gap-3">
-                    <p className="text-xs text-[#8A8880]">Ziyaretçinin sayfayı görüntülediği dile göre gösterilir; boş bıraktığınız dilde Saule'nin varsayılan karşılaması kullanılır.</p>
+                    {/* Below: per-language greeting examples. These labels/placeholders are intentionally
+                        shown in their own language (autonym), not translated to the dashboard's UI language —
+                        they demonstrate what to type for that specific visitor-facing language field. */}
+                    <p className="text-xs text-[#8A8880]">{t('greetingHint')}</p>
                     {([
                       { locale: 'tr' as const, label: 'Türkçe', placeholder: 'Örn: Merhaba, ben Saule. Size nasıl yardımcı olabilirim?' },
                       { locale: 'en' as const, label: 'English', placeholder: "e.g. Hi, I'm Saule. How can I help you?" },
                       { locale: 'ru' as const, label: 'Русский', placeholder: 'Напр.: Привет, я Saule. Чем могу помочь?' },
-                    ]).map(({ locale, label, placeholder }) => (
-                      <div key={locale}>
+                    ]).map(({ locale: greetingLocale, label, placeholder }) => (
+                      <div key={greetingLocale}>
                         <label className="block text-xs font-semibold text-[#8A8880] mb-1 font-mono uppercase tracking-wider">{label}</label>
                         <textarea
-                          value={settings.customGreeting?.[locale] || ''}
-                          onChange={(e) => setSettings({ ...settings, customGreeting: { ...settings.customGreeting, [locale]: e.target.value } })}
+                          value={settings.customGreeting?.[greetingLocale] || ''}
+                          onChange={(e) => setSettings({ ...settings, customGreeting: { ...settings.customGreeting, [greetingLocale]: e.target.value } })}
                           placeholder={placeholder}
                           className="w-full p-3 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F]"
                           rows={2}
@@ -374,7 +383,7 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
               {/* Save Button */}
               <div className="pt-6 border-t border-[rgba(20,35,31,0.10)] flex items-center justify-between">
                 {showToast ? (
-                  <span className="text-sm font-medium text-green-600 flex items-center"><CheckCircle2 className="w-4 h-4 mr-1" /> Ayarlar kaydedildi</span>
+                  <span className="text-sm font-medium text-green-600 flex items-center"><CheckCircle2 className="w-4 h-4 mr-1" /> {t('settingsSavedToast')}</span>
                 ) : <span />}
                 <button
                   onClick={handleSaveSettings}
@@ -382,7 +391,7 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                   className="bg-[#FF6A5C] text-white px-8 py-3 rounded-full font-bold text-sm hover:bg-orange-600 transition shadow-md disabled:opacity-50 flex items-center"
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  Ayarları Kaydet
+                  {t('saveSettingsBtn')}
                 </button>
               </div>
             </div>
@@ -394,8 +403,7 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
         <div className="bg-white border border-[rgba(20,35,31,0.10)] rounded-2xl px-5 py-4 flex items-center gap-3 text-sm">
           <Mail className="w-4 h-4 text-[#8A8880] shrink-0" />
           <p className="text-[#4B5A55]">
-            Talkinbio sürekli gelişen bir uygulama. Geri bildiriminiz, istekleriniz veya şikayetleriniz varsa
-            bize <a href="mailto:info@talkinbio.com" className="text-[#FF6A5C] font-medium hover:underline">info@talkinbio.com</a> adresinden ulaşabilirsiniz.
+            {t('footerTextBeforeEmail')}<a href="mailto:info@talkinbio.com" className="text-[#FF6A5C] font-medium hover:underline">info@talkinbio.com</a>{t('footerTextAfterEmail')}
           </p>
         </div>
       </footer>

@@ -78,13 +78,13 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     ...ruleBasedSuggestions,
     ...insights.map((insight) => ({
       id: insight.id,
-      message: insight.payload?.topic ? `Müşterileriniz son 7 günde sık sık "${insight.payload.topic}" hakkında soru sordu (${insight.payload.count} kez).` : (insight.payload?.summary || 'Yeni bir içgörü var.'),
+      message: insight.payload?.topic ? t('insightTopicMessage', { topic: insight.payload.topic, count: insight.payload.count }) : (insight.payload?.summary || t('insightDefaultMessage')),
       type: 'info' as const,
-      triggerMessage: insight.payload?.suggestedTriggerMessage || 'Konuşmalarımdan çıkan bir içgörüyü değerlendirmek istiyorum.',
+      triggerMessage: insight.payload?.suggestedTriggerMessage || t('insightDefaultTrigger'),
       icon: '📊',
       fromInsight: true,
     })),
-  ], [ruleBasedSuggestions, insights]);
+  ], [ruleBasedSuggestions, insights, t]);
 
   const handleInsightActioned = async (insightId: string) => {
     setInsights((prev) => prev.filter((i) => i.id !== insightId));
@@ -132,7 +132,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       console.error('Setup agent chat error:', error);
       // Faz 4.3: kredi bitti / Faz 4.1: mesaj çok uzun gibi sunucudan gelen anlaşılır
       // mesajları doğrudan göster; boşsa jenerik metne düş.
-      alert(error.message || 'Mesaj gönderilirken bir hata oluştu. Çok uzun bir metin gönderdiyseniz, birkaç parçaya bölüp tekrar deneyin.');
+      alert(error.message || t('chatErrorFallback'));
     },
   });
   const isChatLoading = status === 'streaming' || status === 'submitted';
@@ -152,7 +152,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
         business_id: business.id,
         session_id: activeSessionId,
         role: 'assistant',
-        content: '[Sistem: Bu oturumda manuel düzenleme yapıldı. Yeni sohbet başlatıldı.]'
+        content: t('systemManualEditMessage')
       });
       await supabase.from('setup_sessions').update({ is_archived: true }).eq('id', activeSessionId);
       setSessions((prev) => prev.map((s) => (s.id === activeSessionId ? { ...s, is_archived: true } : s)));
@@ -167,12 +167,12 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     await supabase.from('setup_sessions').upsert({
       id: newId,
       business_id: business.id,
-      title: 'Yeni Sohbet',
+      title: t('sessionDefaultTitle'),
       is_archived: false
     }, { onConflict: 'id' });
     setActiveSessionId(newId);
     setMessages([]);  // Tamamen boş — Sayfa Durumu Kartı devraliyor
-    setSessions((prev) => [{ id: newId, title: 'Yeni Sohbet', created_at: new Date().toISOString(), is_archived: false }, ...prev]);
+    setSessions((prev) => [{ id: newId, title: t('sessionDefaultTitle'), created_at: new Date().toISOString(), is_archived: false }, ...prev]);
     setShowArchive(false);
   };
 
@@ -221,10 +221,10 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       
       const { data: { publicUrl } } = supabase.storage.from('media').getPublicUrl(fileName);
       
-      sendUserText(`[Kullanıcı sisteme bir medya yükledi: ${publicUrl}]`);
+      sendUserText(t('mediaUploadedMessage', { url: publicUrl }));
 
     } catch (err: any) {
-      alert("Dosya yüklenirken hata oluştu: " + err.message);
+      alert(t('mediaUploadError', { message: err.message }));
     } finally {
       setIsUploadingMedia(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -294,7 +294,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       business.is_published = next;
     } catch (err) {
       console.error(err);
-      alert('Yayın durumu güncellenirken hata oluştu.');
+      alert(t('publishToggleError'));
     } finally {
       setIsTogglingPublish(false);
     }
@@ -308,7 +308,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       setNeedsRepublish(false);
     } catch (err) {
       console.error(err);
-      alert('İşlem sırasında hata oluştu.');
+      alert(t('acknowledgeError'));
     } finally {
       setIsTogglingPublish(false);
     }
@@ -355,7 +355,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       await archiveCurrentAndNewSession();
     } catch (err) {
       console.error(err);
-      alert('Kaydedilirken hata oluştu.');
+      alert(t('saveBlockError'));
     } finally {
       setIsSaving(false);
       setEditingBlock(null);
@@ -414,7 +414,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     if (!isPublished) return;
     const url = `${window.location.origin}/${username}`;
     navigator.clipboard.writeText(url);
-    alert('Link kopyalandı!');
+    alert(t('linkCopied'));
   };
 
   const handleUsernameSave = async () => {
@@ -424,19 +424,19 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     }
     const cleanUsername = username.toLowerCase().replace(/[^a-z0-9-]/g, '');
     if (!cleanUsername) {
-      setUsernameError('Geçersiz kullanıcı adı');
+      setUsernameError(t('usernameInvalid'));
       return;
     }
     
     const { data: existing } = await supabase.from('businesses').select('id').eq('username', cleanUsername).neq('id', business.id).single();
     if (existing) {
-      setUsernameError('Bu bağlantı zaten alınmış');
+      setUsernameError(t('usernameTaken'));
       return;
     }
     
     const { error } = await supabase.from('businesses').update({ username: cleanUsername }).eq('id', business.id);
     if (error) {
-      setUsernameError('Kaydedilirken hata oluştu');
+      setUsernameError(t('usernameSaveError'));
     } else {
       business.username = cleanUsername;
       setUsername(cleanUsername);
@@ -468,7 +468,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       await archiveCurrentAndNewSession();
     } catch (err) {
       console.error(err);
-      alert('Sayfa görünümü kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
+      alert(t('layoutSaveError'));
     }
   };
 
@@ -529,13 +529,14 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       await markNeedsRepublish();
     } catch (err) {
       console.error(err);
-      alert('İletişim bilgileri kaydedilirken hata oluştu.');
+      alert(t('contactSaveError'));
     }
   };
 
   const handleBulkSubmit = () => {
     if (!bulkText.trim()) return;
-    sendUserText(`[BULK]\nİşte işletmemle ilgili tüm detaylar. Lütfen soru sormak yerine, elindeki bütün bilgiyi analiz et ve eksik olan tüm blokları (Hakkımda, Hizmetler vb.) arka arkaya araçları çağırarak tek seferde oluştur:\n\n${bulkText}`);
+    const bulkLabels = `${t('blocks.about')}, ${t('blocks.services')} ${t('etcAbbr')}`;
+    sendUserText(t('bulkPromptTemplate', { labels: bulkLabels, text: bulkText }));
     setBulkText('');
     setViewMode('chat');
   };
@@ -554,24 +555,24 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
               <a
                 href="/dashboard/leads"
                 className="p-2 bg-slate-100 text-[var(--ink)] hover:bg-slate-200 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-colors"
-                title="Talepler & Konuşmalar Paneli"
+                title={t('leadsNavTooltip')}
               >
                 <Inbox className="w-5 h-5" />
-                <span className="hidden md:inline">Panel</span>
+                <span className="hidden md:inline">{t('leadsNavLabel')}</span>
               </a>
               <a
                 href="/dashboard/content"
                 className="p-2 bg-slate-100 text-[var(--ink)] hover:bg-slate-200 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-colors"
-                title="İçerik Stüdyosu"
+                title={t('contentStudioTooltip')}
               >
                 <FileText className="w-5 h-5" />
-                <span className="hidden md:inline">İçerik</span>
+                <span className="hidden md:inline">{t('contentStudioLabel')}</span>
               </a>
               <div className="relative">
                 <button
                   onClick={() => setShowSuggestions(!showSuggestions)}
                   className="p-2 bg-yellow-50 text-yellow-600 hover:bg-yellow-100 rounded-lg font-medium text-sm flex items-center relative transition-colors"
-                  title="Beiwe'den İpuçları"
+                  title={t('suggestionsTooltip')}
                 >
                   <Lightbulb className="w-5 h-5" />
                   {suggestions.length > 0 && (
@@ -582,7 +583,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                   <div className="absolute top-full mt-2 -right-12 md:right-0 w-80 max-h-[400px] overflow-y-auto bg-white rounded-xl shadow-2xl border border-slate-200 z-[100] flex flex-col">
                     <div className="p-3 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white/90 backdrop-blur-sm">
                       <h3 className="font-bold text-sm text-[var(--ink)] flex items-center gap-1.5">
-                        <Lightbulb className="w-4 h-4 text-yellow-500" /> Beiwe'nin Notları
+                        <Lightbulb className="w-4 h-4 text-yellow-500" /> {t('suggestionsPanelTitle')}
                       </h3>
                       <button onClick={() => setShowSuggestions(false)} className="text-slate-400 hover:text-slate-600">
                         <X className="w-4 h-4" />
@@ -591,7 +592,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                     <div className="p-2 flex flex-col gap-1.5">
                       {suggestions.length === 0 ? (
                         <div className="p-4 text-center text-sm text-slate-500">
-                          🎉 Sayfanız şu an harika görünüyor! Başka bir tavsiyem yok.
+                          {t('suggestionsEmpty')}
                         </div>
                       ) : (
                         suggestions.map((s) => (
@@ -608,13 +609,13 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                             <span className="text-lg leading-none shrink-0">{s.icon}</span>
                             <div>
                               {s.fromInsight && (
-                                <span className="inline-block text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded mb-1">Konuşmalardan</span>
+                                <span className="inline-block text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded mb-1">{t('suggestionsFromInsight')}</span>
                               )}
                               <p className="text-xs text-[var(--ink)] font-medium leading-relaxed group-hover:text-yellow-900">
                                 {s.message}
                               </p>
                               <span className="text-[10px] text-yellow-600 font-bold mt-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                ✦ Beiwe ile düzelt
+                                {t('suggestionsFixCta')}
                               </span>
                             </div>
                           </button>
@@ -636,10 +637,10 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
           <a
             href="/pricing"
             className="flex items-center justify-between gap-2 px-3 py-2 mb-4 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-[var(--ink)] transition-colors"
-            title="Kredi bakiyeniz — plan ve paketler için tıklayın"
+            title={t('creditBalanceHint')}
           >
             <span className="flex items-center gap-1.5">
-              <Coins className="w-4 h-4" /> Kredi Bakiyesi
+              <Coins className="w-4 h-4" /> {t('creditBalance')}
             </span>
             <span className="font-semibold">{(business.credit_balance ?? 0).toLocaleString('tr-TR')}</span>
           </a>
@@ -676,14 +677,14 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
           {showArchive && (
             <div className="absolute inset-0 z-20 bg-white flex flex-col">
               <div className="flex items-center justify-between p-4 border-b border-slate-200">
-                <h3 className="font-semibold text-slate-800">Geçmiş Konuşmalar</h3>
+                <h3 className="font-semibold text-slate-800">{t('archive.title')}</h3>
                 <button onClick={() => setShowArchive(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-500">
                   <X className="w-5 h-5" />
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-2">
                 {sessions.length === 0 ? (
-                  <div className="text-center text-slate-500 py-8 text-sm">Geçmiş konuşma bulunamadı.</div>
+                  <div className="text-center text-slate-500 py-8 text-sm">{t('archive.empty')}</div>
                 ) : (
                   sessions.map(s => (
                     <button
@@ -692,9 +693,9 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                       className={`w-full text-left p-4 rounded-xl border transition-colors ${activeSessionId === s.id ? 'bg-[var(--coral-tint)] border-[var(--coral)] text-[var(--coral)]' : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'}`}
                     >
                       <div className="font-medium flex items-center gap-2">
-                        {s.title || 'Sohbet'}
+                        {s.title || t('archive.untitledChat')}
                         {s.is_archived && (
-                          <span className="text-[10px] font-normal uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">Arşivlendi</span>
+                          <span className="text-[10px] font-normal uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">{t('archive.archivedBadge')}</span>
                         )}
                       </div>
                       <div className="text-xs opacity-70 mt-1">{new Date(s.created_at).toLocaleString()}</div>
@@ -710,10 +711,10 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 {/* Sayfa Durumu Kartı — sadece chat boşsa gösterilir */}
                 {messages.length === 0 && !isChatLoading && (() => {
                   const trackedBlocks = [
-                    { type: 'about', label: 'Hakkımda' },
-                    { type: 'services', label: 'Hizmetler' },
-                    { type: 'hours', label: 'Çalışma Saat.' },
-                    { type: 'faq', label: 'S.S.S.' },
+                    { type: 'about', label: t('blocks.about') },
+                    { type: 'services', label: t('blocks.services') },
+                    { type: 'hours', label: t('pageStatus.hoursLabel') },
+                    { type: 'faq', label: t('pageStatus.faqLabel') },
                   ];
                   const hasAnyContent = blocks.some(b => hasRealContent(b));
                   const missingBlocks = trackedBlocks.filter(({ type }) => !blocks.find(b => b.type === type && hasRealContent(b)));
@@ -723,11 +724,11 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                     <div className="rounded-2xl border border-[var(--coral)] bg-[var(--coral-tint)] p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold tracking-widest text-[var(--coral)] uppercase font-mono">
-                          📊 Sayfa Durumu
+                          {t('pageStatus.title')}
                         </span>
                         {hasAnyContent && (
                           <span className="text-[10px] text-[var(--ink-soft)]">
-                            {trackedBlocks.length - missingBlocks.length + (hasContactValue ? 1 : 0)}/{trackedBlocks.length + 1} tamamlandı
+                            {t('pageStatus.completedCount', { done: trackedBlocks.length - missingBlocks.length + (hasContactValue ? 1 : 0), total: trackedBlocks.length + 1 })}
                           </span>
                         )}
                       </div>
@@ -744,7 +745,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                         })}
                         <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border ${hasContactValue ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-[var(--ink-soft)] border-[rgba(20,35,31,0.15)]'}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${hasContactValue ? 'bg-green-500' : 'bg-slate-300'}`} />
-                          İletişim
+                          {t('pageStatus.contactLabel')}
                         </span>
                       </div>
 
@@ -754,11 +755,11 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                           disabled={isChatLoading}
                           className="w-full mt-1 py-2 px-4 bg-[var(--coral)] text-white text-xs font-bold rounded-full hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                         >
-                          <span>✦</span> Beiwe ile devam et
+                          <span>✦</span> {t('pageStatus.continueBtn')}
                         </button>
                       ) : (
                         <p className="text-xs text-green-700 font-medium text-center">
-                          🎉 Tüm temel bölümler tamamlandı! Beiwe'ye ekstra fikirler sorabilirsiniz.
+                          {t('pageStatus.allComplete')}
                         </p>
                       )}
                     </div>
@@ -769,7 +770,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                   <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${m.role === 'user' ? 'bg-[var(--ink)] text-white' : 'bg-white border border-slate-200 text-slate-800 shadow-sm'}`}>
                       {getMessageText(m) === '__DEVAM__' ? (
-                        <span className="italic text-white/70 text-xs">Sayfamı analiz et...</span>
+                        <span className="italic text-white/70 text-xs">{t('pageStatus.analyzingPlaceholder')}</span>
                       ) : getMessageText(m)}
                     </div>
                   </div>
@@ -790,7 +791,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 <form onSubmit={handleChatFormSubmit} className="flex items-end gap-2">
                   <button 
                     type="button" 
-                    title="Geçmiş Konuşmalar"
+                    title={t('archive.title')}
                     onClick={() => setShowArchive(true)}
                     className="mb-0.5 p-2.5 bg-white text-slate-500 hover:text-[var(--coral)] rounded-full border border-slate-300 shadow-sm shrink-0 transition-colors"
                   >
@@ -841,7 +842,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
 
                   <button 
                     type="button"
-                    title="Yeni Sohbet"
+                    title={t('newChatTooltip')}
                     onClick={() => handleNewChat()}
                     className="mb-0.5 p-2.5 bg-white text-slate-500 hover:text-[var(--coral)] rounded-full border border-slate-300 shadow-sm shrink-0 transition-colors"
                   >
@@ -892,7 +893,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                           rel="noopener noreferrer"
                           className="text-xs font-bold text-[var(--coral)] hover:text-orange-600 flex items-center"
                         >
-                          <ExternalLink className="w-3 h-3 mr-1" /> Aç
+                          <ExternalLink className="w-3 h-3 mr-1" /> {t('openLink')}
                         </a>
                       )}
                     </div>
@@ -1005,8 +1006,8 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
               {/* Aktif Diller — Faz 2.5 (Faz 7 dil genişlemesi altyapısı) */}
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-medium text-slate-500">Aktif Diller</span>
-                  <span className="text-[10px] text-slate-400">en fazla {MAX_ACTIVE_LOCALES}</span>
+                  <span className="text-xs font-medium text-slate-500">{t('activeLocales.title')}</span>
+                  <span className="text-[10px] text-slate-400">{t('activeLocales.maxHint', { max: MAX_ACTIVE_LOCALES })}</span>
                 </div>
                 <div className="flex gap-2 mt-1">
                   {ALL_LOCALES.map((l) => {
@@ -1026,7 +1027,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                   })}
                 </div>
                 <p className="text-[11px] text-slate-500 mt-2">
-                  Ziyaretçilerinize sunulacak diller. Sayfanız şimdilik her zaman 3 dilde de yayınlanır — bu seçim ileride diller çoğaldığında devreye girecek.
+                  {t('activeLocales.description')}
                 </p>
               </div>
 
@@ -1085,17 +1086,17 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                     onClick={() => handleLayoutModeChange('website')}
                     className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border ${blocks.find(b => b.type === 'settings')?.content?.layoutMode === 'website' ? 'bg-[var(--coral)] text-white border-[var(--coral)]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
                   >
-                    Web Sitesi
+                    {t('layoutWebsite')}
                   </button>
                   <button
                     onClick={() => handleLayoutModeChange('linktree')}
                     className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border ${blocks.find(b => b.type === 'settings')?.content?.layoutMode !== 'website' ? 'bg-[var(--coral)] text-white border-[var(--coral)]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
                   >
-                    Blok (Linktree)
+                    {t('layoutLinktree')}
                   </button>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-2">
-                  Web Sitesi tüm içerikleri alt alta gösterir. Blok modu ise menü açarak sadece tıklanan bölümü gösterir.
+                  {t('layoutDescription')}
                 </p>
               </div>
 
@@ -1218,11 +1219,12 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       </div>
 
       {editingBlock && (
-        <BlockEditorModal 
-          block={editingBlock} 
-          onClose={() => setEditingBlock(null)} 
+        <BlockEditorModal
+          block={editingBlock}
+          onClose={() => setEditingBlock(null)}
           onSave={handleSaveBlock}
           onDelete={handleDeleteBlock}
+          locale={locale}
         />
       )}
       {isSaving && (

@@ -445,6 +445,10 @@ Talkinbio'nun görünürlüğünü, arama motoru otoritesini ve sosyal kanıtın
 - **Locale-Bazlı Metadata (i18n):** Türkçe, İngilizce ve Rusça dilleri için özel `title` ve `description` tagleri üretilir. Hreflang etiketleriyle arama motorlarına doğru dil versiyonları sunulur.
   - **Düzeltilen bug (2026-07-17):** `[locale]/layout.tsx`'teki `alternates` (canonical + hreflang) her zaman `/${locale}` köküne sabitti; alt sayfalar (`[username]`, `/legal`, `/stakeholders`) kendi `alternates`'ini tanımlamadığı için Next.js bunu **olduğu gibi miras alıyordu** — yani her yayınlanan işletme sayfası Google'a "canonical'ım ana sayfa" sinyali veriyordu. Google böyle bir sayfayı ana sayfanın kopyası sanıp indexlemeyebilir; bu, sitemap'in doğru üretilmesine rağmen gerçek indexlenmeyi baltalıyordu. Düzeltme: `[username]/page.tsx`'in `generateMetadata`'sına ve `/legal`, `/stakeholders` için eklenen `layout.tsx` dosyalarına kendi rotasına özel `alternates.canonical` + `alternates.languages` eklendi; sunucudan render edilen HTML'de üç rota da doğrulandı.
   - **Eklenen OG/Twitter meta:** hiçbir rotada `og:image`/Twitter Card yoktu (WhatsApp/Instagram'da paylaşılan bio linkleri görselsiz çıkıyordu). Geçici çözüm: mevcut `saule-avatar-v1.png` (512×512) site geneli ve işletme sayfalarında varsayılan OG/Twitter görseli olarak bağlandı. **Açık iş:** 1200×630 oranında özel bir OG banner tasarımı hâlâ gerekiyor — bu geçici görsel onun yerini almaz.
+- **Paydaşlara (`/stakeholders`) sayfası — içerik bakım notları (2026-07-20 kontrolü):** Sayfa üç dilde de (tr/en/ru) eksiksiz; tüm rakamlar iç kaynaklarla (4.3 kredi tablosu, lean-pitch, fermi-estimation, traction-roadmap) çapraz doğrulandı, tutarsızlık yok. Açık bakım işleri:
+  - **Dil eşitleme:** EN'deki ARPU açıklaması ("$15 — early-stage Starter-heavy mix + annual discount effect") TR ve RU metinlerinde yok; üç dil eşitlenmeli.
+  - **Kur bağımlılığı:** Fermi kayıp örneği TR'de 800 TL / 584.000 TL, EN-RU'da $20 / $14.600 (≈40 TL/$ varsayımı). Kur değiştikçe TR ile EN/RU rakamları birbirinden uzaklaşır — periyodik güncelleme gerekir.
+  - **Sabit sayaç:** "Sayaç şu an 0/10" elle yazılmış metin; ilk ödemeler geldikçe üç dilde de güncellenmeli (sayfanın kendi "canlı belge" taahhüdü gereği).
 - **Marka Araması Optimizasyonu:** Google Search Console ve Bing Webmaster entegrasyonu; marka (Talkinbio) aramalarında logo ve doğru site açıklaması (site-links) çıkartılması.
 - **Microdata & JSON-LD:**
   - `Organization` şeması (Talkinbio'nun kendi kurumsal otoritesi için. **Not:** Sosyal medya hesapları açıldığında bu şemaya eklenecektir).
@@ -642,6 +646,14 @@ Meta entegrasyonunun v2'ye alınmasıyla v1'in ana farklılaştırıcısı bu fa
   Hizmetler bölümüne ve ya bilgi tabanına fiyat ekleyelim mi?" → tek tıkla Beiwe sohbetine trigger mesajı
   (mevcut `useBeiweSuggestions` kart altyapısı yeniden kullanılır; rule-based öneriler
   ve AI-insight önerileri aynı panelde birleşir).
+- **Bilinen sınırlama (2026-07-20, düzeltme):** yukarıdaki fiyat örneği bir ideal
+  senaryo gibi okunabilir ama gerçek davranış daha dar. `analyzeConversations.ts`'teki
+  analiz prompt'u yalnızca son 7 günün ziyaretçi mesajlarını görüyor; işletmenin
+  mevcut sayfa bloklarını veya bilgi tabanı notlarını **karşılaştırma için almıyor**.
+  Yani bir konu "en az 2 kez" sorulduğunda sistem her zaman ekleme önerisi çıkarıyor —
+  o konunun cevabı sayfada/bilgi tabanında zaten olsa bile. "Cevabı zaten var mı"
+  kontrolü şu an yok (bkz. aşağıda Kapsam dışı — bu, gerçek bir geliştirme gerektiriyor,
+  Faz 3.1'in tamamlanmış kapsamının bir parçası değil).
 
 ### 3.2 İçerik stüdyosu (sosyal medya üretimi)
 - Dashboard'a "İçerik" sayfası: bloklardan (hizmet, yorum, galeri) Instagram
@@ -1067,6 +1079,18 @@ kendisi" ise dil genişlemesi onun ön koşuludur. Kapsam (detaylandırılacak):
 - **Takvim entegrasyonu** (Google Calendar randevu yazma) — v2 adayı; şimdilik
   yapılandırılmış randevu talebi (Faz 1.5) yeterli.
 - **RAG / vektör arama** — bilgi tabanı token bütçesini aşarsa gündeme gelir (pgvector hazır).
+  - **Not (2026-07-20) — Saule'nin öğrenmesi:** Beiwe konuşma verisiyle özelleşiyor
+    (bkz. Faz 3.1), ama Saule'nin kendisi konuşmalardan otomatik öğrenmiyor — bilgisi
+    sahibin elle girdiği notlarla sınırlı (Faz 1.4, `saule_knowledge`). Saule'nin
+    konuşma geçmişinden kendi kendine öğrenmesi kapsamlı bir konu ve RAG altyapısıyla
+    doğrudan ilişkili; RAG gündeme geldiğinde birlikte değerlendirilecek.
+- **Beiwe önerilerinde mevcut içerik kontrolü** (2026-07-20) — `analyzeConversations.ts`'teki
+  analiz prompt'una işletmenin güncel sayfa bloklarını ve bilgi tabanı notlarını da
+  vererek, yalnızca cevabı henüz sayfada/bilgi tabanında olmayan konuların önerilmesi
+  sağlanabilir (şu an yalnızca ziyaretçi mesajlarını görüyor, mevcut içerikle
+  karşılaştırmıyor — bkz. Faz 3.1 bilinen sınırlama notu). v1'in kod tarafı tamamlandı
+  ve şu an kod dondurma döneminde (Faz T); bu, dondurma bittikten sonra değerlendirilecek
+  bir v1.1 adayı — Faz 3.1'in kapanmış kapsamına dahil değil.
 - **Görsel içerik üretimi** (story şablonları) — İçerik stüdyosu v2.
 - **Telegram kanalı** — Bot API onay gerektirmediği için v2'nin en ucuz kanal kazanımı;
   `channel_accounts` mimarisi hazır olduğunda hızlıca eklenebilir, hatta Meta onayları

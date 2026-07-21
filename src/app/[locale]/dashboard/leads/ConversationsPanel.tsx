@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { formatDistanceToNow } from 'date-fns';
-import { tr } from 'date-fns/locale';
+import { formatDistanceToNow, type Locale } from 'date-fns';
+import { tr, enUS, ru } from 'date-fns/locale';
+import { useLocale, useTranslations } from 'next-intl';
 import { Archive, ArchiveRestore, Bot, Loader2, MessageCircle, Trash2, User as UserIcon } from 'lucide-react';
+
+const DATE_FNS_LOCALES: Record<string, Locale> = { tr, en: enUS, ru };
 
 type ConversationRow = {
   id: string;
@@ -41,6 +44,9 @@ export default function ConversationsPanel({
   onSelectConversation: (id: string | null) => void;
 }) {
   const supabase = createClient();
+  const t = useTranslations('Leads');
+  const locale = useLocale();
+  const dateLocale = DATE_FNS_LOCALES[locale] || tr;
   const [readMap, setReadMap] = useState<Record<string, boolean>>(
     Object.fromEntries(conversations.map((c) => [c.id, c.is_read]))
   );
@@ -58,12 +64,12 @@ export default function ConversationsPanel({
     if (error) {
       console.error(error);
       setArchivedMap((prev) => ({ ...prev, [conversationId]: !archived }));
-      alert('İşlem sırasında bir hata oluştu.');
+      alert(t('archiveError'));
     }
   };
 
   const handleDeleteConversation = async (conversationId: string) => {
-    if (!window.confirm('Bu konuşmayı kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) return;
+    if (!window.confirm(t('deleteConversationConfirm'))) return;
     setDeletedIds((prev) => new Set(prev).add(conversationId));
     if (selectedConversationId === conversationId) onSelectConversation(null);
     const { error } = await supabase.from('conversations').delete().eq('id', conversationId);
@@ -74,7 +80,7 @@ export default function ConversationsPanel({
         next.delete(conversationId);
         return next;
       });
-      alert('Silinirken bir hata oluştu.');
+      alert(t('deleteError'));
     }
   };
 
@@ -135,8 +141,8 @@ export default function ConversationsPanel({
         <div className="w-16 h-16 bg-[#F4F2ED] rounded-full flex items-center justify-center text-[#8A8880] mb-4">
           <MessageCircle className="w-8 h-8" />
         </div>
-        <h2 className="text-lg font-[800] text-[#14231F] mb-2 font-['Bricolage_Grotesque']">Henüz hiç konuşma yok</h2>
-        <p className="text-[#4B5A55] max-w-sm">Ziyaretçileriniz Saule ile konuşmaya başladığında transkriptler burada görünecek.</p>
+        <h2 className="text-lg font-[800] text-[#14231F] mb-2 font-['Bricolage_Grotesque']">{t('conversations.emptyTitle')}</h2>
+        <p className="text-[#4B5A55] max-w-sm">{t('conversations.emptyDescription')}</p>
       </div>
     );
   }
@@ -152,11 +158,11 @@ export default function ConversationsPanel({
             onClick={() => setShowArchived(!showArchived)}
             className="text-left px-4 py-2.5 text-xs font-medium text-[#8A8880] hover:text-[#14231F] transition flex items-center gap-1.5 border-b border-[rgba(20,35,31,0.06)] shrink-0"
           >
-            {showArchived ? <><ArchiveRestore className="w-3.5 h-3.5" /> Aktif konuşmalara dön</> : <><Archive className="w-3.5 h-3.5" /> Arşivlenenleri gör ({archivedCount})</>}
+            {showArchived ? <><ArchiveRestore className="w-3.5 h-3.5" /> {t('backToActiveConversations')}</> : <><Archive className="w-3.5 h-3.5" /> {t('viewArchived', { count: archivedCount })}</>}
           </button>
         )}
         {visibleConversations.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-[#8A8880] text-center">{showArchived ? 'Arşivlenmiş konuşma yok.' : 'Aktif konuşma yok.'}</p>
+          <p className="px-4 py-6 text-sm text-[#8A8880] text-center">{showArchived ? t('conversations.noArchived') : t('conversations.noActive')}</p>
         ) : visibleConversations.map((c) => {
           const isSelected = c.id === selectedConversationId;
           const isRead = readMap[c.id];
@@ -169,11 +175,11 @@ export default function ConversationsPanel({
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-semibold text-[#14231F] truncate">
-                  {c.is_preview ? 'Test Konuşması' : (leadName || `Ziyaretçi #${c.visitor_session_id.slice(-6)}`)}
+                  {c.is_preview ? t('conversations.testConversationLabel') : (leadName || t('conversations.visitorLabel', { id: c.visitor_session_id.slice(-6) }))}
                 </span>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {c.is_preview && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500">Test</span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500">{t('conversations.testBadge')}</span>
                   )}
                   {!isRead && <span className="w-2 h-2 rounded-full bg-[#FF6A5C]" />}
                 </div>
@@ -181,20 +187,20 @@ export default function ConversationsPanel({
               <div className="flex items-center justify-between mt-1">
                 <p className="text-xs text-[#8A8880] font-mono">
                   {c.last_message_at
-                    ? formatDistanceToNow(new Date(c.last_message_at), { addSuffix: true, locale: tr })
-                    : formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: tr })}
+                    ? formatDistanceToNow(new Date(c.last_message_at), { addSuffix: true, locale: dateLocale })
+                    : formatDistanceToNow(new Date(c.created_at), { addSuffix: true, locale: dateLocale })}
                 </p>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={(e) => { e.stopPropagation(); handleToggleArchive(c.id, !isArchived(c)); }}
-                    title={isArchived(c) ? 'Arşivden çıkar' : 'Arşivle'}
+                    title={isArchived(c) ? t('unarchiveTooltip') : t('archiveTooltip')}
                     className="p-1 text-[#8A8880] hover:text-[#14231F] rounded"
                   >
                     {isArchived(c) ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteConversation(c.id); }}
-                    title="Kalıcı olarak sil"
+                    title={t('deleteTooltip')}
                     className="p-1 text-[#8A8880] hover:text-red-600 rounded"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -210,7 +216,7 @@ export default function ConversationsPanel({
       <div className="flex-1 flex flex-col overflow-hidden">
         {!selectedConversation ? (
           <div className="flex-1 flex items-center justify-center text-[#8A8880] text-sm">
-            Görüntülemek için soldan bir konuşma seçin.
+            {t('conversations.selectPrompt')}
           </div>
         ) : isLoadingMessages ? (
           <div className="flex-1 flex items-center justify-center text-[#8A8880]">

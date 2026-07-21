@@ -5,7 +5,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Mail, MessageCircle, Phone, Link as LinkIcon, AtSign } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useLocale } from 'next-intl';
-import { renderColoredSegments, toColorMarkdown, colorLinkComponents, stripColorSyntax } from '@/utils/coloredText';
+import { renderColoredSegments, toColorMarkdown, colorLinkComponents, stripColorSyntax, styleUrlTransform } from '@/utils/coloredText';
+import { defaultTitleFor, getHoursLabels, type DayKey } from '@/config/localeTitles';
 
 type RenderCtx = {
   locale: string;
@@ -29,16 +30,6 @@ const SECTION_GAP_CLASS: Record<string, string> = {
 // Each block type is rendered by a small, self-contained function registered below.
 // New block types should only need to add a function + a registry entry here —
 // an unregistered type logs a dev warning instead of silently disappearing (see BLOCK_RENDERERS usage below).
-// Fixed section names for block types whose title is a constant label rather than
-// AI-authored content — covers rows saved before per-locale titles were stored in content.
-const FIXED_TITLES: Record<string, Record<string, string>> = {
-  services: { tr: 'Hizmetler', en: 'Services', ru: 'Услуги' },
-  links: { tr: 'Bağlantılar', en: 'Links', ru: 'Ссылки' },
-  hours: { tr: 'Çalışma Saatleri', en: 'Working Hours', ru: 'Часы работы' },
-  faq: { tr: 'Sıkça Sorulan Sorular', en: 'FAQ', ru: 'Частые вопросы' },
-  contact: { tr: 'İletişim', en: 'Contact', ru: 'Контакты' },
-};
-
 const CONTACT_METHOD_LABELS: Record<string, Record<string, string>> = {
   whatsapp: { tr: 'Telefon & WhatsApp', en: 'Phone & WhatsApp', ru: 'Телефон и WhatsApp' },
   instagram: { tr: 'Instagram', en: 'Instagram', ru: 'Instagram' },
@@ -46,8 +37,11 @@ const CONTACT_METHOD_LABELS: Record<string, Record<string, string>> = {
   telegram: { tr: 'Telegram', en: 'Telegram', ru: 'Telegram' },
 };
 
+// Falls back to the locale's fixed section label (shared with Beiwe's tools and the editor
+// modal) for rows saved before per-locale titles were stored in content, or after a locale's
+// title was cleared in the editor to reset it.
 function blockTitleOf(block: any, locale: string) {
-  return block.content?.[locale]?.title || FIXED_TITLES[block.type]?.[locale] || block.title || block.type;
+  return block.content?.[locale]?.title || defaultTitleFor(block.type, locale) || block.title || block.type;
 }
 
 // Wraps bare content in a surface card when the archetype's layoutStyle calls for it (see RenderCtx.cardWrap).
@@ -109,7 +103,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
           {renderColoredSegments(blockTitle)}
         </h2>
         <div className="markdown-body opacity-80 text-lg leading-relaxed">
-          <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(aboutText)}</ReactMarkdown>
+          <ReactMarkdown components={colorLinkComponents} urlTransform={styleUrlTransform}>{toColorMarkdown(aboutText)}</ReactMarkdown>
         </div>
       </section>
     );
@@ -135,7 +129,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
           </div>
         )}
         <div className="markdown-body opacity-90 text-[15px]">
-          <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(aboutText)}</ReactMarkdown>
+          <ReactMarkdown components={colorLinkComponents} urlTransform={styleUrlTransform}>{toColorMarkdown(aboutText)}</ReactMarkdown>
         </div>
       </section>
     );
@@ -159,7 +153,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
         <div className="relative z-10 p-6 sm:p-8 w-full text-white">
           <h2 className={`text-4xl sm:text-5xl mb-4 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
           <div className="markdown-body opacity-90 text-[15px] sm:text-base text-white/90">
-            <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(aboutText)}</ReactMarkdown>
+            <ReactMarkdown components={colorLinkComponents} urlTransform={styleUrlTransform}>{toColorMarkdown(aboutText)}</ReactMarkdown>
           </div>
         </div>
       </section>
@@ -186,7 +180,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
               {renderColoredSegments(blockTitle)}
             </h2>
             <div className="markdown-body opacity-90 text-sm">
-              <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(aboutText)}</ReactMarkdown>
+              <ReactMarkdown components={colorLinkComponents} urlTransform={styleUrlTransform}>{toColorMarkdown(aboutText)}</ReactMarkdown>
             </div>
           </div>
         </div>
@@ -213,7 +207,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
       </h2>
       {pos === 'middle' && MediaElement}
       <div className="markdown-body opacity-90 text-[15px]">
-        <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(aboutText)}</ReactMarkdown>
+        <ReactMarkdown components={colorLinkComponents} urlTransform={styleUrlTransform}>{toColorMarkdown(aboutText)}</ReactMarkdown>
       </div>
       {pos === 'bottom' && MediaElement}
     </>,
@@ -237,7 +231,7 @@ function renderTextBlock(block: any, ctx: RenderCtx) {
         {renderColoredSegments(blockTitle)}
       </h2>
       <div className="markdown-body opacity-90 text-[15px]">
-        <ReactMarkdown components={colorLinkComponents}>{toColorMarkdown(text)}</ReactMarkdown>
+        <ReactMarkdown components={colorLinkComponents} urlTransform={styleUrlTransform}>{toColorMarkdown(text)}</ReactMarkdown>
       </div>
     </>,
     block.id,
@@ -382,22 +376,15 @@ function renderServices(block: any, ctx: RenderCtx) {
   return withSectionBackground(inner, block.id, ctx, block.content?.backgroundImage, block.content?.backgroundOverlay);
 }
 
-const DAY_LABELS_TR: Record<string, string> = {
-  monday: 'Pazartesi', tuesday: 'Salı', wednesday: 'Çarşamba', thursday: 'Perşembe',
-  friday: 'Cuma', saturday: 'Cumartesi', sunday: 'Pazar',
-};
-const DAY_KEYS_BY_JS_INDEX = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+const DAY_KEYS_BY_JS_INDEX: DayKey[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 function renderHours(block: any, ctx: RenderCtx) {
   const { locale, radiusClass, headingFont } = ctx;
   const blockTitle = blockTitleOf(block, locale);
   const layoutVariant = block.content?.layoutVariant || 'table';
+  const labels = getHoursLabels(locale);
 
   if (layoutVariant === 'pill-row') {
-    const DAY_ABBR_TR: Record<string, string> = {
-      monday: 'Pzt', tuesday: 'Sal', wednesday: 'Çar', thursday: 'Per',
-      friday: 'Cum', saturday: 'Cts', sunday: 'Paz',
-    };
     return (
       <section key={block.id}>
         <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
@@ -407,7 +394,7 @@ function renderHours(block: any, ctx: RenderCtx) {
             return (
               <span
                 key={day}
-                title={data?.isOpen ? `${data.openTime} - ${data.closeTime}` : 'Kapalı'}
+                title={data?.isOpen ? `${data.openTime} - ${data.closeTime}` : labels.closed}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border ${data?.isOpen ? '' : 'opacity-50'}`}
                 style={{
                   backgroundColor: data?.isOpen ? 'var(--primary)' : 'var(--surface)',
@@ -415,7 +402,7 @@ function renderHours(block: any, ctx: RenderCtx) {
                   borderColor: 'var(--border)',
                 }}
               >
-                {DAY_ABBR_TR[day] || day}
+                {labels.dayAbbr[day] || day}
               </span>
             );
           })}
@@ -434,15 +421,15 @@ function renderHours(block: any, ctx: RenderCtx) {
           <summary className="cursor-pointer list-none p-4 flex items-center justify-between [&::-webkit-details-marker]:hidden">
             <span className="flex items-center gap-2 text-sm font-medium">
               <span className={`w-2 h-2 rounded-full ${todayData?.isOpen ? 'bg-green-500' : 'bg-red-500'}`} />
-              {todayData?.isOpen ? `Bugün Açık · ${todayData.openTime} - ${todayData.closeTime}` : 'Bugün Kapalı'}
+              {todayData?.isOpen ? `${labels.todayOpen} · ${todayData.openTime} - ${todayData.closeTime}` : labels.todayClosed}
             </span>
-            <span className="text-xs opacity-60">Tüm saatler</span>
+            <span className="text-xs opacity-60">{labels.allHours}</span>
           </summary>
           <div className="px-4 pb-4 pt-3 border-t space-y-2 font-mono text-xs" style={{ borderColor: 'var(--border)' }}>
             {Object.entries(block.content?.schedule || {}).map(([day, data]: [string, any]) => (
               <div key={day} className="flex justify-between">
-                <span className="opacity-70">{DAY_LABELS_TR[day] || day}</span>
-                <span>{data.isOpen ? `${data.openTime} - ${data.closeTime}` : 'Kapalı'}</span>
+                <span className="opacity-70">{labels.days[day as DayKey] || day}</span>
+                <span>{data.isOpen ? `${data.openTime} - ${data.closeTime}` : labels.closed}</span>
               </div>
             ))}
           </div>
@@ -461,9 +448,9 @@ function renderHours(block: any, ctx: RenderCtx) {
         <div className="space-y-3 font-mono text-sm">
           {Object.entries(block.content?.schedule || {}).map(([day, data]: [string, any]) => (
             <div key={day} className="flex justify-between border-b pb-3 last:border-0 last:pb-0" style={{ borderColor: 'var(--border)' }}>
-              <span className="capitalize" style={{ color: 'var(--text-muted)' }}>{DAY_LABELS_TR[day] || day}</span>
+              <span className="capitalize" style={{ color: 'var(--text-muted)' }}>{labels.days[day as DayKey] || day}</span>
               <span className={data.isOpen ? 'font-medium' : 'opacity-60'}>
-                {data.isOpen ? `${data.openTime} - ${data.closeTime}` : 'Kapalı'}
+                {data.isOpen ? `${data.openTime} - ${data.closeTime}` : labels.closed}
               </span>
             </div>
           ))}
@@ -483,17 +470,21 @@ function renderFAQ(block: any, ctx: RenderCtx) {
       <section key={block.id}>
         <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="space-y-6">
-          {(block.content?.items || []).map((item: any, idx: number) => (
+          {(block.content?.items || []).map((item: any, idx: number) => {
+            const question = item.question?.[locale] || item.question;
+            const answer = item.answer?.[locale] || item.answer;
+            return (
             <div key={idx} className="flex items-start gap-4 pb-6 border-b last:border-0 last:pb-0" style={{ borderColor: 'var(--border)' }}>
               <span className={`text-4xl leading-none opacity-30 shrink-0 ${headingFont}`} style={{ color: 'var(--primary)' }}>
                 {String(idx + 1).padStart(2, '0')}
               </span>
               <div>
-                <h4 className="font-semibold text-base mb-1">{renderColoredSegments(item.question)}</h4>
-                <p className="text-sm opacity-80" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(item.answer)}</p>
+                <h4 className="font-semibold text-base mb-1">{renderColoredSegments(question)}</h4>
+                <p className="text-sm opacity-80" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(answer)}</p>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </section>
     );
@@ -504,15 +495,19 @@ function renderFAQ(block: any, ctx: RenderCtx) {
       <section key={block.id}>
         <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="space-y-2">
-          {(block.content?.items || []).map((item: any, idx: number) => (
+          {(block.content?.items || []).map((item: any, idx: number) => {
+            const question = item.question?.[locale] || item.question;
+            const answer = item.answer?.[locale] || item.answer;
+            return (
             <details key={idx} className={`border ${radiusClass} overflow-hidden`} style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
               <summary className="cursor-pointer list-none p-4 font-medium text-sm flex justify-between items-center gap-3 [&::-webkit-details-marker]:hidden">
-                <span>{renderColoredSegments(item.question)}</span>
+                <span>{renderColoredSegments(question)}</span>
                 <span className="opacity-40 shrink-0" style={{ color: 'var(--primary)' }}>+</span>
               </summary>
-              <div className="px-4 pb-4 text-sm opacity-80" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(item.answer)}</div>
+              <div className="px-4 pb-4 text-sm opacity-80" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(answer)}</div>
             </details>
-          ))}
+            );
+          })}
         </div>
       </section>
     );
@@ -522,16 +517,19 @@ function renderFAQ(block: any, ctx: RenderCtx) {
     <section key={block.id}>
       <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
       <div className="flex flex-wrap gap-2">
-        {(block.content?.items || []).map((item: any, idx: number) => (
+        {(block.content?.items || []).map((item: any, idx: number) => {
+          const question = item.question?.[locale] || item.question;
+          return (
           <button
             key={idx}
-            onClick={() => window.dispatchEvent(new CustomEvent('sendToChat', { detail: stripColorSyntax(item.question) }))}
+            onClick={() => window.dispatchEvent(new CustomEvent('sendToChat', { detail: stripColorSyntax(question) }))}
             className={`text-left px-4 py-2 border transition-all hover:scale-105 ${radiusClass}`}
             style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--primary)' }}
           >
-            <span className="font-medium text-sm">{renderColoredSegments(item.question)}</span>
+            <span className="font-medium text-sm">{renderColoredSegments(question)}</span>
           </button>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
@@ -844,7 +842,7 @@ function renderContact(block: any, ctx: RenderCtx) {
 
   return (
     <section key={block.id}>
-      <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{FIXED_TITLES.contact[locale] || FIXED_TITLES.contact.tr}</h2>
+      <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{defaultTitleFor('contact', locale)}</h2>
       <div className="flex flex-col gap-3">
         {items.map(({ key, value }) => {
           const Icon = contactIcon(key);

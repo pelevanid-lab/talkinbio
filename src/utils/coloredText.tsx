@@ -1,30 +1,70 @@
-import React from 'react';
+'use client';
 
-// Shared authoring syntax for inline text color, entered via the manual editor's color picker
-// (or typed by hand): `[[metin|#RRGGBB]]`. Two render paths consume it — plain headings/titles
-// (renderColoredSegments, no markdown) and full markdown bodies (toColorMarkdown + colorLinkComponents,
-// piggybacking on ReactMarkdown's own link syntax so bold/italic/lists inside the same text still work).
-const COLOR_SYNTAX = /\[\[([^\]]+?)\|(#[0-9a-fA-F]{6})\]\]/g;
+import React, { useEffect, useRef, useState } from 'react';
+import { defaultUrlTransform } from 'react-markdown';
+import { useTranslations } from 'next-intl';
+import { Bold, Underline, Eraser } from 'lucide-react';
 
-export function renderColoredSegments(text: string): React.ReactNode {
-  if (!text || !text.includes('[[')) return text;
-  const parts: React.ReactNode[] = [];
+// Shared authoring syntax for inline text styling, entered via the manual editor's toolbar
+// (ColoredTextField below) or typed by hand: `[[metin|attrs]]`, where attrs is a `;`-separated
+// mix of an optional `#RRGGBB` color plus `b` (bold) / `u` (underline) flags, e.g. `#FF6A5C`,
+// `b`, `u`, `#FF6A5C;b;u`. Two render paths consume it — plain headings/titles
+// (renderColoredSegments, no markdown) and full markdown bodies (toColorMarkdown +
+// colorLinkComponents, piggybacking on ReactMarkdown's own link syntax so bold/italic/lists
+// inside the same text still work).
+const COLOR_SYNTAX = /\[\[([^\]]+?)\|((?:#[0-9a-fA-F]{6}|b|u)(?:;(?:#[0-9a-fA-F]{6}|b|u))*)\]\]/g;
+
+type Attrs = { color?: string; bold?: boolean; underline?: boolean };
+
+function parseAttrs(attrs: string): Attrs {
+  const tokens = attrs.split(';').filter(Boolean);
+  return {
+    color: tokens.find((t) => t.startsWith('#')),
+    bold: tokens.includes('b'),
+    underline: tokens.includes('u'),
+  };
+}
+
+function serializeAttrs(attrs: Attrs): string {
+  return [attrs.color, attrs.bold && 'b', attrs.underline && 'u'].filter(Boolean).join(';');
+}
+
+function styleFor(attrs: Attrs): React.CSSProperties {
+  return {
+    color: attrs.color,
+    fontWeight: attrs.bold ? 700 : undefined,
+    textDecoration: attrs.underline ? 'underline' : undefined,
+  };
+}
+
+export function parseColorSegments(text: string): Array<{ text: string } & Attrs> {
+  if (!text) return [];
+  const segments: Array<{ text: string } & Attrs> = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   const re = new RegExp(COLOR_SYNTAX);
-  let key = 0;
   while ((match = re.exec(text)) !== null) {
-    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
-    parts.push(<span key={key++} style={{ color: match[2] }}>{match[1]}</span>);
+    if (match.index > lastIndex) segments.push({ text: text.slice(lastIndex, match.index) });
+    segments.push({ text: match[1], ...parseAttrs(match[2]) });
     lastIndex = match.index + match[0].length;
   }
-  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
-  return parts.length ? parts : text;
+  if (lastIndex < text.length) segments.push({ text: text.slice(lastIndex) });
+  return segments;
+}
+
+export function renderColoredSegments(text: string): React.ReactNode {
+  if (!text || !text.includes('[[')) return text;
+  const segments = parseColorSegments(text);
+  return segments.map((seg, i) =>
+    seg.color || seg.bold || seg.underline
+      ? <span key={i} style={styleFor(seg)}>{seg.text}</span>
+      : <React.Fragment key={i}>{seg.text}</React.Fragment>
+  );
 }
 
 export function toColorMarkdown(text: string): string {
   if (!text) return text;
-  return text.replace(COLOR_SYNTAX, (_m, label, hex) => `[${label}](color:${hex})`);
+  return text.replace(COLOR_SYNTAX, (_m, label, attrs) => `[${label}](style:${attrs})`);
 }
 
 // Plain text with the color markup removed — for places that need the raw string, not a rendered
@@ -36,32 +76,299 @@ export function stripColorSyntax(text: string): string {
 
 export const colorLinkComponents = {
   a: ({ href, children }: { href?: string; children?: React.ReactNode }) => {
-    if (typeof href === 'string' && href.startsWith('color:')) {
-      return <span style={{ color: href.slice('color:'.length) }}>{children}</span>;
+    if (typeof href === 'string' && href.startsWith('style:')) {
+      return <span style={styleFor(parseAttrs(href.slice('style:'.length)))}>{children}</span>;
     }
     return <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
   },
 };
 
+// react-markdown sanitizes every link/image URL through `urlTransform` before it ever reaches
+// `colorLinkComponents.a` above, and its default only allows http(s)/ircs/mailto/xmpp — our
+// `style:` pseudo-scheme gets silently blanked to `""`, which is why styled runs rendered as
+// plain (unstyled) clickable links to nowhere. Pass our own `style:` URLs through untouched and
+// defer to the default sanitizer for everything else, so real links stay protected.
+export function styleUrlTransform(url: string): string {
+  return url.startsWith('style:') ? url : defaultUrlTransform(url);
+}
+
 // Brand orange (--coral in landing.css / the logo's message-bubble color) always listed first.
+// `labelKey` resolves via useTranslations('BlockEditor.colorToolbar') in ColoredTextField below —
+// kept as translation keys rather than raw strings so the swatch tooltips follow the dashboard's
+// selected UI language instead of always showing Turkish.
 export const TEXT_COLOR_PRESETS = [
-  { label: 'Marka Turuncusu', hex: '#FF6A5C' },
-  { label: 'Koyu Lacivert', hex: '#14231F' },
-  { label: 'Yeşil', hex: '#2B6F5C' },
-  { label: 'Beyaz', hex: '#FFFFFF' },
+  { labelKey: 'presetBrand', hex: '#FF6A5C' },
+  { labelKey: 'presetNavy', hex: '#14231F' },
+  { labelKey: 'presetGreen', hex: '#2B6F5C' },
+  { labelKey: 'presetWhite', hex: '#FFFFFF' },
 ] as const;
 
-// Wraps the currently-selected substring of a focused input/textarea with the color syntax.
-// No-op if nothing is selected in that field.
-export function wrapSelectionWithColor(
-  el: HTMLTextAreaElement | HTMLInputElement | null,
-  value: string,
-  hex: string
-): string | null {
-  if (!el) return null;
-  const start = el.selectionStart ?? 0;
-  const end = el.selectionEnd ?? 0;
-  if (start === end) return null;
-  const selected = value.slice(start, end);
-  return value.slice(0, start) + `[[${selected}|${hex}]]` + value.slice(end);
+// --- DOM <-> `[[text|attrs]]` syntax bridge for ColoredTextField ---------------------------
+
+function attrsOf(el: HTMLElement): Attrs {
+  return {
+    color: el.getAttribute('data-color') || undefined,
+    bold: el.getAttribute('data-bold') === 'true',
+    underline: el.getAttribute('data-underline') === 'true',
+  };
+}
+
+function applyAttrsToSpan(span: HTMLElement, attrs: Attrs) {
+  if (attrs.color) span.setAttribute('data-color', attrs.color);
+  if (attrs.bold) span.setAttribute('data-bold', 'true');
+  if (attrs.underline) span.setAttribute('data-underline', 'true');
+  Object.assign(span.style, styleFor(attrs));
+}
+
+function buildDom(root: HTMLElement, text: string) {
+  root.innerHTML = '';
+  for (const seg of parseColorSegments(text)) {
+    if (seg.color || seg.bold || seg.underline) {
+      const span = document.createElement('span');
+      applyAttrsToSpan(span, seg);
+      span.textContent = seg.text;
+      root.appendChild(span);
+    } else {
+      root.appendChild(document.createTextNode(seg.text));
+    }
+  }
+}
+
+// Recursively flattens one inline node (text node, styled span, or a stray formatting element
+// the browser inserted) back into the `[[text|attrs]]` syntax.
+function serializeInline(node: ChildNode, parts: string[]) {
+  if (node.nodeType === Node.TEXT_NODE) {
+    parts.push(node.nodeValue || '');
+    return;
+  }
+  if (node.nodeType !== Node.ELEMENT_NODE) return;
+  const el = node as HTMLElement;
+  if (el.tagName === 'BR') {
+    parts.push('\n');
+    return;
+  }
+  const attrs = attrsOf(el);
+  // A styled span can end up empty — contentEditable keeps a dangling `<span>` around after every
+  // character inside it is deleted, so the formatting "sticks" for whatever gets typed next. With
+  // no text to carry, `[[|b]]` would otherwise get written into the stored string as literal,
+  // unparseable content (the syntax requires a non-empty label) — so this drops the marker rather
+  // than serializing it, matching the fact that there's nothing there to format.
+  if ((attrs.color || attrs.bold || attrs.underline) && el.textContent) {
+    parts.push(`[[${el.textContent}|${serializeAttrs(attrs)}]]`);
+    return;
+  }
+  el.childNodes.forEach((child) => serializeInline(child, parts));
+}
+
+// contentEditable inserts a <div>/<p> per line (Chrome/Safari) or bare <br> (Firefox) on Enter —
+// normalize both back into plain '\n' characters so the stored string round-trips through
+// parseColorSegments/buildDom the same way it would if the user had typed '\n' directly.
+function serializeDom(root: HTMLElement): string {
+  const parts: string[] = [];
+  root.childNodes.forEach((node) => {
+    const el = node.nodeType === Node.ELEMENT_NODE ? (node as HTMLElement) : null;
+    if (el && /^(DIV|P)$/.test(el.tagName)) {
+      // Any content already accumulated (text or a prior block) ends at this block boundary.
+      if (parts.length > 0) parts.push('\n');
+      if (el.innerHTML.toLowerCase() !== '<br>') {
+        el.childNodes.forEach((child) => serializeInline(child, parts));
+      }
+    } else {
+      serializeInline(node, parts);
+    }
+  });
+  return parts.join('');
+}
+
+// Drop-in replacement for a plain <input>/<textarea> that lets the user select a run of text and
+// click color/bold/underline to style it — the field shows the actual styled text instead of the
+// raw `[[text|attrs]]` syntax. The stored/emitted value still uses that syntax, so nothing
+// downstream (ArchetypeRenderer, saved content) needs to change.
+export function ColoredTextField({
+  value,
+  onChange,
+  multiline = false,
+  placeholder,
+  className = '',
+  compact = false,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  multiline?: boolean;
+  placeholder?: string;
+  className?: string;
+  compact?: boolean;
+}) {
+  const t = useTranslations('BlockEditor.colorToolbar');
+  const rootRef = useRef<HTMLDivElement>(null);
+  const lastEmitted = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (value === lastEmitted.current) return;
+    if (rootRef.current) buildDom(rootRef.current, value);
+    lastEmitted.current = value;
+  }, [value]);
+
+  const emitChange = () => {
+    if (!rootRef.current) return;
+    const next = serializeDom(rootRef.current);
+    lastEmitted.current = next;
+    onChange(next);
+  };
+
+  // Grabs the current selection, provided it's inside this field and non-empty. Returns the
+  // range and its plain text, or null if there's nothing usable to act on.
+  const currentSelection = (): { sel: Selection; range: Range; text: string } | null => {
+    const root = rootRef.current;
+    if (!root) return null;
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+    const range = sel.getRangeAt(0);
+    if (!root.contains(range.commonAncestorContainer)) return null;
+    const text = range.toString();
+    if (!text) return null;
+    return { sel, range, text };
+  };
+
+  // Wraps the current selection in a span carrying `overlay` merged on top of whatever attrs the
+  // selection already had (only inherited when the selection exactly matches one existing styled
+  // span — a mixed/plain selection just gets `overlay` applied fresh).
+  const applyFormat = (overlay: Attrs) => {
+    const picked = currentSelection();
+    if (!picked) return;
+    const { sel, range, text } = picked;
+
+    // Inherit existing attrs when the selection is exactly one styled span (whole or partial —
+    // cloneContents normalizes container-level selections like Ctrl+A the same as a text-node
+    // drag-select, so both resolve to a single cloned element here). A mixed/plain selection
+    // clones to more than one top-level node and falls back to a fresh, unstyled base.
+    const clone = range.cloneContents();
+    const base: Attrs =
+      clone.childNodes.length === 1 && clone.childNodes[0].nodeType === Node.ELEMENT_NODE && (clone.childNodes[0] as HTMLElement).textContent === text
+        ? attrsOf(clone.childNodes[0] as HTMLElement)
+        : {};
+
+    const merged: Attrs = { ...base, ...overlay };
+    const span = document.createElement('span');
+    applyAttrsToSpan(span, merged);
+    span.textContent = text;
+    range.deleteContents();
+    range.insertNode(span);
+    range.setStartAfter(span);
+    range.setEndAfter(span);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    emitChange();
+  };
+
+  // Strips all formatting (color/bold/underline) from the current selection — the reliable
+  // "undo" for the toolbar buttons above, since re-clicking the same button on a reselected run
+  // depends on the selection lining up exactly with an existing styled span, which real
+  // click-and-drag selections don't always do.
+  const clearFormat = () => {
+    const picked = currentSelection();
+    if (!picked) return;
+    const { sel, range, text } = picked;
+    range.deleteContents();
+    const textNode = document.createTextNode(text);
+    range.insertNode(textNode);
+    range.setStartAfter(textNode);
+    range.setEndAfter(textNode);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    emitChange();
+  };
+
+  const swatchSize = compact ? 'w-4 h-4' : 'w-6 h-6';
+  const formatBtnSize = compact ? 'w-4 h-4' : 'w-6 h-6';
+  const formatIconSize = compact ? 10 : 14;
+
+  return (
+    <div>
+      <div className={`flex items-center gap-1.5 flex-wrap ${compact ? 'mb-1' : 'mb-2'}`}>
+        {!compact && <span className="text-xs text-slate-400">{t('label')}</span>}
+        {TEXT_COLOR_PRESETS.map((c) => (
+          <button
+            key={c.hex}
+            type="button"
+            title={t(c.labelKey)}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => applyFormat({ color: c.hex })}
+            className={`rounded-full border border-slate-300 shadow-sm shrink-0 ${swatchSize}`}
+            style={{ backgroundColor: c.hex }}
+          />
+        ))}
+        <CustomColorButton compact={compact} onApply={(hex) => applyFormat({ color: hex })} />
+        <button
+          type="button"
+          title={t('boldTitle')}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => applyFormat({ bold: true })}
+          className={`flex items-center justify-center rounded border border-slate-300 shadow-sm shrink-0 text-slate-600 hover:bg-slate-50 ${formatBtnSize}`}
+        >
+          <Bold size={formatIconSize} />
+        </button>
+        <button
+          type="button"
+          title={t('underlineTitle')}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => applyFormat({ underline: true })}
+          className={`flex items-center justify-center rounded border border-slate-300 shadow-sm shrink-0 text-slate-600 hover:bg-slate-50 ${formatBtnSize}`}
+        >
+          <Underline size={formatIconSize} />
+        </button>
+        <button
+          type="button"
+          title={t('clearFormatTitle')}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={clearFormat}
+          className={`flex items-center justify-center rounded border border-slate-300 shadow-sm shrink-0 text-slate-600 hover:bg-slate-50 ${formatBtnSize}`}
+        >
+          <Eraser size={formatIconSize} />
+        </button>
+        {!compact && <span className="text-[10px] text-slate-400">{t('hint')}</span>}
+      </div>
+      <div
+        ref={rootRef}
+        contentEditable
+        suppressContentEditableWarning
+        data-placeholder={placeholder}
+        onInput={emitChange}
+        onKeyDown={(e) => {
+          if (!multiline && e.key === 'Enter') e.preventDefault();
+        }}
+        onPaste={(e) => {
+          e.preventDefault();
+          const text = e.clipboardData.getData('text/plain');
+          document.execCommand('insertText', false, multiline ? text : text.replace(/\n/g, ' '));
+        }}
+        className={`whitespace-pre-wrap overflow-y-auto empty:before:content-[attr(data-placeholder)] empty:before:text-slate-400 empty:before:pointer-events-none ${className}`}
+      />
+    </div>
+  );
+}
+
+function CustomColorButton({ compact, onApply }: { compact: boolean; onApply: (hex: string) => void }) {
+  const t = useTranslations('BlockEditor.colorToolbar');
+  const [hex, setHex] = useState('#FF6A5C');
+  return (
+    <>
+      <input
+        type="color"
+        value={hex}
+        onChange={(e) => setHex(e.target.value)}
+        onMouseDown={(e) => e.preventDefault()}
+        className={`rounded border border-slate-300 cursor-pointer p-0 shrink-0 ${compact ? 'w-4 h-4' : 'w-6 h-6'}`}
+        title={t('customColorTitle')}
+      />
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => onApply(hex)}
+        className="text-xs text-[var(--coral)] font-medium hover:underline shrink-0"
+      >
+        {t('applyBtn')}
+      </button>
+    </>
+  );
 }

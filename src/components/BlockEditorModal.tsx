@@ -1,91 +1,35 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import MediaUploader from './MediaUploader';
-import { TEXT_COLOR_PRESETS, wrapSelectionWithColor } from '@/utils/coloredText';
-
-// Select some text in the field below this toolbar, then click a swatch — wraps the selection in
-// the `[[text|#hex]]` syntax that ArchetypeRenderer renders as a colored span (title) or colored
-// markdown link (body text). No-op if nothing is selected.
-function ColorToolbar({
-  getEl = () => document.activeElement as HTMLTextAreaElement | HTMLInputElement | null,
-  value,
-  onChange,
-  compact = false,
-}: {
-  // Optional: for fields inside a repeated list (services items, FAQ items, ...) refs per row are
-  // overkill — clicking a swatch keeps the just-focused field focused (onMouseDown preventDefault
-  // below), so document.activeElement already points at the right textarea/input.
-  getEl?: () => HTMLTextAreaElement | HTMLInputElement | null;
-  value: string;
-  onChange: (v: string) => void;
-  compact?: boolean;
-}) {
-  const [customHex, setCustomHex] = useState('#FF6A5C');
-
-  const applyColor = (hex: string) => {
-    const next = wrapSelectionWithColor(getEl(), value, hex);
-    if (next !== null) onChange(next);
-  };
-
-  return (
-    <div className={`flex items-center gap-1.5 flex-wrap ${compact ? 'mb-1' : 'mb-2'}`}>
-      {!compact && <span className="text-xs text-slate-400">Renk:</span>}
-      {TEXT_COLOR_PRESETS.map((c) => (
-        <button
-          key={c.hex}
-          type="button"
-          title={c.label}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => applyColor(c.hex)}
-          className={`rounded-full border border-slate-300 shadow-sm shrink-0 ${compact ? 'w-4 h-4' : 'w-6 h-6'}`}
-          style={{ backgroundColor: c.hex }}
-        />
-      ))}
-      <input
-        type="color"
-        value={customHex}
-        onChange={(e) => setCustomHex(e.target.value)}
-        onMouseDown={(e) => e.preventDefault()}
-        className={`rounded border border-slate-300 cursor-pointer p-0 shrink-0 ${compact ? 'w-4 h-4' : 'w-6 h-6'}`}
-        title="Özel renk"
-      />
-      <button
-        type="button"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => applyColor(customHex)}
-        className="text-xs text-[var(--coral)] font-medium hover:underline shrink-0"
-      >
-        Uygula
-      </button>
-      {!compact && <span className="text-[10px] text-slate-400">— metni seçip bir renge tıkla</span>}
-    </div>
-  );
-}
+import { ColoredTextField } from '@/utils/coloredText';
+import { defaultTitleFor, LOCALE_KEYS, type LocaleKey } from '@/config/localeTitles';
 
 // Shared "background image behind this section" fields, used by about(standard)/services/testimonials/contact/custom.
 function BackgroundImageFields({ content, setContent }: { content: any; setContent: (c: any) => void }) {
+  const t = useTranslations('BlockEditor');
   return (
     <div className="space-y-3 pt-4 border-t border-slate-100">
-      <label className="block text-sm font-medium mb-1 text-[var(--ink)]">Arka Plan Görseli (opsiyonel)</label>
+      <label className="block text-sm font-medium mb-1 text-[var(--ink)]">{t('background.label')}</label>
       <MediaUploader
         value={content.backgroundImage || ''}
         onChange={(url) => setContent({ ...content, backgroundImage: url })}
-        label="Arka Plan Görseli Yükle"
+        label={t('background.uploadLabel')}
       />
       {content.backgroundImage && (
         <div>
-          <label className="block text-xs font-medium mb-1 text-slate-500">Karartma / Renk Katmanı</label>
+          <label className="block text-xs font-medium mb-1 text-slate-500">{t('background.overlayLabel')}</label>
           <select
             value={content.backgroundOverlay || 'dark'}
             onChange={(e) => setContent({ ...content, backgroundOverlay: e.target.value })}
             className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
           >
-            <option value="dark">Koyu Karartma</option>
-            <option value="light">Açık/Beyaz</option>
-            <option value="tint">Arketip Rengiyle Tonlama</option>
-            <option value="none">Katmansız</option>
+            <option value="dark">{t('background.overlayDark')}</option>
+            <option value="light">{t('background.overlayLight')}</option>
+            <option value="tint">{t('background.overlayTint')}</option>
+            <option value="none">{t('background.overlayNone')}</option>
           </select>
         </div>
       )}
@@ -93,29 +37,37 @@ function BackgroundImageFields({ content, setContent }: { content: any; setConte
   );
 }
 
-export default function BlockEditorModal({ 
-  block, 
-  onSave, 
+export default function BlockEditorModal({
+  block,
+  onSave,
   onClose,
-  onDelete
-}: { 
-  block: any; 
-  onSave: (data: any) => void; 
+  onDelete,
+  locale,
+}: {
+  block: any;
+  onSave: (data: any) => void;
   onClose: () => void;
   onDelete: () => void;
+  // Dashboard's current UI language (from EditorClient's useLocale(), a plain string) — the modal
+  // should open on this language's content tab, not always default to Turkish regardless of
+  // what's selected.
+  locale?: string;
 }) {
+  const t = useTranslations('BlockEditor');
   const [titles, setTitles] = useState<Record<'tr' | 'en' | 'ru', string>>({ tr: '', en: '', ru: '' });
   const [content, setContent] = useState<any>(block?.content || {});
-  const [activeLang, setActiveLang] = useState<'tr'|'en'|'ru'>('tr');
-  const titleInputRef = useRef<HTMLInputElement>(null);
-  const mainTextRef = useRef<HTMLTextAreaElement>(null);
+  const [activeLang, setActiveLang] = useState<LocaleKey>(
+    LOCALE_KEYS.includes(locale as LocaleKey) ? (locale as LocaleKey) : 'tr'
+  );
 
   useEffect(() => {
-    setTitles({
-      tr: block?.content?.tr?.title || block?.title || '',
-      en: block?.content?.en?.title || block?.title || '',
-      ru: block?.content?.ru?.title || block?.title || '',
-    });
+    // Prefill each language tab from its OWN locale: existing per-locale title, else that
+    // locale's default label for fixed section types, else (AI-authored types like
+    // gallery/testimonials/custom only) the top-level title. Never seed one locale's custom
+    // title into another tab — saving would then stamp the same word into every language.
+    const prefill = (loc: LocaleKey) =>
+      block?.content?.[loc]?.title || defaultTitleFor(block?.type, loc) || block?.title || '';
+    setTitles({ tr: prefill('tr'), en: prefill('en'), ru: prefill('ru') });
 
     if (!block?.content || Object.keys(block.content).length === 0) {
       if (block?.type === 'services' || block?.type === 'pricing') setContent({ items: [] });
@@ -139,12 +91,19 @@ export default function BlockEditorModal({
     // blockTitleOf() (ArchetypeRenderer) reads content[locale].title first, falling back to the
     // top-level `title` only when that's unset — Beiwe's tools always populate content[locale].title,
     // so without writing per-locale here a manually-typed title would silently have no visible effect
-    // on any block Beiwe has touched. Each language tab's title is independent — leaving one blank
-    // keeps whatever that locale already had, it does not clear it.
+    // on any block Beiwe has touched. Each language tab's title is independent. Clearing a tab
+    // removes that locale's stored title so the renderer falls back to the locale's default label —
+    // the manual escape hatch from a bad custom title.
     const titledContent = { ...content };
     (['tr', 'en', 'ru'] as const).forEach((loc) => {
       const val = titles[loc]?.trim();
-      if (val) titledContent[loc] = { ...titledContent[loc], title: val };
+      if (val) {
+        titledContent[loc] = { ...titledContent[loc], title: val };
+      } else if (titledContent[loc]?.title) {
+        const rest = { ...titledContent[loc] };
+        delete rest.title;
+        titledContent[loc] = rest;
+      }
     });
     onSave({ title: titles.tr || titles.en || titles.ru || '', content: titledContent });
   };
@@ -173,50 +132,45 @@ export default function BlockEditorModal({
         return (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Metin İçeriği ({activeLang.toUpperCase()})</label>
-              <ColorToolbar
-                getEl={() => mainTextRef.current}
+              <label className="block text-sm font-medium mb-1">{t('textContentLabel', { lang: activeLang.toUpperCase() })}</label>
+              <ColoredTextField
+                multiline
                 value={content[activeLang]?.text || content.text || ''}
                 onChange={(v) => setContent({ ...content, [activeLang]: { ...content[activeLang], text: v } })}
-              />
-              <textarea
-                ref={mainTextRef}
-                value={content[activeLang]?.text || content.text || ''}
-                onChange={(e) => setContent({...content, [activeLang]: { ...content[activeLang], text: e.target.value }})}
                 className="w-full p-3 border border-slate-200 rounded-lg h-40 focus:border-[var(--coral)] focus:outline-none"
-                placeholder="İçeriğinizi buraya yazın..."
+                placeholder={t('textContentPlaceholder')}
               />
             </div>
             {block.type === 'about' && (
               <div className="space-y-3 pt-4 border-t border-slate-100">
-                <label className="block text-sm font-medium mb-1 text-[var(--ink)]">Tasarım Stili (Varyasyon)</label>
-                <select 
-                  value={content.layoutVariant || 'standard'} 
+                <label className="block text-sm font-medium mb-1 text-[var(--ink)]">{t('layoutVariantLabel')}</label>
+                <select
+                  value={content.layoutVariant || 'standard'}
                   onChange={(e) => setContent({...content, layoutVariant: e.target.value})}
                   className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
                 >
-                  <option value="standard">Standart</option>
-                  <option value="hero-overlay">Tam Ekran Karşılama (Hero)</option>
-                  <option value="split-card">Yan Yana Asimetrik (Split)</option>
-                  <option value="big-statement">Büyük Tipografi (Manifesto)</option>
-                  <option value="image-grid">Görsel Kolajı + Metin</option>
+                  <option value="standard">{t('about.variantStandard')}</option>
+                  <option value="hero-overlay">{t('about.variantHero')}</option>
+                  <option value="split-card">{t('about.variantSplit')}</option>
+                  <option value="big-statement">{t('about.variantBigStatement')}</option>
+                  <option value="image-grid">{t('about.variantImageGrid')}</option>
                 </select>
-                <label className="block text-sm font-medium mb-1 mt-4">Görsel / Video</label>
-                <MediaUploader 
+                <label className="block text-sm font-medium mb-1 mt-4">{t('about.mediaLabel')}</label>
+                <MediaUploader
                   value={content.mediaUrl || ''}
                   onChange={(url) => setContent({...content, mediaUrl: url})}
                 />
                 {content.mediaUrl && (
                   <div className="pt-2">
-                    <label className="block text-xs font-medium mb-1 text-slate-500">Görsel Konumu</label>
+                    <label className="block text-xs font-medium mb-1 text-slate-500">{t('about.mediaPositionLabel')}</label>
                     <select
                       value={content.mediaPosition || 'middle'}
                       onChange={(e) => setContent({...content, mediaPosition: e.target.value})}
                       className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
                     >
-                      <option value="top">En Üstte (Başlıktan Önce)</option>
-                      <option value="middle">Ortada (Başlık ile Metin Arasında)</option>
-                      <option value="bottom">En Altta (Metinden Sonra)</option>
+                      <option value="top">{t('about.mediaPositionTop')}</option>
+                      <option value="middle">{t('about.mediaPositionMiddle')}</option>
+                      <option value="bottom">{t('about.mediaPositionBottom')}</option>
                     </select>
                   </div>
                 )}
@@ -232,17 +186,17 @@ export default function BlockEditorModal({
         return (
           <div className="space-y-4">
             <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">Tasarım Stili (Varyasyon)</label>
+              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">{t('layoutVariantLabel')}</label>
               <select
-                value={content.layoutVariant || 'grid-cards'} 
+                value={content.layoutVariant || 'grid-cards'}
                 onChange={(e) => setContent({...content, layoutVariant: e.target.value})}
                 className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
               >
-                <option value="grid-cards">Yan Yana Kutular (Grid Cards)</option>
-                <option value="list">Alt Alta Klasik Liste</option>
-                <option value="numbered-list">Numaralı Zarif Liste</option>
-                <option value="feature-split">Sağ-Sol Büyük Görsel+Metin</option>
-                <option value="price-table">Klasik Menü/Fiyat Listesi</option>
+                <option value="grid-cards">{t('services.variantGridCards')}</option>
+                <option value="list">{t('services.variantList')}</option>
+                <option value="numbered-list">{t('services.variantNumberedList')}</option>
+                <option value="feature-split">{t('services.variantFeatureSplit')}</option>
+                <option value="price-table">{t('services.variantPriceTable')}</option>
               </select>
             </div>
             {(content.items || []).map((item: any, idx: number) => {
@@ -259,7 +213,7 @@ export default function BlockEditorModal({
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  <ColorToolbar
+                  <ColoredTextField
                     compact
                     value={itemLoc.title || ''}
                     onChange={(v) => {
@@ -267,34 +221,19 @@ export default function BlockEditorModal({
                       newItems[idx] = { ...item, [activeLang]: { ...itemLoc, title: v } };
                       setContent({...content, items: newItems});
                     }}
-                  />
-                  <input
-                    value={itemLoc.title || ''}
-                    onChange={e => {
-                      const newItems = [...content.items];
-                      newItems[idx] = { ...item, [activeLang]: { ...itemLoc, title: e.target.value } };
-                      setContent({...content, items: newItems});
-                    }}
-                    placeholder="Hizmet Adı"
+                    placeholder={t('services.namePlaceholder')}
                     className="w-full p-2 border border-slate-200 rounded focus:border-[var(--coral)] focus:outline-none"
                   />
-                  <ColorToolbar
+                  <ColoredTextField
                     compact
+                    multiline
                     value={itemLoc.description || ''}
                     onChange={(v) => {
                       const newItems = [...content.items];
                       newItems[idx] = { ...item, [activeLang]: { ...itemLoc, description: v } };
                       setContent({...content, items: newItems});
                     }}
-                  />
-                  <textarea
-                    value={itemLoc.description || ''}
-                    onChange={e => {
-                      const newItems = [...content.items];
-                      newItems[idx] = { ...item, [activeLang]: { ...itemLoc, description: e.target.value } };
-                      setContent({...content, items: newItems});
-                    }}
-                    placeholder="Açıklama"
+                    placeholder={t('services.descriptionPlaceholder')}
                     className="w-full p-2 border border-slate-200 rounded focus:border-[var(--coral)] focus:outline-none"
                   />
                   <div className="flex gap-3">
@@ -305,12 +244,12 @@ export default function BlockEditorModal({
                         newItems[idx].price = e.target.value;
                         setContent({...content, items: newItems});
                       }}
-                      placeholder="Fiyat (Örn: 400 TL)"
+                      placeholder={t('services.pricePlaceholder')}
                       className="flex-1 p-2 border border-slate-200 rounded focus:border-[var(--coral)] focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1 text-slate-500">Hizmet Görseli / Videosu</label>
+                    <label className="block text-xs font-medium mb-1 text-slate-500">{t('services.mediaLabel')}</label>
                     <MediaUploader
                       value={item.mediaUrl || ''}
                       onChange={url => {
@@ -327,7 +266,7 @@ export default function BlockEditorModal({
               onClick={() => setContent({...content, items: [...(content.items || []), { price: '', mediaUrl: '' }]})}
               className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] font-medium flex items-center justify-center hover:bg-slate-50"
             >
-              <Plus className="w-4 h-4 mr-2" /> Yeni Hizmet Ekle
+              <Plus className="w-4 h-4 mr-2" /> {t('services.addBtn')}
             </button>
             <BackgroundImageFields content={content} setContent={setContent} />
           </div>
@@ -337,20 +276,23 @@ export default function BlockEditorModal({
         return (
           <div className="space-y-4">
             <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">Tasarım Stili (Varyasyon)</label>
+              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">{t('layoutVariantLabel')}</label>
               <select
                 value={content.layoutVariant || 'chips'}
                 onChange={(e) => setContent({...content, layoutVariant: e.target.value})}
                 className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
               >
-                <option value="chips">Etiket (Tıklayınca Asistana Sorar)</option>
-                <option value="accordion">Aç/Kapa Liste (Cevabı Gösterir)</option>
-                <option value="numbered">Numaralı Liste (Her Zaman Açık)</option>
+                <option value="chips">{t('faq.variantChips')}</option>
+                <option value="accordion">{t('faq.variantAccordion')}</option>
+                <option value="numbered">{t('faq.variantNumbered')}</option>
               </select>
             </div>
-            {(content.items || []).map((item: any, idx: number) => (
+            {(content.items || []).map((item: any, idx: number) => {
+              const questionLoc = item.question?.[activeLang] || (typeof item.question === 'string' ? item.question : '');
+              const answerLoc = item.answer?.[activeLang] || (typeof item.answer === 'string' ? item.answer : '');
+              return (
               <div key={idx} className="p-4 border border-slate-200 rounded-lg relative space-y-3 bg-slate-50">
-                <button 
+                <button
                   onClick={() => {
                     const newItems = [...content.items];
                     newItems.splice(idx, 1);
@@ -360,51 +302,37 @@ export default function BlockEditorModal({
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
-                <ColorToolbar
+                <ColoredTextField
                   compact
-                  value={item.question || ''}
+                  value={questionLoc}
                   onChange={(v) => {
                     const newItems = [...content.items];
-                    newItems[idx].question = v;
+                    newItems[idx].question = { ...(item.question || {}), [activeLang]: v };
                     setContent({...content, items: newItems});
                   }}
-                />
-                <input
-                  value={item.question || ''}
-                  onChange={e => {
-                    const newItems = [...content.items];
-                    newItems[idx].question = e.target.value;
-                    setContent({...content, items: newItems});
-                  }}
-                  placeholder="Soru"
+                  placeholder={t('faq.questionPlaceholder', { lang: activeLang })}
                   className="w-full p-2 border border-slate-200 rounded font-medium"
                 />
-                <ColorToolbar
+                <ColoredTextField
                   compact
-                  value={item.answer || ''}
+                  multiline
+                  value={answerLoc}
                   onChange={(v) => {
                     const newItems = [...content.items];
-                    newItems[idx].answer = v;
+                    newItems[idx].answer = { ...(item.answer || {}), [activeLang]: v };
                     setContent({...content, items: newItems});
                   }}
-                />
-                <textarea
-                  value={item.answer || ''}
-                  onChange={e => {
-                    const newItems = [...content.items];
-                    newItems[idx].answer = e.target.value;
-                    setContent({...content, items: newItems});
-                  }}
-                  placeholder="Cevap (Opsiyonel - Ajan bunu context olarak kullanabilir)"
+                  placeholder={t('faq.answerPlaceholder', { lang: activeLang })}
                   className="w-full p-2 border border-slate-200 rounded text-sm"
                 />
               </div>
-            ))}
-            <button 
-              onClick={() => setContent({...content, items: [...(content.items || []), { question: '', answer: '' }]})}
+              );
+            })}
+            <button
+              onClick={() => setContent({...content, items: [...(content.items || []), { question: {}, answer: {} }]})}
               className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] font-medium flex items-center justify-center hover:bg-slate-50"
             >
-              <Plus className="w-4 h-4 mr-2" /> Yeni Soru Ekle
+              <Plus className="w-4 h-4 mr-2" /> {t('faq.addBtn')}
             </button>
           </div>
         );
@@ -413,15 +341,15 @@ export default function BlockEditorModal({
         return (
           <div className="space-y-4">
             <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">Tasarım Stili (Varyasyon)</label>
+              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">{t('layoutVariantLabel')}</label>
               <select
                 value={content.layoutVariant || 'stacked'}
                 onChange={(e) => setContent({...content, layoutVariant: e.target.value})}
                 className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
               >
-                <option value="stacked">Alt Alta Tam Genişlik Buton</option>
-                <option value="icon-row">Yan Yana Yuvarlak İkon</option>
-                <option value="two-col-grid">2 Sütunlu Etiketli Kart</option>
+                <option value="stacked">{t('links.variantStacked')}</option>
+                <option value="icon-row">{t('links.variantIconRow')}</option>
+                <option value="two-col-grid">{t('links.variantTwoColGrid')}</option>
               </select>
             </div>
             {(content.items || []).map((item: any, idx: number) => (
@@ -436,7 +364,7 @@ export default function BlockEditorModal({
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
-                <ColorToolbar
+                <ColoredTextField
                   compact
                   value={item.label || ''}
                   onChange={(v) => {
@@ -444,15 +372,7 @@ export default function BlockEditorModal({
                     newItems[idx].label = v;
                     setContent({...content, items: newItems});
                   }}
-                />
-                <input
-                  value={item.label || ''}
-                  onChange={e => {
-                    const newItems = [...content.items];
-                    newItems[idx].label = e.target.value;
-                    setContent({...content, items: newItems});
-                  }}
-                  placeholder="Etiket (Örn: Instagram)"
+                  placeholder={t('links.labelPlaceholder')}
                   className="w-full p-2 border border-slate-200 rounded font-medium"
                 />
                 <input
@@ -462,7 +382,7 @@ export default function BlockEditorModal({
                     newItems[idx].url = e.target.value;
                     setContent({...content, items: newItems});
                   }}
-                  placeholder="URL (Örn: https://instagram.com/...)"
+                  placeholder={t('links.urlPlaceholder')}
                   className="w-full p-2 border border-slate-200 rounded text-sm"
                 />
               </div>
@@ -471,7 +391,7 @@ export default function BlockEditorModal({
               onClick={() => setContent({...content, items: [...(content.items || []), { label: '', url: '' }]})}
               className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] font-medium flex items-center justify-center hover:bg-slate-50"
             >
-              <Plus className="w-4 h-4 mr-2" /> Yeni Bağlantı Ekle
+              <Plus className="w-4 h-4 mr-2" /> {t('links.addBtn')}
             </button>
           </div>
         );
@@ -480,16 +400,16 @@ export default function BlockEditorModal({
         return (
           <div className="space-y-4">
             <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">Tasarım Stili (Varyasyon)</label>
+              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">{t('layoutVariantLabel')}</label>
               <select
                 value={content.layoutVariant || 'grid'}
                 onChange={(e) => setContent({...content, layoutVariant: e.target.value})}
                 className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
               >
-                <option value="grid">Klasik Izgara (Grid)</option>
-                <option value="masonry">Pinterest Stili Sanatsal (Masonry)</option>
-                <option value="fullbleed-carousel">Kenarsız Kaydırmalı Şerit</option>
-                <option value="stacked-fullwidth">Alt Alta Büyük Tam Genişlik</option>
+                <option value="grid">{t('gallery.variantGrid')}</option>
+                <option value="masonry">{t('gallery.variantMasonry')}</option>
+                <option value="fullbleed-carousel">{t('gallery.variantFullbleedCarousel')}</option>
+                <option value="stacked-fullwidth">{t('gallery.variantStackedFullwidth')}</option>
               </select>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -515,10 +435,10 @@ export default function BlockEditorModal({
                           newItems[idx].url = url;
                           setContent({...content, items: newItems});
                         }}
-                        label="Medya Yükle"
+                        label={t('gallery.uploadLabel')}
                       />
                     </div>
-                    <ColorToolbar
+                    <ColoredTextField
                       compact
                       value={captionLoc}
                       onChange={(v) => {
@@ -526,26 +446,18 @@ export default function BlockEditorModal({
                         newItems[idx].caption = { ...(item.caption || {}), [activeLang]: v };
                         setContent({...content, items: newItems});
                       }}
-                    />
-                    <input
-                      value={captionLoc}
-                      onChange={e => {
-                        const newItems = [...content.items];
-                        newItems[idx].caption = { ...(item.caption || {}), [activeLang]: e.target.value };
-                        setContent({...content, items: newItems});
-                      }}
-                      placeholder={`Açıklama (${activeLang})`}
+                      placeholder={t('gallery.captionPlaceholder', { lang: activeLang })}
                       className="w-full p-2 border border-slate-200 rounded text-xs mt-auto focus:border-[var(--coral)] focus:outline-none"
                     />
                   </div>
                 );
               })}
             </div>
-            <button 
+            <button
               onClick={() => setContent({...content, items: [...(content.items || []), { url: '', caption: {} }]})}
               className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] font-medium flex items-center justify-center hover:bg-slate-50"
             >
-              <Plus className="w-4 h-4 mr-2" /> Yeni Medya Ekle
+              <Plus className="w-4 h-4 mr-2" /> {t('gallery.addBtn')}
             </button>
           </div>
         );
@@ -554,15 +466,15 @@ export default function BlockEditorModal({
         return (
           <div className="space-y-4">
             <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">Tasarım Stili (Varyasyon)</label>
+              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">{t('layoutVariantLabel')}</label>
               <select
                 value={content.layoutVariant || 'scroll-cards'}
                 onChange={(e) => setContent({...content, layoutVariant: e.target.value})}
                 className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
               >
-                <option value="scroll-cards">Yatay Kaydırmalı Kartlar</option>
-                <option value="big-quote">Büyük Editoryal Alıntı</option>
-                <option value="grid-quotes">2 Sütunlu Kompakt Kartlar</option>
+                <option value="scroll-cards">{t('testimonials.variantScrollCards')}</option>
+                <option value="big-quote">{t('testimonials.variantBigQuote')}</option>
+                <option value="grid-quotes">{t('testimonials.variantGridQuotes')}</option>
               </select>
             </div>
             {(content.items || []).map((item: any, idx: number) => {
@@ -580,44 +492,37 @@ export default function BlockEditorModal({
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  <ColorToolbar
+                  <ColoredTextField
                     compact
+                    multiline
                     value={quoteLoc}
                     onChange={(v) => {
                       const newItems = [...content.items];
                       newItems[idx].quote = { ...(item.quote || {}), [activeLang]: v };
                       setContent({...content, items: newItems});
                     }}
-                  />
-                  <textarea
-                    value={quoteLoc}
-                    onChange={e => {
-                      const newItems = [...content.items];
-                      newItems[idx].quote = { ...(item.quote || {}), [activeLang]: e.target.value };
-                      setContent({...content, items: newItems});
-                    }}
-                    placeholder={`Müşteri Yorumu (${activeLang})...`}
+                    placeholder={t('testimonials.quotePlaceholder', { lang: activeLang })}
                     className="w-full p-2 border border-slate-200 rounded min-h-[80px] focus:border-[var(--coral)] focus:outline-none"
                   />
                   <div className="flex gap-2">
-                    <input 
-                      value={item.author || ''} 
+                    <input
+                      value={item.author || ''}
                       onChange={e => {
                         const newItems = [...content.items];
                         newItems[idx].author = e.target.value;
                         setContent({...content, items: newItems});
                       }}
-                      placeholder="Müşteri Adı" 
+                      placeholder={t('testimonials.authorPlaceholder')}
                       className="flex-1 p-2 border border-slate-200 rounded text-sm focus:border-[var(--coral)] focus:outline-none"
                     />
-                    <input 
-                      value={roleLoc} 
+                    <input
+                      value={roleLoc}
                       onChange={e => {
                         const newItems = [...content.items];
                         newItems[idx].role = { ...(item.role || {}), [activeLang]: e.target.value };
                         setContent({...content, items: newItems});
                       }}
-                      placeholder={`Unvan (${activeLang})`}
+                      placeholder={t('testimonials.rolePlaceholder', { lang: activeLang })}
                       className="flex-1 p-2 border border-slate-200 rounded text-sm focus:border-[var(--coral)] focus:outline-none"
                     />
                   </div>
@@ -628,7 +533,7 @@ export default function BlockEditorModal({
               onClick={() => setContent({...content, items: [...(content.items || []), { quote: {}, author: '', role: {} }]})}
               className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] font-medium flex items-center justify-center hover:bg-slate-50"
             >
-              <Plus className="w-4 h-4 mr-2" /> Yeni Yorum Ekle
+              <Plus className="w-4 h-4 mr-2" /> {t('testimonials.addBtn')}
             </button>
             <BackgroundImageFields content={content} setContent={setContent} />
           </div>
@@ -638,15 +543,15 @@ export default function BlockEditorModal({
         return (
           <div className="space-y-3">
             <div className="mb-1 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">Tasarım Stili (Varyasyon)</label>
+              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">{t('layoutVariantLabel')}</label>
               <select
                 value={content.layoutVariant || 'table'}
                 onChange={(e) => setContent({...content, layoutVariant: e.target.value})}
                 className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
               >
-                <option value="table">Tam Liste</option>
-                <option value="compact-badge">Bugün Açık/Kapalı Rozeti</option>
-                <option value="pill-row">Haftalık Özet (Hap Şerit)</option>
+                <option value="table">{t('hours.variantTable')}</option>
+                <option value="compact-badge">{t('hours.variantCompactBadge')}</option>
+                <option value="pill-row">{t('hours.variantPillRow')}</option>
               </select>
             </div>
             {Object.entries(content.schedule || {}).map(([day, data]: [string, any]) => (
@@ -689,7 +594,7 @@ export default function BlockEditorModal({
                     />
                   </div>
                 ) : (
-                  <span className="text-sm text-[var(--muted)]">Kapalı</span>
+                  <span className="text-sm text-[var(--muted)]">{t('hours.closedLabel')}</span>
                 )}
               </div>
             ))}
@@ -698,7 +603,7 @@ export default function BlockEditorModal({
 
       default:
         return (
-          <p className="text-sm text-slate-500">Bu blok tipi için düzenleyici henüz hazır değil.</p>
+          <p className="text-sm text-slate-500">{t('emptyEditor')}</p>
         );
     }
   };
@@ -709,7 +614,7 @@ export default function BlockEditorModal({
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90dvh]">
         <div className="flex justify-between items-center p-5 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-[var(--ink)]">Bloğu Düzenle</h2>
+          <h2 className="text-lg font-bold text-[var(--ink)]">{t('title')}</h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-500">
             <X className="w-5 h-5" />
           </button>
@@ -718,18 +623,12 @@ export default function BlockEditorModal({
         <div className="p-5 overflow-y-auto flex-1">
           <LangTabs />
           <div className="mb-5">
-            <label className="block text-sm font-medium mb-1 text-[var(--ink)]">Blok Başlığı ({activeLang.toUpperCase()})</label>
-            <ColorToolbar
-              getEl={() => titleInputRef.current}
+            <label className="block text-sm font-medium mb-1 text-[var(--ink)]">{t('blockTitleLabel', { lang: activeLang.toUpperCase() })}</label>
+            <ColoredTextField
               value={titles[activeLang]}
               onChange={(v) => setTitles({ ...titles, [activeLang]: v })}
-            />
-            <input
-              ref={titleInputRef}
-              value={titles[activeLang]}
-              onChange={(e) => setTitles({ ...titles, [activeLang]: e.target.value })}
               className="w-full p-3 border border-slate-200 rounded-lg font-semibold focus:border-[var(--coral)] focus:outline-none"
-              placeholder="Örn: Hakkımda"
+              placeholder={t('blockTitlePlaceholder')}
             />
           </div>
 
@@ -738,14 +637,14 @@ export default function BlockEditorModal({
 
         <div className="p-5 border-t border-slate-100 flex justify-between items-center bg-slate-50 rounded-b-2xl">
           <button onClick={onDelete} className="text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg font-medium transition">
-            Sil
+            {t('delete')}
           </button>
           <div className="space-x-3 flex">
             <button onClick={onClose} className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition">
-              İptal
+              {t('cancel')}
             </button>
             <button onClick={handleSave} className="px-6 py-2 bg-[var(--coral)] text-white font-medium rounded-lg hover:bg-orange-600 shadow-sm transition">
-              Kaydet
+              {t('save')}
             </button>
           </div>
         </div>

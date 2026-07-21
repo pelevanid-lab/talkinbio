@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { CheckCircle2, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 
 export default function OnboardingPage() {
-  const t = useTranslations('Index'); // I will update translations later, using hardcoded for now or creating a new translation namespace
+  const t = useTranslations('Onboarding');
   const router = useRouter();
   const supabase = createClient();
   const [step, setStep] = useState(1);
@@ -37,7 +37,7 @@ export default function OnboardingPage() {
       if (authError || !userData?.user) {
         // For MVP, if not logged in, we should ideally ask them to login first. 
         // We'll redirect to login or show an error.
-        alert("Lütfen önce giriş yapın.");
+        alert(t('loginRequiredAlert'));
         setIsSubmitting(false);
         return;
       }
@@ -59,14 +59,14 @@ export default function OnboardingPage() {
         contact_value: contactValues,
       }).select().single();
 
-      if (bizError || !business) throw new Error("İşletme oluşturulamadı.");
+      if (bizError || !business) throw new Error(t('businessCreationFailedError'));
 
       // 2. Create Blocks (Services)
       if (formData.services.length > 0) {
         await supabase.from('blocks').insert({
           business_id: business.id,
           type: 'services',
-          title: 'Hizmetler',
+          title: t('servicesBlockTitle'),
           content: { items: formData.services },
           order: 1
         });
@@ -77,7 +77,7 @@ export default function OnboardingPage() {
         await supabase.from('blocks').insert({
           business_id: business.id,
           type: 'hours',
-          title: 'Çalışma Saatleri',
+          title: t('hoursBlockTitle'),
           content: { schedule: formData.hours },
           order: 2
         });
@@ -86,7 +86,7 @@ export default function OnboardingPage() {
       router.push(`/${business.username}`);
     } catch (error) {
       console.error(error);
-      alert("Bir hata oluştu.");
+      alert(t('genericErrorAlert'));
     } finally {
       setIsSubmitting(false);
     }
@@ -106,28 +106,28 @@ export default function OnboardingPage() {
         <div className="p-8">
           {step === 1 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold">İşletmenizi Tanıyalım</h2>
-              <p className="text-slate-500">Öncelikle işletmenizin adı ve sektörünü girelim.</p>
-              
+              <h2 className="text-2xl font-bold">{t('step1.title')}</h2>
+              <p className="text-slate-500">{t('step1.subtitle')}</p>
+
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">İşletme Adı</label>
-                  <input 
-                    type="text" 
+                  <label className="block text-sm font-medium text-slate-700 mb-1">{t('step1.businessNameLabel')}</label>
+                  <input
+                    type="text"
                     value={formData.name}
                     onChange={e => setFormData({...formData, name: e.target.value})}
                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="Örn: X Kuaför"
+                    placeholder={t('step1.businessNamePlaceholder')}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Sektör / Kategori</label>
-                  <input 
-                    type="text" 
+                  <label className="block text-sm font-medium text-slate-700 mb-1">{t('step1.categoryLabel')}</label>
+                  <input
+                    type="text"
                     value={formData.category}
                     onChange={e => setFormData({...formData, category: e.target.value})}
                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="Örn: Kuaför, Güzellik Salonu, Terapist..."
+                    placeholder={t('step1.categoryPlaceholder')}
                   />
                 </div>
               </div>
@@ -136,24 +136,24 @@ export default function OnboardingPage() {
 
           {step === 2 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold">Nasıl İletişim Kurulacak?</h2>
-              <p className="text-slate-500">Müşterileriniz sizinle nasıl iletişime geçsin?</p>
-              
+              <h2 className="text-2xl font-bold">{t('step2.title')}</h2>
+              <p className="text-slate-500">{t('step2.subtitle')}</p>
+
               <div className="space-y-4">
-                <label className="block text-sm font-medium text-slate-700">İletişim Yöntemleri (Birden fazla seçebilirsiniz)</label>
-                
+                <label className="block text-sm font-medium text-slate-700">{t('step2.contactMethodsLabel')}</label>
+
                 {(Object.keys(formData.contacts) as Array<keyof typeof formData.contacts>).map((method) => {
                   const labels: Record<string, string> = {
-                    whatsapp: 'WhatsApp',
-                    phone: 'Telefon Araması',
-                    instagram: 'Instagram DM',
-                    email: 'E-posta'
+                    whatsapp: t('step2.contacts.whatsapp'),
+                    phone: t('step2.contacts.phone'),
+                    instagram: t('step2.contacts.instagram'),
+                    email: t('step2.contacts.email')
                   };
                   const placeholders: Record<string, string> = {
-                    whatsapp: 'Örn: +90 5XX XXX XX XX',
-                    phone: 'Örn: +90 5XX XXX XX XX',
-                    instagram: 'Örn: @kullaniciadi',
-                    email: 'Örn: iletisim@sirket.com'
+                    whatsapp: t('step2.contactPlaceholders.whatsapp'),
+                    phone: t('step2.contactPlaceholders.phone'),
+                    instagram: t('step2.contactPlaceholders.instagram'),
+                    email: t('step2.contactPlaceholders.email')
                   };
 
                   return (
@@ -203,31 +203,31 @@ export default function OnboardingPage() {
 
           {step === 3 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold">Hizmetler & Fiyatlar (Opsiyonel)</h2>
-              <p className="text-slate-500">Sundiğunuz ana hizmetleri ve isterseniz başlangıç fiyatlarını ekleyin.</p>
-              
+              <h2 className="text-2xl font-bold">{t('step3.title')}</h2>
+              <p className="text-slate-500">{t('step3.subtitle')}</p>
+
               {/* Simplified for MVP: Textarea to parse later or simple inputs */}
               <p className="text-sm text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
-                MVP Sürüm: Şu anki arayüzde doğrudan AI'a söyleyerek de bu kısımları yönetebilirsiniz. Şimdilik bu adımı geçebilirsiniz.
+                {t('step3.note')}
               </p>
             </div>
           )}
 
           {step === 4 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold">Çalışma Saatleri</h2>
-              <p className="text-slate-500">Hangi günler ve saatler arasında açıksınız?</p>
+              <h2 className="text-2xl font-bold">{t('step4.title')}</h2>
+              <p className="text-slate-500">{t('step4.subtitle')}</p>
               <p className="text-sm text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
-                MVP Sürüm: Bu detayları oluşturduktan sonra AI asistanınıza direkt yazarak belirtebilirsiniz.
+                {t('step4.note')}
               </p>
             </div>
           )}
 
           {step === 5 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold">Sıkça Sorulan Sorular</h2>
+              <h2 className="text-2xl font-bold">{t('step5.title')}</h2>
               <p className="text-sm text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
-                MVP Sürüm: Profilinizi oluşturduktan sonra sık sorulan soruları ekleyebilirsiniz.
+                {t('step5.note')}
               </p>
             </div>
           )}
@@ -237,8 +237,8 @@ export default function OnboardingPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-4">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-bold">Harika, her şey hazır!</h2>
-              <p className="text-slate-500">Profiliniz oluşturulmaya hazır. Şimdi AI asistanınızı devreye alabiliriz.</p>
+              <h2 className="text-2xl font-bold">{t('step6.title')}</h2>
+              <p className="text-slate-500">{t('step6.subtitle')}</p>
             </div>
           )}
 
@@ -250,26 +250,26 @@ export default function OnboardingPage() {
               className="px-4 py-2 text-slate-500 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium transition"
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
-              Geri
+              {t('back')}
             </button>
-            
+
             {step < 6 ? (
-              <button 
+              <button
                 onClick={handleNext}
                 disabled={isSubmitting || (step === 1 && !formData.name)}
                 className="px-6 py-2 bg-slate-900 text-white rounded-full hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium shadow-md transition"
               >
-                İleri
+                {t('next')}
                 <ChevronRight className="w-4 h-4 ml-1" />
               </button>
             ) : (
-              <button 
+              <button
                 onClick={submitForm}
                 disabled={isSubmitting}
                 className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium shadow-md transition"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                {isSubmitting ? 'Oluşturuluyor...' : 'Profili Oluştur'}
+                {isSubmitting ? t('creating') : t('create')}
               </button>
             )}
           </div>

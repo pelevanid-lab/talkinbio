@@ -202,7 +202,188 @@
     "assistantGreeting": "Size nasıl yardımcı olabilirim?",
     "chatPlaceholder": "Asistanınıza mesaj yazın...",
     "agentInputPlaceholder": "İşletmenizden bahsedin...",
-    "aiWelcome": "Merhaba {name}! Ben Talkinbio kurulum asistanınızım. İşletmenizden ve sunduğunuz hizmetlerden kısaca bahseder misiniz? Konuştukça sayfanızı sizin için hazırlayacağım."
+    "aiWelcome": "Merhaba {name}! Ben Talkinbio kurulum asistanınızım. İşletmenizden ve sunduğunuz hizmetlerden kısaca bahseder misiniz? Konuştukça sayfanızı sizin için hazırlayacağım.",
+    "leadsNavTooltip": "Talepler & Konuşmalar Paneli",
+    "leadsNavLabel": "Panel",
+    "contentStudioTooltip": "İçerik Stüdyosu",
+    "contentStudioLabel": "İçerik",
+    "suggestionsTooltip": "Beiwe'den İpuçları",
+    "suggestionsPanelTitle": "Beiwe'nin Notları",
+    "suggestionsEmpty": "🎉 Sayfanız şu an harika görünüyor! Başka bir tavsiyem yok.",
+    "suggestionsFromInsight": "Konuşmalardan",
+    "suggestionsFixCta": "✦ Beiwe ile düzelt",
+    "insightTopicMessage": "Müşterileriniz son 7 günde sık sık \"{topic}\" hakkında soru sordu ({count} kez).",
+    "insightDefaultMessage": "Yeni bir içgörü var.",
+    "insightDefaultTrigger": "Konuşmalarımdan çıkan bir içgörüyü değerlendirmek istiyorum.",
+    "creditBalance": "Kredi Bakiyesi",
+    "creditBalanceHint": "Kredi bakiyeniz — plan ve paketler için tıklayın",
+    "archive": {
+      "title": "Geçmiş Konuşmalar",
+      "empty": "Geçmiş konuşma bulunamadı.",
+      "untitledChat": "Sohbet",
+      "archivedBadge": "Arşivlendi"
+    },
+    "newChatTooltip": "Yeni Sohbet",
+    "sessionDefaultTitle": "Yeni Sohbet",
+    "pageStatus": {
+      "title": "📊 Sayfa Durumu",
+      "completedCount": "{done}/{total} tamamlandı",
+      "hoursLabel": "Çalışma Saat.",
+      "faqLabel": "S.S.S.",
+      "contactLabel": "İletişim",
+      "continueBtn": "Beiwe ile devam et",
+      "allComplete": "🎉 Tüm temel bölümler tamamlandı! Beiwe'ye ekstra fikirler sorabilirsiniz.",
+      "analyzingPlaceholder": "Sayfamı analiz et..."
+    },
+    "systemManualEditMessage": "[Sistem: Bu oturumda manuel düzenleme yapıldı. Yeni sohbet başlatıldı.]",
+    "mediaUploadedMessage": "[Kullanıcı sisteme bir medya yükledi: {url}]",
+    "mediaUploadError": "Dosya yüklenirken hata oluştu: {message}",
+    "chatErrorFallback": "Mesaj gönderilirken bir hata oluştu. Çok uzun bir metin gönderdiyseniz, birkaç parçaya bölüp tekrar deneyin.",
+    "publishToggleError": "Yayın durumu güncellenirken hata oluştu.",
+    "acknowledgeError": "İşlem sırasında hata oluştu.",
+    "saveBlockError": "Kaydedilirken hata oluştu.",
+    "linkCopied": "Link kopyalandı!",
+    "usernameInvalid": "Geçersiz kullanıcı adı",
+    "usernameTaken": "Bu bağlantı zaten alınmış",
+    "usernameSaveError": "Kaydedilirken hata oluştu",
+    "layoutSaveError": "Sayfa görünümü kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.",
+    "contactSaveError": "İletişim bilgileri kaydedilirken hata oluştu.",
+    "openLink": "Aç",
+    "activeLocales": {
+      "title": "Aktif Diller",
+      "maxHint": "en fazla {max}",
+      "description": "Ziyaretçilerinize sunulacak diller. Sayfanız şimdilik her zaman 3 dilde de yayınlanır — bu seçim ileride diller çoğaldığında devreye girecek."
+    },
+    "layoutWebsite": "Web Sitesi",
+    "layoutLinktree": "Blok (Linktree)",
+    "layoutDescription": "Web Sitesi tüm içerikleri alt alta gösterir. Blok modu ise menü açarak sadece tıklanan bölümü gösterir.",
+    "etcAbbr": "vb.",
+    "bulkPromptTemplate": "[BULK]\nİşte işletmemle ilgili tüm detaylar. Lütfen soru sormak yerine, elindeki bütün bilgiyi analiz et ve eksik olan tüm blokları ({labels}) arka arkaya araçları çağırarak tek seferde oluştur:\n\n{text}",
+    "businessNotFound": "İşletme bulunamadı. Lütfen yöneticiyle iletişime geçin.",
+    "ruleBasedSuggestions": {
+      "shortAbout": {
+        "message": "Hakkımda metniniz oldukça kısa. Biraz daha hikayenizi anlatmak güven verir.",
+        "trigger": "Hakkımda metnimi genişletmek için bana birkaç soru sorar mısın?"
+      },
+      "blandServices": {
+        "message": "Hizmetlerinizde görsel veya fiyat bilgisi yok. Bunları eklemek dönüşümü artırabilir.",
+        "trigger": "Mevcut hizmetlerime fiyat ve detay eklemek istiyorum."
+      },
+      "missingGallery": {
+        "message": "Sektörünüz gereği işlerinizi sergilemek önemli. Bir Fotoğraf Galerisi ekleyelim.",
+        "trigger": "Sayfama bir fotoğraf galerisi eklemek istiyorum."
+      },
+      "missingTestimonials": {
+        "message": "Müşteri yorumları potansiyel müşterilere güven verir. Referanslarınızı eklemeyi düşünün.",
+        "trigger": "Sayfama müşteri yorumları (Testimonials) ekleyelim."
+      },
+      "missingLinks": {
+        "message": "Sosyal medya hesaplarınızı veya randevu bağlantılarınızı eklemediniz.",
+        "trigger": "Sosyal medya ve randevu bağlantılarımı eklemek istiyorum."
+      },
+      "missingTheme": {
+        "message": "Sayfanıza henüz özgün bir renk paleti ve font çifti atanmamış.",
+        "trigger": "İşletmeme uygun özgün bir tasarım (renk ve font) tasarlar mısın?"
+      }
+    }
+  },
+  "BlockEditor": {
+    "title": "Bloğu Düzenle",
+    "blockTitleLabel": "Blok Başlığı ({lang})",
+    "blockTitlePlaceholder": "Örn: Hakkımda",
+    "layoutVariantLabel": "Tasarım Stili (Varyasyon)",
+    "textContentLabel": "Metin İçeriği ({lang})",
+    "textContentPlaceholder": "İçeriğinizi buraya yazın...",
+    "delete": "Sil",
+    "cancel": "İptal",
+    "save": "Kaydet",
+    "emptyEditor": "Bu blok tipi için düzenleyici henüz hazır değil.",
+    "background": {
+      "label": "Arka Plan Görseli (opsiyonel)",
+      "uploadLabel": "Arka Plan Görseli Yükle",
+      "overlayLabel": "Karartma / Renk Katmanı",
+      "overlayDark": "Koyu Karartma",
+      "overlayLight": "Açık/Beyaz",
+      "overlayTint": "Arketip Rengiyle Tonlama",
+      "overlayNone": "Katmansız"
+    },
+    "about": {
+      "variantStandard": "Standart",
+      "variantHero": "Tam Ekran Karşılama (Hero)",
+      "variantSplit": "Yan Yana Asimetrik (Split)",
+      "variantBigStatement": "Büyük Tipografi (Manifesto)",
+      "variantImageGrid": "Görsel Kolajı + Metin",
+      "mediaLabel": "Görsel / Video",
+      "mediaPositionLabel": "Görsel Konumu",
+      "mediaPositionTop": "En Üstte (Başlıktan Önce)",
+      "mediaPositionMiddle": "Ortada (Başlık ile Metin Arasında)",
+      "mediaPositionBottom": "En Altta (Metinden Sonra)"
+    },
+    "services": {
+      "variantGridCards": "Yan Yana Kutular (Grid Cards)",
+      "variantList": "Alt Alta Klasik Liste",
+      "variantNumberedList": "Numaralı Zarif Liste",
+      "variantFeatureSplit": "Sağ-Sol Büyük Görsel+Metin",
+      "variantPriceTable": "Klasik Menü/Fiyat Listesi",
+      "namePlaceholder": "Hizmet Adı",
+      "descriptionPlaceholder": "Açıklama",
+      "pricePlaceholder": "Fiyat (Örn: 400 TL)",
+      "mediaLabel": "Hizmet Görseli / Videosu",
+      "addBtn": "Yeni Hizmet Ekle"
+    },
+    "faq": {
+      "variantChips": "Etiket (Tıklayınca Asistana Sorar)",
+      "variantAccordion": "Aç/Kapa Liste (Cevabı Gösterir)",
+      "variantNumbered": "Numaralı Liste (Her Zaman Açık)",
+      "questionPlaceholder": "Soru ({lang})",
+      "answerPlaceholder": "Cevap ({lang}) - Opsiyonel, Ajan bunu context olarak kullanabilir",
+      "addBtn": "Yeni Soru Ekle"
+    },
+    "links": {
+      "variantStacked": "Alt Alta Tam Genişlik Buton",
+      "variantIconRow": "Yan Yana Yuvarlak İkon",
+      "variantTwoColGrid": "2 Sütunlu Etiketli Kart",
+      "labelPlaceholder": "Etiket (Örn: Instagram)",
+      "urlPlaceholder": "URL (Örn: https://instagram.com/...)",
+      "addBtn": "Yeni Bağlantı Ekle"
+    },
+    "gallery": {
+      "variantGrid": "Klasik Izgara (Grid)",
+      "variantMasonry": "Pinterest Stili Sanatsal (Masonry)",
+      "variantFullbleedCarousel": "Kenarsız Kaydırmalı Şerit",
+      "variantStackedFullwidth": "Alt Alta Büyük Tam Genişlik",
+      "uploadLabel": "Medya Yükle",
+      "captionPlaceholder": "Açıklama ({lang})",
+      "addBtn": "Yeni Medya Ekle"
+    },
+    "testimonials": {
+      "variantScrollCards": "Yatay Kaydırmalı Kartlar",
+      "variantBigQuote": "Büyük Editoryal Alıntı",
+      "variantGridQuotes": "2 Sütunlu Kompakt Kartlar",
+      "quotePlaceholder": "Müşteri Yorumu ({lang})...",
+      "authorPlaceholder": "Müşteri Adı",
+      "rolePlaceholder": "Unvan ({lang})",
+      "addBtn": "Yeni Yorum Ekle"
+    },
+    "hours": {
+      "variantTable": "Tam Liste",
+      "variantCompactBadge": "Bugün Açık/Kapalı Rozeti",
+      "variantPillRow": "Haftalık Özet (Hap Şerit)",
+      "closedLabel": "Kapalı"
+    },
+    "colorToolbar": {
+      "label": "Renk:",
+      "presetBrand": "Marka Turuncusu",
+      "presetNavy": "Koyu Lacivert",
+      "presetGreen": "Yeşil",
+      "presetWhite": "Beyaz",
+      "customColorTitle": "Özel renk",
+      "applyBtn": "Uygula",
+      "boldTitle": "Kalın",
+      "underlineTitle": "Altı Çizili",
+      "clearFormatTitle": "Biçimlendirmeyi Kaldır",
+      "hint": "— metni seçip bir renge/biçime tıkla, kaldırmak için silgiye tıkla"
+    }
   },
   "ChatWidget": {
     "welcome": "Merhaba! Ben {name}'ın asistanıyım. Size nasıl yardımcı olabilirim?",
@@ -245,46 +426,46 @@
   },
   "Stakeholders": {
     "title": "Paydaşlarımıza",
-    "intro": "Değerli takım üyelerimiz, kullanıcılarımız ve yatırımcılarımız; bu sayfada size hem talkinbio'yu hem de birlikte nasıl çalıştığımızı anlatacağım.",
+    "intro": "Bu sayfayı size — takım arkadaşlarıma, kullanıcılarımıza ve yatırımcılarımıza — talkinbio'nun ne olduğunu ve bu işi nasıl kurduğumuzu anlatmak için yazdım.",
     "eyebrow": "Manifesto · 2026",
-    "ctaTitle": "Bio linkini çalışmaya başlat.",
-    "ctaBody": "Kurulum 10 dakika. İlk ay sonunda veriye bakarsın, karar verirsin.",
+    "ctaTitle": "Bio linkini şimdi çalıştır.",
+    "ctaBody": "Kurulum 10 dakika sürüyor. İlk ayın sonunda veriye bakıp kararını sen verirsin.",
     "footerNote": "Manifesto",
     "q1": {
       "title": "Neden Şimdi",
-      "content": "Sosyal medya üzerinden iş yapan bireysel hizmet sahipleri için son üç yılda bir şey değişti: DM'ler bir içerik kanalıyken birer satış kanalına dönüştü. Randevu alan, fiyat soran, pazarlık yapan, karar veren. Tüm bunlar Instagram DM'den akıyor. Ve satıcılar bu trafikle başa çıkamaz hale geldi.\n\nWhatsApp Business API'nin bireysel hesaplara açılması bu tabloya yeni bir kat ekledi: Satıcı artık teknik olarak tüm kanallarında tek bir sesten konuşabileceği bir altyapıya erişebiliyor. Ancak bunu kuracak, yönetecek ve işiyle büyütecek bir araç yok.\n\nLinktree bu boşluğu görmedi. Salesforce bu segmenti umursamadı. CRM devleri paketlerini KOBİ'lere sattı, bireylere değil. Bu boşluk kasıtlı olarak boş bırakıldı. Biz bu boşlukta çözüm üretiyoruz."
+      "content": "Sosyal medyada iş yapan bireysel hizmet sahipleri için son üç yılda bir şey değişti. DM'ler eskiden sadece içerik konuşulan bir yerdi; şimdi asıl satış oradan yapılıyor. Randevu, fiyat, pazarlık, karar — hepsi artık sosyal medya DM'sinden akıyor. Ve satıcılar bu trafiğin altında kalıyor.\n\nWhatsApp Business API'nin bireysel hesaplara açılması bu tabloyu daha da karmaşıklaştırdı: satıcı artık teknik olarak tüm kanallarında tek bir sesle konuşabilecek bir altyapıya erişebiliyor — ama bunu kuracak, yönetecek ve büyütecek bir araç yok.\n\nBu boşluğu büyük oyuncular ya görmedi ya da önemsemedi; hiçbiri bireysel hizmet sahipleri için tasarlamadı. Biz bu boşlukta çözüm üretiyoruz."
     },
     "q2": {
       "title": "Hiçbir Şey Değişmezse",
-      "content": "Bir müşteri soru soruyor. Cevap 4 saat sonra geliyor. Müşteri çoktan başka birine gitti. Satıcı bunu fark etmiyor bile.\n\nBu senaryo her gün, Türkiye'deki 600.000 bireysel satıcıdan on binlercesinde yaşanıyor. Gelir kaybı görünmez çünkü kimse 'kaçırdım' demiyor. Müşteri gitti, sayılmıyor.\n\nYatırımcılar için somutlaştıralım (Fermi modelimizden bir tahmin — henüz sahada doğrulanmadı): Bir satıcı günde ortalama 10 DM alıyor. Bunun %40'ı satın alma niyetiyle geliyor. Cevap gecikmesi nedeniyle bu 4 potansiyel müşteriden 2'sini kaybediyor. Ortalama işlem değeri 800 TL. Bu, tek bir satıcı için yılda yaklaşık 584.000 TL kayıp demek. Birleştirince pazar hasarı hesaplanamıyor.\n\nTakım için ise daha sade bir gerçek: Bu problemi çözmek için buradayız. Ve çözemezsek bırakılması gereken şey gerçekten bırakılıyor demektir."
+      "content": "Bir müşteri soru soruyor. Cevap dört saat sonra geliyor. Müşteri çoktan başka birine gitmiş bile — satıcı bunun farkında bile değil.\n\nBu sahne her gün, 600.000 bireysel satıcının on binlercesinde tekrarlanıyor. Gelir kaybı görünmüyor çünkü kimse 'bir müşteri kaçırdım' demiyor; müşteri sessizce gidiyor, hiç sayılmıyor.\n\nYatırımcılar için biraz somutlaştıralım (Fermi modelimize dayanan bir tahmin): bir satıcı günde ortalama 10 DM alıyor, bunun yaklaşık %40'ı gerçek bir satın alma niyeti taşıyor. Cevap gecikmesi yüzünden bu 4 potansiyel müşteriden 2'si kayboluyor. Ortalama işlem değeri 800 TL olduğunda bu, tek bir satıcı için yılda yaklaşık 584.000 TL'lik bir kayıp demek. Pazarın tamamına yayınca hasarı hesaplamak bile zorlaşıyor."
     },
     "q3": {
       "title": "Mevcut Alternatifler Neden Yetersiz",
-      "content": "Linktree: Ziyaretçinin sorusunu yanıtlamıyor. Satıcının linkini tıklayan biri hizmet öğrenmek istiyor ama hiçbir eşleşme yok. Linktree bir vitrin, temsilci değil.\n\nManyChat ve benzer chatbot'lar: Kurulumu karmaşık, senaryoları sabit ve kırılgan. Her soru için ayrı akış tasarlamak teknik bilgi istiyor. Bireyin zamanı ve kapasitesi yok.\n\nBüyük CRM'ler (HubSpot, Pipedrive): Bir koç ya da güzellik uzmanı için aşırı karmaşık. Onboarding haftalar sürer, fiyat yıllık abonelik bazlı, entegrasyon teknik bilgi gerektirir. Bu ürünler içinde IT departmanı olan işletmeler için tasarlandı.\n\nWhatsApp Business tek başına: Soru geliyor, elle cevap veriliyor. Otomasyon yok, takip yok, analiz yok. Sadece biraz daha organize bir mesajlaşma.\n\nHiçbiri 7/24 çalışan, soruya cevap veren, müşteriyi sınıflandıran, lead listesi çıkaran ve satıcıya pazarlama önerisi üreten bir yapıyı bir arada sunmuyor. İşte bu boşluk talkinbio."
+      "content": "Linktree bir vitrin sunuyor ama ziyaretçinin sorusuna cevap vermiyor. Satıcının linkine tıklayan biri hizmeti öğrenmek istiyor, karşısında konuşan kimse yok.\n\nManyChat ve benzeri chatbot'lar bu boşluğu teknik karmaşıklıkla dolduruyor: kurulumu zor, senaryoları sabit ve kırılgan. Her yeni soru için ayrı bir akış tasarlamak gerekiyor — bireyin ne zamanı ne de bu işe ayıracak teknik bilgisi var.\n\nBüyük CRM'ler (HubSpot, Pipedrive gibi) bir koç ya da güzellik uzmanı için fazlasıyla ağır. Onboarding haftalar sürüyor, fiyatlandırma yıllık abonelik mantığıyla kurulu, entegrasyon teknik bilgi istiyor — bu ürünler içinde IT departmanı olan işletmeler için tasarlandı, bireyler için değil.\n\nWhatsApp Business tek başına kullanıldığında da fark etmiyor: soru geliyor, elle cevaplanıyor. Otomasyon yok, takip yok, analiz yok — sadece biraz daha organize bir mesajlaşma.\n\nBunların hiçbiri 7/24 çalışan, soruyu yanıtlayan, müşteriyi sınıflandıran, lead listesi çıkaran ve satıcıya pazarlama önerisi sunan tek bir yapı sunmuyor. talkinbio tam da bu boşlukta duruyor."
     },
     "q4": {
       "title": "Ne Yapıyoruz",
-      "content": "talkinbio iki bileşenden oluşuyor.\n\nSaule, bio sayfanızdaki 7/24 çalışan yapay zeka asistanıdır. Ziyaretçi soru sorar, Saule dinler, anlar ve hizmetinizi bilen bir temsilci gibi yanıtlar. Randevu toplar, ilgilenen ziyaretçiyi kaydeder, takip gerektiren durumları işaretler. Sabah kalktığınızda kaçırdığınız DM değil, sıralanmış ve etiketlenmiş bir lead listesi bulursunuz.\n\nBeiwe, bu konuşmaları analiz ederek haftalık pazarlama önerileri üreten ajandır. 'Bu hafta hangi soru en çok soruldu? Hangi hizmet daha çok ilgi gördü? Hangi saatlerde daha fazla ziyaretçi geldi?' — Beiwe bu soruları yanıtlıyor ve bir sonraki içerik kararınızı veriye dayandırmanızı sağlıyor.\n\nKurulum 10 dakika. Kod yazmak gerekmiyor. Sistem çalışmaya başladığında siz çalışmasanız da çalışıyor."
+      "content": "talkinbio iki parçadan oluşuyor.\n\nSaule, bio sayfanızda 7/24 çalışan yapay zeka asistanınız. Bir ziyaretçi soru sorduğunda Saule dinliyor, anlıyor ve hizmetinizi gerçekten bilen biri gibi cevap veriyor. Randevu topluyor, ilgilenen ziyaretçiyi kaydediyor, takip gerektiren durumları işaretliyor. Sabah kalktığınızda karşınızda kaçırılmış DM'ler değil, sıralanmış ve etiketlenmiş bir lead listesi buluyorsunuz.\n\nBeiwe ise bu konuşmaları analiz edip size haftalık pazarlama önerileri sunan ajan. 'Bu hafta en çok hangi soru soruldu? Hangi hizmet daha çok ilgi gördü? Ziyaretçiler hangi saatlerde geldi?' — Beiwe bu soruları yanıtlıyor, bir sonraki içerik kararınızı tahmine değil veriye dayandırmanızı sağlıyor.\n\nKurulum 10 dakika sürüyor, kod yazmanıza gerek yok. Sistem bir kere çalışmaya başladıktan sonra, siz çalışmasanız da o çalışmaya devam ediyor."
     },
     "q5": {
       "title": "Farkımız",
-      "content": "Her Saule konuşmasının altında küçük bir imza var: 'Saule ile konuşuyorsunuz — talkinbio.com.' Bu imza satıcının sayfasını ziyaret eden her kullanıcı tarafından görülüyor. Kullanıcı 'bunu kendi sayfamda da isterim' diyor ve sisteme giriyor. Bu, ürünün büyümesini ürünün kendisinin sağladığı anlamına geliyor. Ücretli pazarlama yapmadan CAC organik kalıyor.\n\nBirinci avantaj: Viral döngü. Her aktif asistan, yeni kullanıcı kazanma kanalına dönüşüyor.\n\nİkinci avantaj: Konuşma verisi birikimi. Beiwe ne kadar kullanılırsa o kadar özelleşiyor. Yeni giren bir rakip bu veri avantajını hemen kopyalayamaz. Erken kullanıcılar veri zenginliği anlamında stratejik değer taşıyor.\n\nÜçüncüsü: Türkçe-ilk mimari. Farklı dil ve ödeme altyapısına sahip pazarlara (MENA, LatAm) uyum sağlayan lokalizasyon iskeletini baştan kuruyoruz. Bu, sıfırdan başlamak zorunda kalmayan bir v2 genişlemesi anlamına geliyor."
+      "content": "Her Saule konuşmasının altında küçük bir imza var: 'Saule ile konuşuyorsunuz — talkinbio.com.' Bunu satıcının sayfasını ziyaret eden herkes görüyor. Ve bazıları 'ben de kendi sayfamda bunu istiyorum' diyerek sisteme giriyor. Yani ürün kendi büyümesini kendisi sağlıyor — ücretli pazarlama yapmadan CAC organik kalabiliyor.\n\nBunun birkaç sonucu var. Birincisi viral döngü: her aktif asistan, yeni bir kullanıcı kazanma kanalına dönüşüyor.\n\nİkincisi konuşma verisi birikimi: Beiwe ne kadar çok kullanılırsa o kadar özelleşiyor. Yeni giren bir rakip bu veri avantajını bir günde kopyalayamaz; erken kullanıcılarımız bize stratejik bir veri zenginliği kazandırıyor.\n\nÜçüncüsü de Türkçe-ilk mimari: farklı dil ve ödeme altyapısına sahip pazarlara (MENA, LatAm) uyum sağlayacak lokalizasyon iskeletini şimdiden kuruyoruz. Yani v2 genişlemesi sıfırdan başlamak zorunda kalmayacak."
     },
     "q6": {
       "title": "Gelir Modelimiz",
-      "content": "Gelir modelimiz kredi bazlı abonelik. Faturalandırma altyapısı yol haritamızda lansman kapısının parçası; ilk pilotlarda tahsilat manuel yapılıyor. Üç paket var.\n\nStarter ($9/ay, 200 kredi): Günde 3-5 DM alan, ilk kez asistan kuran bireysel satıcı için. Bu kademedeki kullanıcı Saule'nin ne olduğunu öğreniyor ve sistemin değerini test ediyor.\n\nPro ($29/ay, 700 kredi): Haftada 30+ DM alan, düzenli müşteri kitlesi olan, Beiwe analizini kullanan satıcı için. Bu kademe asıl gelir motorumuz.\n\nBusiness ($79/ay, 1.800 kredi): Birden fazla hizmet hattı olan, yüksek hacimli DM trafiği yöneten ve otomasyon ihtiyacı olgunlaşmış satıcı için.\n\nFiyat dolar-sabit. TL tahsilatı güncel kur üzerinden yapılıyor. Yıllık ödeme seçeneğinde %20 indirim sunuyoruz — hem müşteri için tasarruf, hem bizim için kur riskine karşı bariyer.\n\nEfektif ARPU: $15. LTV: $300 (%5 churn varsayımıyla). CAC hedefi: $100 altında — viral imza döngüsü bunu organik tutacak."
+      "content": "Gelir modelimiz kredi bazlı bir abonelik. Faturalandırma altyapısı yol haritamızda lansman kapısının bir parçası; şu an, ilk pilotlarda tahsilatı elle yapıyoruz. Üç paketimiz var.\n\nStarter ($9/ay, 200 kredi) günde 3-5 DM alan ve ilk kez bir asistan kuran bireysel satıcı için. Bu kademedeki kullanıcı Saule'nin ne olduğunu öğreniyor, sistemin değerini test ediyor.\n\nPro ($29/ay, 700 kredi) haftada 30'dan fazla DM alan, düzenli bir müşteri kitlesi olan ve Beiwe analizini kullanan satıcı için — asıl gelir motorumuz burası.\n\nBusiness ($79/ay, 1.800 kredi) ise birden fazla hizmet hattı yürüten, yüksek hacimli DM trafiği yöneten ve otomasyon ihtiyacı olgunlaşmış satıcılar için.\n\nFiyatlarımız dolar üzerinden sabit; TL tahsilatını güncel kurdan yapıyoruz. Yıllık ödemede %20 indirim sunuyoruz — hem müşteriye tasarruf, hem bize kur riskine karşı bir tampon.\n\nRakamlara dökersek: efektif ARPU $15, LTV $300 (%5 churn varsayımıyla), hedeflediğimiz CAC ise $100'ün altı — viral imza döngümüz bunu organik tutacak."
     },
     "q7": {
       "title": "Nereye Gidiyoruz",
-      "content": "Bugün Aşama 1'deyiz: Problem/Çözüm Uyumu. OMTM'imiz ödeme yapan müşteri sayısı. Sayaç şu an 0/10. Hedef: 20 problem görüşmesi tamamla, tekrar eden ağrı noktalarını doğrula, ilk 10 pilotu $9/ay ücretli başlat.\n\nAşama 2 (550 müşteri, $100K ARR): Bu eşiği geçmek Problem/Çözüm Uyumu'nun kanıtıdır. Viral döngünün çalışıp çalışmadığı ölçülmüş olur. Yatırımcı konuşması buradan başlar.\n\nAşama 3 (v2 Global, ~4.500 müşteri, $810K ARR baz senaryo): WhatsApp ve Instagram DM doğrudan entegrasyonu. MENA ve LatAm lokalizasyonu. Dil genişlemesi. Bu noktada Saule artık yalnızca bio sayfasında değil, her kanalda çalışıyor.\n\nStretch senaryo (%6 global yakalama): ~9.000 müşteri, ~$1,6M ARR.\n\nHer adım öncekinin kanıtını gerektirir. Şu an sıradakini yapıyoruz: İlk 10 ödeme.\n\nUzun vadede talkinbio yalnızca bireyler için bir araç değil. Saule ve Beiwe, işletmelerin tüm iletişim kanallarında çalışan bir ajan altyapısına dönüşüyor. Bu sürecin adını şimdilik koymuyoruz — ürün konuşacak."
+      "content": "Şu an Aşama 1'deyiz: Problem/Çözüm Uyumu. Takip ettiğimiz tek metrik (OMTM) ödeme yapan müşteri sayısı, ve sayaç şu an 0/10. Hedefimiz: 20 problem görüşmesi tamamlamak, tekrar eden ağrı noktalarını doğrulamak ve ilk 10 pilotu $9/ay'dan ücretli başlatmak.\n\nAşama 2'de (550 müşteri, $100K ARR) bu eşiği geçmek bize Problem/Çözüm Uyumu'nun kanıtını verecek — viral döngünün gerçekten çalışıp çalışmadığını da orada göreceğiz. Yatırımcı konuşmaları buradan başlıyor.\n\nAşama 3, v2 Global: WhatsApp ve Instagram DM'e doğrudan entegrasyon, MENA ve LatAm lokalizasyonu, yeni diller. Baz senaryoda ~4.500 müşteri ve $810K ARR öngörüyoruz; Saule bu noktada artık sadece bio sayfasında değil, her kanalda çalışıyor olacak. Daha iyimser bir senaryoda (%6 global yakalama) rakam ~9.000 müşteriye, ~$1,6M ARR'ye çıkıyor.\n\nHer adım bir öncekinin kanıtını istiyor. Şu an odaklandığımız tek şey: ilk 10 ödeme.\n\nUzun vadede talkinbio'yu sadece bireyler için bir araç olarak görmüyoruz. Saule ve Beiwe, işletmelerin tüm iletişim kanallarında çalışan bir ajan altyapısına dönüşüyor — bu sürecin adını şimdiden koymuyoruz, ürün zamanla kendi adını koyacak."
     },
     "q8": {
       "title": "Nasıl Çalışıyoruz",
-      "content": "Running Lean metodolojisini takip ediyoruz. Bu sloganik bir ifade değil; çalışma biçimini doğrudan belirleyen bir çerçeve.\n\nÖnce problem doğrulaması, sonra ürün. Müşteri görüşmelerini ürünü geliştirmeden önce tamamlıyoruz. 20 görüşmede tekrar eden ağrı noktası netleşmezse sayıyı artırıyoruz.\n\nÜcretsiz deneme yok. Bu sadece bir tercih değil, metodolojik bir karar. Ash Maurya'nın Running Lean metodolojisinde bu net: Ücretsiz erken erişim meraklı toplar, müşteri değil. İlk 10 ödeyen, değer hipotezinin testidir — ödeme taahhüttür.\n\nSürekli Gelişim paneli: Yalın Kanvas, Fermi Tahmini, Çekim Gücü Yol Haritası ve Yalın Satış Konuşması — bunların hepsi, şu an okuduğunuz bu sayfa dahil, canlı belgeler. Değiştikçe güncelleniyor, güncellenince kaydediliyor. Versiyon disiplini bir standarttır.\n\nKanıt sınıfları açık tutulur. Doğrulanmış olan açıkça belirtilir; doğrulanmamış olan da. Şişirilmiş kanıt iddiası kabul görmez."
+      "content": "Running Lean metodolojisini takip ediyoruz — bu bir slogan değil, çalışma biçimimizi doğrudan belirleyen bir çerçeve.\n\nÖnce problemi doğruluyoruz, sonra ürünü geliştiriyoruz. Müşteri görüşmelerini ürün geliştirmeden önce tamamlıyoruz; 20 görüşmede tekrar eden bir ağrı noktası netleşmezse sayıyı artırıyoruz.\n\nÜcretsiz deneme sunmuyoruz — bu bir tercih değil, metodolojik bir karar. Ash Maurya'nın Running Lean yaklaşımında bu net: ücretsiz erken erişim meraklı toplar, müşteri toplamaz. İlk 10 ödeyen kişi bizim için değer hipotezinin gerçek testi; ödeme, taahhüttür.\n\nSürekli Gelişim panelimiz var: Yalın Kanvas, Fermi Tahmini, Çekim Gücü Yol Haritası ve Yalın Satış Konuşması — şu an okuduğunuz bu sayfa dahil, hepsi canlı belgeler. Değiştikçe güncelliyoruz, güncelledikçe kaydediyoruz; versiyon disiplini bizim için bir standart.\n\nKanıt sınıflarını da açık tutuyoruz: doğrulanmış olanı doğrulanmış, doğrulanmamış olanı doğrulanmamış diye işaretliyoruz. Şişirilmiş kanıt iddiasına burada yer yok."
     },
     "q9": {
       "title": "Sizden Ne İstiyoruz",
-      "content": "Kullanıcılarımıza: Kurulumu 10 dakika. Bio linkini talkinbio'ya bağla, bir ay boyunca Saule'nin kaç lead topladığını gör. Eğer değer yaratmadıysa devam etme. Eğer yarattıysa, artık bunu biliyorsun.\n\nYatırımcılarımıza: Şu an erken evre bootstrapped bir başlangıçtayız. Yatırım konuşması için doğru zaman $100K ARR'yi geçtiğimizde. Ama sizi o noktada beklemek yerine şimdiden tanıştırmak istedik. Rakamlarımız kanıt sınıfına göre işaretli — doğrulanmış olan doğrulanmış, tahmin olan tahmin; model dürüst, açık sorular açık. Hazır olduğumuzda iletişime geçeceğiz.\n\nTakımımıza: Bu işi inşa etmenin neden önemli olduğunu hatırlamak istediğinizde bu sayfaya dönün. Yaptığımız şeyin doğru olduğuna inanıyoruz; ispatlamamız gereken tek şey bu."
+      "content": "Kullanıcılarımızdan: kurulum 10 dakika. Bio linkinizi talkinbio'ya bağlayın, bir ay boyunca Saule'nin kaç lead topladığını izleyin. Değer yaratmadıysa devam etmeyin. Yarattıysa, artık bunu biliyorsunuz.\n\nYatırımcılarımızdan: şu an erken evre, bootstrapped bir başlangıçtayız. Yatırım konuşması için doğru zaman $100K ARR'yi geçtiğimiz an; ama sizi o noktaya kadar bekletmek yerine, süreci şimdiden şeffaf tutmak istedik. Rakamlarımızı kanıt sınıfına göre işaretliyoruz — doğrulanmış olan doğrulanmış, tahmin olan tahmin. Hazır olduğumuzda size ulaşacağız.\n\nTakımımızdan: bu işi neden inşa ettiğimizi hatırlamak istediğinizde bu sayfaya dönün. Yaptığımız şeyin doğru olduğuna inanıyoruz; şimdi tek yapmamız gereken bunu kanıtlamak."
     }
   },
   "Legal": {
@@ -333,8 +514,226 @@
     "contactTitle": "Veri Sorumlusu İletişim",
     "contactBody": "talkinbio\ninfo@talkinbio.com\ntalkinbio Platformu — talkinbio.com"
   },
+  "Login": {
+    "loginTitle": "Talkinbio'ya Giriş Yap",
+    "forgotTitle": "Şifremi Unuttum",
+    "loginSubtitle": "İşletmenizi yönetmek için giriş yapın.",
+    "forgotSubtitle": "E-posta adresinizi girin, size şifre sıfırlama bağlantısı gönderelim.",
+    "resetLinkInvalid": "Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş. Lütfen yeni bir bağlantı isteyin.",
+    "emailLabel": "E-posta Adresi",
+    "emailPlaceholder": "ornek@sirket.com",
+    "passwordLabel": "Şifre",
+    "forgotPasswordLink": "Şifremi Unuttum",
+    "rememberMe": "Beni Hatırla",
+    "loginButton": "Giriş Yap",
+    "loginButtonLoading": "Giriş Yapılıyor...",
+    "sendLinkButton": "Bağlantıyı Gönder",
+    "sendLinkButtonLoading": "Gönderiliyor...",
+    "backToLogin": "Giriş ekranına dön",
+    "invalidCredentials": "E-posta veya şifre hatalı",
+    "resetLinkSent": "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Lütfen kutunuzu kontrol edin.",
+    "genericError": "Bir hata oluştu"
+  },
+  "AuthCallback": {
+    "errorTitle": "Giriş Başarısız",
+    "retryButton": "Tekrar Dene",
+    "loadingTitle": "Giriş yapılıyor...",
+    "loadingSubtitle": "Lütfen bekleyin, yönlendiriliyorsunuz.",
+    "genericError": "Giriş yapılırken bir hata oluştu."
+  },
+  "Onboarding": {
+    "step1": {
+      "title": "İşletmenizi Tanıyalım",
+      "subtitle": "Öncelikle işletmenizin adı ve sektörünü girelim.",
+      "businessNameLabel": "İşletme Adı",
+      "businessNamePlaceholder": "Örn: X Kuaför",
+      "categoryLabel": "Sektör / Kategori",
+      "categoryPlaceholder": "Örn: Kuaför, Güzellik Salonu, Terapist..."
+    },
+    "step2": {
+      "title": "Nasıl İletişim Kurulacak?",
+      "subtitle": "Müşterileriniz sizinle nasıl iletişime geçsin?",
+      "contactMethodsLabel": "İletişim Yöntemleri (Birden fazla seçebilirsiniz)",
+      "contacts": {
+        "whatsapp": "WhatsApp",
+        "phone": "Telefon Araması",
+        "instagram": "Instagram DM",
+        "email": "E-posta"
+      },
+      "contactPlaceholders": {
+        "whatsapp": "Örn: +90 5XX XXX XX XX",
+        "phone": "Örn: +90 5XX XXX XX XX",
+        "instagram": "Örn: @kullaniciadi",
+        "email": "Örn: iletisim@sirket.com"
+      }
+    },
+    "step3": {
+      "title": "Hizmetler & Fiyatlar (Opsiyonel)",
+      "subtitle": "Sunduğunuz ana hizmetleri ve isterseniz başlangıç fiyatlarını ekleyin.",
+      "note": "MVP Sürüm: Şu anki arayüzde doğrudan AI'a söyleyerek de bu kısımları yönetebilirsiniz. Şimdilik bu adımı geçebilirsiniz."
+    },
+    "step4": {
+      "title": "Çalışma Saatleri",
+      "subtitle": "Hangi günler ve saatler arasında açıksınız?",
+      "note": "MVP Sürüm: Bu detayları oluşturduktan sonra AI asistanınıza direkt yazarak belirtebilirsiniz."
+    },
+    "step5": {
+      "title": "Sıkça Sorulan Sorular",
+      "note": "MVP Sürüm: Profilinizi oluşturduktan sonra sık sorulan soruları ekleyebilirsiniz."
+    },
+    "step6": {
+      "title": "Harika, her şey hazır!",
+      "subtitle": "Profiliniz oluşturulmaya hazır. Şimdi AI asistanınızı devreye alabiliriz."
+    },
+    "back": "Geri",
+    "next": "İleri",
+    "create": "Profili Oluştur",
+    "creating": "Oluşturuluyor...",
+    "loginRequiredAlert": "Lütfen önce giriş yapın.",
+    "genericErrorAlert": "Bir hata oluştu.",
+    "businessCreationFailedError": "İşletme oluşturulamadı.",
+    "servicesBlockTitle": "Hizmetler",
+    "hoursBlockTitle": "Çalışma Saatleri"
+  },
+  "PublicPage": {
+    "unpublishedBanner": "Profiliniz henüz ziyaretçilere kapalı. Yayınlamak için eksikleri tamamlayın."
+  },
   "Metadata": {
     "title": "Talkinbio | Biyografinizi Akıllı Asistana Dönüştürün",
     "description": "Talkinbio, sosyal medya takipçilerinizle 7/24 kendi dilinde görüşen, randevu ve talep toplayan yapay zeka tabanlı dijital satış asistanınızdır."
+  },
+  "ContentStudio": {
+    "noBusinessTitle": "Henüz bir işletme kurmamışsınız",
+    "noBusinessDescription": "İçerik üretebilmek için önce profilinizi oluşturun.",
+    "createProfileBtn": "Profili Oluştur",
+    "pageTitle": "İçerik Stüdyosu",
+    "navPanel": "Panel",
+    "navEditor": "Editör",
+    "sourceGeneral": "Genel Tanıtım",
+    "sourceServiceLabel": "Hizmet: {title}",
+    "sourceGalleryLabel": "Galeri: {title}",
+    "sourceGalleryDefaultTitle": "Galeri görseli {index}",
+    "sourceTestimonialLabel": "Yorum: {author}",
+    "copyTooltip": "Kopyala",
+    "sourceQuestion": "Ne hakkında içerik üretelim?",
+    "formatLabel": "Format",
+    "formatInstagramPost": "Instagram Gönderisi",
+    "formatInstagramStory": "Instagram Hikayesi",
+    "formatWhatsappStatus": "WhatsApp Durumu",
+    "generatingBtn": "Üretiliyor...",
+    "generateBtn": "Oluştur",
+    "generateErrorDefault": "İçerik üretilemedi.",
+    "generateErrorGeneric": "İçerik üretilirken bir hata oluştu.",
+    "localeLabelTr": "Türkçe",
+    "localeLabelEn": "İngilizce",
+    "localeLabelRu": "Rusça"
+  },
+  "Leads": {
+    "noBusinessTitle": "Henüz bir işletme kurmamışsınız",
+    "noBusinessDescription": "Müşteri taleplerini görebilmek için önce profilinizi oluşturun.",
+    "createProfileBtn": "Profili Oluştur",
+    "headerTitle": "Talepler & Asistan",
+    "tabRequests": "Talepler",
+    "tabConversations": "Konuşmalar",
+    "tabSettings": "Saule Ayarları",
+    "navContent": "İçerik",
+    "navEditor": "Editör",
+    "navViewProfile": "Profilimi Gör",
+    "viewArchived": "Arşivlenenleri gör ({count})",
+    "backToActiveLeads": "Aktif taleplere dön",
+    "backToActiveConversations": "Aktif konuşmalara dön",
+    "emptyLeadsTitle": "Henüz hiç talep almadınız",
+    "emptyLeadsDescription": "Ziyaretçileriniz asistanınız Saule ile konuşup bir hizmet talep ettiğinde burada görünecekler.",
+    "emptyArchivedLeadsTitle": "Arşivlenmiş talep yok",
+    "emptyArchivedLeadsDescription": "Arşivlediğiniz talepler burada görünecek.",
+    "statusNew": "Yeni",
+    "statusSeen": "İncelendi",
+    "statusDone": "Tamamlandı",
+    "preferredTime": "Tercih edilen zaman: {time}",
+    "notesLabel": "Notunuz",
+    "notesPlaceholder": "Bu kişi hakkında kendinize not bırakın — yalnızca siz görürsünüz.",
+    "messageBtn": "Mesaj At",
+    "viewConversationBtn": "Konuşmayı Gör",
+    "markSeenBtn": "İşaretle",
+    "archiveTooltip": "Arşivle",
+    "unarchiveTooltip": "Arşivden çıkar",
+    "deleteTooltip": "Kalıcı olarak sil",
+    "archiveError": "İşlem sırasında bir hata oluştu.",
+    "notesSaveError": "Not kaydedilirken bir hata oluştu.",
+    "deleteLeadConfirm": "Bu talebi kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
+    "deleteConversationConfirm": "Bu konuşmayı kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
+    "deleteError": "Silinirken bir hata oluştu.",
+    "settingsSaveError": "Ayarlar kaydedilirken hata oluştu.",
+    "settingsSavedToast": "Ayarlar kaydedildi",
+    "saveSettingsBtn": "Ayarları Kaydet",
+    "sauleSubtitle": "Dijital Ön Masa Asistanınız",
+    "toneSectionTitle": "Kişilik & Ton",
+    "toneFriendlyLabel": "Sıcak & Samimi",
+    "toneFormalLabel": "Resmi & Profesyonel",
+    "toneEnergeticLabel": "Enerjik",
+    "toneFriendlyDesc": "Ziyaretçilerle arkadaş canlısı konuşur.",
+    "toneFormalDesc": "Daha ciddi ve mesafeli bir dil kullanır.",
+    "toneEnergeticDesc": "Heyecanlı ve pozitif bir yaklaşım sergiler.",
+    "leadCaptureTitle": "Lead Yakalama",
+    "leadCaptureDesc": "Ziyaretçilerden iletişim bilgisi istesin mi?",
+    "appointmentTitle": "Randevu Akışı",
+    "appointmentDesc": "Randevu/rezervasyon talebi alsın mı?",
+    "appointmentInstructionsLabel": "Randevu Talimatı",
+    "appointmentInstructionsPlaceholder": "Örn: Hangi gün ve saatte gelmek istediklerini sor.",
+    "appointmentHint": "Bu özellik şu an \"Talepler\" sekmesine lead kaydı oluşturur. Takvim entegrasyonu yakında eklenecektir.",
+    "greetingTitle": "Özel Karşılama",
+    "greetingDesc": "İlk mesajı siz belirleyin.",
+    "greetingHint": "Ziyaretçinin sayfayı görüntülediği dile göre gösterilir; boş bıraktığınız dilde Saule'nin varsayılan karşılaması kullanılır.",
+    "footerTextBeforeEmail": "Talkinbio sürekli gelişen bir uygulama. Geri bildiriminiz, istekleriniz veya şikayetleriniz varsa bize ",
+    "footerTextAfterEmail": " adresinden ulaşabilirsiniz.",
+    "conversations": {
+      "emptyTitle": "Henüz hiç konuşma yok",
+      "emptyDescription": "Ziyaretçileriniz Saule ile konuşmaya başladığında transkriptler burada görünecek.",
+      "noArchived": "Arşivlenmiş konuşma yok.",
+      "noActive": "Aktif konuşma yok.",
+      "testConversationLabel": "Test Konuşması",
+      "visitorLabel": "Ziyaretçi #{id}",
+      "testBadge": "Test",
+      "selectPrompt": "Görüntülemek için soldan bir konuşma seçin."
+    },
+    "knowledgeBase": {
+      "title": "Bilgi Tabanı",
+      "description": "Saule'ye sayfada yazmayan şeyleri öğretin (iptal politikası, özel kurallar vb.).",
+      "addBtn": "Not Ekle",
+      "overBudgetWarning": "Aktif notlarınız yaklaşık {tokens} token'a ulaştı — bu, her Saule mesajının maliyetini artırıyor. Kısaltmayı veya az kullanılan notları pasifleştirmeyi düşünün.",
+      "titlePlaceholder": "Başlık (opsiyonel)",
+      "contentPlaceholder": "Örn: Randevu iptalleri en az 24 saat önceden bildirilmeli.",
+      "cancelBtn": "Vazgeç",
+      "saveBtn": "Kaydet",
+      "addError": "Not eklenirken hata oluştu.",
+      "editError": "Not güncellenirken hata oluştu.",
+      "emptyState": "Henüz not eklenmedi.",
+      "editTooltip": "Düzenle",
+      "deactivateTooltip": "Pasifleştir",
+      "activateTooltip": "Aktifleştir"
+    }
+  },
+  "MediaUploader": {
+    "defaultLabel": "Görsel Seç veya Sürükle",
+    "errorInvalidType": "Sadece fotoğraf veya video yükleyebilirsiniz.",
+    "errorFileSize": "Dosya boyutu 10MB'dan küçük olmalıdır.",
+    "errorGeneric": "Dosya yüklenirken bir hata oluştu.",
+    "uploadingLabel": "Yükleniyor...",
+    "maxSizeHint": "10MB'a kadar"
+  },
+  "SetPasswordModal": {
+    "passwordTooShort": "Şifreniz en az 6 karakter olmalıdır.",
+    "passwordMismatch": "Şifreler eşleşmiyor.",
+    "updateErrorGeneric": "Şifre güncellenirken bir hata oluştu.",
+    "title": "Hesap Şifrenizi Belirleyin",
+    "description": "Hesabınızı güvene almak ve sonraki girişlerinizde e-posta ve şifre kullanabilmek için lütfen bir şifre belirleyin.",
+    "newPasswordLabel": "Yeni Şifre",
+    "confirmPasswordLabel": "Şifre (Tekrar)",
+    "savingBtn": "Kaydediliyor...",
+    "saveBtn": "Şifreyi Kaydet ve Devam Et"
+  },
+  "CreditBadge": {
+    "tooltip": "Kredi bakiyeniz — plan ve paketler için tıklayın",
+    "label": "{balance} kredi"
   }
 }
