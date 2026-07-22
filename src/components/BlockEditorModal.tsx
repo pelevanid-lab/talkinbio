@@ -259,6 +259,23 @@ export default function BlockEditorModal({
                       }}
                     />
                   </div>
+                  {item.mediaUrl && (
+                    <div className="pt-2">
+                      <label className="block text-xs font-medium mb-1 text-slate-500">{t('about.mediaPositionLabel') || 'Görsel Konumu'}</label>
+                      <select
+                        value={item.mediaPosition || 'top'}
+                        onChange={(e) => {
+                          const newItems = [...content.items];
+                          newItems[idx].mediaPosition = e.target.value;
+                          setContent({...content, items: newItems});
+                        }}
+                        className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--coral)]"
+                      >
+                        <option value="top">{t('about.mediaPositionTop') || 'Üstte'}</option>
+                        <option value="bottom">{t('about.mediaPositionBottom') || 'Altta'}</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
               );
             })}

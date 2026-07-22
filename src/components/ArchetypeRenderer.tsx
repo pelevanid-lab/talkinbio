@@ -288,7 +288,11 @@ function renderServices(block: any, ctx: RenderCtx) {
               <div key={idx} className={`flex ${reverse ? 'flex-row-reverse' : 'flex-row'} gap-4 items-center`}>
                 {item.mediaUrl && (
                   <div className={`w-2/5 shrink-0 h-32 overflow-hidden ${radiusClass}`}>
-                    <img src={item.mediaUrl} alt={itemLoc.title} className="w-full h-full object-cover" />
+                    {item.mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+                      <video src={item.mediaUrl} className="w-full h-full object-cover" autoPlay loop muted playsInline />
+                    ) : (
+                      <img src={item.mediaUrl} alt={itemLoc.title || ''} className="w-full h-full object-cover" />
+                    )}
                   </div>
                 )}
                 <div className={item.mediaUrl ? 'w-3/5' : 'w-full'}>
@@ -336,16 +340,24 @@ function renderServices(block: any, ctx: RenderCtx) {
         <div className={layoutVariant === 'grid-cards' ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : "space-y-4"}>
           {items.map((item: any, idx: number) => {
             const itemLoc = item[locale] || item;
+            const pos = item.mediaPosition || 'top';
+            
+            const MediaEl = item.mediaUrl && theme.mediaProfile !== 'minimal' ? (
+              item.mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+                <video src={item.mediaUrl} className={`object-cover ${radiusClass} ${layoutVariant === 'list' ? 'w-full sm:w-32 h-32 mb-0 shrink-0' : 'w-full h-40 ' + (pos === 'bottom' ? 'mt-4' : 'mb-4')}`} autoPlay loop muted playsInline />
+              ) : (
+                <img src={item.mediaUrl} alt={itemLoc.title || ''} className={`object-cover ${radiusClass} ${layoutVariant === 'list' ? 'w-full sm:w-32 h-32 mb-0 shrink-0' : 'w-full h-40 ' + (pos === 'bottom' ? 'mt-4' : 'mb-4')}`} />
+              )
+            ) : null;
+
             return (
               <div
                 key={idx}
-                className={`p-5 border transition-transform hover:-translate-y-1 ${radiusClass} ${layoutVariant === 'list' ? 'flex flex-col sm:flex-row gap-4 items-start sm:items-center' : ''}`}
+                className={`p-5 border transition-transform hover:-translate-y-1 ${radiusClass} ${layoutVariant === 'list' ? (pos === 'bottom' ? 'flex flex-col sm:flex-row-reverse' : 'flex flex-col sm:flex-row') + ' gap-4 items-start sm:items-center' : 'flex flex-col'}`}
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
               >
-                {item.mediaUrl && theme.mediaProfile !== 'minimal' && (
-                  <img src={item.mediaUrl} alt={itemLoc.title} className={`object-cover ${radiusClass} ${layoutVariant === 'list' ? 'w-full sm:w-32 h-32 mb-0' : 'w-full h-40 mb-4'}`} />
-                )}
-                <div className={`flex-1 ${layoutVariant === 'list' ? 'w-full' : 'flex justify-between items-start gap-4'}`}>
+                {pos !== 'bottom' && MediaEl}
+                <div className={`flex-1 ${layoutVariant === 'list' ? 'w-full' : 'flex justify-between items-start gap-4 w-full'}`}>
                   <div>
                     <h4 className={`font-semibold text-lg ${headingFont}`}>{renderColoredSegments(itemLoc.title || item.title)}</h4>
                     {(itemLoc.description || item.description) && (
@@ -355,7 +367,7 @@ function renderServices(block: any, ctx: RenderCtx) {
                     )}
                   </div>
                   {item.price && (
-                    <div className={layoutVariant === 'list' ? 'mt-3 sm:mt-0 sm:ml-auto' : ''}>
+                    <div className={layoutVariant === 'list' ? 'mt-3 sm:mt-0 sm:ml-auto shrink-0' : 'shrink-0'}>
                       <span
                         className="font-mono font-medium px-3 py-1 rounded-full text-sm whitespace-nowrap inline-block"
                         style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
@@ -365,6 +377,7 @@ function renderServices(block: any, ctx: RenderCtx) {
                     </div>
                   )}
                 </div>
+                {pos === 'bottom' && MediaEl}
               </div>
             );
           })}
