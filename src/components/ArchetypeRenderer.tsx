@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import { useLocale } from 'next-intl';
 import { renderColoredSegments, toColorMarkdown, colorLinkComponents, stripColorSyntax, styleUrlTransform } from '@/utils/coloredText';
 import { defaultTitleFor, getHoursLabels, type DayKey } from '@/config/localeTitles';
+import { isVideoUrl } from '@/utils/mediaType';
 
 type RenderCtx = {
   locale: string;
@@ -143,7 +144,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
     return (
       <section key={block.id} className={`relative overflow-hidden ${radiusClass} h-[440px] shadow-xl flex items-end group`}>
         <div className="absolute inset-0 z-0">
-          {mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+          {isVideoUrl(mediaUrl) ? (
             <video src={mediaUrl} className="w-full h-full object-cover" autoPlay loop muted playsInline />
           ) : (
             <img src={mediaUrl} alt={blockTitle} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -169,7 +170,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
       <section key={block.id} className="pt-4">
         <div className={`flex flex-row overflow-hidden border shadow-md ${radiusClass}`} style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div className="w-2/5 shrink-0 relative">
-            {mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+            {isVideoUrl(mediaUrl) ? (
               <video src={mediaUrl} className="w-full h-full object-cover absolute inset-0" autoPlay loop muted playsInline />
             ) : (
               <img src={mediaUrl} alt={blockTitle} className="w-full h-full object-cover absolute inset-0" />
@@ -191,7 +192,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
   // Standard layout
   const MediaElement = mediaUrl ? (
     <div className={`overflow-hidden shadow-sm ${radiusClass} ${pos === 'middle' ? 'my-6' : pos === 'top' ? 'mb-6' : 'mt-6'}`}>
-      {mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+      {isVideoUrl(mediaUrl) ? (
         <video src={mediaUrl} className="w-full max-h-96 object-cover" controls />
       ) : (
         <img src={mediaUrl} alt={blockTitle} className="w-full max-h-96 object-cover" />
@@ -288,7 +289,7 @@ function renderServices(block: any, ctx: RenderCtx) {
               <div key={idx} className={`flex ${reverse ? 'flex-row-reverse' : 'flex-row'} gap-4 items-center`}>
                 {item.mediaUrl && (
                   <div className={`w-2/5 shrink-0 h-32 overflow-hidden ${radiusClass}`}>
-                    {item.mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+                    {isVideoUrl(item.mediaUrl) ? (
                       <video src={item.mediaUrl} className="w-full h-full object-cover" autoPlay loop muted playsInline />
                     ) : (
                       <img src={item.mediaUrl} alt={itemLoc.title || ''} className="w-full h-full object-cover" />
@@ -343,7 +344,7 @@ function renderServices(block: any, ctx: RenderCtx) {
             const pos = item.mediaPosition || 'top';
             
             const MediaEl = item.mediaUrl && theme.mediaProfile !== 'minimal' ? (
-              item.mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+              isVideoUrl(item.mediaUrl) ? (
                 <video src={item.mediaUrl} className={`object-cover ${radiusClass} ${layoutVariant === 'list' ? 'w-full sm:w-32 h-32 mb-0 shrink-0' : 'w-full h-40 ' + (pos === 'bottom' ? 'mt-4' : 'mb-4')}`} autoPlay loop muted playsInline />
               ) : (
                 <img src={item.mediaUrl} alt={itemLoc.title || ''} className={`object-cover ${radiusClass} ${layoutVariant === 'list' ? 'w-full sm:w-32 h-32 mb-0 shrink-0' : 'w-full h-40 ' + (pos === 'bottom' ? 'mt-4' : 'mb-4')}`} />
@@ -562,7 +563,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
             const caption = item.caption?.[locale] || item.caption;
             return (
               <div key={idx} className="relative shrink-0 w-[85%] h-72 snap-center group overflow-hidden">
-                {item.url?.match(/\.(mp4|webm|ogg)$/i) ? (
+                {isVideoUrl(item.url) ? (
                   <video src={item.url} className="w-full h-full object-cover" controls />
                 ) : (
                   <img src={item.url} alt={caption || 'Gallery'} className="w-full h-full object-cover" />
@@ -589,7 +590,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
             const caption = item.caption?.[locale] || item.caption;
             return (
               <div key={idx} className={`relative overflow-hidden group h-64 sm:h-80 ${radiusClass}`}>
-                {item.url?.match(/\.(mp4|webm|ogg)$/i) ? (
+                {isVideoUrl(item.url) ? (
                   <video src={item.url} className="w-full h-full object-cover" controls />
                 ) : (
                   <img src={item.url} alt={caption || 'Gallery'} className="w-full h-full object-cover" />
@@ -616,7 +617,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
             const caption = item.caption?.[locale] || item.caption;
             return (
               <div key={idx} className={`break-inside-avoid relative group overflow-hidden ${radiusClass}`}>
-                {item.url?.match(/\.(mp4|webm|ogg)$/i) ? (
+                {isVideoUrl(item.url) ? (
                   <video src={item.url} className="w-full object-cover" controls />
                 ) : (
                   <img src={item.url} alt={caption || 'Gallery'} className="w-full object-cover transition-transform duration-500 group-hover:scale-110" />
@@ -642,7 +643,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
           const caption = item.caption?.[locale] || item.caption;
           return (
             <div key={idx} className={`relative overflow-hidden group ${radiusClass}`}>
-              {item.url?.match(/\.(mp4|webm|ogg)$/i) ? (
+              {isVideoUrl(item.url) ? (
                 <video src={item.url} className="w-full h-40 md:h-64 object-cover" controls />
               ) : (
                 <img src={item.url} alt={caption || 'Gallery'} className="w-full h-40 md:h-64 object-cover transition-transform duration-500 group-hover:scale-105" />

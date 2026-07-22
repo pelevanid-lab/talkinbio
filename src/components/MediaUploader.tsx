@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { compressImageIfNeeded } from '@/utils/imageCompression';
+import { isVideoUrl } from '@/utils/mediaType';
 
 interface MediaUploaderProps {
   value: string;
@@ -114,7 +115,7 @@ export default function MediaUploader({ value, onChange, label, bucket = "media"
       {value ? (
         // Preview State
         <div className="relative w-full bg-slate-50 rounded-lg border border-slate-200 overflow-hidden group flex items-center justify-center">
-          {value.match(/\.(mp4|webm|ogg)$/i) ? (
+          {isVideoUrl(value) ? (
             <video src={value} className="w-full max-h-64 object-contain" controls />
           ) : (
             <img src={value} alt="Preview" className="w-full max-h-64 object-contain" />
