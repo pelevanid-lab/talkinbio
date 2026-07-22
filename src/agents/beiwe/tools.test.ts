@@ -51,7 +51,7 @@ describe('addSectionTool', () => {
     ];
     const { client, updates, inserted } = fakeSupabase(existingBlocks);
     const result = await addSectionTool({ supabase: client, businessId: 'biz-1', locale: 'tr' })
-      .execute({ ...SECTION_ARGS, insertAfterType: 'about' }, { toolCallId: 't1', messages: [] });
+      .execute({ ...SECTION_ARGS, insertAfterType: 'about' }, { toolCallId: 't1', messages: [], context: {} });
 
     expect(result).not.toMatch(/^Error:/);
     expect(inserted).toHaveLength(1);
@@ -70,7 +70,7 @@ describe('addSectionTool', () => {
     const existingBlocks: FakeBlock[] = [{ id: 'about-id', type: 'about', order: 1 }];
     const { client, updates, inserted } = fakeSupabase(existingBlocks);
     await addSectionTool({ supabase: client, businessId: 'biz-1', locale: 'tr' })
-      .execute({ ...SECTION_ARGS, insertAfterType: 'about' }, { toolCallId: 't2', messages: [] });
+      .execute({ ...SECTION_ARGS, insertAfterType: 'about' }, { toolCallId: 't2', messages: [], context: {} });
 
     expect(updates).toEqual([]);
     expect(inserted[0].order).toBe(2);

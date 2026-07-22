@@ -1,7 +1,7 @@
 import { streamText, isStepCount, convertToModelMessages, createUIMessageStreamResponse, toUIMessageStream } from 'ai';
 import { createClient } from '@supabase/supabase-js';
 import { getModel } from '@/utils/ai';
-import { buildBeiwePrompt, buildReadinessSummary } from '@/agents/beiwe/prompt';
+import { buildBeiweStaticPrompt, buildBeiweDynamicContext, buildReadinessSummary } from '@/agents/beiwe/prompt';
 import { createBeiweTools } from '@/agents/beiwe/tools';
 import { getUIMessageText } from '@/agents/shared/uiMessages';
 import { BEIWE_MAX_INPUT_CHARS } from '@/agents/shared/limits';
@@ -26,9 +26,11 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Fetch existing blocks + business to give context to the AI
+    // Fetch existing blocks + business to give context to the AI. Only the columns the
+    // prompt/readiness summary actually read — id/business_id/singleton_key are pure noise
+    // once this is serialized into the prompt (every block repeats the same business_id).
     const [{ data: blocks }, { data: business }] = await Promise.all([
-      supabase.from('blocks').select('*').eq('business_id', businessId).order('order', { ascending: true }),
+      supabase.from('blocks').select('type, title, content, order, is_visible').eq('business_id', businessId).order('order', { ascending: true }),
       supabase.from('businesses').select('contact_method, contact_value, category, theme, is_published, credit_balance').eq('id', businessId).single(),
     ]);
 
@@ -77,12 +79,16 @@ export async function POST(req: Request) {
     const hasContact = Object.values(contactValues).some((v) => typeof v === 'string' && v.trim().length > 0);
     const readinessSummary = buildReadinessSummary(blockList, hasContact);
 
-    const systemPrompt = buildBeiwePrompt({ business: business || null, blocks: blockList, locale: currentLocale, readinessSummary });
+    // Faz 2.3 prompt caching: persona + kural seti (business.category dışında oturum boyunca
+    // sabit) ayrı bir cache'lenmiş system mesajı; mevcut bloklar/tema/yayına hazırlık durumu
+    // (hemen her turda değişir) ayrı, cache'siz bir kuyruk mesajı — ikisi TEK bir metinde
+    // birleştirilirse blok değişikliği her turda ~18-19K token'lık tüm cache'i bozuyordu.
+    const staticPrompt = buildBeiweStaticPrompt({ business: business || null, locale: currentLocale });
+    const dynamicContext = buildBeiweDynamicContext({ business: business || null, blocks: blockList, readinessSummary });
 
-    // Faz 2.3 prompt caching: Beiwe'nin sabit yükü (mevcut bloklar + kural seti) her
-    // çağrıda tekrar gönderiliyor — Anthropic ephemeral cache ile bu tekrar ucuzlar.
     const modelMessages = [
-      { role: 'system' as const, content: systemPrompt, providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' as const } } } },
+      { role: 'system' as const, content: staticPrompt, providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' as const } } } },
+      { role: 'system' as const, content: dynamicContext },
       ...(await convertToModelMessages(messages)),
     ];
 
