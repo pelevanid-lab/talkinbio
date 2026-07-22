@@ -53,6 +53,7 @@ export async function insertLeadAndNotify({
   // Send email via Resend (skipped for editor preview test conversations — Faz 1.7)
   if (!isPreview && process.env.RESEND_API_KEY && contactValues.email) {
     try {
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://talkinbio.com';
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
         from: 'info@talkinbio.com',
@@ -69,6 +70,9 @@ export async function insertLeadAndNotify({
               ${preferredDatetime ? `<p><strong>Tercih Edilen Zaman:</strong> ${preferredDatetime}</p>` : ''}
               ${sourceUsername ? `<p><strong>Sosyal Medya Kullanıcı Adı:</strong> ${sourceUsername}</p>` : ''}
             </div>
+            <a href="${baseUrl}/dashboard/leads" style="display:inline-block;padding:12px 24px;background-color:#14231F;color:#fff;text-decoration:none;border-radius:100px;font-weight:bold;margin-right:12px;">
+              Panelde Görüntüle
+            </a>
             ${sourceUsername ? `
             <a href="https://ig.me/m/${sourceUsername.replace('@', '')}" style="display:inline-block;padding:12px 24px;background-color:#FF6A5C;color:#fff;text-decoration:none;border-radius:100px;font-weight:bold;">
               Instagram'da Mesaj At
