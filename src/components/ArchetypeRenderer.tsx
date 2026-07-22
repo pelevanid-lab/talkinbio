@@ -220,20 +220,38 @@ function renderAbout(block: any, ctx: RenderCtx) {
 }
 
 // Shared by `contact` and `custom` — a simple text section, same content shape/locale reading as `about`'s standard layout.
+// `custom` also supports an in-flow mediaUrl/mediaPosition now (BlockEditorModal), same
+// before/between/after placement as `about`'s standard layout — it used to only support a
+// full-bleed backgroundImage, with no way to put an actual photo next to the text.
 function renderTextBlock(block: any, ctx: RenderCtx) {
-  const { locale, headingFont } = ctx;
+  const { locale, headingFont, radiusClass } = ctx;
   const blockTitle = blockTitleOf(block, locale);
   const text = block.content?.[locale]?.text || block.content?.text || '';
   if (!text) return null;
 
+  const mediaUrl = block.content?.mediaUrl;
+  const pos = block.content?.mediaPosition || 'middle';
+  const MediaElement = mediaUrl ? (
+    <div className={`overflow-hidden shadow-sm ${radiusClass} ${pos === 'middle' ? 'my-6' : pos === 'top' ? 'mb-6' : 'mt-6'}`}>
+      {isVideoUrl(mediaUrl) ? (
+        <video src={mediaUrl} className="w-full max-h-96 object-cover" controls />
+      ) : (
+        <img src={mediaUrl} alt={blockTitle} className="w-full max-h-96 object-cover" />
+      )}
+    </div>
+  ) : null;
+
   return withSectionBackground(
     <>
+      {pos === 'top' && MediaElement}
       <h2 className={`text-3xl mb-6 font-bold ${headingFont}`} style={{ color: 'var(--text)' }}>
         {renderColoredSegments(blockTitle)}
       </h2>
+      {pos === 'middle' && MediaElement}
       <div className="markdown-body opacity-90 text-[15px]">
         <ReactMarkdown components={colorLinkComponents} urlTransform={styleUrlTransform}>{toColorMarkdown(text)}</ReactMarkdown>
       </div>
+      {pos === 'bottom' && MediaElement}
     </>,
     block.id,
     ctx,
