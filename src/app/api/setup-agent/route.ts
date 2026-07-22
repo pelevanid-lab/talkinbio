@@ -4,7 +4,7 @@ import { getModel } from '@/utils/ai';
 import { buildBeiweStaticPrompt, buildBeiweDynamicContext, buildReadinessSummary } from '@/agents/beiwe/prompt';
 import { createBeiweTools } from '@/agents/beiwe/tools';
 import { getUIMessageText } from '@/agents/shared/uiMessages';
-import { BEIWE_MAX_INPUT_CHARS } from '@/agents/shared/limits';
+import { BEIWE_MAX_INPUT_CHARS, BEIWE_HISTORY_WINDOW } from '@/agents/shared/limits';
 import { recordUsageEvent } from '@/agents/shared/usage';
 import { beiweCreditCost, deductCredits } from '@/agents/shared/credits';
 
@@ -86,10 +86,18 @@ export async function POST(req: Request) {
     const staticPrompt = buildBeiweStaticPrompt({ business: business || null, locale: currentLocale });
     const dynamicContext = buildBeiweDynamicContext({ business: business || null, blocks: blockList, readinessSummary });
 
+    // Unlike Saule (DB-side HISTORY_WINDOW, shared/history.ts), Beiwe had no cap at all —
+    // the client's full session transcript was resent, in full, on every single turn, so a
+    // long setup conversation made every subsequent turn more expensive than the last. Each
+    // UIMessage here is one self-contained role turn (a tool call + its result live together
+    // as parts of the SAME assistant message, not as separate array entries), so slicing by
+    // count can't split a tool call from its result.
+    const recentMessages = messages.length > BEIWE_HISTORY_WINDOW ? messages.slice(-BEIWE_HISTORY_WINDOW) : messages;
+
     const modelMessages = [
       { role: 'system' as const, content: staticPrompt, providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' as const } } } },
       { role: 'system' as const, content: dynamicContext },
-      ...(await convertToModelMessages(messages)),
+      ...(await convertToModelMessages(recentMessages)),
     ];
 
     const result = await streamText({
