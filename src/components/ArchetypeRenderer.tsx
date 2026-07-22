@@ -343,18 +343,22 @@ function renderServices(block: any, ctx: RenderCtx) {
             const itemLoc = item[locale] || item;
             const pos = item.mediaPosition || 'top';
             
+            // "top"/"bottom" is documented (and labeled in the editor) as before/after the text,
+            // i.e. vertical stacking — 'list' used to instead render it as a small side-by-side
+            // thumbnail (flex-row/flex-row-reverse on wider screens), which silently ignored the
+            // picked position and contradicted its own "alt alta" (stacked) design intent.
             const MediaEl = item.mediaUrl && theme.mediaProfile !== 'minimal' ? (
               isVideoUrl(item.mediaUrl) ? (
-                <video src={item.mediaUrl} className={`object-cover ${radiusClass} ${layoutVariant === 'list' ? 'w-full sm:w-32 h-32 mb-0 shrink-0' : 'w-full h-40 ' + (pos === 'bottom' ? 'mt-4' : 'mb-4')}`} autoPlay loop muted playsInline />
+                <video src={item.mediaUrl} className={`object-cover ${radiusClass} w-full h-40 ${pos === 'bottom' ? 'mt-4' : 'mb-4'}`} autoPlay loop muted playsInline />
               ) : (
-                <img src={item.mediaUrl} alt={itemLoc.title || ''} className={`object-cover ${radiusClass} ${layoutVariant === 'list' ? 'w-full sm:w-32 h-32 mb-0 shrink-0' : 'w-full h-40 ' + (pos === 'bottom' ? 'mt-4' : 'mb-4')}`} />
+                <img src={item.mediaUrl} alt={itemLoc.title || ''} className={`object-cover ${radiusClass} w-full h-40 ${pos === 'bottom' ? 'mt-4' : 'mb-4'}`} />
               )
             ) : null;
 
             return (
               <div
                 key={idx}
-                className={`p-5 border transition-transform hover:-translate-y-1 ${radiusClass} ${layoutVariant === 'list' ? (pos === 'bottom' ? 'flex flex-col sm:flex-row-reverse' : 'flex flex-col sm:flex-row') + ' gap-4 items-start sm:items-center' : 'flex flex-col'}`}
+                className={`p-5 border transition-transform hover:-translate-y-1 ${radiusClass} flex flex-col`}
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
               >
                 {pos !== 'bottom' && MediaEl}
