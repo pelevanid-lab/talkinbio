@@ -12,6 +12,52 @@ interface MediaUploaderProps {
   bucket?: string;
 }
 
+const MAX_IMAGE_DIMENSION = 1920;
+const IMAGE_COMPRESS_QUALITY = 0.82;
+// Below this, the file is already small enough that re-encoding would only cost quality for
+// no real size benefit.
+const COMPRESS_THRESHOLD_BYTES = 1.5 * 1024 * 1024;
+
+// Instagram-style client-side downscale/re-encode, run before the file ever leaves the browser.
+// Phone photos routinely land at 10-25MB; this typically brings them under 1-2MB with no
+// visible quality loss. Doing this in the browser (rather than a server route) sidesteps
+// Vercel's serverless request body size limit (~4.5MB) entirely, since the original oversized
+// file never has to travel to a server — it's already small by the time it's uploaded.
+async function compressImageIfNeeded(file: File): Promise<File> {
+  // Canvas re-encoding flattens animated GIFs to a single frame, so leave those (and non-images) alone.
+  if (!file.type.startsWith('image/') || file.type === 'image/gif') return file;
+  if (file.size <= COMPRESS_THRESHOLD_BYTES) return file;
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    const targetWidth = Math.round(bitmap.width * scale);
+    const targetHeight = Math.round(bitmap.height * scale);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+    bitmap.close();
+
+    // PNGs may carry transparency — keep the format for those (still benefits from the resize,
+    // just losslessly); everything else re-encodes as JPEG with the quality knob.
+    const outputType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, outputType, IMAGE_COMPRESS_QUALITY));
+    if (!blob || blob.size >= file.size) return file; // re-encoding didn't actually help — keep original
+
+    const newName = outputType === 'image/jpeg' && !/\.jpe?g$/i.test(file.name)
+      ? file.name.replace(/\.[^.]+$/, '') + '.jpg'
+      : file.name;
+    return new File([blob], newName, { type: outputType });
+  } catch (err) {
+    console.error('Image compression failed, uploading original:', err);
+    return file;
+  }
+}
+
 export default function MediaUploader({ value, onChange, label, bucket = "media" }: MediaUploaderProps) {
   const t = useTranslations('MediaUploader');
   const [isUploading, setIsUploading] = useState(false);
@@ -31,19 +77,21 @@ export default function MediaUploader({ value, onChange, label, bucket = "media"
         throw new Error(t('errorInvalidType'));
       }
 
-      // Max size: 25MB
-      if (file.size > 25 * 1024 * 1024) {
+      const processedFile = await compressImageIfNeeded(file);
+
+      // Max size: 25MB (safety net — compression above should keep real photos well under this)
+      if (processedFile.size > 25 * 1024 * 1024) {
         throw new Error(t('errorFileSize'));
       }
 
       // Create unique filename
-      const fileExt = file.name.split('.').pop();
+      const fileExt = processedFile.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
       const { data, error: uploadError } = await supabase.storage
         .from(bucket)
-        .upload(filePath, file, {
+        .upload(filePath, processedFile, {
           cacheControl: '3600',
           upsert: false
         });
