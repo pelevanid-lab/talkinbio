@@ -716,10 +716,10 @@
   "MediaUploader": {
     "defaultLabel": "Choose or Drag an Image",
     "errorInvalidType": "You can only upload photos or videos.",
-    "errorFileSize": "File size must be under 25MB.",
+    "errorFileSize": "File size must be under 100MB.",
     "errorGeneric": "An error occurred while uploading the file.",
     "uploadingLabel": "Uploading...",
-    "maxSizeHint": "Up to 25MB"
+    "maxSizeHint": "Up to 100MB"
   },
   "SetPasswordModal": {
     "passwordTooShort": "Your password must be at least 6 characters.",

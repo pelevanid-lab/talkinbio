@@ -716,10 +716,10 @@
   "MediaUploader": {
     "defaultLabel": "Выберите или перетащите изображение",
     "errorInvalidType": "Можно загружать только фото или видео.",
-    "errorFileSize": "Размер файла должен быть меньше 25 МБ.",
+    "errorFileSize": "Размер файла должен быть меньше 100 МБ.",
     "errorGeneric": "Ошибка при загрузке файла.",
     "uploadingLabel": "Загрузка...",
-    "maxSizeHint": "До 25 МБ"
+    "maxSizeHint": "До 100 МБ"
   },
   "SetPasswordModal": {
     "passwordTooShort": "Пароль должен содержать не менее 6 символов.",
