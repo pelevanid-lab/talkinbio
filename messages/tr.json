@@ -716,10 +716,10 @@
   "MediaUploader": {
     "defaultLabel": "Görsel Seç veya Sürükle",
     "errorInvalidType": "Sadece fotoğraf veya video yükleyebilirsiniz.",
-    "errorFileSize": "Dosya boyutu 10MB'dan küçük olmalıdır.",
+    "errorFileSize": "Dosya boyutu 25MB'dan küçük olmalıdır.",
     "errorGeneric": "Dosya yüklenirken bir hata oluştu.",
     "uploadingLabel": "Yükleniyor...",
-    "maxSizeHint": "10MB'a kadar"
+    "maxSizeHint": "25MB'a kadar"
   },
   "SetPasswordModal": {
     "passwordTooShort": "Şifreniz en az 6 karakter olmalıdır.",

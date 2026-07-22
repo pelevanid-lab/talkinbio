@@ -31,8 +31,8 @@ export default function MediaUploader({ value, onChange, label, bucket = "media"
         throw new Error(t('errorInvalidType'));
       }
 
-      // Max size: 10MB
-      if (file.size > 10 * 1024 * 1024) {
+      // Max size: 25MB
+      if (file.size > 25 * 1024 * 1024) {
         throw new Error(t('errorFileSize'));
       }
 
