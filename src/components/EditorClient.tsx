@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Lightbulb, Inbox, FileText, Coins } from 'lucide-react';
+import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Inbox, Coins } from 'lucide-react';
 import ArchetypeRenderer from './ArchetypeRenderer';
 import ChatWidget from './ChatWidget';
 import BlockEditorModal from './BlockEditorModal';
@@ -15,7 +15,6 @@ import { RECOMMENDED_TYPES, hasRealContent, isRequiredSatisfied } from '@/config
 import { DEFAULT_THEME, Theme } from '@/config/archetypes';
 import { googleFontsHref } from '@/utils/googleFonts';
 import { compressImageIfNeeded } from '@/utils/imageCompression';
-import { useBeiweSuggestions, Suggestion } from '@/hooks/useBeiweSuggestions';
 
 type LegacyMessage = { id: string; role: string; content: string };
 
@@ -27,7 +26,7 @@ function getMessageText(m: UIMessage): string {
   return m.parts.filter((p) => p.type === 'text').map((p) => (p as { text: string }).text).join('');
 }
 
-export default function EditorClient({ business, initialBlocks, initialChatMessages, initialSessions, initialInsights }: { business: any, initialBlocks: any[], initialChatMessages?: any[], initialSessions?: any[], initialInsights?: any[] }) {
+export default function EditorClient({ business, initialBlocks, initialChatMessages, initialSessions }: { business: any, initialBlocks: any[], initialChatMessages?: any[], initialSessions?: any[] }) {
   const [blocks, setBlocks] = useState(initialBlocks);
   const [sessions, setSessions] = useState<any[]>(initialSessions || []);
   const [activeSessionId, setActiveSessionId] = useState(() => {
@@ -36,7 +35,6 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   });
   const [showArchive, setShowArchive] = useState(false);
   const [theme, setTheme] = useState<Theme>(business.theme || DEFAULT_THEME);
-  const [hasCustomTheme, setHasCustomTheme] = useState<boolean>(!!business.theme);
   const [editingBlock, setEditingBlock] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
@@ -62,7 +60,6 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   const [contactMethods, setContactMethods] = useState<Record<string, { selected: boolean, value: string }>>(() =>
     Object.fromEntries(CONTACT_METHODS.map((m) => [m, { selected: m === 'email', value: '' }]))
   );
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -71,27 +68,6 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
 
   const t = useTranslations('Editor');
   const locale = useLocale();
-  const ruleBasedSuggestions = useBeiweSuggestions(blocks, business.category, contactValue, locale, hasCustomTheme);
-  const [insights, setInsights] = useState<any[]>(initialInsights || []);
-  // Faz 3.1: rule-based (statik kod) öneriler ile konuşma madenciliğinden gelen AI
-  // içgörüleri aynı listede birleşir — sahip tek bir yerden bakar.
-  const suggestions: (Suggestion & { fromInsight?: boolean })[] = useMemo(() => [
-    ...ruleBasedSuggestions,
-    ...insights.map((insight) => ({
-      id: insight.id,
-      message: insight.payload?.topic ? t('insightTopicMessage', { topic: insight.payload.topic, count: insight.payload.count }) : (insight.payload?.summary || t('insightDefaultMessage')),
-      type: 'info' as const,
-      triggerMessage: insight.payload?.suggestedTriggerMessage || t('insightDefaultTrigger'),
-      icon: '📊',
-      fromInsight: true,
-    })),
-  ], [ruleBasedSuggestions, insights, t]);
-
-  const handleInsightActioned = async (insightId: string) => {
-    setInsights((prev) => prev.filter((i) => i.id !== insightId));
-    const { error } = await supabase.from('beiwe_insights').update({ status: 'actioned' }).eq('id', insightId);
-    if (error) console.error('Failed to mark insight as actioned', error);
-  };
 
   const hasContactValue = useMemo(() => {
     try {
@@ -277,7 +253,6 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       if (bData) {
         if (bData.theme && JSON.stringify(bData.theme) !== JSON.stringify(theme)) {
           setTheme(bData.theme);
-          setHasCustomTheme(true);
         }
         if (bData.contact_value !== contactValue) {
           setContactValue(bData.contact_value);
@@ -570,71 +545,6 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 <Inbox className="w-5 h-5" />
                 <span className="hidden md:inline">{t('leadsNavLabel')}</span>
               </a>
-              <a
-                href="/dashboard/content"
-                className="p-2 bg-slate-100 text-[var(--ink)] hover:bg-slate-200 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-colors"
-                title={t('contentStudioTooltip')}
-              >
-                <FileText className="w-5 h-5" />
-                <span className="hidden md:inline">{t('contentStudioLabel')}</span>
-              </a>
-              <div className="relative">
-                <button
-                  onClick={() => setShowSuggestions(!showSuggestions)}
-                  className="p-2 bg-yellow-50 text-yellow-600 hover:bg-yellow-100 rounded-lg font-medium text-sm flex items-center relative transition-colors"
-                  title={t('suggestionsTooltip')}
-                >
-                  <Lightbulb className="w-5 h-5" />
-                  {suggestions.length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
-                  )}
-                </button>
-                {showSuggestions && (
-                  <div className="absolute top-full mt-2 -right-12 md:right-0 w-80 max-h-[400px] overflow-y-auto bg-white rounded-xl shadow-2xl border border-slate-200 z-[100] flex flex-col">
-                    <div className="p-3 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white/90 backdrop-blur-sm">
-                      <h3 className="font-bold text-sm text-[var(--ink)] flex items-center gap-1.5">
-                        <Lightbulb className="w-4 h-4 text-yellow-500" /> {t('suggestionsPanelTitle')}
-                      </h3>
-                      <button onClick={() => setShowSuggestions(false)} className="text-slate-400 hover:text-slate-600">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div className="p-2 flex flex-col gap-1.5">
-                      {suggestions.length === 0 ? (
-                        <div className="p-4 text-center text-sm text-slate-500">
-                          {t('suggestionsEmpty')}
-                        </div>
-                      ) : (
-                        suggestions.map((s) => (
-                          <button
-                            key={s.id}
-                            onClick={() => {
-                              setShowSuggestions(false);
-                              setViewMode('chat');
-                              sendUserText(s.triggerMessage);
-                              if (s.fromInsight) handleInsightActioned(s.id);
-                            }}
-                            className="text-left w-full p-3 rounded-lg border border-slate-100 hover:border-yellow-200 hover:bg-yellow-50 transition-colors flex items-start gap-3 group"
-                          >
-                            <span className="text-lg leading-none shrink-0">{s.icon}</span>
-                            <div>
-                              {s.fromInsight && (
-                                <span className="inline-block text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded mb-1">{t('suggestionsFromInsight')}</span>
-                              )}
-                              <p className="text-xs text-[var(--ink)] font-medium leading-relaxed group-hover:text-yellow-900">
-                                {s.message}
-                              </p>
-                              <span className="text-[10px] text-yellow-600 font-bold mt-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                {t('suggestionsFixCta')}
-                              </span>
-                            </div>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
               <button
                 className="md:hidden p-2 bg-[var(--coral-tint)] text-[var(--coral)] rounded-lg font-medium text-sm flex items-center"
                 onClick={() => setShowMobilePreview(true)}
