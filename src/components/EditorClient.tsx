@@ -14,6 +14,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { RECOMMENDED_TYPES, hasRealContent, isRequiredSatisfied } from '@/config/blockTypes';
 import { DEFAULT_THEME, Theme } from '@/config/archetypes';
 import { googleFontsHref } from '@/utils/googleFonts';
+import { compressImageIfNeeded } from '@/utils/imageCompression';
 import { useBeiweSuggestions, Suggestion } from '@/hooks/useBeiweSuggestions';
 
 type LegacyMessage = { id: string; role: string; content: string };
@@ -213,14 +214,23 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
 
     try {
       setIsUploadingMedia(true);
-      const fileExt = file.name.split('.').pop();
+
+      // Same Instagram-style downscale/re-encode as MediaUploader (src/utils/imageCompression.ts)
+      // — this path (Beiwe chat's attachment button) used to upload the raw file untouched, so a
+      // phone photo well past Supabase Storage's own server-side size limit was rejected outright.
+      const processedFile = await compressImageIfNeeded(file);
+      if (processedFile.size > 100 * 1024 * 1024) {
+        throw new Error(t('mediaUploadSizeError'));
+      }
+
+      const fileExt = processedFile.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-      
-      const { error } = await supabase.storage.from('media').upload(fileName, file, { cacheControl: '3600' });
+
+      const { error } = await supabase.storage.from('media').upload(fileName, processedFile, { cacheControl: '3600' });
       if (error) throw error;
-      
+
       const { data: { publicUrl } } = supabase.storage.from('media').getPublicUrl(fileName);
-      
+
       sendUserText(t('mediaUploadedMessage', { url: publicUrl }));
 
     } catch (err: any) {

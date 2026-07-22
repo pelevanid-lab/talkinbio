@@ -238,6 +238,7 @@
     "systemManualEditMessage": "[System: A manual edit was made in this session. A new chat was started.]",
     "mediaUploadedMessage": "[The user uploaded a media file to the system: {url}]",
     "mediaUploadError": "An error occurred while uploading the file: {message}",
+    "mediaUploadSizeError": "File size must be under 100MB.",
     "chatErrorFallback": "An error occurred while sending the message. If you sent a very long text, try splitting it into a few parts and sending again.",
     "publishToggleError": "An error occurred while updating the publish status.",
     "acknowledgeError": "An error occurred while processing the request.",
