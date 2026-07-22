@@ -347,11 +347,14 @@ function renderServices(block: any, ctx: RenderCtx) {
             // i.e. vertical stacking — 'list' used to instead render it as a small side-by-side
             // thumbnail (flex-row/flex-row-reverse on wider screens), which silently ignored the
             // picked position and contradicted its own "alt alta" (stacked) design intent.
+            // aspect-square (not a fixed h-40 band) — a fixed short height on a full-width card
+            // crops a landscape photo down to a thin strip; a square crop, Instagram-style, keeps
+            // enough of the actual photo visible regardless of the card's width.
             const MediaEl = item.mediaUrl && theme.mediaProfile !== 'minimal' ? (
               isVideoUrl(item.mediaUrl) ? (
-                <video src={item.mediaUrl} className={`object-cover ${radiusClass} w-full h-40 ${pos === 'bottom' ? 'mt-4' : 'mb-4'}`} autoPlay loop muted playsInline />
+                <video src={item.mediaUrl} className={`object-cover ${radiusClass} w-full aspect-square ${pos === 'bottom' ? 'mt-4' : 'mb-4'}`} autoPlay loop muted playsInline />
               ) : (
-                <img src={item.mediaUrl} alt={itemLoc.title || ''} className={`object-cover ${radiusClass} w-full h-40 ${pos === 'bottom' ? 'mt-4' : 'mb-4'}`} />
+                <img src={item.mediaUrl} alt={itemLoc.title || ''} className={`object-cover ${radiusClass} w-full aspect-square ${pos === 'bottom' ? 'mt-4' : 'mb-4'}`} />
               )
             ) : null;
 
