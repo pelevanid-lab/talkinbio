@@ -660,6 +660,10 @@ Meta entegrasyonunun v2'ye alınmasıyla v1'in ana farklılaştırıcısı bu fa
   gönderi metni / story metni / WhatsApp durum önerisi üretimi.
 - Beiwe tool'ları: `generatePostIdeas`, `draftCaption` (3 dilde, işletme tonunda).
 - v1'de yalnız metin; görsel şablon üretimi bilinçli olarak kapsam dışı.
+- **Bilinen sınırlama (2026-07-22):** üretim tamamen stateless (`src/app/api/content/generate/route.ts`)
+  — her istek yalnızca o an seçilen TEK kalemin (bir hizmet/galeri/yorum) başlık+açıklamasını
+  görüyor; ne işletmenin geri kalan sayfasını ne önceden üretilmiş gönderileri biliyor,
+  hiçbir üretim geçmişi saklanmıyor. Bkz. aşağıda Kapsam dışı — Faz 3.1 ile ortak kök nedene bağlı.
 
 ### 3.3 Haftalık özet e-postası
 - Vercel Cron (`/api/cron/weekly-report`, `vercel.json`'da schedule hazır — bkz.
@@ -1084,13 +1088,30 @@ kendisi" ise dil genişlemesi onun ön koşuludur. Kapsam (detaylandırılacak):
     sahibin elle girdiği notlarla sınırlı (Faz 1.4, `saule_knowledge`). Saule'nin
     konuşma geçmişinden kendi kendine öğrenmesi kapsamlı bir konu ve RAG altyapısıyla
     doğrudan ilişkili; RAG gündeme geldiğinde birlikte değerlendirilecek.
-- **Beiwe önerilerinde mevcut içerik kontrolü** (2026-07-20) — `analyzeConversations.ts`'teki
-  analiz prompt'una işletmenin güncel sayfa bloklarını ve bilgi tabanı notlarını da
-  vererek, yalnızca cevabı henüz sayfada/bilgi tabanında olmayan konuların önerilmesi
-  sağlanabilir (şu an yalnızca ziyaretçi mesajlarını görüyor, mevcut içerikle
-  karşılaştırmıyor — bkz. Faz 3.1 bilinen sınırlama notu). v1'in kod tarafı tamamlandı
-  ve şu an kod dondurma döneminde (Faz T); bu, dondurma bittikten sonra değerlendirilecek
-  bir v1.1 adayı — Faz 3.1'in kapanmış kapsamına dahil değil.
+- **Beiwe önerilerinde mevcut içerik kontrolü** (2026-07-20, genişletildi 2026-07-22) —
+  `analyzeConversations.ts`'teki analiz prompt'una işletmenin güncel sayfa bloklarını ve
+  bilgi tabanı notlarını da vererek, yalnızca cevabı henüz sayfada/bilgi tabanında olmayan
+  konuların önerilmesi sağlanabilir (şu an yalnızca ziyaretçi mesajlarını görüyor, mevcut
+  içerikle karşılaştırmıyor — bkz. Faz 3.1 bilinen sınırlama notu). v1'in kod tarafı
+  tamamlandı ve şu an kod dondurma döneminde (Faz T); bu, dondurma bittikten sonra
+  değerlendirilecek bir v1.1 adayı — Faz 3.1'in kapanmış kapsamına dahil değil.
+  - **Canlı pilot bulgusu (2026-07-22, Uliana Pehlivan hesabı):** hem "Beiwe Önerileri"
+    paneli (3.1, ampul ikonu) hem İçerik Stüdyosu (3.2, "İçerik" sekmesi) gerçek hesapta
+    denendi — ikisi de "çok zayıf" bulundu, ikisi de AYNI kökten: hiçbiri işletmenin ne
+    zaten sahip olduğunu bilmiyor.
+    - 3.1: sayfa bloklarını/bilgi tabanını görmediği için, o konunun cevabı sayfada zaten
+      olsa bile aynı ekleme önerisini tekrar tekrar çıkarabiliyor (yukarıdaki not).
+    - 3.2 (`src/app/api/content/generate/route.ts`): her üretim tamamen stateless — sadece
+      o an seçilen tek kalemin (bir hizmet/galeri/yorum) başlık+açıklamasını görüyor, ne
+      işletmenin geri kalan sayfasını ne önceden üretilmiş gönderileri biliyor; üretilen
+      içeriğin hiçbir geçmişi saklanmıyor, bu yüzden aynı kalem için tekrar üretim
+      istendiğinde önceki sonuçtan habersiz, tekrarlayan/jenerik metin çıkabiliyor.
+  - **Karar (2026-07-22):** ikisi de v1 haliyle donduruldu — bu geliştirme (mevcut içerik
+    karşılaştırması) tamamlanmadan ikisine de öncelik verilmeyecek. Faz T (kod dondurma)
+    bittiğinde, 3.1 ve 3.2'yi AYNI "içerik farkındalığı" katmanı altında birlikte ele almak
+    mantıklı — ikisinde de eksik olan şey aynı: üretilen/önerilen şeyin işletmenin MEVCUT
+    durumuyla (sayfa + bilgi tabanı + geçmiş üretimler) karşılaştırılması. Ayrı ayrı
+    yamanmamalı, tek bir v1.1 işi olarak planlanmalı.
 - **Görsel içerik üretimi** (story şablonları) — İçerik stüdyosu v2.
 - **Telegram kanalı** — Bot API onay gerektirmediği için v2'nin en ucuz kanal kazanımı;
   `channel_accounts` mimarisi hazır olduğunda hızlıca eklenebilir, hatta Meta onayları
