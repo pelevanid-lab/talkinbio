@@ -8,6 +8,12 @@ export const BEIWE_MAX_INPUT_CHARS = 50000;
 // Oturum içi mesaj tavanı (soft) — dolunca sert blokaj değil, "yeni sohbet" daveti.
 export const SESSION_MESSAGE_CAP = 50;
 
+// Beiwe modele giden geçmişin penceresi — Saule'nin HISTORY_WINDOW'uyla aynı fikir
+// (bkz. shared/history.ts), ama Beiwe DB'den değil doğrudan istemcinin gönderdiği
+// UIMessage dizisinden kırpıyor: sınır olmadan her tur o session'ın TÜM geçmişi
+// yeniden modele gönderiliyordu, konuşma uzadıkça tur başına maliyet sürekli artıyordu.
+export const BEIWE_HISTORY_WINDOW = 30;
+
 // Oturum açma hızı sınırı (asıl kalkan) — ziyaretçi başına saatte kaç yeni oturum.
 export const SESSION_OPEN_RATE_LIMIT = 4;
 export const SESSION_OPEN_RATE_WINDOW_MS = 60 * 60 * 1000;

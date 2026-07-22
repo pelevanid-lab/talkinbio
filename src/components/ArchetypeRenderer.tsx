@@ -948,15 +948,22 @@ export default function ArchetypeRenderer({
 
   // `contact` is no longer a real row in `blocks` (edited as business.contact_method/contact_value
   // in the dashboard's fixed "İletişim" section instead) — synthesize a virtual block for it here
-  // so it renders as a real page section/tile like everything else, right after services.
+  // so it renders as a real page section/tile like everything else, always last. A fixed order
+  // (e.g. 2.5, "right after services") used to place it — but custom sections can land on either
+  // side of any fixed number, so it drifted into the middle of the page instead of staying at the
+  // bottom. Sorting the real blocks first and appending contact after guarantees "always last"
+  // regardless of what order values the other blocks end up with.
   const visibleBlocks = useMemo(() => {
-    const real = blocks.filter(b => b.type !== 'settings' && b.type !== 'contact' && b.is_visible !== false);
+    const real = blocks
+      .filter(b => b.type !== 'settings' && b.type !== 'contact' && b.is_visible !== false)
+      .slice()
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     let values: Record<string, string> = {};
     try { values = contactValue ? JSON.parse(contactValue) : {}; } catch { values = {}; }
     const hasAnyValue = (contactMethod || '').split(',').filter(Boolean).some((k) => values[k]?.trim());
     if (!hasAnyValue) return real;
-    const contactBlock = { id: '__contact__', type: 'contact', order: 2.5, content: { method: contactMethod, value: contactValue } };
-    return [...real, contactBlock].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const contactBlock = { id: '__contact__', type: 'contact', content: { method: contactMethod, value: contactValue } };
+    return [...real, contactBlock];
   }, [blocks, contactMethod, contactValue]);
 
   const styleVars = useMemo(() => {

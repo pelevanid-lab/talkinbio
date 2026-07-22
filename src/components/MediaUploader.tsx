@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { compressImageIfNeeded } from '@/utils/imageCompression';
 
 interface MediaUploaderProps {
   value: string;
@@ -31,19 +32,23 @@ export default function MediaUploader({ value, onChange, label, bucket = "media"
         throw new Error(t('errorInvalidType'));
       }
 
-      // Max size: 10MB
-      if (file.size > 10 * 1024 * 1024) {
+      const processedFile = await compressImageIfNeeded(file);
+
+      // Max size: 100MB — mainly a backstop for video (never compressed here) and for images
+      // the browser couldn't decode/compress (e.g. HEIC in browsers with no HEIC codec, which
+      // makes compressImageIfNeeded throw and fall back to the original file untouched).
+      if (processedFile.size > 100 * 1024 * 1024) {
         throw new Error(t('errorFileSize'));
       }
 
       // Create unique filename
-      const fileExt = file.name.split('.').pop();
+      const fileExt = processedFile.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
       const { data, error: uploadError } = await supabase.storage
         .from(bucket)
-        .upload(filePath, file, {
+        .upload(filePath, processedFile, {
           cacheControl: '3600',
           upsert: false
         });
