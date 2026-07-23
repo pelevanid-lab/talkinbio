@@ -59,18 +59,39 @@ select '11111111-1111-1111-1111-111111111111'::uuid, 'services', 'Neler Yapabili
 where exists (select 1 from public.businesses where id = '11111111-1111-1111-1111-111111111111'::uuid)
 on conflict (business_id, singleton_key) do nothing;
 
--- FAQ (single-language block, per addFAQ convention — written in the business's primary language)
+-- FAQ (multi-language, per addFAQ convention — every item translated into all 3 locales)
 insert into public.blocks (business_id, type, title, content, "order", is_visible)
 select '11111111-1111-1111-1111-111111111111'::uuid, 'faq', 'Sıkça Sorulanlar',
   '{
     "tr": {"title": "Sıkça Sorulanlar"},
-    "en": {"title": "Sıkça Sorulanlar"},
-    "ru": {"title": "Sıkça Sorulanlar"},
+    "en": {"title": "Frequently Asked Questions"},
+    "ru": {"title": "Часто задаваемые вопросы"},
     "layoutVariant": "chips",
     "items": [
-      {"question": "Saule nedir?", "answer": "Saule, işletmenizin dijital ön masa asistanı. Ziyaretçilerinizin sorularını yanıtlar, ilgilenenlerin bilgilerini toplar — tıpkı şu an seninle konuştuğu gibi."},
-      {"question": "Fiyatı ne olacak?", "answer": "Şu anda erken erişim aşamasındayız ve ücretsiz. Erişim talebi bırakırsan sana en kısa sürede ulaşırız."},
-      {"question": "Kurulumu ne kadar sürer?", "answer": "Birkaç dakika — Beiwe adlı kurulum asistanımızla sohbet ederek sayfanı oluşturabilirsin."}
+      {
+        "question": {"tr": "Saule nedir?", "en": "What is Saule?", "ru": "Что такое Saule?"},
+        "answer": {
+          "tr": "Saule, işletmenizin dijital ön masa asistanı. Ziyaretçilerinizin sorularını yanıtlar, ilgilenenlerin bilgilerini toplar — tıpkı şu an seninle konuştuğu gibi.",
+          "en": "Saule is your business''s digital front-desk assistant. It answers your visitors'' questions and collects interested customers'' info — just like it is doing with you right now.",
+          "ru": "Saule — цифровой ассистент на «ресепшене» вашего бизнеса. Она отвечает на вопросы посетителей и собирает данные заинтересованных клиентов — точно так же, как сейчас общается с вами."
+        }
+      },
+      {
+        "question": {"tr": "Fiyatı ne olacak?", "en": "What will it cost?", "ru": "Сколько это будет стоить?"},
+        "answer": {
+          "tr": "Şu anda erken erişim aşamasındayız ve ücretsiz. Erişim talebi bırakırsan sana en kısa sürede ulaşırız.",
+          "en": "We are currently in early access and it is free. Leave an access request and we will reach out to you as soon as possible.",
+          "ru": "Сейчас мы на этапе раннего доступа, и это бесплатно. Оставьте заявку на доступ, и мы свяжемся с вами как можно скорее."
+        }
+      },
+      {
+        "question": {"tr": "Kurulumu ne kadar sürer?", "en": "How long does setup take?", "ru": "Сколько времени занимает настройка?"},
+        "answer": {
+          "tr": "Birkaç dakika — Beiwe adlı kurulum asistanımızla sohbet ederek sayfanı oluşturabilirsin.",
+          "en": "Just a few minutes — you can build your page by chatting with our setup assistant, Beiwe.",
+          "ru": "Всего несколько минут — вы можете создать свою страницу, пообщавшись с нашим ассистентом по настройке Beiwe."
+        }
+      }
     ]
   }'::jsonb,
   3, true
