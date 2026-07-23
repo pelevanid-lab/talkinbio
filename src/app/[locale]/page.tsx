@@ -252,6 +252,7 @@ export default async function HomePage({ params }: any) {
 
         <section className="cta-final" id="basla">
           <div className="wrap">
+            <span className="eyebrow">{t('cta.eyebrow')}</span>
             <h2>{t('cta.title')}</h2>
             <p>{t('cta.sub')}</p>
             <div className="cta-buttons">
@@ -274,6 +275,9 @@ export default async function HomePage({ params }: any) {
           </div>
           <div className="footer-bar" style={{ justifyContent: 'center', padding: '0' }}>
             <span>{t('footer.brandLink')}</span>
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '8px' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>{t('footer.tagline')}</span>
           </div>
           <div style={{ textAlign: 'center', marginTop: '16px' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>{t('footer.rights')} · <a href="mailto:info@talkinbio.com" style={{ color: 'inherit', textDecoration: 'underline' }}>info@talkinbio.com</a></span>

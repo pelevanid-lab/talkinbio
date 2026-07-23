@@ -7,7 +7,7 @@
       "pricing": "Fiyatlandırma"
     },
     "hero": {
-      "eyebrow": "Tüm sosyal medya hesaplarınız için yeni nesil",
+      "eyebrow": "Stop linking. Start talking.",
       "headlinePrefix": "Link in bio değil,",
       "headlineStrike": "bak",
       "headlineSuffix": "artık ",
@@ -88,7 +88,8 @@
       "typing": "yazıyor..."
     },
     "cta": {
-      "title": "Bio'ndaki link, bugün konuşmaya başlasın.",
+      "eyebrow": "Stop linking. Start talking.",
+    "title": "Bio'ndaki link, bugün konuşmaya başlasın.",
       "sub": "Kurulum 10 dakika sürer · erken erişim kontenjanı sınırlı.",
       "startFree": "Erken erişime başvur",
       "demo": "Örnek bir sayfa gör"
@@ -98,6 +99,7 @@
       "terms": "",
       "contact": "İletişim",
       "brandLink": "talkinbio.com/sen",
+      "tagline": "Stop linking. Start talking.",
       "rights": "© 2026 talkinbio. Tüm hakları saklıdır."
     }
   },
@@ -600,7 +602,7 @@
     "unpublishedBanner": "Profiliniz henüz ziyaretçilere kapalı. Yayınlamak için eksikleri tamamlayın."
   },
   "Metadata": {
-    "title": "Talkinbio | Biyografinizi Akıllı Asistana Dönüştürün",
+    "title": "Talkinbio — Stop linking. Start talking.",
     "description": "Talkinbio, sosyal medya takipçilerinizle 7/24 kendi dilinde görüşen, randevu ve talep toplayan yapay zeka tabanlı dijital satış asistanınızdır."
   },
   "ContentStudio": {

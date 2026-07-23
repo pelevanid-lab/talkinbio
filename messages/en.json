@@ -7,7 +7,7 @@
       "pricing": "Pricing"
     },
     "hero": {
-      "eyebrow": "Next-gen for all your social media accounts",
+      "eyebrow": "Stop linking. Start talking.",
       "headlinePrefix": "It's not link in bio,",
       "headlineStrike": "look",
       "headlineSuffix": "it's now ",
@@ -88,7 +88,8 @@
       "typing": "typing..."
     },
     "cta": {
-      "title": "Let your bio link start talking today.",
+      "eyebrow": "Stop linking. Start talking.",
+    "title": "Let your bio link start talking today.",
       "sub": "Setup takes 10 minutes · early access spots are limited.",
       "startFree": "Apply for early access",
       "demo": "See a sample page"
@@ -98,6 +99,7 @@
       "terms": "",
       "contact": "Contact",
       "brandLink": "talkinbio.com/you",
+      "tagline": "Stop linking. Start talking.",
       "rights": "© 2026 talkinbio. All rights reserved."
     }
   },
@@ -600,7 +602,7 @@
     "unpublishedBanner": "Your profile isn't open to visitors yet. Complete the missing steps to publish it."
   },
   "Metadata": {
-    "title": "Talkinbio | Turn Your Bio Into a Smart Assistant",
+    "title": "Talkinbio — Stop linking. Start talking.",
     "description": "Talkinbio is your AI-powered digital sales assistant that talks with your social media followers 24/7 in their language, collects leads, and books appointments."
   },
   "ContentStudio": {
