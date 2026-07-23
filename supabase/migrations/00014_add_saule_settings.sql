@@ -7,6 +7,7 @@ alter table public.businesses
 --   "appointmentEnabled": true,
 --   "appointmentInstructions": "Lütfen gün ve saat tercihinizi belirtin",
 --   "leadCaptureEnabled": true,
+--   "notificationEmail": "owner@example.com", -- lead alert recipient; falls back to contact_value.email when unset
 --   "customGreeting": null,
 --   "personalityTone": "friendly"  -- "friendly" | "formal" | "energetic"
 -- }

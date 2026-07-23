@@ -15,6 +15,7 @@ export type InsertLeadAndNotifyParams = {
   summary: string;
   sourceUsername?: string;
   preferredDatetime?: string;
+  notificationEmail?: string;
 };
 
 /**
@@ -34,6 +35,7 @@ export async function insertLeadAndNotify({
   summary,
   sourceUsername,
   preferredDatetime,
+  notificationEmail,
 }: InsertLeadAndNotifyParams): Promise<{ success: boolean; message: string }> {
   const { error } = await supabaseAdmin.from('leads').insert({
     business_id: businessId,
@@ -50,13 +52,18 @@ export async function insertLeadAndNotify({
     return { success: false, message: 'Kayıt sırasında bir hata oluştu.' };
   }
 
+  // Notification recipient: owner-configured address (saule_settings.notificationEmail)
+  // takes priority over the public contact email shown on the bio page — they're not
+  // necessarily the same inbox.
+  const recipientEmail = notificationEmail?.trim() || contactValues.email;
+
   // Send email via Resend (skipped for editor preview test conversations — Faz 1.7)
-  if (!isPreview && process.env.RESEND_API_KEY && contactValues.email) {
+  if (!isPreview && process.env.RESEND_API_KEY && recipientEmail) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
         from: 'info@talkinbio.com',
-        to: contactValues.email,
+        to: recipientEmail,
         subject: `Yeni Müşteri Talebi: ${name}`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
@@ -81,7 +88,7 @@ export async function insertLeadAndNotify({
       console.error('Resend email error:', err);
     }
   } else {
-    console.log('Skipping email. No RESEND_API_KEY or email configured.', contactValues.email);
+    console.log('Skipping email. No RESEND_API_KEY or email configured.', recipientEmail);
   }
 
   return { success: true, message: 'Bilgileriniz başarıyla işletmeye iletildi. En kısa sürede sizinle iletişime geçecekler.' + (directLinks.length > 0 ? ' Dilerseniz beklemeden işletme sahibine doğrudan şu linklerden yazabilirsiniz: ' + directLinks.join(', ') : '') };
@@ -94,9 +101,10 @@ export type CaptureLeadToolParams = {
   contactValues: Record<string, string>;
   directLinks: string[];
   isPreview: boolean;
+  notificationEmail?: string;
 };
 
-export function captureLeadTool({ supabaseAdmin, businessId, conversationId, contactValues, directLinks, isPreview }: CaptureLeadToolParams) {
+export function captureLeadTool({ supabaseAdmin, businessId, conversationId, contactValues, directLinks, isPreview, notificationEmail }: CaptureLeadToolParams) {
   return tool({
     description: 'Müşteri bir hizmet almak, rezervasyon yapmak veya kendisine ulaşılmasını istediğinde, isim ve iletişim bilgisini verdiyse bu aracı çalıştır.',
     inputSchema: z.object({
@@ -119,6 +127,7 @@ export function captureLeadTool({ supabaseAdmin, businessId, conversationId, con
         summary,
         sourceUsername: source_username,
         preferredDatetime: preferred_datetime,
+        notificationEmail,
       });
     },
   });

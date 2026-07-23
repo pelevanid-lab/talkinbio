@@ -25,11 +25,12 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const { data: business } = await supabaseAdmin.from('businesses').select('contact_value').eq('id', businessId).single();
+    const { data: business } = await supabaseAdmin.from('businesses').select('contact_value, saule_settings').eq('id', businessId).single();
     if (!business) {
       return new Response('Business not found', { status: 404 });
     }
     const { contactValues, directLinks } = parseContactInfo(business.contact_value);
+    const notificationEmail = (business.saule_settings as Record<string, unknown> | null)?.notificationEmail as string | undefined;
 
     const { data: conversation } = await supabaseAdmin
       .from('conversations')
@@ -60,6 +61,7 @@ export async function POST(req: Request) {
       name,
       contact,
       summary: typeof message === 'string' && message.trim() ? message.trim() : 'Kredi limiti nedeniyle sohbet yerine doğrudan mesaj bırakıldı.',
+      notificationEmail,
     });
 
     return Response.json(result);

@@ -171,7 +171,7 @@ export async function runSauleTurn({
     tools: isDemoBusiness
       ? { capture_access_request: captureAccessRequestTool({ supabaseAdmin, businessId, conversationId }) }
       : sauleSettings.leadCaptureEnabled !== false
-      ? { capture_lead: captureLeadTool({ supabaseAdmin, businessId, conversationId, contactValues, directLinks, isPreview }) }
+      ? { capture_lead: captureLeadTool({ supabaseAdmin, businessId, conversationId, contactValues, directLinks, isPreview, notificationEmail: sauleSettings.notificationEmail }) }
       : {},
     onFinish: async ({ text, toolCalls, usage, model }) => {
       await persistAssistantMessage(text);

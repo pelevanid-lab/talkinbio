@@ -313,6 +313,19 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                 </label>
               </div>
 
+              {/* Notification Email */}
+              <div className="py-4 border-t border-[rgba(20,35,31,0.10)]">
+                <h3 className="text-base font-semibold text-[#14231F]">{t('notificationEmailTitle')}</h3>
+                <p className="text-sm text-[#4B5A55] mb-3">{t('notificationEmailDesc')}</p>
+                <input
+                  type="email"
+                  value={settings.notificationEmail || ''}
+                  onChange={(e) => setSettings({ ...settings, notificationEmail: e.target.value })}
+                  placeholder={t('notificationEmailPlaceholder')}
+                  className="w-full p-3 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F]"
+                />
+              </div>
+
               {/* Appointments */}
               <div className="py-4 border-t border-[rgba(20,35,31,0.10)]">
                 <div className="flex items-center justify-between mb-4">
