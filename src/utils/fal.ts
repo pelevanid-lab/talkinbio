@@ -113,11 +113,22 @@ export async function generateCharacterImage(
     }),
   });
 
-  const submitted = (await submitRes.json()) as { request_id?: string };
+  const submitted = (await submitRes.json()) as {
+    request_id?: string;
+    status_url?: string;
+    response_url?: string;
+  };
   const requestId = submitted.request_id;
   if (!requestId) {
     throw new FalError('fal.ai istek kimliği döndürmedi.');
   }
+
+  // fal'ın submit cevabındaki status_url/response_url'i kullanıyoruz, kendimiz
+  // inşa etmiyoruz: fal bu URL'lerde model kimliğini action eki (ör. "/edit")
+  // OLMADAN döndürüyor ("fal-ai/nano-banana-pro", "fal-ai/nano-banana-pro/edit"
+  // değil) — bunu `${model}/requests/...` ile kendimiz kurunca 405 alıyorduk.
+  const statusUrl = submitted.status_url || `${QUEUE_BASE}/${model}/requests/${requestId}/status`;
+  const resultUrl = submitted.response_url || `${QUEUE_BASE}/${model}/requests/${requestId}`;
 
   const startedAt = Date.now();
   for (;;) {
@@ -127,7 +138,7 @@ export async function generateCharacterImage(
 
     await sleep(POLL_INTERVAL_MS);
 
-    const statusRes = await falFetch(`${QUEUE_BASE}/${model}/requests/${requestId}/status`);
+    const statusRes = await falFetch(statusUrl);
     const status = (await statusRes.json()) as { status?: string };
 
     if (status.status === 'COMPLETED') break;
@@ -136,7 +147,7 @@ export async function generateCharacterImage(
     }
   }
 
-  const resultRes = await falFetch(`${QUEUE_BASE}/${model}/requests/${requestId}`);
+  const resultRes = await falFetch(resultUrl);
   const result = (await resultRes.json()) as {
     images?: FalImage[];
     seed?: number;
