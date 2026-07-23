@@ -1,0 +1,31 @@
+import { notFound } from 'next/navigation';
+import { requireAdmin } from '@/utils/adminAuth';
+import AdminLayout from '@/components/AdminLayout';
+import CharacterRoomTabs from '@/components/CharacterRoomTabs';
+import CharacterRoomClient from '@/components/CharacterRoomClient';
+import { supabaseAdmin } from '@/utils/supabase/admin';
+import { CHARACTERS, isCharacterId, type CharacterShot } from '@/config/characters';
+
+export default async function CharacterRoomPage({ params }: { params: Promise<{ characterId: string }> }) {
+  await requireAdmin();
+
+  const { characterId } = await params;
+  if (!isCharacterId(characterId)) notFound();
+
+  const character = CHARACTERS[characterId];
+
+  const { data: shots } = await supabaseAdmin
+    .from('character_shots')
+    .select('*')
+    .eq('character_id', characterId)
+    .order('created_at', { ascending: false })
+    .limit(120);
+
+  return (
+    <AdminLayout>
+      <h1 className="text-3xl font-bold text-slate-900 mb-6">Karakter Odası</h1>
+      <CharacterRoomTabs />
+      <CharacterRoomClient character={character} initialShots={(shots || []) as CharacterShot[]} />
+    </AdminLayout>
+  );
+}

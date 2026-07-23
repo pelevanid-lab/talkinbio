@@ -5,20 +5,24 @@ import { routing } from '@/i18n/routing';
 import { Inter, Bricolage_Grotesque, IBM_Plex_Mono } from "next/font/google";
 import "../globals.css";
 
+// Alt küme notu: "latin" tek başına Türkçe'nin ı/ğ/ş/İ harflerini (latin-ext, U+0100-024F)
+// ve Rusça'nın Kiril harflerini kapsamıyor — ikisi de sistem fontuna düşüyordu. Alt küme
+// eklemek bedava: next/font unicode-range ile ayrı dosya üretir, o glifler sayfada
+// geçmedikçe indirilmez. Bricolage'ın Kiril'i yok, Rusça metinde Inter kullanılmalı.
 const inter = Inter({
   variable: "--font-inter",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext", "cyrillic"],
 });
 
 const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
   variable: "--font-ibm-plex-mono",
   weight: ['400', '500', '600'],
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext", "cyrillic"],
 });
 
 export function generateStaticParams() {

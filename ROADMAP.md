@@ -463,10 +463,55 @@ Talkinbio'nun görünürlüğünü, arama motoru otoritesini ve sosyal kanıtın
 - **A/B Testleri:** Landing page üzerindeki "Erken Erişim" butonlarının yerleşimi ve metinlerinin dönüşüme etkisinin ölçülmesi.
 - **Saule İmzası:** Müşterilerin widget'larında yer alan "Saule ile konuşuyorsunuz" imzasından gelen trafiğin (UTM parametreleri ile) ölçümlenmesi ve viral büyüme katsayısının (K-factor) izlenmesi.
 
+### S.4 Karakter odaklı sosyal medya (Saule & Beiwe) — 2026-07-23
+
+Talkinbio'nun sosyal medya hesapları kurumsal bir marka sesiyle değil, **iki agent'ın
+karakterleri üzerinden** kurgulanacak. Ürünün mimarisiyle aynı bölüşüm: Saule ön büro
+(ziyaretçinin gördüğü yüz, halka açık karakter), Beiwe arka oda (işletme sahibiyle
+konuşan, kuran, raporlayan).
+
+- **Kanal ayrımı (karar, 2026-07-23):** İlk 10 müşteriye giden DM'ler **kurucunun kişisel
+  hesabından** atılır — Faz P.1'in amacı satış değil dürüst cevap; marka hesabından yazmak
+  karşıdakini "satıcıya kibar cevap" moduna sokar, ayrıca sıfır geçmişli işletme hesabının
+  toplu DM'i spam filtresine takılır. `@talkinbio` hesabı satış yapmaz, **"nedir bu?"
+  sorusunun cevabı** olur.
+- **İçerik hiyerarşisi:** en güçlü içerik gerçek (demo hesabında sahnelenmiş) Saule
+  konuşma kesitleridir; tanıtım videosu en zayıfı. Gerçek pilot konuşmaları
+  **yayınlanmaz** — üçüncü kişi verisi, KVKK/GDPR açısından işletmenin yazılı onayı
+  gerekir (bkz. Faz H.2). Pilot verisi içeriğe yalnızca rakam olarak girer.
+- **Yayın tetikleyicisi:** Faz T bitişi + en az 3 gerçek pilot. Ondan önce hesaplar açılır
+  ve karakter kiti hazırlanır, düzenli yayına geçilmez — anlatacak hikaye pilotlardan gelir.
+
+**Karakter Odası (admin, kod tarafı tamamlandı 2026-07-23):** `admin/characters/saule` ve
+`admin/characters/beiwe` — iki ayrı oda, fal.ai (`fal-ai/nano-banana-pro/edit`) üzerinden
+sahne üretimi.
+- Tutarlılık üç katmanla zorlanır: `public/{id}-avatar-v1.png` kanonik referansı (her
+  istekte, base64), `src/config/characters.ts`'teki kilitli kimlik prompt'u (UI'dan
+  düzenlenemez), ve galeriden sabitlenen kanon kareler. Referans bütçesi 6 (1 avatar +
+  3 kanon + 2 sahne referansı) — fal, üstünde kimlik sadakatinin düştüğünü belirtiyor.
+- Türkçe sahne tarifi `generateOnce({ task: 'characterPrompt' })` ile İngilizce prompt'a
+  çevrilir; şablonlar kadraj/ortam/aksiyon olarak gruplu; `leaveTextSpace` bayrağı
+  slogan için boşluk bıraktırır.
+- **Slogan/tanıtım metni modele yazdırılmaz**, üretimden sonra Canvas 2D ile katman olarak
+  bindirilir (`src/utils/imageOverlay.ts`) — marka fontu korunur, düzeltme yeniden üretim
+  gerektirmez, ve tek üretimden tr/en/ru üç kare çıkar. Model, Türkçe ı/ğ/ş/İ ve Kiril
+  karakterlerde güvenilir değil.
+- Geçmiş `character_shots` tablosunda (00037), görseller `media` bucket'ında.
+- **Kod dondurma istisnası:** Faz T'nin (T.1) istisna listesinde değildi; kurucu bilerek
+  onayladı (2026-07-23). Risk sınırlaması: üretim yüzeyleri (Saule/Beiwe akışları, widget,
+  dashboard) değişmedi, mevcut tablolara dokunulmadı, yeni npm bağımlılığı eklenmedi.
+- **Yan düzeltme:** `next/font` alt kümeleri yalnız `latin` idi — Türkçe ı/ğ/ş/İ (latin-ext)
+  ve Rusça Kiril sistem fontuna düşüyordu. `latin-ext` + `cyrillic` eklendi; `unicode-range`
+  sayesinde o glifler kullanılmadıkça indirilmiyor, yani mevcut sayfalara maliyeti yok.
+- **Doğrulanmadı:** ~$0,13/görsel maliyet tahmini — ilk 10 üretimden sonra fal faturasından
+  gerçek birim maliyet ölçülmeli (ayna-odası kuralı: tahmin, ölçüm değil).
+
 ### Kabul Kriterleri
 - [x] Zengin sonuç testi (Rich Results Test) tüm şemaları doğruluyor.
 - [x] Yayınlanan her profil sitemap'te yer alıyor ve Search Console'da indeksleniyor.
 - [ ] UTM ile gelen trafik ve widget imzası dönüşümleri admin panelinde izlenebiliyor.
+- [ ] Saule ve Beiwe için kanon referans seti kuruldu (her karakterde en az 1 sabitlenmiş kare) ve 1200×630 OG banner Karakter Odası'ndan üretildi (S.1'de duran açık iş).
+- [ ] `@talkinbio` hesabı açıldı ve "nedir bu?" sorusunu karşılayan ilk içerik seti yayında.
 
 ---
 
