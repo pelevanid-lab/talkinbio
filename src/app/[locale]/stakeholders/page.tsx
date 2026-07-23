@@ -19,10 +19,10 @@ const LogoSVG = () => (
     </defs>
     <g transform="translate(4,26)">
       <rect x="0" y="0" width="108" height="108" rx="26" fill="#14231F"/>
-      <rect x="14" y="60" width="80" height="34" rx="17" fill="#FF6A5C"/>
-      <circle cx="34" cy="77" r="4.5" fill="#14231F"/>
-      <circle cx="54" cy="77" r="4.5" fill="#14231F"/>
-      <circle cx="74" cy="77" r="4.5" fill="#14231F"/>
+      <rect x="14" y="37" width="80" height="34" rx="17" fill="#FF6A5C"/>
+      <circle cx="34" cy="54" r="4.5" fill="#14231F"/>
+      <circle cx="54" cy="54" r="4.5" fill="#14231F"/>
+      <circle cx="74" cy="54" r="4.5" fill="#14231F"/>
     </g>
     <text x="140" y="102" className="word" fontSize="64" fill="#14231F" letterSpacing="-1.5">talkin<tspan fill="#FF6A5C">bio</tspan></text>
   </svg>

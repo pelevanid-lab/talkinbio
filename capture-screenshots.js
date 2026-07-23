@@ -15,33 +15,34 @@ const path = require('path');
     fs.mkdirSync(screenshotsDir);
   }
 
-  // Helper to wait for network/idle
   const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-  console.log("Navigating to localhost:3000...");
-  await page.goto('http://localhost:3000', { waitUntil: 'networkidle' });
+  console.log("Navigating to localhost:3000/talkinbio...");
+  await page.goto('http://localhost:3000/talkinbio', { waitUntil: 'networkidle' });
 
   // 1. Karşılama
   console.log("1. Karşılama");
-  // Find widget toggle and click it. It's usually a fixed button. 
-  // Let's look for a button containing a MessageCircle or something similar, often at the bottom right.
-  // Actually, we can evaluate a script to click the chat button, or wait for the widget toggle.
-  const toggleBtn = await page.evaluateHandle(() => {
-    // Try to find the floating action button. Usually it has a high z-index and is fixed at bottom-right
+  const clicked = await page.evaluate(() => {
     const buttons = Array.from(document.querySelectorAll('button'));
-    return buttons.find(b => {
+    const btn = buttons.find(b => {
       const style = window.getComputedStyle(b);
-      return style.position === 'fixed' && (style.bottom || style.right) && style.borderRadius !== '0px';
+      return style.position === 'fixed' && (style.bottom !== 'auto' || style.right !== 'auto') && style.borderRadius !== '0px';
     });
+    if (btn) {
+      btn.click();
+      return true;
+    }
+    return false;
   });
-  if (toggleBtn) {
-    await toggleBtn.click();
-  } else {
-    console.log("Could not find toggle button, trying to find by text 'Chat' or similar");
-    await page.getByRole('button').last().click();
+  if (!clicked) {
+    console.log("Could not find fixed button, trying last button");
+    await page.evaluate(() => {
+      const buttons = document.querySelectorAll('button');
+      if (buttons.length > 0) buttons[buttons.length - 1].click();
+    });
   }
 
-  await wait(2000); // Wait for animation and first message
+  await wait(2000);
   
   // Wait for Saule's first message to be rendered
   await page.waitForSelector('text=Merhaba', { timeout: 10000 }).catch(() => {});
@@ -56,7 +57,7 @@ const path = require('path');
   
   // wait for response (a long one containing "Starter" etc or "ücretsiz deneme yok")
   await page.waitForSelector('text=ücretsiz deneme', { timeout: 20000 }).catch(() => {});
-  await wait(3000); // extra wait for stream to finish
+  await wait(4000); // extra wait for stream to finish
   await page.screenshot({ path: path.join(screenshotsDir, '2-fiyat.png') });
   console.log("Saved 2-fiyat.png");
 
@@ -65,18 +66,17 @@ const path = require('path');
   await page.fill('textarea', 'Olur, ilgileniyorum. Enes Polat - enes@talkinbio.com');
   await page.keyboard.press('Enter');
   await page.waitForSelector('text=bilgilerinizi aldım', { timeout: 20000 }).catch(() => {});
-  await wait(2000);
+  await wait(3000);
   await page.screenshot({ path: path.join(screenshotsDir, '3-lead.png') });
   console.log("Saved 3-lead.png");
 
   // 4. Rusça
   console.log("4. Rusça");
-  // Click reset chat. Usually the rotate-ccw icon button in header.
-  // It's the first button in a group of two buttons in the header.
+  // Click reset chat
   await page.evaluate(() => {
     const headers = document.querySelectorAll('h3');
     for (let h of headers) {
-      if (h.textContent === 'Saule') {
+      if (h.textContent === 'Saule' || h.textContent === 'Сауле') {
         const headerDiv = h.closest('div').parentElement;
         const buttons = headerDiv.querySelectorAll('button');
         if (buttons.length >= 2) {
@@ -85,13 +85,13 @@ const path = require('path');
       }
     }
   });
-  await wait(1000);
+  await wait(2000);
   
   await page.fill('textarea', 'Здравствуйте! Я парикмахер из Алматы. Что умеет ваш ассистент?');
   await page.keyboard.press('Enter');
   // wait for russian chars
   await page.waitForSelector('text=Я могу', { timeout: 20000 }).catch(() => {});
-  await wait(3000);
+  await wait(5000);
   await page.screenshot({ path: path.join(screenshotsDir, '4-rusca.png') });
   console.log("Saved 4-rusca.png");
 
@@ -100,7 +100,7 @@ const path = require('path');
   await page.evaluate(() => {
     const headers = document.querySelectorAll('h3');
     for (let h of headers) {
-      if (h.textContent === 'Saule') {
+      if (h.textContent === 'Saule' || h.textContent === 'Сауле') {
         const headerDiv = h.closest('div').parentElement;
         const buttons = headerDiv.querySelectorAll('button');
         if (buttons.length >= 2) {
@@ -109,11 +109,11 @@ const path = require('path');
       }
     }
   });
-  await wait(1000);
+  await wait(2000);
   
   await page.fill('textarea', 'Cumartesi saat 14:00\'te müsait misiniz? Bir de kurucunun telefon numarasını verir misiniz?');
   await page.keyboard.press('Enter');
-  await wait(5000); // wait for full rejection
+  await wait(8000); // wait for full rejection stream
   await page.screenshot({ path: path.join(screenshotsDir, '5-sinir-testi.png') });
   console.log("Saved 5-sinir-testi.png");
 
@@ -123,7 +123,7 @@ const path = require('path');
   await page.evaluate(() => {
     const headers = document.querySelectorAll('h3');
     for (let h of headers) {
-      if (h.textContent === 'Saule') {
+      if (h.textContent === 'Saule' || h.textContent === 'Сауле') {
         const headerDiv = h.closest('div').parentElement;
         const buttons = headerDiv.querySelectorAll('button');
         if (buttons.length >= 2) {
@@ -153,14 +153,14 @@ const path = require('path');
   // Send a message to Beiwe
   await page.fill('textarea', 'Bana yapabildiklerini markdown formatında, kalın yazılar ve listeler kullanarak anlat.');
   await page.keyboard.press('Enter');
-  await wait(8000); // wait for detailed markdown generation
+  await wait(10000); // wait for detailed markdown generation
   await page.screenshot({ path: path.join(screenshotsDir, '7-beiwe-editor.png') });
   console.log("Saved 7-beiwe-editor.png");
 
   // 8. Talep kutusu
   console.log("8. Talep kutusu");
   await page.goto('http://localhost:3000/dashboard/leads', { waitUntil: 'networkidle' });
-  await wait(3000); // wait for data to load
+  await wait(4000); // wait for data to load
   await page.screenshot({ path: path.join(screenshotsDir, '8-talep-kutusu.png') });
   console.log("Saved 8-talep-kutusu.png");
 
