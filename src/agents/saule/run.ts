@@ -151,7 +151,7 @@ export async function runSauleTurn({
   const sauleSettings = business.saule_settings || {};
   // Faz 2.3 bağlam diyeti: bloklar sadece ziyaretçinin dilinde, kompakt olarak prompt'a girer.
   const localizedBlocks = filterBlocksToLocale(blocksRes.data || [], locale || 'tr');
-  const systemPrompt = buildSaulePrompt({ business, blocks: localizedBlocks, knowledge: knowledgeRes.data || [], locale, isDemoBusiness, directLinks });
+  const systemPrompt = buildSaulePrompt({ business, blocks: localizedBlocks, knowledge: knowledgeRes.data || [], locale, isDemoBusiness, directLinks, contactValues });
   // Faz 2.3 prompt caching: sistem prompt'u (sabit bloklar + kurallar) konuşma boyunca
   // aynı kalır — Anthropic ephemeral cache ile tekrar eden girdi ~10 kat ucuzlar.
   const modelMessages = [

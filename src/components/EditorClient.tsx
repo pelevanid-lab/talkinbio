@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Inbox, Coins } from 'lucide-react';
 import ArchetypeRenderer from './ArchetypeRenderer';
+import AgentMarkdown from './AgentMarkdown';
 import ChatWidget from './ChatWidget';
 import BlockEditorModal from './BlockEditorModal';
 import SetPasswordModal from './SetPasswordModal';
@@ -691,7 +692,11 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                     <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${m.role === 'user' ? 'bg-[var(--ink)] text-white' : 'bg-white border border-slate-200 text-slate-800 shadow-sm'}`}>
                       {getMessageText(m) === '__DEVAM__' ? (
                         <span className="italic text-white/70 text-xs">{t('pageStatus.analyzingPlaceholder')}</span>
-                      ) : getMessageText(m)}
+                      ) : m.role === 'user' ? (
+                        getMessageText(m)
+                      ) : (
+                        <AgentMarkdown>{getMessageText(m)}</AgentMarkdown>
+                      )}
                     </div>
                   </div>
                 ))}

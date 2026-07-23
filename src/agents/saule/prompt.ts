@@ -38,9 +38,36 @@ export type BuildSaulePromptParams = {
   locale: string | null;
   isDemoBusiness: boolean;
   directLinks: string[];
+  contactValues: Record<string, string>;
 };
 
-export function buildSaulePrompt({ business, blocks, knowledge, locale, isDemoBusiness, directLinks }: BuildSaulePromptParams): string {
+const CONTACT_LABELS: Record<string, string> = {
+  email: 'E-posta',
+  phone: 'Telefon',
+  whatsapp: 'WhatsApp',
+  instagram: 'Instagram',
+  telegram: 'Telegram',
+  website: 'Web sitesi',
+};
+
+/**
+ * İletişim satırı yalnızca gerçekten veri varsa yazılır.
+ *
+ * Eskiden `contact_value` ham JSON metni olarak gömülüyor ve alan boşken
+ * "İletişim Tercihi: Belirtilmedi (Belirtilmedi)" yazılıyordu. Bu, prompt'un
+ * ilerisindeki İletişim bloğuyla ve bilgi tabanıyla çelişen kesin bir olumsuz
+ * iddiaydı — Saule bazen sayfada e-posta dururken "iletişim bilgim yok" diyordu.
+ * Bilgi yoksa hiçbir şey söylememek, yanlış bir şey söylemekten iyidir: blok
+ * verisi zaten aşağıda duruyor.
+ */
+function buildContactSection(contactValues: Record<string, string>): string {
+  const entries = Object.entries(contactValues).filter(([, value]) => value?.trim());
+  if (entries.length === 0) return '';
+  const formatted = entries.map(([key, value]) => `${CONTACT_LABELS[key] || key}: ${value}`).join(' | ');
+  return `\n      İşletmenin iletişim bilgileri: ${formatted}`;
+}
+
+export function buildSaulePrompt({ business, blocks, knowledge, locale, isDemoBusiness, directLinks, contactValues }: BuildSaulePromptParams): string {
   const localeName = locale ? LOCALE_NAMES[locale] : null;
   const sauleSettings = business.saule_settings || {};
   const tone = TONE_GUIDANCE[sauleSettings.personalityTone as string] || 'Sıcak, kısa ve işe yarar yanıtlar ver.';
@@ -68,8 +95,7 @@ export function buildSaulePrompt({ business, blocks, knowledge, locale, isDemoBu
       ÇOK ÖNEMLİ — KİMLİK: Sen ${business.name} DEĞİLSİN, onun asistanısın. Hizmeti fiilen veren, deneyimi olan, "benim için X önemlidir" diyen kişi işletme sahibi — SEN değilsin. Birinci tekil şahısla (ben/benim) ASLA işletme sahibinin duygusunu, görüşünü veya deneyimini anlatma; bunun yerine üçüncü şahıs kullan (ör. "${business.name} için bu sadece teknik değil...") ya da doğrudan bilgiyi (fiyat, süre, içerik) aktar, kişisel yorum ekleme.
       ${appointmentGuidance}
 
-      Sektör: ${business.category || 'Belirtilmedi'}
-      İletişim Tercihi: ${business.contact_method || 'Belirtilmedi'} (${business.contact_value || 'Belirtilmedi'})
+      Sektör: ${business.category || 'Belirtilmedi'}${buildContactSection(contactValues)}
 
       Aşağıdaki bilgileri kullanarak müşterilerin sorularını yanıtla:
       ${blocks.map((b) => `${b.title} (${b.type}):\n${JSON.stringify(b.content, null, 2)}`).join('\n\n')}

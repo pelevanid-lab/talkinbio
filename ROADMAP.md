@@ -994,6 +994,34 @@ Faz P'nin genel sürekli akışından ayrı, bu dönemin kendine özgü kontrol 
   bir hata çıkarsa (ör. lead kaydedilmiyor, kredi yanlış düşüyor) hemen
   müdahale edilir.
 
+#### Dondurma açılan işler (2026-07-23, kurucu onayıyla)
+Sosyal medya içerik çekimi sırasında bulunan hatalar; hiçbiri T.1'in
+para/veri/güvenlik istisnasına girmiyordu, kurucu bilerek "şimdi düzelt" dedi.
+
+- **Beiwe'nin cevaplarında markdown render edilmiyordu** — `EditorClient` mesajı
+  çıplak string basıyordu, `**kalın**` yıldızlarıyla ve satır sonları kaybolmuş
+  bir metin duvarı olarak görünüyordu. Saule'nin widget'ındaki satır içi markdown
+  haritası `components/AgentMarkdown.tsx`'e çıkarıldı, iki agent da onu kullanıyor.
+- **"Yeni sohbet" butonu sunucuya ulaşmıyordu** (`ChatWidget`) — yarış durumu:
+  `onFormSubmit`, bayrağı `sendMessage`'dan hemen sonra `false`'a çekiyordu ama
+  `prepareSendMessagesRequest` asenkron çalıştığı için bayrağı hep `false` okuyordu.
+  Sıfırlama yalnızca ekranı temizliyor, Saule aynı konuşmadan devam edip önceki
+  ziyaretçiyi hatırlıyordu. Bayrak artık okunduğu yerde tüketiliyor. Sunucu tarafı
+  (`run.ts`) zaten doğruydu.
+- **Saule sayfada e-posta dururken "iletişim bilgim yok" diyebiliyordu** —
+  `prompt.ts` `contact_value`'yu ham JSON olarak gömüyor ve alan boşken
+  "İletişim Tercihi: Belirtilmedi (Belirtilmedi)" yazıyordu; bu, prompt'un
+  ilerisindeki İletişim bloğuyla çelişen kesin bir olumsuz iddiaydı. Artık
+  ayrıştırılmış veri okunabilir biçimde yazılıyor, veri yoksa satır hiç yazılmıyor.
+  Regresyon testleri: `src/agents/saule/prompt.test.ts`.
+- **`middleware` → `proxy` göçü** — Next 16'da `middleware` dosya konvansiyonu
+  kullanımdan kalktı (AGENTS.md: deprecation notlarına uy). `src/middleware.ts`
+  → `src/proxy.ts`, fonksiyon adı `proxy`. Davranış aynı; codemod yerine elle
+  yapıldı (`@next/codemod@canary` sabitlenmemiş paket çekiyor). Doğrulandı:
+  uyarı kayboldu, i18n yönlendirmesi (`/ru/talkinbio` → `lang="ru"`) ve
+  `visitor_session_id` çerezi (sunucu yeniden başlatmasına rağmen konuşma
+  sürekliliği) çalışıyor.
+
 ### T.2 Bu dönemde bilerek/dolaylı olarak tetiklenecek noktalar
 - **E-posta teslimi (Resend, 2026-07-18 düzeltildi):** gönderici adresi
   `onboarding@resend.dev`'den doğrulanmış `info@talkinbio.com`'a çevrildi

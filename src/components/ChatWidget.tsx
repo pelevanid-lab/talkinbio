@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, X, MessageCircle, User, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
-import ReactMarkdown from 'react-markdown';
+import AgentMarkdown from './AgentMarkdown';
 
 type LegacyMessage = { id: string; role: string; content: string };
 
@@ -69,16 +69,26 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
   const { messages, sendMessage, status, setMessages } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
-      prepareSendMessagesRequest: ({ id, messages }) => ({
-        body: {
-          id,
-          messages,
-          businessId,
-          locale,
-          preview,
-          newConversation: pendingNewConversationRef.current,
-        },
-      }),
+      prepareSendMessagesRequest: ({ id, messages }) => {
+        // Bayrak burada okunup burada sıfırlanmalı: prepareSendMessagesRequest,
+        // sendMessage() çağrısından SONRA (asenkron gönderim akışının içinde)
+        // çalışıyor. Sıfırlamayı onFormSubmit'e koymak bayrağı okunmadan önce
+        // false'a çekiyordu — "Yeni sohbet" butonu sunucuya hiç ulaşmıyor, sadece
+        // ekranı temizliyordu; Saule aynı konuşmadan devam edip önceki ziyaretçiyi
+        // hatırlamaya devam ediyordu.
+        const isNewConversation = pendingNewConversationRef.current;
+        pendingNewConversationRef.current = false;
+        return {
+          body: {
+            id,
+            messages,
+            businessId,
+            locale,
+            preview,
+            newConversation: isNewConversation,
+          },
+        };
+      },
     }),
     messages: initialMessages.length > 0 ? initialMessages.map(toUIMessage) : [welcomeMessage()],
     // Faz 4.1: sert kalkanlar (flood/oturum açma/günlük tavan) 429 + düz metin döner;
@@ -114,7 +124,6 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
     if (!input.trim() || isLoading) return;
     sendMessage({ text: input });
     setInput('');
-    pendingNewConversationRef.current = false;
   };
 
   const scrollToBottom = () => {
@@ -249,16 +258,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
                       </div>
                       <div className={`px-4 py-3 rounded-2xl text-sm ${m.role === 'user' ? 'bg-[var(--ink)] text-white rounded-br-sm' : 'bg-white border border-[var(--border-light)] text-[var(--ink)] shadow-sm rounded-bl-sm'}`}>
                         {m.role === 'user' ? getMessageText(m) : (
-                          <ReactMarkdown components={{
-                            p: ({node, ...props}) => <p className="mb-2 last:mb-0 leading-relaxed" {...props} />,
-                            ul: ({node, ...props}) => <ul className="list-disc pl-4 mb-2 last:mb-0" {...props} />,
-                            ol: ({node, ...props}) => <ol className="list-decimal pl-4 mb-2 last:mb-0" {...props} />,
-                            li: ({node, ...props}) => <li className="mb-1 last:mb-0" {...props} />,
-                            a: ({node, ...props}) => <a className="text-[var(--coral)] underline hover:text-orange-600 transition" target="_blank" rel="noreferrer" {...props} />,
-                            strong: ({node, ...props}) => <strong className="font-semibold text-[var(--ink)]" {...props} />
-                          }}>
-                            {getMessageText(m)}
-                          </ReactMarkdown>
+                          <AgentMarkdown>{getMessageText(m)}</AgentMarkdown>
                         )}
                       </div>
                     </div>
