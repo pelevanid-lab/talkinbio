@@ -161,7 +161,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
         image_url: publicUrl,
         prompt: finalPrompt,
         user_intent: intent || null,
-        preset_id: preset?.id || null,
+        preset_id: presetIds.length > 0 ? presetIds.join(',') : null,
         model,
         seed: result.seed ?? null,
         reference_urls: imageUrls.map((u) => (u.startsWith('data:') ? `public/${character.referenceFile}` : u)),

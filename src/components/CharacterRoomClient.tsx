@@ -479,7 +479,7 @@ export default function CharacterRoomClient({ character, initialShots }: Props) 
                     <button
                       onClick={() => {
                         setIntent(shot.user_intent || '');
-                        setPresetId(shot.preset_id);
+                        setPresetIds(shot.preset_id ? shot.preset_id.split(',') : []);
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
                       className="w-full text-[11px] text-slate-400 hover:text-slate-700 text-left"
