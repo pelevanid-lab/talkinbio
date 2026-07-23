@@ -238,7 +238,7 @@
     "systemManualEditMessage": "[Sistem: Bu oturumda manuel düzenleme yapıldı. Yeni sohbet başlatıldı.]",
     "mediaUploadedMessage": "[Kullanıcı sisteme bir medya yükledi: {url}]",
     "mediaUploadError": "Dosya yüklenirken hata oluştu: {message}",
-    "mediaUploadSizeError": "Dosya boyutu 100MB'dan küçük olmalıdır.",
+    "mediaUploadSizeError": "Dosya boyutu 150MB'dan küçük olmalıdır.",
     "chatErrorFallback": "Mesaj gönderilirken bir hata oluştu. Çok uzun bir metin gönderdiyseniz, birkaç parçaya bölüp tekrar deneyin.",
     "publishToggleError": "Yayın durumu güncellenirken hata oluştu.",
     "acknowledgeError": "İşlem sırasında hata oluştu.",
@@ -720,10 +720,10 @@
   "MediaUploader": {
     "defaultLabel": "Görsel Seç veya Sürükle",
     "errorInvalidType": "Sadece fotoğraf veya video yükleyebilirsiniz.",
-    "errorFileSize": "Dosya boyutu 100MB'dan küçük olmalıdır.",
+    "errorFileSize": "Dosya boyutu 150MB'dan küçük olmalıdır.",
     "errorGeneric": "Dosya yüklenirken bir hata oluştu.",
     "uploadingLabel": "Yükleniyor...",
-    "maxSizeHint": "100MB'a kadar"
+    "maxSizeHint": "150MB'a kadar"
   },
   "SetPasswordModal": {
     "passwordTooShort": "Şifreniz en az 6 karakter olmalıdır.",

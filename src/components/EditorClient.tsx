@@ -195,7 +195,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       // — this path (Beiwe chat's attachment button) used to upload the raw file untouched, so a
       // phone photo well past Supabase Storage's own server-side size limit was rejected outright.
       const processedFile = await compressImageIfNeeded(file);
-      if (processedFile.size > 100 * 1024 * 1024) {
+      if (processedFile.size > 150 * 1024 * 1024) {
         throw new Error(t('mediaUploadSizeError'));
       }
 

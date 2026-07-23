@@ -142,7 +142,7 @@ export default function BlockEditorModal({
               />
             </div>
             {block.type === 'about' && (
-              <div className="space-y-3 pt-4 border-t border-slate-100">
+              <div className="pt-4 border-t border-slate-100">
                 <label className="block text-sm font-medium mb-1 text-[var(--ink)]">{t('layoutVariantLabel')}</label>
                 <select
                   value={content.layoutVariant || 'standard'}
@@ -155,7 +155,15 @@ export default function BlockEditorModal({
                   <option value="big-statement">{t('about.variantBigStatement')}</option>
                   <option value="image-grid">{t('about.variantImageGrid')}</option>
                 </select>
-                <label className="block text-sm font-medium mb-1 mt-4">{t('about.mediaLabel')}</label>
+              </div>
+            )}
+            {/* 'custom' blocks used to only get BackgroundImageFields below (a full-bleed
+                background behind the text) — no in-flow image like About has. Sharing About's
+                media + position controls here gives custom sections the same "photo next to
+                the text" option instead of just a background. */}
+            {(block.type === 'about' || block.type === 'custom') && (
+              <div className={`space-y-3 ${block.type === 'about' ? 'pt-3' : 'pt-4 border-t border-slate-100'}`}>
+                <label className="block text-sm font-medium mb-1 text-[var(--ink)]">{t('about.mediaLabel')}</label>
                 <MediaUploader
                   value={content.mediaUrl || ''}
                   onChange={(url) => setContent({...content, mediaUrl: url})}

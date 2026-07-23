@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { compressImageIfNeeded } from '@/utils/imageCompression';
+import { isVideoUrl } from '@/utils/mediaType';
 
 interface MediaUploaderProps {
   value: string;
@@ -34,10 +35,10 @@ export default function MediaUploader({ value, onChange, label, bucket = "media"
 
       const processedFile = await compressImageIfNeeded(file);
 
-      // Max size: 100MB — mainly a backstop for video (never compressed here) and for images
+      // Max size: 150MB — mainly a backstop for video (never compressed here) and for images
       // the browser couldn't decode/compress (e.g. HEIC in browsers with no HEIC codec, which
       // makes compressImageIfNeeded throw and fall back to the original file untouched).
-      if (processedFile.size > 100 * 1024 * 1024) {
+      if (processedFile.size > 150 * 1024 * 1024) {
         throw new Error(t('errorFileSize'));
       }
 
@@ -114,7 +115,7 @@ export default function MediaUploader({ value, onChange, label, bucket = "media"
       {value ? (
         // Preview State
         <div className="relative w-full bg-slate-50 rounded-lg border border-slate-200 overflow-hidden group flex items-center justify-center">
-          {value.match(/\.(mp4|webm|ogg)$/i) ? (
+          {isVideoUrl(value) ? (
             <video src={value} className="w-full max-h-64 object-contain" controls />
           ) : (
             <img src={value} alt="Preview" className="w-full max-h-64 object-contain" />

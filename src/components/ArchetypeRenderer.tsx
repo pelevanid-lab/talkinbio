@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import { useLocale } from 'next-intl';
 import { renderColoredSegments, toColorMarkdown, colorLinkComponents, stripColorSyntax, styleUrlTransform } from '@/utils/coloredText';
 import { defaultTitleFor, getHoursLabels, type DayKey } from '@/config/localeTitles';
+import { isVideoUrl } from '@/utils/mediaType';
 
 type RenderCtx = {
   locale: string;
@@ -143,7 +144,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
     return (
       <section key={block.id} className={`relative overflow-hidden ${radiusClass} h-[440px] shadow-xl flex items-end group`}>
         <div className="absolute inset-0 z-0">
-          {mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+          {isVideoUrl(mediaUrl) ? (
             <video src={mediaUrl} className="w-full h-full object-cover" autoPlay loop muted playsInline />
           ) : (
             <img src={mediaUrl} alt={blockTitle} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -169,7 +170,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
       <section key={block.id} className="pt-4">
         <div className={`flex flex-row overflow-hidden border shadow-md ${radiusClass}`} style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div className="w-2/5 shrink-0 relative">
-            {mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+            {isVideoUrl(mediaUrl) ? (
               <video src={mediaUrl} className="w-full h-full object-cover absolute inset-0" autoPlay loop muted playsInline />
             ) : (
               <img src={mediaUrl} alt={blockTitle} className="w-full h-full object-cover absolute inset-0" />
@@ -191,7 +192,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
   // Standard layout
   const MediaElement = mediaUrl ? (
     <div className={`overflow-hidden shadow-sm ${radiusClass} ${pos === 'middle' ? 'my-6' : pos === 'top' ? 'mb-6' : 'mt-6'}`}>
-      {mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+      {isVideoUrl(mediaUrl) ? (
         <video src={mediaUrl} className="w-full max-h-96 object-cover" controls />
       ) : (
         <img src={mediaUrl} alt={blockTitle} className="w-full max-h-96 object-cover" />
@@ -219,20 +220,38 @@ function renderAbout(block: any, ctx: RenderCtx) {
 }
 
 // Shared by `contact` and `custom` — a simple text section, same content shape/locale reading as `about`'s standard layout.
+// `custom` also supports an in-flow mediaUrl/mediaPosition now (BlockEditorModal), same
+// before/between/after placement as `about`'s standard layout — it used to only support a
+// full-bleed backgroundImage, with no way to put an actual photo next to the text.
 function renderTextBlock(block: any, ctx: RenderCtx) {
-  const { locale, headingFont } = ctx;
+  const { locale, headingFont, radiusClass } = ctx;
   const blockTitle = blockTitleOf(block, locale);
   const text = block.content?.[locale]?.text || block.content?.text || '';
   if (!text) return null;
 
+  const mediaUrl = block.content?.mediaUrl;
+  const pos = block.content?.mediaPosition || 'middle';
+  const MediaElement = mediaUrl ? (
+    <div className={`overflow-hidden shadow-sm ${radiusClass} ${pos === 'middle' ? 'my-6' : pos === 'top' ? 'mb-6' : 'mt-6'}`}>
+      {isVideoUrl(mediaUrl) ? (
+        <video src={mediaUrl} className="w-full max-h-96 object-cover" controls />
+      ) : (
+        <img src={mediaUrl} alt={blockTitle} className="w-full max-h-96 object-cover" />
+      )}
+    </div>
+  ) : null;
+
   return withSectionBackground(
     <>
+      {pos === 'top' && MediaElement}
       <h2 className={`text-3xl mb-6 font-bold ${headingFont}`} style={{ color: 'var(--text)' }}>
         {renderColoredSegments(blockTitle)}
       </h2>
+      {pos === 'middle' && MediaElement}
       <div className="markdown-body opacity-90 text-[15px]">
         <ReactMarkdown components={colorLinkComponents} urlTransform={styleUrlTransform}>{toColorMarkdown(text)}</ReactMarkdown>
       </div>
+      {pos === 'bottom' && MediaElement}
     </>,
     block.id,
     ctx,
@@ -288,7 +307,7 @@ function renderServices(block: any, ctx: RenderCtx) {
               <div key={idx} className={`flex ${reverse ? 'flex-row-reverse' : 'flex-row'} gap-4 items-center`}>
                 {item.mediaUrl && (
                   <div className={`w-2/5 shrink-0 h-32 overflow-hidden ${radiusClass}`}>
-                    {item.mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+                    {isVideoUrl(item.mediaUrl) ? (
                       <video src={item.mediaUrl} className="w-full h-full object-cover" autoPlay loop muted playsInline />
                     ) : (
                       <img src={item.mediaUrl} alt={itemLoc.title || ''} className="w-full h-full object-cover" />
@@ -342,18 +361,25 @@ function renderServices(block: any, ctx: RenderCtx) {
             const itemLoc = item[locale] || item;
             const pos = item.mediaPosition || 'top';
             
+            // "top"/"bottom" is documented (and labeled in the editor) as before/after the text,
+            // i.e. vertical stacking — 'list' used to instead render it as a small side-by-side
+            // thumbnail (flex-row/flex-row-reverse on wider screens), which silently ignored the
+            // picked position and contradicted its own "alt alta" (stacked) design intent.
+            // aspect-square (not a fixed h-40 band) — a fixed short height on a full-width card
+            // crops a landscape photo down to a thin strip; a square crop, Instagram-style, keeps
+            // enough of the actual photo visible regardless of the card's width.
             const MediaEl = item.mediaUrl && theme.mediaProfile !== 'minimal' ? (
-              item.mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
-                <video src={item.mediaUrl} className={`object-cover ${radiusClass} ${layoutVariant === 'list' ? 'w-full sm:w-32 h-32 mb-0 shrink-0' : 'w-full h-40 ' + (pos === 'bottom' ? 'mt-4' : 'mb-4')}`} autoPlay loop muted playsInline />
+              isVideoUrl(item.mediaUrl) ? (
+                <video src={item.mediaUrl} className={`object-cover ${radiusClass} w-full aspect-square ${pos === 'bottom' ? 'mt-4' : 'mb-4'}`} autoPlay loop muted playsInline />
               ) : (
-                <img src={item.mediaUrl} alt={itemLoc.title || ''} className={`object-cover ${radiusClass} ${layoutVariant === 'list' ? 'w-full sm:w-32 h-32 mb-0 shrink-0' : 'w-full h-40 ' + (pos === 'bottom' ? 'mt-4' : 'mb-4')}`} />
+                <img src={item.mediaUrl} alt={itemLoc.title || ''} className={`object-cover ${radiusClass} w-full aspect-square ${pos === 'bottom' ? 'mt-4' : 'mb-4'}`} />
               )
             ) : null;
 
             return (
               <div
                 key={idx}
-                className={`p-5 border transition-transform hover:-translate-y-1 ${radiusClass} ${layoutVariant === 'list' ? (pos === 'bottom' ? 'flex flex-col sm:flex-row-reverse' : 'flex flex-col sm:flex-row') + ' gap-4 items-start sm:items-center' : 'flex flex-col'}`}
+                className={`p-5 border transition-transform hover:-translate-y-1 ${radiusClass} flex flex-col`}
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
               >
                 {pos !== 'bottom' && MediaEl}
@@ -562,7 +588,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
             const caption = item.caption?.[locale] || item.caption;
             return (
               <div key={idx} className="relative shrink-0 w-[85%] h-72 snap-center group overflow-hidden">
-                {item.url?.match(/\.(mp4|webm|ogg)$/i) ? (
+                {isVideoUrl(item.url) ? (
                   <video src={item.url} className="w-full h-full object-cover" controls />
                 ) : (
                   <img src={item.url} alt={caption || 'Gallery'} className="w-full h-full object-cover" />
@@ -589,7 +615,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
             const caption = item.caption?.[locale] || item.caption;
             return (
               <div key={idx} className={`relative overflow-hidden group h-64 sm:h-80 ${radiusClass}`}>
-                {item.url?.match(/\.(mp4|webm|ogg)$/i) ? (
+                {isVideoUrl(item.url) ? (
                   <video src={item.url} className="w-full h-full object-cover" controls />
                 ) : (
                   <img src={item.url} alt={caption || 'Gallery'} className="w-full h-full object-cover" />
@@ -616,7 +642,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
             const caption = item.caption?.[locale] || item.caption;
             return (
               <div key={idx} className={`break-inside-avoid relative group overflow-hidden ${radiusClass}`}>
-                {item.url?.match(/\.(mp4|webm|ogg)$/i) ? (
+                {isVideoUrl(item.url) ? (
                   <video src={item.url} className="w-full object-cover" controls />
                 ) : (
                   <img src={item.url} alt={caption || 'Gallery'} className="w-full object-cover transition-transform duration-500 group-hover:scale-110" />
@@ -642,7 +668,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
           const caption = item.caption?.[locale] || item.caption;
           return (
             <div key={idx} className={`relative overflow-hidden group ${radiusClass}`}>
-              {item.url?.match(/\.(mp4|webm|ogg)$/i) ? (
+              {isVideoUrl(item.url) ? (
                 <video src={item.url} className="w-full h-40 md:h-64 object-cover" controls />
               ) : (
                 <img src={item.url} alt={caption || 'Gallery'} className="w-full h-40 md:h-64 object-cover transition-transform duration-500 group-hover:scale-105" />

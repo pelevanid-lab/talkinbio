@@ -42,7 +42,12 @@ export async function compressImageIfNeeded(file: File): Promise<File> {
   if (file.size <= COMPRESS_THRESHOLD_BYTES) return file;
 
   try {
-    const bitmap = await createImageBitmap(file);
+    // imageOrientation defaults to 'none' in some browsers — without it, a portrait phone photo
+    // (stored as landscape pixel data + an EXIF rotation flag) gets redrawn onto the canvas
+    // ignoring that flag, and canvas re-encoding strips EXIF entirely, so the flag is gone for
+    // good afterward: the photo comes out sideways/upside-down with no way to recover the
+    // original orientation. 'from-image' bakes the rotation into the pixels before we ever draw.
+    const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
     const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(bitmap.width, bitmap.height));
     const targetWidth = Math.round(bitmap.width * scale);
     const targetHeight = Math.round(bitmap.height * scale);
