@@ -6,6 +6,7 @@ import { Link } from '@/i18n/routing';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { ChevronLeft } from 'lucide-react';
 import { SAULE_CREDIT_COST, BEIWE_UPDATE_CREDIT_COST } from '@/agents/shared/credits';
+import { PLANS, EXTRA_PACK } from '@/config/plans';
 import '../landing.css';
 
 const LogoSVG = () => (
@@ -27,14 +28,6 @@ const LogoSVG = () => (
 // Faz 4.3: ödeme sağlayıcı Faz H.1'i bekliyor — bu sayfa gerçek checkout değil,
 // roadmap'in kredi tablosunu şeffaf gösteren + "bize ulaşın" formuna yönlendiren
 // geçici bir çözüm. Kapasite örnekleri credits.ts'teki gerçek sabitlerden hesaplanır.
-const PLANS = [
-  { id: 'starter', name: 'Starter', price: 9, credits: 200 },
-  { id: 'pro', name: 'Pro', price: 29, credits: 700 },
-  { id: 'business', name: 'Business', price: 79, credits: 1800 },
-] as const;
-
-const EXTRA_PACK = { price: 5, credits: 100 };
-
 const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '0.85rem 1rem',

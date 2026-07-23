@@ -1,16 +1,32 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
+import { createClient as createServerSupabase } from '@/utils/supabase/server';
 import { notifyAdmin } from '@/agents/shared/notifyAdmin';
 
 // Faz 4.3: /pricing sayfasındaki "bize ulaşın" formu — gerçek checkout değil,
 // ödeme sağlayıcı (Faz H.1) ve sözleşmeler (H.3) hazır olana kadar geçici çözüm.
 // Admin manuel arayıp admin/subscriptions'tan planı/kredisi elle atar.
+//
+// Faz 4.4.x: /dashboard/billing'in "ek kredi/plan talebi" formu da aynı endpoint'i
+// kullanır ama oturum içi olduğu için businessId taşır — admin artık e-posta
+// eşleştirmesine güvenmeden hangi işletmenin talep ettiğini doğrudan görür.
 export async function POST(req: Request) {
   try {
-    const { email, phone, planInterest, message } = await req.json();
+    const { email, phone, planInterest, message, businessId } = await req.json();
 
     if (!email || !phone) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    let verifiedBusinessId: string | null = null;
+    if (businessId) {
+      const { data: business } = await supabaseAdmin.from('businesses').select('owner_id').eq('id', businessId).single();
+      const supabaseAuth = await createServerSupabase();
+      const { data: { user } } = await supabaseAuth.auth.getUser();
+      if (!business || !user || user.id !== business.owner_id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+      }
+      verifiedBusinessId = businessId;
     }
 
     const { error } = await supabaseAdmin.from('pricing_inquiries').insert({
@@ -18,6 +34,7 @@ export async function POST(req: Request) {
       phone,
       plan_interest: planInterest || null,
       message: message || null,
+      business_id: verifiedBusinessId,
     });
 
     if (error) {

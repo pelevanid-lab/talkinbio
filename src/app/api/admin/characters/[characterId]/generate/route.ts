@@ -31,6 +31,7 @@ type Body = {
   intent?: string;
   rawPrompt?: string;
   presetId?: string;
+  presetIds?: string[];
   aspectRatio?: AspectRatio;
   resolution?: Resolution;
   numImages?: number;
@@ -53,20 +54,22 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
   const character = CHARACTERS[characterId];
 
   const body = (await req.json()) as Body;
-  const preset = body.presetId ? character.scenePresets.find((p) => p.id === body.presetId) : undefined;
+  const presetIds = body.presetIds || (body.presetId ? [body.presetId] : []);
+  const presets = presetIds.map(id => character.scenePresets.find((p) => p.id === id)).filter(Boolean) as typeof character.scenePresets;
+  const presetPrompt = presets.map(p => p.prompt).join(' ') || undefined;
 
   const aspectRatio: AspectRatio = VALID_ASPECT_RATIOS.includes(body.aspectRatio as AspectRatio)
     ? (body.aspectRatio as AspectRatio)
-    : preset?.aspectRatio || '4:5';
+    : presets.find((p) => p.aspectRatio)?.aspectRatio || '4:5';
   const resolution: Resolution = body.resolution === '2K' ? '2K' : '1K';
   const numImages = Math.min(Math.max(Number(body.numImages) || 1, 1), MAX_IMAGES_PER_RUN);
   const sceneRefUrls = (body.sceneRefUrls || []).filter((u) => typeof u === 'string' && u).slice(0, MAX_SCENE_REFS);
-  const textSpace = body.textSpace ?? preset?.textSpace ?? 'none';
+  const textSpace = body.textSpace ?? presets.find((p) => p.textSpace)?.textSpace ?? 'none';
 
   const intent = body.intent?.trim();
   const rawPrompt = body.rawPrompt?.trim();
 
-  if (!rawPrompt && !intent && !preset) {
+  if (!rawPrompt && !intent && presets.length === 0) {
     return NextResponse.json({ error: 'Sahne tarifi, şablon veya ham prompt gerekli.' }, { status: 400 });
   }
 
@@ -81,7 +84,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
       const { system, prompt } = buildScenePrompt({
         character,
         intent,
-        presetPrompt: preset?.prompt,
+        presetPrompt: presetPrompt,
         hasSceneReference: sceneRefUrls.length > 0,
       });
       const { text } = await generateOnce({ task: 'characterPrompt', system, prompt });
@@ -90,7 +93,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
         return NextResponse.json({ error: 'Sahne tarifi üretilemedi, tekrar dener misin?' }, { status: 502 });
       }
     } else {
-      scene = preset!.prompt;
+      scene = presetPrompt!;
     }
 
     /* 2 — Referanslar. Sıra önemli: kimlik önce, sahne sonra; prompt'taki rol

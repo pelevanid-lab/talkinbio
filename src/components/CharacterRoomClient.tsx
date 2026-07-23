@@ -38,7 +38,7 @@ type Props = {
 
 export default function CharacterRoomClient({ character, initialShots }: Props) {
   const [shots, setShots] = useState<CharacterShot[]>(initialShots);
-  const [presetId, setPresetId] = useState<string | null>(null);
+  const [presetIds, setPresetIds] = useState<string[]>([]);
   const [intent, setIntent] = useState('');
   const [rawPrompt, setRawPrompt] = useState('');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio | ''>('');
@@ -57,16 +57,26 @@ export default function CharacterRoomClient({ character, initialShots }: Props) 
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const preset = useMemo(
-    () => character.scenePresets.find((p) => p.id === presetId) || null,
-    [character.scenePresets, presetId],
+  const selectedPresets = useMemo(
+    () => presetIds.map((id) => character.scenePresets.find((p) => p.id === id)).filter(Boolean) as ScenePreset[],
+    [character.scenePresets, presetIds],
   );
   const canonShots = useMemo(() => shots.filter((s) => s.is_canon), [shots]);
-  const effectiveAspect = aspectRatio || preset?.aspectRatio || '4:5';
+  const effectiveAspect = aspectRatio || selectedPresets.find(p => p.aspectRatio)?.aspectRatio || '4:5';
+
+  const handlePresetToggle = (preset: ScenePreset) => {
+    setPresetIds((prev) => {
+      const otherGroupPresets = prev.filter(
+        (id) => character.scenePresets.find((p) => p.id === id)?.group !== preset.group
+      );
+      if (prev.includes(preset.id)) return otherGroupPresets;
+      return [...otherGroupPresets, preset.id];
+    });
+  };
 
   const generate = async () => {
-    if (!intent.trim() && !rawPrompt.trim() && !preset) {
-      setError('Bir şablon seç ya da sahneyi tarif et.');
+    if (!intent.trim() && !rawPrompt.trim() && selectedPresets.length === 0) {
+      setError('En az bir şablon seç ya da sahneyi tarif et.');
       return;
     }
     setGenerating(true);
@@ -78,7 +88,7 @@ export default function CharacterRoomClient({ character, initialShots }: Props) 
         body: JSON.stringify({
           intent: intent.trim() || undefined,
           rawPrompt: rawPrompt.trim() || undefined,
-          presetId: presetId || undefined,
+          presetIds: presetIds.length > 0 ? presetIds : undefined,
           aspectRatio: aspectRatio || undefined,
           resolution,
           numImages,
@@ -198,9 +208,9 @@ export default function CharacterRoomClient({ character, initialShots }: Props) 
                     .map((p) => (
                       <button
                         key={p.id}
-                        onClick={() => setPresetId(presetId === p.id ? null : p.id)}
+                        onClick={() => handlePresetToggle(p)}
                         className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                          presetId === p.id
+                          presetIds.includes(p.id)
                             ? 'bg-blue-600 border-blue-600 text-white'
                             : 'bg-white border-slate-300 text-slate-600 hover:border-slate-400'
                         }`}

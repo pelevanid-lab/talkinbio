@@ -19,15 +19,18 @@ export type RecordUsageEventParams = {
   channel: string;
   model: string;
   usage: UsageLike;
+  creditsCharged?: number;
 };
 
 /**
  * Persists a usage_events row for cost/model calibration reporting (admin
- * analytics, Faz 4.3 credit multiplier tuning). Never throws — a logging
- * failure must not break the user-facing turn it's attached to.
+ * analytics, Faz 4.3 credit multiplier tuning) and for the owner-facing
+ * /dashboard/billing usage history (credits_charged, Faz 4.4.x). Never
+ * throws — a logging failure must not break the user-facing turn it's
+ * attached to.
  */
 export async function recordUsageEvent(supabaseAdmin: SupabaseClient, params: RecordUsageEventParams): Promise<void> {
-  const { businessId, agent, channel, model, usage } = params;
+  const { businessId, agent, channel, model, usage, creditsCharged } = params;
   try {
     await supabaseAdmin.from('usage_events').insert({
       business_id: businessId,
@@ -38,6 +41,7 @@ export async function recordUsageEvent(supabaseAdmin: SupabaseClient, params: Re
       output_tokens: usage.outputTokens || 0,
       cache_read_tokens: usage.inputTokenDetails?.cacheReadTokens || 0,
       cache_write_tokens: usage.inputTokenDetails?.cacheWriteTokens || 0,
+      credits_charged: creditsCharged || 0,
     });
   } catch (err) {
     console.error('[recordUsageEvent] failed to persist usage event', { businessId, agent, channel, model, err });

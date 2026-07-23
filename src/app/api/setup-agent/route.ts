@@ -112,8 +112,9 @@ export async function POST(req: Request) {
       messages: modelMessages,
       tools: createBeiweTools({ supabase, businessId, locale: currentLocale }),
       onFinish: async ({ text, toolCalls, usage, model }) => {
-        await recordUsageEvent(supabase, { businessId, agent: 'beiwe', channel: 'web', model: model.modelId, usage });
-        await deductCredits(supabase, businessId, beiweCreditCost(toolCalls.length));
+        const creditsCharged = beiweCreditCost(toolCalls.length);
+        await recordUsageEvent(supabase, { businessId, agent: 'beiwe', channel: 'web', model: model.modelId, usage, creditsCharged });
+        await deductCredits(supabase, businessId, creditsCharged);
         if (text) {
           await supabase.from('setup_sessions').upsert({
             id: sessionId,

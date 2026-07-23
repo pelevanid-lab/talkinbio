@@ -253,7 +253,7 @@ export const CHARACTERS: Record<CharacterId, CharacterDefinition> = {
     name: 'Saule',
     role: 'Ön büro — ziyaretçiyle konuşan, gece 2\'de cevap veren asistan',
     summary:
-      'Otuzlu yaşların başında, Orta Asya (Kazak) kökenli; uzun koyu kahve dalgalı saç, badem gözler, sakin ve kapalı bir gülümseme. İmza parçası lacivert fitilli kazak. Sıcak, ölçülü, güven veren bir enerji.',
+      'Otuzlu yaşların başında, Orta Asya (Kazak) kökenli; uzun koyu kahve dalgalı saç, belirgin elmacık kemikleri, sıcak açık-kumral ten, badem gözler, sakin ve kapalı bir gülümseme. Sıcak, ölçülü, güven veren bir enerji.',
     referenceFile: 'saule-avatar-v1.png',
     accentColor: '#1E3A5F',
     identityPrompt: [
@@ -265,7 +265,7 @@ export const CHARACTERS: Record<CharacterId, CharacterDefinition> = {
       'Her face, hair length and build must match the reference image exactly.',
     ].join(' '),
     wardrobePrompt:
-      'Her signature piece is a navy ribbed knit crewneck sweater. If the scene calls for different clothing, stay within a restrained palette of navy, charcoal, cream and warm sand — solid colours only, no patterns, no logos, no bright saturated tones.',
+      'Keep her clothing within a restrained professional palette of navy, charcoal, cream and warm sand — solid colours only, no patterns, no logos, no bright saturated tones. Adapt the specific clothing to fit the environment naturally.',
     scenePresets: [
       ...SHARED_SCENE_PRESETS,
       {
@@ -291,7 +291,7 @@ export const CHARACTERS: Record<CharacterId, CharacterDefinition> = {
     name: 'Beiwe',
     role: 'Arka oda — sayfayı kuran, içeriği üreten, raporu yazan asistan',
     summary:
-      'Yirmili yaşların sonunda, Kuzey/Doğu Avrupa kökenli; omuz hizasında ballı kumral saç, mavi-gri gözler, açık ve enerjik bir gülümseme. İmza parçası petrol mavisi üst. Yapıcı, pratik, "hadi kuralım" enerjisi.',
+      'Yirmili yaşların sonunda, Kuzey/Doğu Avrupa kökenli; omuz hizasında ballı kumral saç, mavi-gri gözler, ince düz burun, hafif çilli yanaklar, açık ve enerjik bir gülümseme. Yapıcı, pratik, "hadi kuralım" enerjisi.',
     referenceFile: 'beiwe-avatar-v1.png',
     accentColor: '#14607A',
     identityPrompt: [
@@ -303,7 +303,7 @@ export const CHARACTERS: Record<CharacterId, CharacterDefinition> = {
       'Her face, hair length and build must match the reference image exactly.',
     ].join(' '),
     wardrobePrompt:
-      'Her signature piece is a teal / petrol blue crewneck top. If the scene calls for different clothing, stay within a palette of teal, deep green, warm grey and off-white — solid colours only, no patterns, no logos, no bright saturated tones.',
+      'Keep her clothing within a palette of teal, deep green, warm grey and off-white — solid colours only, no patterns, no logos, no bright saturated tones. Adapt the specific clothing to fit the environment naturally.',
     scenePresets: [
       ...SHARED_SCENE_PRESETS,
       {

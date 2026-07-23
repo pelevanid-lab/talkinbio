@@ -141,7 +141,7 @@ export async function runSauleTurn({
         messages: [{ role: 'user' as const, content: userMessage }],
         onFinish: async ({ text, usage, model }) => {
           await persistAssistantMessage(text);
-          await recordUsageEvent(supabaseAdmin, { businessId, agent: 'saule', channel, model: model.modelId, usage });
+          await recordUsageEvent(supabaseAdmin, { businessId, agent: 'saule', channel, model: model.modelId, usage, creditsCharged: SAULE_CREDIT_COST });
           await deductCredits(supabaseAdmin, businessId, SAULE_CREDIT_COST);
         },
       });
@@ -175,7 +175,7 @@ export async function runSauleTurn({
       : {},
     onFinish: async ({ text, toolCalls, usage, model }) => {
       await persistAssistantMessage(text);
-      await recordUsageEvent(supabaseAdmin, { businessId, agent: 'saule', channel, model: model.modelId, usage });
+      await recordUsageEvent(supabaseAdmin, { businessId, agent: 'saule', channel, model: model.modelId, usage, creditsCharged: SAULE_CREDIT_COST });
       await deductCredits(supabaseAdmin, businessId, SAULE_CREDIT_COST);
       // A tool (capture_lead / capture_access_request) was available this turn, but the model
       // never invoked it and still wrote a confirmation-sounding reply — i.e. it told the visitor

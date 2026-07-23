@@ -37,7 +37,25 @@ describe('recordUsageEvent', () => {
       output_tokens: 136,
       cache_read_tokens: 7000,
       cache_write_tokens: 500,
+      credits_charged: 0,
     });
+  });
+
+  it('persists creditsCharged as credits_charged for the billing usage history', async () => {
+    const supabaseAdmin = createFakeSupabase();
+
+    await recordUsageEvent(supabaseAdmin, {
+      businessId: 'biz-1',
+      agent: 'saule',
+      channel: 'web',
+      model: 'claude-sonnet-4-5-20250929',
+      usage: { inputTokens: 10, outputTokens: 5 },
+      creditsCharged: 1,
+    });
+
+    expect(supabaseAdmin.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ credits_charged: 1 })
+    );
   });
 
   it('defaults missing token fields to 0 (e.g. generateOnce usage has no cache details)', async () => {

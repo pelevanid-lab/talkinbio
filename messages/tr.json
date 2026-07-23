@@ -216,7 +216,7 @@
     "insightDefaultMessage": "Yeni bir içgörü var.",
     "insightDefaultTrigger": "Konuşmalarımdan çıkan bir içgörüyü değerlendirmek istiyorum.",
     "creditBalance": "Kredi Bakiyesi",
-    "creditBalanceHint": "Kredi bakiyeniz — plan ve paketler için tıklayın",
+    "creditBalanceHint": "Kredi bakiyeniz ve kullanım geçmişiniz — detaylar için tıklayın",
     "archive": {
       "title": "Geçmiş Konuşmalar",
       "empty": "Geçmiş konuşma bulunamadı.",
@@ -737,7 +737,37 @@
     "saveBtn": "Şifreyi Kaydet ve Devam Et"
   },
   "CreditBadge": {
-    "tooltip": "Kredi bakiyeniz — plan ve paketler için tıklayın",
+    "tooltip": "Kredi bakiyeniz ve kullanım geçmişiniz — detaylar için tıklayın",
     "label": "{balance} kredi"
+  },
+  "Billing": {
+    "noBusinessTitle": "Henüz bir işletme kurmamışsınız",
+    "noBusinessDescription": "Faturalandırma ve kullanım bilgilerinizi görebilmek için önce profilinizi oluşturun.",
+    "createProfileBtn": "Profili Oluştur",
+    "pageTitle": "Faturalandırma & Kullanım",
+    "navPanel": "Panel",
+    "navContent": "İçerik",
+    "navEditor": "Editör",
+    "balanceLabel": "Kredi Bakiyeniz",
+    "creditsUnit": "kredi",
+    "usageTitle": "Kullanım Geçmişi",
+    "usageEmpty": "Henüz bir kullanım kaydı yok.",
+    "freeLabel": "Ücretsiz",
+    "agent": {
+      "saule": "Saule (Ziyaretçi Sohbeti)",
+      "beiwe": "Beiwe (Kurulum Asistanı)",
+      "analysis": "Otomatik Analiz"
+    },
+    "topUpTitle": "Ek Kredi veya Plan Yükseltme",
+    "topUpSubtitle": "Ödeme altyapımız kuruluyor — bir plan seçip talep bırakın, ekibimiz sizinle birlikte kurulumu yapsın.",
+    "perMonth": "/ay",
+    "credits": "{count} kredi",
+    "extraPackName": "Ek Kredi Paketi",
+    "formPhone": "Telefon",
+    "formMessage": "Eklemek istediğiniz bir not (opsiyonel)",
+    "formSubmit": "Talep Gönder",
+    "formSubmitting": "Gönderiliyor...",
+    "formSuccess": "Talebiniz alındı. Ekibimiz en kısa sürede sizinle iletişime geçecek.",
+    "formErrorGeneric": "Gönderilirken bir hata oluştu, lütfen tekrar deneyin."
   }
 }

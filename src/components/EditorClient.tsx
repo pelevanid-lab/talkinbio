@@ -556,7 +556,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
           </div>
 
           <a
-            href="/pricing"
+            href="/dashboard/billing"
             className="flex items-center justify-between gap-2 px-3 py-2 mb-4 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-[var(--ink)] transition-colors"
             title={t('creditBalanceHint')}
           >

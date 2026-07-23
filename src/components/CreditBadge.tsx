@@ -14,7 +14,7 @@ export default function CreditBadge({ balance }: { balance: number }) {
   const numberLocale = NUMBER_LOCALES[locale] || NUMBER_LOCALES.tr;
   return (
     <a
-      href="/pricing"
+      href="/dashboard/billing"
       className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap flex items-center gap-1.5"
       title={t('tooltip')}
     >

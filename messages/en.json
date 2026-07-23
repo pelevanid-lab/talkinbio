@@ -216,7 +216,7 @@
     "insightDefaultMessage": "There's a new insight.",
     "insightDefaultTrigger": "I'd like to review an insight from my conversations.",
     "creditBalance": "Credit Balance",
-    "creditBalanceHint": "Your credit balance — click for plans and packages",
+    "creditBalanceHint": "Your credit balance and usage history — click for details",
     "archive": {
       "title": "Past Conversations",
       "empty": "No past conversations found.",
@@ -737,7 +737,37 @@
     "saveBtn": "Save Password and Continue"
   },
   "CreditBadge": {
-    "tooltip": "Your credit balance — click for plans and packages",
+    "tooltip": "Your credit balance and usage history — click for details",
     "label": "{balance} credits"
+  },
+  "Billing": {
+    "noBusinessTitle": "You haven't set up a business yet",
+    "noBusinessDescription": "Create your profile first to see your billing and usage details.",
+    "createProfileBtn": "Create Profile",
+    "pageTitle": "Billing & Usage",
+    "navPanel": "Panel",
+    "navContent": "Content",
+    "navEditor": "Editor",
+    "balanceLabel": "Your Credit Balance",
+    "creditsUnit": "credits",
+    "usageTitle": "Usage History",
+    "usageEmpty": "No usage recorded yet.",
+    "freeLabel": "Free",
+    "agent": {
+      "saule": "Saule (Visitor Chat)",
+      "beiwe": "Beiwe (Setup Assistant)",
+      "analysis": "Automated Analysis"
+    },
+    "topUpTitle": "Extra Credits or Plan Upgrade",
+    "topUpSubtitle": "Our payment infrastructure is being built — pick a plan and leave a request, and our team will set it up with you.",
+    "perMonth": "/mo",
+    "credits": "{count} credits",
+    "extraPackName": "Extra Credit Pack",
+    "formPhone": "Phone",
+    "formMessage": "A note you'd like to add (optional)",
+    "formSubmit": "Send Request",
+    "formSubmitting": "Sending...",
+    "formSuccess": "Your request has been received. Our team will get in touch with you shortly.",
+    "formErrorGeneric": "Something went wrong while sending, please try again."
   }
 }
