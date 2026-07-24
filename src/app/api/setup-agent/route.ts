@@ -26,11 +26,11 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Fetch existing blocks + business to give context to the AI. Only the columns the
-    // prompt/readiness summary actually read — id/business_id/singleton_key are pure noise
-    // once this is serialized into the prompt (every block repeats the same business_id).
+    // Fetch existing blocks + business to give context to the AI. `id` is included so the model
+    // can target a specific 'custom' section for syncBlockLanguages (business_id/singleton_key are
+    // still omitted as noise — every block repeats the same business_id).
     const [{ data: blocks }, { data: business }] = await Promise.all([
-      supabase.from('blocks').select('type, title, content, order, is_visible').eq('business_id', businessId).order('order', { ascending: true }),
+      supabase.from('blocks').select('id, type, title, content, order, is_visible').eq('business_id', businessId).order('order', { ascending: true }),
       supabase.from('businesses').select('contact_method, contact_value, category, theme, is_published, credit_balance').eq('id', businessId).single(),
     ]);
 

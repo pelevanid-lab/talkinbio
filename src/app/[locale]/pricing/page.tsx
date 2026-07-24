@@ -180,6 +180,9 @@ export default function PricingPage() {
                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--ink-soft)', lineHeight: 1.5, minHeight: '2.5rem' }}>
                   {t('capacityExample', { saule: sauleChats, beiwe: beiweUpdates })}
                 </p>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--ink-soft)', lineHeight: 1.5, fontWeight: 500 }}>
+                  {t(`idealFor_${plan.id}` as any)}
+                </p>
                 <button
                   onClick={() => handlePlanCta(plan.id)}
                   className="btn btn-primary"

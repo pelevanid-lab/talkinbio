@@ -2,6 +2,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { LOCALE_TITLES, type LocaleKey } from '@/config/localeTitles';
+import { mergeLocaleTranslations, type BlockLocaleText, type SyncableBlockType } from './localeSync';
 
 export type BeiweToolParams = {
   supabase: SupabaseClient;
@@ -456,6 +457,57 @@ export function addSectionTool({ supabase, businessId, locale }: BeiweToolParams
   });
 }
 
+// Faz: "aynı içerik, diğer diller" eşitlemesi. Kullanıcı bir bölümü editörde TEK dilde elle
+// düzenleyip Beiwe'ye "şu bölümü şu dilde güncelledim, diğer dillere eşitle" dediğinde çağrılır.
+// add* araçlarından farkı: onlar item EKLER (kopya oluşturur); bu araç mevcut içeriği YERİNDE
+// günceller — sadece hedef dillerin metnini yazar, kaynak dili ve metin-dışı alanları (fiyat,
+// görsel, yazar, schedule, layoutVariant) olduğu gibi korur (bkz. localeSync.mergeLocaleTranslations).
+export function syncBlockLanguagesTool({ supabase, businessId, locale }: BeiweToolParams) {
+  return tool({
+    description: "Var olan bir bölümün metinlerini diller arasında EŞİTLER. Kullanıcı bir bölümü tek dilde (editörde elle) düzenleyip 'şu bölümü şu dilde güncelledim, diğer dillere de eşitle/çevir' dediğinde bunu kullan. Kaynak dili aynen korur, SADECE istenen hedef dilleri günceller — item eklemez, kopya oluşturmaz. Yeni içerik EKLEMEK için bu aracı KULLANMA; o zaman ilgili add/update aracını kullan.",
+    inputSchema: z.object({
+      type: z.enum(['about', 'custom', 'services', 'gallery', 'testimonials', 'faq', 'hours'])
+        .describe("Eşitlenecek bölümün tipi. 'links' desteklenmez (çevrilecek metni yok)."),
+      blockId: z.string().optional()
+        .describe("SADECE 'custom' (kullanıcının eklediği ayrı bölüm) tipinde gerekli: eşitlenecek bölümün id'si. Mevcut Sayfa Blokları'nda her bloğun 'id' alanı var; oradan al. Sabit bölümlerde (about/services/vb.) gönderme."),
+      translations: z.array(z.object({
+        locale: z.enum(['tr', 'en', 'ru']).describe('Bu çevirinin hedef dili.'),
+        title: z.string().optional().describe('Bölüm başlığının bu dildeki çevirisi (değiştiyse).'),
+        text: z.string().optional().describe('Gövde metninin bu dildeki çevirisi (sadece about/custom).'),
+        items: z.array(z.object({
+          title: z.string().optional().describe('services item başlığı'),
+          description: z.string().optional().describe('services item açıklaması'),
+          caption: z.string().optional().describe('gallery item altyazısı'),
+          quote: z.string().optional().describe('testimonials alıntısı'),
+          role: z.string().optional().describe('testimonials kişi rolü'),
+          question: z.string().optional().describe('faq sorusu'),
+          answer: z.string().optional().describe('faq cevabı'),
+        })).optional().describe('Liste bloklarında (services/gallery/testimonials/faq) item metinlerinin çevirisi — mevcut item SIRASIYLA aynı sırada, aynı sayıda gönder. Sadece o bölüm tipiyle ilgili alanları doldur.'),
+      })).min(1).describe('Her HEDEF dil için çevrilmiş metinler. Kaynak dili buraya EKLEME — o değişmeden kalır.'),
+    }),
+    execute: async ({ type, blockId, translations }) => {
+      const base = supabase.from('blocks').select('id, content, title').eq('business_id', businessId);
+      const { data: existing } = type === 'custom' && blockId
+        ? await base.eq('id', blockId).single()
+        : await base.eq('type', type).single();
+      if (!existing) return `Error: Eşitlenecek '${type}' bölümü bulunamadı.`;
+
+      const byLocale: Partial<Record<LocaleKey, BlockLocaleText>> = {};
+      for (const t of translations) {
+        byLocale[t.locale] = { title: t.title, text: t.text, items: t.items };
+      }
+      const nextContent = mergeLocaleTranslations(type as SyncableBlockType, existing.content || {}, byLocale);
+      const nextTitle = (nextContent[locale as LocaleKey] as { title?: string } | undefined)?.title || existing.title;
+
+      const { error } = await supabase.from('blocks').update({ content: nextContent, title: nextTitle }).eq('id', existing.id);
+      if (error) return `Error: ${error.message}`;
+
+      const locs = translations.map((t) => t.locale.toUpperCase()).join(', ');
+      return `'${type}' bölümü ${locs} diline eşitlendi (kaynak dil ve fiyat/görsel gibi alanlar korundu). Başka bir isteği varsa yardımcı ol.`;
+    },
+  });
+}
+
 export function updateContactTool({ supabase, businessId }: BeiweToolParams) {
   return tool({
     description: "İşletmenin iletişim yöntemlerini (WhatsApp/Telefon, Instagram, e-posta, Telegram) günceller. Bu bir blok değil, işletmenin genel ayarıdır.",
@@ -496,6 +548,7 @@ export function createBeiweTools(params: BeiweToolParams) {
     addHours: addHoursTool(params),
     addFAQ: addFAQTool(params),
     addSection: addSectionTool(params),
+    syncBlockLanguages: syncBlockLanguagesTool(params),
     updateContact: updateContactTool(params),
   };
 }

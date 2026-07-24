@@ -14,6 +14,8 @@ import { useChat, UIMessage } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useTranslations, useLocale } from 'next-intl';
 import { RECOMMENDED_TYPES, hasRealContent, isRequiredSatisfied } from '@/config/blockTypes';
+import { extractLocaleText, isSyncableType, type SyncableBlockType, type BlockLocaleText } from '@/agents/beiwe/localeSync';
+import type { LocaleKey } from '@/config/localeTitles';
 import { DEFAULT_THEME, Theme, resolveThemeColors } from '@/config/archetypes';
 import { avatarFromBlocks } from '@/utils/avatarFromBlocks';
 import { collectShortcutCandidates, getShortcuts, resolveShortcuts, shortcutsEqual, type Shortcut } from '@/utils/shortcuts';
@@ -61,6 +63,9 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   const [isTogglingPublish, setIsTogglingPublish] = useState(false);
   const [needsRepublish, setNeedsRepublish] = useState<boolean>(business.needs_republish || false);
   const [previewActiveBlockId, setPreviewActiveBlockId] = useState<string | null>(null);
+  // Feature 2: after a single-locale manual block edit, offer to auto-translate the stale locales.
+  const [syncPrompt, setSyncPrompt] = useState<null | { blockId: string; type: SyncableBlockType; content: unknown; sourceLocale: LocaleKey; targetLocales: LocaleKey[] }>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [contactValue, setContactValue] = useState<string | null>(business.contact_value || null);
   const [contactMethod, setContactMethod] = useState<string | null>(business.contact_method || null);
   const [isEditingContact, setIsEditingContact] = useState(false);
@@ -316,11 +321,39 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     await supabase.from('businesses').update({ needs_republish: true }).eq('id', business.id);
   };
 
+  // True if a per-locale extracted payload carries any non-empty translatable text.
+  const payloadHasText = (p: BlockLocaleText): boolean => {
+    if (p.title?.trim() || p.text?.trim()) return true;
+    return Array.isArray(p.items) && p.items.some((it) => Object.values(it).some((v) => typeof v === 'string' && v.trim()));
+  };
+
+  // After a manual save, decide whether to offer language sync: fire only when the owner changed
+  // some locale(s) AND at least one other active locale was left untouched (now stale) — matching
+  // the "only ask when there's a stale language" choice.
+  const maybeOfferLanguageSync = (blockId: string, type: string, oldContent: unknown, newContent: unknown) => {
+    if (!blockId || !isSyncableType(type)) return;
+    const actives = activeLocales.filter((l): l is LocaleKey => (['tr', 'en', 'ru'] as string[]).includes(l));
+    if (actives.length < 2) return;
+    const changed = actives.filter((loc) =>
+      JSON.stringify(extractLocaleText(type, oldContent, loc)) !== JSON.stringify(extractLocaleText(type, newContent, loc))
+    );
+    if (changed.length === 0) return;
+    const targets = actives.filter((l) => !changed.includes(l));
+    if (targets.length === 0) return; // every active locale changed → nothing stale to sync
+    const sourceLocale = changed.includes(locale as LocaleKey) ? (locale as LocaleKey) : changed[0];
+    if (!payloadHasText(extractLocaleText(type, newContent, sourceLocale))) return; // nothing to translate from
+    setSyncPrompt({ blockId, type, content: newContent, sourceLocale, targetLocales: targets });
+  };
+
   const handleSaveBlock = async (data: { title: string, content: any }) => {
     setIsSaving(true);
+    const blockType = editingBlock.type;
+    const isNew = editingBlock.isNew;
+    const originalContent = isNew ? {} : (editingBlock.content || {});
     try {
       let updatedBlocks;
-      if (editingBlock.isNew) {
+      let savedBlockId: string;
+      if (isNew) {
         const nextOrder = blocks.reduce((max, b) => Math.max(max, b.order ?? 0), 0) + 1;
         const { data: newBlock, error } = await supabase.from('blocks').insert({
           business_id: business.id,
@@ -330,28 +363,65 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
           order: nextOrder,
           is_visible: true
         }).select().single();
-        
+
         if (error) throw error;
+        savedBlockId = newBlock.id;
         updatedBlocks = [...blocks, newBlock];
         setBlocks(updatedBlocks);
       } else {
+        savedBlockId = editingBlock.id;
         const { error } = await supabase.from('blocks').update({
           title: data.title,
           content: data.content
         }).eq('id', editingBlock.id);
-        
+
         if (error) throw error;
         updatedBlocks = blocks.map(b => b.id === editingBlock.id ? { ...b, title: data.title, content: data.content } : b);
         setBlocks(updatedBlocks);
       }
       await markNeedsRepublish();
       await archiveCurrentAndNewSession();
+      maybeOfferLanguageSync(savedBlockId, blockType, originalContent, data.content);
     } catch (err) {
       console.error(err);
       alert(t('saveBlockError'));
     } finally {
       setIsSaving(false);
       setEditingBlock(null);
+    }
+  };
+
+  // Confirmed the auto-translate prompt: translate the source locale into the stale ones and persist.
+  const handleConfirmSync = async () => {
+    if (!syncPrompt) return;
+    setIsSyncing(true);
+    try {
+      const res = await fetch('/api/content/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: business.id,
+          type: syncPrompt.type,
+          content: syncPrompt.content,
+          sourceLocale: syncPrompt.sourceLocale,
+          targetLocales: syncPrompt.targetLocales,
+        }),
+      });
+      if (!res.ok) {
+        alert(res.status === 402 ? t('sync.creditsExhausted') : t('sync.error'));
+        return;
+      }
+      const { content: merged } = await res.json();
+      const { error } = await supabase.from('blocks').update({ content: merged }).eq('id', syncPrompt.blockId);
+      if (error) throw error;
+      setBlocks((prev) => prev.map((b) => b.id === syncPrompt.blockId ? { ...b, content: merged } : b));
+      await markNeedsRepublish();
+    } catch (err) {
+      console.error(err);
+      alert(t('sync.error'));
+    } finally {
+      setIsSyncing(false);
+      setSyncPrompt(null);
     }
   };
 
@@ -1330,6 +1400,36 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
           onDelete={handleDeleteBlock}
           locale={locale}
         />
+      )}
+      {syncPrompt && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6">
+            <h3 className="text-lg font-bold text-[var(--ink)] mb-2">{t('sync.title')}</h3>
+            <p className="text-sm text-slate-600 mb-5">
+              {t('sync.body', {
+                source: syncPrompt.sourceLocale.toUpperCase(),
+                targets: syncPrompt.targetLocales.map((l) => l.toUpperCase()).join(', '),
+              })}
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setSyncPrompt(null)}
+                disabled={isSyncing}
+                className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition disabled:opacity-50"
+              >
+                {t('sync.cancel')}
+              </button>
+              <button
+                onClick={handleConfirmSync}
+                disabled={isSyncing}
+                className="px-5 py-2 bg-[var(--coral)] text-white font-medium rounded-lg hover:bg-orange-600 shadow-sm transition disabled:opacity-50 flex items-center gap-2"
+              >
+                {isSyncing && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isSyncing ? t('sync.syncing') : t('sync.confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       {isSaving && (
         <div className="fixed inset-0 bg-white/50 backdrop-blur-sm z-[200] flex items-center justify-center">
