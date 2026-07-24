@@ -287,7 +287,7 @@ function renderServices(block: any, ctx: RenderCtx) {
                     {item.price && <span className="font-mono text-sm shrink-0" style={{ color: 'var(--text-muted)' }}>{item.price}</span>}
                   </div>
                   {(itemLoc.description || item.description) && (
-                    <p className="text-sm mt-1 opacity-80" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(itemLoc.description || item.description)}</p>
+                    <p className="text-sm mt-1 opacity-80 whitespace-pre-line" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(itemLoc.description || item.description)}</p>
                   )}
                 </div>
               </div>
@@ -318,7 +318,7 @@ function renderServices(block: any, ctx: RenderCtx) {
                 <div className={item.mediaUrl ? 'w-3/5' : 'w-full'}>
                   <h4 className={`text-xl font-semibold mb-2 ${headingFont}`}>{renderColoredSegments(itemLoc.title || item.title)}</h4>
                   {(itemLoc.description || item.description) && (
-                    <p className="text-sm opacity-80 mb-3" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(itemLoc.description || item.description)}</p>
+                    <p className="text-sm opacity-80 mb-3 whitespace-pre-line" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(itemLoc.description || item.description)}</p>
                   )}
                   {item.price && (
                     <span className="font-mono px-3 py-1 rounded-full text-sm inline-block" style={{ backgroundColor: 'var(--primary)', color: '#fff' }}>
@@ -345,7 +345,7 @@ function renderServices(block: any, ctx: RenderCtx) {
                 <span className="flex-1 border-b border-dotted opacity-30 translate-y-[-4px]" style={{ borderColor: 'var(--text-muted)' }} />
                 {item.price && <span className="font-mono text-sm shrink-0">{item.price}</span>}
                 {(itemLoc.description || item.description) && (
-                  <span className="w-full basis-full text-sm mt-1 opacity-70" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(itemLoc.description || item.description)}</span>
+                  <span className="w-full basis-full text-sm mt-1 opacity-70 whitespace-pre-line" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(itemLoc.description || item.description)}</span>
                 )}
               </div>
             );
@@ -388,7 +388,7 @@ function renderServices(block: any, ctx: RenderCtx) {
                   <div>
                     <h4 className={`font-semibold text-lg ${headingFont}`}>{renderColoredSegments(itemLoc.title || item.title)}</h4>
                     {(itemLoc.description || item.description) && (
-                      <p className="text-sm mt-2 opacity-80" style={{ color: 'var(--text-muted)' }}>
+                      <p className="text-sm mt-2 opacity-80 whitespace-pre-line" style={{ color: 'var(--text-muted)' }}>
                         {renderColoredSegments(itemLoc.description || item.description)}
                       </p>
                     )}
@@ -520,7 +520,7 @@ function renderFAQ(block: any, ctx: RenderCtx) {
               </span>
               <div>
                 <h4 className="font-semibold text-base mb-1">{renderColoredSegments(question)}</h4>
-                <p className="text-sm opacity-80" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(answer)}</p>
+                <p className="text-sm opacity-80 whitespace-pre-line" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(answer)}</p>
               </div>
             </div>
             );
@@ -544,7 +544,7 @@ function renderFAQ(block: any, ctx: RenderCtx) {
                 <span>{renderColoredSegments(question)}</span>
                 <span className="opacity-40 shrink-0" style={{ color: 'var(--primary)' }}>+</span>
               </summary>
-              <div className="px-4 pb-4 text-sm opacity-80" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(answer)}</div>
+              <div className="px-4 pb-4 text-sm opacity-80 whitespace-pre-line" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(answer)}</div>
             </details>
             );
           })}
