@@ -177,7 +177,7 @@ export default async function BusinessProfilePage({ params }: any) {
           dock below. Blocks scroll within here; the last block ends above Saule and can never
           slide under it (no magic pb-[…] needed). */}
       <main className="flex-1 min-h-0 overflow-y-auto">
-        <div className="max-w-md mx-auto w-full px-4 pt-6 pb-8">
+        <div className="max-w-md mx-auto w-full px-4 pt-4 pb-8">
 
           <ProfilePageBody
             blocks={blocks || []}
@@ -196,8 +196,8 @@ export default async function BusinessProfilePage({ params }: any) {
       {/* Saule dock — an in-flow flex child (NOT fixed), so it reserves its own vertical space and
           the block area above shrinks to fit. Overlap with blocks is structurally impossible.
           The expanded chat sheet still opens as a fixed 85dvh overlay from inside ChatWidget. */}
-      <div className="h-[30dvh] shrink-0 relative z-50">
-        <div className="max-w-md mx-auto w-full h-full relative">
+      <div className="shrink-0 relative z-50">
+        <div className="max-w-md mx-auto w-full relative">
           <ChatWidget businessId={business.id} businessName={business.name} locale={locale} initialMessages={initialMessages} customGreeting={customGreeting} initialCreditsExhausted={(business.credit_balance ?? 0) <= 0} />
         </div>
       </div>

@@ -351,7 +351,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
         <div
           onClick={toggleExpand}
           className={variant === 'sheet'
-            ? 'w-full h-full p-4 flex flex-col justify-end cursor-pointer group'
+            ? 'w-full p-4 flex flex-col justify-end cursor-pointer group'
             : 'absolute bottom-0 left-0 right-0 h-[31%] p-3 flex flex-col justify-end cursor-pointer group'}
         >
           {/* Quick preview of last message */}

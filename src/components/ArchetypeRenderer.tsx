@@ -1038,7 +1038,7 @@ export default function ArchetypeRenderer({
 
       <div className="flex flex-col gap-10">
         {layoutMode === 'linktree' && !activeBlockId && (
-          <div className="flex flex-col gap-4 mt-8">
+          <div className="flex flex-col gap-4 mt-2">
             {visibleBlocks.map(block => {
               const blockTitle = blockTitleOf(block, locale);
               return (

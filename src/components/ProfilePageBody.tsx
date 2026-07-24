@@ -5,7 +5,7 @@ import { useLocale } from 'next-intl';
 import ArchetypeRenderer from './ArchetypeRenderer';
 import ProfileHeader from './ProfileHeader';
 import LanguageSwitcher from './LanguageSwitcher';
-import { Theme, DEFAULT_THEME } from '@/config/archetypes';
+import { Theme, DEFAULT_THEME, resolveThemeColors } from '@/config/archetypes';
 import { avatarFromBlocks } from '@/utils/avatarFromBlocks';
 import { resolveShortcuts } from '@/utils/shortcuts';
 
@@ -21,6 +21,7 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
   const avatarUrl = avatarFromBlocks(blocks);
   const description = tagline?.[locale] || category || undefined;
   const shortcuts = resolveShortcuts(blocks);
+  const c = resolveThemeColors(resolvedTheme);
 
   return (
     <>
@@ -31,12 +32,16 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
         theme={resolvedTheme}
         activeBlockId={activeBlockId}
         onBack={() => setActiveBlockId(null)}
-        topRight={<LanguageSwitcher compact />}
+        topRight={
+          <div className="flex items-center px-2.5 py-1 rounded-full border" style={{ borderColor: c.border, backgroundColor: c.surface }}>
+            <LanguageSwitcher compact />
+          </div>
+        }
         shortcuts={shortcuts}
         onShortcutSelect={setActiveBlockId}
       />
 
-      <div className="w-full mt-6">
+      <div className="w-full mt-3">
         {((blocks && blocks.length > 0) || (contactMethod && contactValue)) && (
           <ArchetypeRenderer
             blocks={blocks}
