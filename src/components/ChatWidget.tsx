@@ -27,6 +27,28 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const t = useTranslations('ChatWidget');
 
+  // Mobil klavye düzeltmesi: bazı tarayıcılarda (örn. Instagram in-app WebView)
+  // klavye açılınca layout viewport küçülmüyor, sadece visual viewport küçülüyor.
+  // "fixed bottom-0" ve "dvh" bu durumda klavyenin arkasında kalıyor — giriş alanı
+  // görünmez oluyor. VisualViewport API ile gerçek görünür alanı takip edip sheet'i
+  // buna göre konumlandırıyoruz.
+  const [keyboardGap, setKeyboardGap] = useState(0);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+    const vv = window.visualViewport;
+    const update = () => {
+      const gap = window.innerHeight - vv.height - vv.offsetTop;
+      setKeyboardGap(Math.max(0, Math.round(gap)));
+    };
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, []);
+
   const pendingNewConversationRef = useRef(false);
 
   // Faz 4.3: kredi bitince (fiili ücretsiz katman) sohbet yerine LLM'siz bir
@@ -175,8 +197,9 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className={variant === 'sheet'
-                ? 'fixed bottom-0 left-0 right-0 h-[85dvh] bg-white rounded-t-3xl shadow-2xl z-[70] flex flex-col overflow-hidden'
+                ? 'fixed left-0 right-0 h-[85dvh] bg-white rounded-t-3xl shadow-2xl z-[70] flex flex-col overflow-hidden'
                 : 'absolute inset-0 bg-white z-20 flex flex-col overflow-hidden'}
+              style={variant === 'sheet' ? { bottom: keyboardGap, maxHeight: keyboardGap > 0 ? `calc(100dvh - ${keyboardGap}px)` : undefined } : undefined}
             >
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-[var(--border-light)] bg-white">

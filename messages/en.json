@@ -155,6 +155,11 @@
     "tabManual": "Fine Tuning",
     "profileLink": "Your Profile Link",
     "pageTitle": "Page Title (optional)",
+    "tagline": "Short Description (optional)",
+    "taglineHint": "The profile photo is taken automatically from the image in your 'About' section.",
+    "appearance": "Appearance",
+    "modeLight": "Light",
+    "modeDark": "Dark",
     "contactMethods": {
       "whatsapp": "Phone & WhatsApp",
       "instagram": "Instagram DM",

@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Inbox, Coins } from 'lucide-react';
 import ArchetypeRenderer from './ArchetypeRenderer';
+import ProfileHeader from './ProfileHeader';
 import AgentMarkdown from './AgentMarkdown';
 import ChatWidget from './ChatWidget';
 import BlockEditorModal from './BlockEditorModal';
@@ -13,7 +14,8 @@ import { useChat, UIMessage } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useTranslations, useLocale } from 'next-intl';
 import { RECOMMENDED_TYPES, hasRealContent, isRequiredSatisfied } from '@/config/blockTypes';
-import { DEFAULT_THEME, Theme } from '@/config/archetypes';
+import { DEFAULT_THEME, Theme, resolveThemeColors } from '@/config/archetypes';
+import { avatarFromBlocks } from '@/utils/avatarFromBlocks';
 import { googleFontsHref } from '@/utils/googleFonts';
 import { compressImageIfNeeded } from '@/utils/imageCompression';
 
@@ -47,6 +49,8 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   const [usernameError, setUsernameError] = useState('');
   const [pageTitle, setPageTitle] = useState(business.page_title || '');
   const [isEditingPageTitle, setIsEditingPageTitle] = useState(false);
+  const [tagline, setTagline] = useState<Record<string, string>>(business.tagline || {});
+  const [isEditingTagline, setIsEditingTagline] = useState(false);
   const ALL_LOCALES = ['tr', 'en', 'ru'] as const;
   const [activeLocales, setActiveLocales] = useState<string[]>(business.active_locales || ['tr', 'en', 'ru']);
   const MAX_ACTIVE_LOCALES = 3;
@@ -469,6 +473,36 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
     }
   };
 
+  // Kısa açıklama (tagline) — ProfileHeader'da isim altında gösterilir. Çok dilli; boş diller
+  // temizlenir. Avatar ayrı kaydedilmez, "Hakkında" bloğunun fotosundan otomatik gelir.
+  const handleTaglineSave = async () => {
+    const cleaned: Record<string, string> = {};
+    for (const [k, v] of Object.entries(tagline)) {
+      const trimmed = (v || '').trim();
+      if (trimmed) cleaned[k] = trimmed;
+    }
+    const { error } = await supabase.from('businesses').update({ tagline: cleaned }).eq('id', business.id);
+    if (!error) {
+      business.tagline = cleaned;
+      setTagline(cleaned);
+      setIsEditingTagline(false);
+      await markNeedsRepublish();
+    }
+  };
+
+  // Light/dark modu theme jsonb'sine yazılır (theme.mode). Ziyaretçiye görünen bir toggle yok;
+  // yalnız işletme sahibi burada seçer. Poll efekti aynı temayı geri okur (tutarlı).
+  const handleSetMode = async (mode: 'light' | 'dark') => {
+    if ((theme.mode || 'light') === mode) return;
+    const nextTheme: Theme = { ...theme, mode };
+    setTheme(nextTheme);
+    const { error } = await supabase.from('businesses').update({ theme: nextTheme }).eq('id', business.id);
+    if (!error) {
+      business.theme = nextTheme;
+      await markNeedsRepublish();
+    }
+  };
+
   // Faz 2.5: her işletme en fazla 3 (şu an sistemdeki tüm) dil arasından en az 1'ini aktif
   // tutmalı — Faz 7'de dil sayısı 6'ya çıktığında bu seçim maliyeti/karmaşıklığı sınırlayacak.
   const toggleActiveLocale = async (locale: string) => {
@@ -872,6 +906,62 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 )}
               </div>
 
+              {/* Short description (tagline) — shown under the name in the Linktree-style profile
+                  header. Avatar is NOT edited here; it's derived from the About block's photo. */}
+              <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs font-medium text-slate-500">{t('tagline')}</span>
+                  {isEditingTagline ? (
+                    <button onClick={handleTaglineSave} className="text-xs font-bold text-[var(--teal)] hover:text-teal-700">{t('saveBtn')}</button>
+                  ) : (
+                    <button onClick={() => setIsEditingTagline(true)} className="text-xs font-medium text-slate-500 hover:text-[var(--coral)] flex items-center">
+                      <Edit2 className="w-3 h-3 mr-1" /> {t('editBtn')}
+                    </button>
+                  )}
+                </div>
+                {isEditingTagline ? (
+                  <div className="space-y-2">
+                    {activeLocales.map((l) => (
+                      <div key={l}>
+                        <span className="text-[10px] font-semibold text-slate-400 uppercase">{l}</span>
+                        <textarea
+                          value={tagline[l] || ''}
+                          onChange={e => setTagline({ ...tagline, [l]: e.target.value })}
+                          rows={2}
+                          className="w-full mt-0.5 p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-[var(--coral)] resize-none"
+                        />
+                      </div>
+                    ))}
+                    <p className="text-[10px] text-slate-400">{t('taglineHint')}</p>
+                  </div>
+                ) : (
+                  <div className="text-sm font-medium text-[var(--ink)]">
+                    {tagline[locale] || Object.values(tagline).find(Boolean) || business.category || t('noContent')}
+                  </div>
+                )}
+              </div>
+
+              {/* Appearance — owner-selected single light/dark mode (no visitor toggle). Stored in
+                  theme.mode; the profile header + blocks render dark neutrals via resolveThemeColors. */}
+              <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                <span className="text-xs font-medium text-slate-500">{t('appearance')}</span>
+                <div className="flex gap-2 mt-2">
+                  {(['light', 'dark'] as const).map((m) => {
+                    const active = (theme.mode || 'light') === m;
+                    return (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => handleSetMode(m)}
+                        className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition ${active ? 'bg-[var(--ink)] text-white border-[var(--ink)]' : 'bg-white text-slate-600 border-slate-300 hover:border-[var(--coral)]'}`}
+                      >
+                        {m === 'light' ? t('modeLight') : t('modeDark')}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Contact methods — the single source of truth also used by request-access and the
                   setup agent's updateContact tool; not a reorderable page block. */}
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
@@ -1090,24 +1180,21 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
             <div className="w-32 h-6 bg-slate-800 rounded-b-xl"></div>
           </div>
 
-          {/* Top 70% Content Area */}
-          <div className="flex-1 flex flex-col relative overflow-hidden bg-slate-50">
-            {/* Compact Header — stays fixed above the scrollable blocks below, so the back button
-                (when a block is open) remains reachable instead of scrolling away with the content. */}
-            <div className="w-full pt-12 pb-4 px-4 flex justify-between items-center z-10 relative shrink-0">
-              <div className="flex items-center gap-1 min-w-0 max-w-[70%]">
-                {previewActiveBlockId && (
-                  <button
-                    type="button"
-                    onClick={() => setPreviewActiveBlockId(null)}
-                    className="p-1 -ml-1 shrink-0 text-slate-800 hover:opacity-70 transition"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                )}
-                <span className="text-sm font-semibold truncate text-slate-800">{pageTitle || business.name}</span>
-              </div>
-              <div className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-[10px] text-slate-500 font-medium bg-white/50 backdrop-blur-sm shadow-sm uppercase shrink-0">{locale}</div>
+          {/* Top 70% Content Area — background follows the resolved theme so dark mode covers the
+              whole preview (header included), matching the live page. */}
+          <div className="flex-1 flex flex-col relative overflow-hidden" style={{ backgroundColor: resolveThemeColors(theme).background }}>
+            {/* Compact profile header — same ProfileHeader component the live page uses, so the
+                editor preview matches it 1:1. Avatar comes from the About block's photo. */}
+            <div className="w-full pt-12 pb-2 px-4 z-10 relative shrink-0">
+              <ProfileHeader
+                avatarUrl={avatarFromBlocks(blocks)}
+                name={pageTitle || business.name}
+                description={tagline[locale] || Object.values(tagline).find(Boolean) || business.category || undefined}
+                theme={theme}
+                activeBlockId={previewActiveBlockId}
+                onBack={() => setPreviewActiveBlockId(null)}
+                topRight={<div className="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center text-[10px] text-slate-500 font-medium bg-white/50 backdrop-blur-sm shadow-sm uppercase shrink-0">{locale}</div>}
+              />
             </div>
 
             {/* Blocks (Archetype Preview) */}

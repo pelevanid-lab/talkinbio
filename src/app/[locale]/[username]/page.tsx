@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import ChatWidget from '@/components/ChatWidget';
 import ProfilePageBody from '@/components/ProfilePageBody';
 import { createClient } from '@/utils/supabase/server';
-import { DEFAULT_THEME } from '@/config/archetypes';
+import { DEFAULT_THEME, resolveThemeColors } from '@/config/archetypes';
 import { googleFontsHref } from '@/utils/googleFonts';
 import { isConversationActive } from '@/utils/conversationWindow';
 
@@ -154,8 +154,12 @@ export default async function BusinessProfilePage({ params }: any) {
     '@id': `https://www.talkinbio.com/${locale}/${business.username}#localbusiness`
   };
 
+  // Koyu modda tüm viewport (header satırı dahil) koyu zemine uyar — ArchetypeRenderer'ın kendi
+  // renkli div'i yalnızca blok alanını kaplıyor, profil başlığı ve boşluklar bunun dışında.
+  const resolvedColors = resolveThemeColors(theme);
+
   return (
-    <div className="flex flex-col min-h-[100dvh] relative">
+    <div className="flex flex-col h-[100dvh] relative" style={{ backgroundColor: resolvedColors.background, color: resolvedColors.text }}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -169,15 +173,19 @@ export default async function BusinessProfilePage({ params }: any) {
         </div>
       )}
       
-      {/* Top 70% Content Area */}
-      <main className="flex-1 overflow-y-auto pb-[35dvh]">
+      {/* Scrollable content — flex-1 min-h-0 so it fills only the space ABOVE the in-flow Saule
+          dock below. Blocks scroll within here; the last block ends above Saule and can never
+          slide under it (no magic pb-[…] needed). */}
+      <main className="flex-1 min-h-0 overflow-y-auto">
         <div className="max-w-md mx-auto w-full px-4 pt-6 pb-8">
-          
+
           <ProfilePageBody
             blocks={blocks || []}
             theme={theme}
             businessName={business.name}
             pageTitle={business.page_title || business.name}
+            tagline={business.tagline}
+            category={business.category}
             contactMethod={business.contact_method}
             contactValue={business.contact_value}
           />
@@ -185,9 +193,11 @@ export default async function BusinessProfilePage({ params }: any) {
         </div>
       </main>
 
-      {/* Bottom 30% Chat Widget */}
-      <div className="fixed bottom-0 left-0 right-0 h-[30dvh] bg-transparent z-50 pointer-events-none">
-        <div className="max-w-md mx-auto w-full h-full relative pointer-events-auto">
+      {/* Saule dock — an in-flow flex child (NOT fixed), so it reserves its own vertical space and
+          the block area above shrinks to fit. Overlap with blocks is structurally impossible.
+          The expanded chat sheet still opens as a fixed 85dvh overlay from inside ChatWidget. */}
+      <div className="h-[30dvh] shrink-0 relative z-50">
+        <div className="max-w-md mx-auto w-full h-full relative">
           <ChatWidget businessId={business.id} businessName={business.name} locale={locale} initialMessages={initialMessages} customGreeting={customGreeting} initialCreditsExhausted={(business.credit_balance ?? 0) <= 0} />
         </div>
       </div>

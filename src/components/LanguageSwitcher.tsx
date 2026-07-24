@@ -3,7 +3,7 @@
 import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from '@/i18n/routing';
 
-export default function LanguageSwitcher() {
+export default function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -12,8 +12,10 @@ export default function LanguageSwitcher() {
     router.replace(pathname, { locale: newLocale });
   };
 
+  // Color inherit: ProfileHeader controls the text color so it matches the resolved theme
+  // (light/dark) instead of the fixed global --ink. compact shrinks it to reclaim vertical space.
   return (
-    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: '13px', color: 'var(--ink)' }}>
+    <div style={{ display: 'flex', gap: compact ? '6px' : '8px', alignItems: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: compact ? '11px' : '13px', color: 'inherit' }}>
       <button 
         onClick={() => handleLanguageChange('tr')} 
         style={{ 

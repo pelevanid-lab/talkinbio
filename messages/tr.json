@@ -155,6 +155,11 @@
     "tabManual": "İnce Ayar",
     "profileLink": "Profil Bağlantınız",
     "pageTitle": "Sayfa Başlığı (opsiyonel)",
+    "tagline": "Kısa Açıklama (opsiyonel)",
+    "taglineHint": "Profil fotoğrafı 'Hakkında' bölümündeki görselden otomatik alınır.",
+    "appearance": "Görünüm",
+    "modeLight": "Açık",
+    "modeDark": "Koyu",
     "contactMethods": {
       "whatsapp": "Telefon & WhatsApp",
       "instagram": "Instagram DM",

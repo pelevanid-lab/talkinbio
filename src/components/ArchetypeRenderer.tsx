@@ -1,6 +1,6 @@
 'use client';
 
-import { DEFAULT_THEME, Theme } from '@/config/archetypes';
+import { DEFAULT_THEME, Theme, resolveThemeColors } from '@/config/archetypes';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Mail, MessageCircle, Phone, Link as LinkIcon, AtSign } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -993,13 +993,14 @@ export default function ArchetypeRenderer({
   }, [blocks, contactMethod, contactValue]);
 
   const styleVars = useMemo(() => {
+    const c = resolveThemeColors(theme);
     return {
-      '--bg': theme.colors.background,
-      '--surface': theme.colors.surface,
-      '--primary': theme.colors.primary,
-      '--text': theme.colors.text,
-      '--text-muted': theme.colors.textMuted,
-      '--border': theme.colors.border,
+      '--bg': c.background,
+      '--surface': c.surface,
+      '--primary': c.primary,
+      '--text': c.text,
+      '--text-muted': c.textMuted,
+      '--border': c.border,
       '--heading-font': `"${theme.headingFont}", sans-serif`,
       '--body-font': `"${theme.bodyFont}", sans-serif`,
     } as React.CSSProperties;

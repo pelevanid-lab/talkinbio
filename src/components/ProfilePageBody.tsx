@@ -1,35 +1,38 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { useLocale } from 'next-intl';
 import ArchetypeRenderer from './ArchetypeRenderer';
+import ProfileHeader from './ProfileHeader';
 import LanguageSwitcher from './LanguageSwitcher';
-import { Theme } from '@/config/archetypes';
+import { Theme, DEFAULT_THEME } from '@/config/archetypes';
+import { avatarFromBlocks } from '@/utils/avatarFromBlocks';
 
-// Owns activeBlockId so the "back" control can live in the same header row as the page
-// title/language switcher instead of floating inside the scrollable block content below.
-export default function ProfilePageBody({ blocks, theme, businessName, pageTitle, contactMethod, contactValue }: { blocks: any[], theme?: Theme | null, businessName: string, pageTitle: string, contactMethod?: string | null, contactValue?: string | null }) {
+type LocalizedText = Partial<Record<'tr' | 'en' | 'ru', string>> | null;
+
+// Owns activeBlockId so the "back" control can live in the same header (ProfileHeader) as the
+// avatar/name/language switcher instead of floating inside the scrollable block content below.
+export default function ProfilePageBody({ blocks, theme, businessName, pageTitle, tagline, category, contactMethod, contactValue }: { blocks: any[], theme?: Theme | null, businessName: string, pageTitle: string, tagline?: LocalizedText, category?: string | null, contactMethod?: string | null, contactValue?: string | null }) {
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
+  const locale = useLocale() as 'tr' | 'en' | 'ru';
+  const resolvedTheme = theme || DEFAULT_THEME;
+
+  const avatarUrl = avatarFromBlocks(blocks);
+  const description = tagline?.[locale] || category || undefined;
 
   return (
     <>
-      <div className="flex justify-between items-center mb-6 px-2 gap-3">
-        <div className="flex items-center gap-1 min-w-0">
-          {activeBlockId && (
-            <button
-              type="button"
-              onClick={() => setActiveBlockId(null)}
-              className="p-1 -ml-1 shrink-0 text-slate-800 hover:opacity-70 transition"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-          )}
-          <span className="text-sm font-semibold truncate text-slate-800">{pageTitle}</span>
-        </div>
-        <LanguageSwitcher />
-      </div>
+      <ProfileHeader
+        avatarUrl={avatarUrl}
+        name={pageTitle}
+        description={description}
+        theme={resolvedTheme}
+        activeBlockId={activeBlockId}
+        onBack={() => setActiveBlockId(null)}
+        topRight={<LanguageSwitcher compact />}
+      />
 
-      <div className="w-full">
+      <div className="w-full mt-6">
         {((blocks && blocks.length > 0) || (contactMethod && contactValue)) && (
           <ArchetypeRenderer
             blocks={blocks}

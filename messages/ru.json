@@ -155,6 +155,11 @@
     "tabManual": "Тонкая настройка",
     "profileLink": "Ссылка на ваш профиль",
     "pageTitle": "Заголовок страницы (необязательно)",
+    "tagline": "Краткое описание (необязательно)",
+    "taglineHint": "Фото профиля берётся автоматически из изображения в разделе «О нас».",
+    "appearance": "Оформление",
+    "modeLight": "Светлое",
+    "modeDark": "Тёмное",
     "contactMethods": {
       "whatsapp": "Телефон и WhatsApp",
       "instagram": "Instagram DM",
