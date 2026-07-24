@@ -1284,6 +1284,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 topRight={<div className="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center text-[10px] text-slate-500 font-medium bg-white/50 backdrop-blur-sm shadow-sm uppercase shrink-0">{locale}</div>}
                 shortcuts={resolveShortcuts(blocks)}
                 onShortcutSelect={setPreviewActiveBlockId}
+                minimal={(blocks.find(b => b.type === 'settings')?.content?.layoutMode === 'website') || previewActiveBlockId != null}
               />
             </div>
 

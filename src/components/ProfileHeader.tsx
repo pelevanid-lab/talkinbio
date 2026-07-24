@@ -24,6 +24,7 @@ export default function ProfileHeader({
   topRight,
   shortcuts,
   onShortcutSelect,
+  minimal = false,
 }: {
   avatarUrl?: string;
   name: string;
@@ -36,51 +37,64 @@ export default function ProfileHeader({
   // ile ilgili bölümü açar (linktree kartı). resolveShortcuts ile hazırlanıp geçilir.
   shortcuts?: Shortcut[];
   onShortcutSelect?: (blockId: string) => void;
+  // Bu yeni profil-başlığı özellikleri (avatar/isim/açıklama/wordmark/kısayollar) yalnız BLOG
+  // (linktree liste) görünümüne aittir. Web sitesi görünümünde ve bir blok açık (detay) iken
+  // minimal=true geçilir → sadece geri butonu + dil kalır, gerisi gizlenir.
+  minimal?: boolean;
 }) {
   const c = resolveThemeColors(theme);
   const initial = (name || '?').trim().charAt(0).toUpperCase();
 
+  // Minimal: web sitesi görünümü veya açık blok detayı. Sadece kompakt bir üst şerit.
+  if (minimal) {
+    return (
+      <div className="w-full flex items-center justify-between min-h-[32px]" style={{ color: c.text }}>
+        <div className="flex items-center">
+          {activeBlockId && onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="p-1 -ml-1 shrink-0 hover:opacity-70 transition"
+              style={{ color: c.text }}
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+        {topRight}
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
-      {/* Tek yatay bant: sol = talkinbio wordmark (kart açıkken geri butonu) · orta = avatar ·
-          sağ = topRight (dil pill'i / locale rozeti). Ayrı üst şerit yok → üstten dikey alan kazanılır;
-          yan kontroller avatarla dikey hizalı. */}
+      {/* Tek yatay bant: sol = talkinbio wordmark · orta = avatar · sağ = topRight (dil pill'i /
+          locale rozeti). Yan kontroller avatarın ÜST kenarıyla hizalı (top-0), ferah dursun. */}
       <div className="flex flex-col items-center text-center">
         <div className="relative w-full flex justify-center">
-          {/* Sol slot */}
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center" style={{ color: c.text }}>
-            {activeBlockId && onBack ? (
-              <button
-                type="button"
-                onClick={onBack}
-                className="p-1 -ml-1 shrink-0 hover:opacity-70 transition"
-                style={{ color: c.text }}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-            ) : (
-              <a
-                href="https://talkinbio.com/?utm_source=widget&utm_medium=profile_logo&utm_campaign=attribution"
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs font-bold tracking-tight hover:opacity-100 transition"
-                style={{ color: c.textMuted, opacity: 0.5, fontFamily: `"${theme.headingFont}", sans-serif` }}
-              >
-                talkinbio
-              </a>
-            )}
+          {/* Sol slot — avatar üst kenarına hizalı */}
+          <div className="absolute left-0 top-0 flex items-center" style={{ color: c.text }}>
+            <a
+              href="https://talkinbio.com/?utm_source=widget&utm_medium=profile_logo&utm_campaign=attribution"
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-bold tracking-tight hover:opacity-100 transition"
+              style={{ color: c.textMuted, opacity: 0.5, fontFamily: `"${theme.headingFont}", sans-serif` }}
+            >
+              talkinbio
+            </a>
           </div>
 
           {/* Avatar (orta) */}
           <div
-            className="w-[76px] h-[76px] rounded-full overflow-hidden flex items-center justify-center shrink-0 border"
+            className="w-24 h-24 rounded-full overflow-hidden flex items-center justify-center shrink-0 border"
             style={{ backgroundColor: c.surface, borderColor: c.border }}
           >
             {avatarUrl ? (
               <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
             ) : (
               <span
-                className="text-2xl font-semibold"
+                className="text-3xl font-semibold"
                 style={{ color: c.textMuted, fontFamily: `"${theme.headingFont}", sans-serif` }}
               >
                 {initial}
@@ -88,14 +102,14 @@ export default function ProfileHeader({
             )}
           </div>
 
-          {/* Sağ slot */}
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center" style={{ color: c.text }}>
+          {/* Sağ slot — avatar üst kenarına hizalı */}
+          <div className="absolute right-0 top-0 flex items-center" style={{ color: c.text }}>
             {topRight}
           </div>
         </div>
 
         <h1
-          className="mt-2 text-lg font-bold leading-tight"
+          className="mt-3 text-xl font-bold leading-tight"
           style={{ color: c.text, fontFamily: `"${theme.headingFont}", sans-serif` }}
         >
           {name}

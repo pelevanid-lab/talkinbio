@@ -1038,14 +1038,14 @@ export default function ArchetypeRenderer({
 
       <div className="flex flex-col gap-10">
         {layoutMode === 'linktree' && !activeBlockId && (
-          <div className="flex flex-col gap-4 mt-2">
+          <div className="flex flex-col gap-3 mt-2">
             {visibleBlocks.map(block => {
               const blockTitle = blockTitleOf(block, locale);
               return (
                 <button
                   key={block.id}
                   onClick={() => setActiveBlockId(block.id)}
-                  className="w-full p-4 rounded-2xl text-lg font-semibold border shadow-sm transition hover:scale-[1.02]"
+                  className="w-full py-3 px-4 rounded-2xl text-base font-semibold border shadow-sm transition hover:scale-[1.02]"
                   style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
                 >
                   {renderColoredSegments(blockTitle)}
