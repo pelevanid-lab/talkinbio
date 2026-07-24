@@ -88,14 +88,14 @@ export default function ProfileHeader({
 
           {/* Avatar (orta) */}
           <div
-            className="w-24 h-24 rounded-full overflow-hidden flex items-center justify-center shrink-0 border"
+            className="w-36 h-36 rounded-full overflow-hidden flex items-center justify-center shrink-0 border"
             style={{ backgroundColor: c.surface, borderColor: c.border }}
           >
             {avatarUrl ? (
               <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
             ) : (
               <span
-                className="text-3xl font-semibold"
+                className="text-5xl font-semibold"
                 style={{ color: c.textMuted, fontFamily: `"${theme.headingFont}", sans-serif` }}
               >
                 {initial}

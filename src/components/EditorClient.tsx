@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { createClient } from '@/utils/supabase/client';
 import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Inbox, Coins, Tag } from 'lucide-react';
 import ArchetypeRenderer from './ArchetypeRenderer';
@@ -821,7 +822,12 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 })()}
 
                 {messages.map((m, idx) => (
-                  <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div key={idx} className={`flex items-end gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    {m.role !== 'user' && (
+                      <div className="w-7 h-7 rounded-full overflow-hidden border border-slate-200 shrink-0 mb-0.5">
+                        <Image src="/beiwe-avatar-v1.png" alt="Beiwe" width={28} height={28} className="w-full h-full object-cover" />
+                      </div>
+                    )}
                     <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${m.role === 'user' ? 'bg-[var(--ink)] text-white' : 'bg-white border border-slate-200 text-slate-800 shadow-sm'}`}>
                       {getMessageText(m) === '__DEVAM__' ? (
                         <span className="italic text-white/70 text-xs">{t('pageStatus.analyzingPlaceholder')}</span>
@@ -834,7 +840,10 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                   </div>
                 ))}
                 {isChatLoading && (
-                  <div className="flex justify-start">
+                  <div className="flex items-end gap-2 justify-start">
+                    <div className="w-7 h-7 rounded-full overflow-hidden border border-slate-200 shrink-0 mb-0.5">
+                      <Image src="/beiwe-avatar-v1.png" alt="Beiwe" width={28} height={28} className="w-full h-full object-cover" />
+                    </div>
                     <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm flex items-center space-x-2">
                       <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></div>
                       <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce delay-100"></div>
