@@ -346,13 +346,19 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
         )}
       </AnimatePresence>
 
-      {/* Collapsed State (fills the parent frame — for "sheet" that's a pre-sized bottom-30dvh wrapper; for "inline" this positions itself) */}
+      {/* Collapsed State — plain flow block for BOTH variants, sized by its own content (preview
+          card + input). "inline" used to self-position with `absolute bottom-0 ... h-[31%]`
+          against the nearest positioned ancestor (the editor preview's whole phone frame, not
+          just its own reserved slot) — since this element contributed no flow height while
+          collapsed, the sibling content area's `flex-1` filled the ENTIRE frame instead of
+          leaving room for it, so the invisible dock's absolute hit-box floated on top of
+          whatever page block happened to render in that bottom band (e.g. "İletişim"), stealing
+          its clicks and opening the chat instead. Keeping this in normal flow makes it a real
+          flex sibling that the content area's `flex-1` correctly shrinks around. */}
       {!isExpanded && (
         <div
           onClick={toggleExpand}
-          className={variant === 'sheet'
-            ? 'w-full p-4 flex flex-col justify-end cursor-pointer group'
-            : 'absolute bottom-0 left-0 right-0 h-[31%] p-3 flex flex-col justify-end cursor-pointer group'}
+          className={variant === 'sheet' ? 'w-full p-4 flex flex-col justify-end cursor-pointer group' : 'w-full p-3 flex flex-col justify-end cursor-pointer group shrink-0'}
         >
           {/* Quick preview of last message */}
           <div className="bg-white border border-[var(--border-light)] rounded-2xl shadow-lg p-4 flex items-center justify-between mb-4 transform transition group-hover:-translate-y-1">
