@@ -21,18 +21,22 @@
     },
     "steps": {
       "title": "The setup itself is your agent's training.",
-      "sub": "No separate \"train the AI\" step. Every answer you give while setting up your page becomes your agent's knowledge base.",
+      "sub": "No separate \"train the AI\" step: while you chat with Beiwe, your setup agent, every answer becomes what Saule — the agent that talks to your visitors — knows.",
       "step1": {
         "title": "Answer a few questions",
-        "desc": "What do you sell, what are your prices, your hours — you explain it in a simple chat flow, no form filling."
+        "desc": "What do you sell, what are your prices, your hours — you tell Beiwe in a simple chat, no form filling."
       },
       "step2": {
         "title": "Your page and your agent are born together",
-        "desc": "The information you provide turns into both a visible page and what your agent knows — one source, two outputs."
+        "desc": "What you tell Beiwe turns into both a visible page and what Saule knows — one source, two outputs."
       },
       "step3": {
         "title": "Put your link in your bio, let it talk",
-        "desc": "Visitor asks a question, your agent answers, and takes note of interested customers for you."
+        "desc": "A visitor asks a question, Saule answers, and notes down interested customers for you."
+      },
+      "agents": {
+        "beiweRole": "Builds your page",
+        "sauleRole": "Talks to your visitors"
       }
     },
     "features": {

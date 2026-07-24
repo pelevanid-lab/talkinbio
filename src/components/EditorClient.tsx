@@ -856,26 +856,26 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
 
               <div ref={chatInputBarRef} className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent">
                 <form onSubmit={handleChatFormSubmit} className="flex items-end gap-2">
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     title={t('archive.title')}
                     onClick={() => setShowArchive(true)}
-                    className="mb-0.5 p-2.5 bg-white text-slate-500 hover:text-[var(--coral)] rounded-full border border-slate-300 shadow-sm shrink-0 transition-colors"
+                    className="w-[46px] h-[46px] flex items-center justify-center bg-white text-slate-500 hover:text-[var(--coral)] rounded-full border border-slate-300 shadow-sm shrink-0 transition-colors"
                   >
                     <Archive className="w-5 h-5" />
                   </button>
 
                   <div className="relative flex-1">
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploadingMedia || isChatLoading} 
-                      className="absolute left-3 bottom-2 p-1.5 text-slate-400 hover:text-[var(--coral)] rounded-full disabled:opacity-50 transition-colors z-10"
+                      disabled={isUploadingMedia || isChatLoading}
+                      className="absolute left-3 bottom-1.5 p-1.5 text-slate-400 hover:text-[var(--coral)] rounded-full disabled:opacity-50 transition-colors z-10"
                     >
                       {isUploadingMedia ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
                     </button>
                     <input type="file" ref={fileInputRef} onChange={handleMediaUpload} accept="image/*,video/*" className="hidden" />
-                    
+
                     <textarea
                       value={input}
                       onChange={(e) => {
@@ -897,21 +897,21 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                       style={{ maxHeight: '150px' }}
                     />
                     {isChatLoading ? (
-                      <button type="button" onClick={() => stop()} className="absolute right-2 bottom-1.5 p-2.5 bg-[var(--coral)] text-white rounded-lg transition-opacity">
+                      <button type="button" onClick={() => stop()} className="absolute right-2 bottom-1.5 w-8 h-8 flex items-center justify-center bg-[var(--coral)] text-white rounded-full transition-opacity">
                         <Square className="w-3 h-3 fill-white" />
                       </button>
                     ) : (
-                      <button type="submit" disabled={!input.trim()} className="absolute right-2 bottom-1.5 p-2 bg-[var(--coral)] text-white rounded-full disabled:opacity-50 transition-opacity">
+                      <button type="submit" disabled={!input.trim()} className="absolute right-2 bottom-1.5 w-8 h-8 flex items-center justify-center bg-[var(--coral)] text-white rounded-full disabled:opacity-50 transition-opacity">
                         <Send className="w-4 h-4" />
                       </button>
                     )}
                   </div>
 
-                  <button 
+                  <button
                     type="button"
                     title={t('newChatTooltip')}
                     onClick={() => handleNewChat()}
-                    className="mb-0.5 p-2.5 bg-white text-slate-500 hover:text-[var(--coral)] rounded-full border border-slate-300 shadow-sm shrink-0 transition-colors"
+                    className="w-[46px] h-[46px] flex items-center justify-center bg-white text-slate-500 hover:text-[var(--coral)] rounded-full border border-slate-300 shadow-sm shrink-0 transition-colors"
                   >
                     <MessageSquarePlus className="w-5 h-5" />
                   </button>

@@ -21,18 +21,22 @@
     },
     "steps": {
       "title": "Kurulumun kendisi, ajanının eğitimi.",
-      "sub": "Ayrı bir \"yapay zekayı besle\" adımı yok. Sayfanı kurarken verdiğin her cevap, aynı anda temsilcinin bilgi kaynağı oluyor.",
+      "sub": "Ayrı bir \"yapay zekayı besle\" adımı yok: kurulum ajanın Beiwe'yle sohbet ederken verdiğin her cevap, ziyaretçilerinle konuşan Saule'nin bilgi kaynağı oluyor.",
       "step1": {
         "title": "Birkaç soruya cevap ver",
-        "desc": "Ne satıyorsun, fiyatların ne, saatlerin ne — sade bir sohbet akışıyla anlatıyorsun, form doldurmuyorsun."
+        "desc": "Ne satıyorsun, fiyatların ne, saatlerin ne — Beiwe'yle sade bir sohbet akışında anlatıyorsun, form doldurmuyorsun."
       },
       "step2": {
         "title": "Sayfan ve temsilcin birlikte doğar",
-        "desc": "Verdiğin bilgi hem görünür bir sayfaya hem de ajanının bildiklerine dönüşür — tek kaynak, iki çıktı."
+        "desc": "Beiwe'ye verdiğin bilgi hem görünür bir sayfaya hem de Saule'nin bildiklerine dönüşür — tek kaynak, iki çıktı."
       },
       "step3": {
         "title": "Linkini bio'na koy, konuşmaya bırak",
-        "desc": "Ziyaretçi soru sorar, temsilcin cevaplar, ilgilenen müşteriyi senin için not alır."
+        "desc": "Ziyaretçi soru sorar, Saule cevaplar, ilgilenen müşteriyi senin için not alır."
+      },
+      "agents": {
+        "beiweRole": "Sayfanı kurar",
+        "sauleRole": "Ziyaretçinle konuşur"
       }
     },
     "features": {

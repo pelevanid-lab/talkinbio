@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
+import Image from 'next/image';
 import { Link } from '@/i18n/routing';
 import LandingMockup from '@/components/LandingMockup';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -169,9 +170,27 @@ export default async function HomePage({ params }: any) {
 
         <section id="nasil-calisir">
           <div className="wrap">
-            <div className="section-head">
-              <h2>{t('steps.title')}</h2>
-              <p>{t('steps.sub')}</p>
+            <div className="steps-head">
+              <div className="section-head">
+                <h2>{t('steps.title')}</h2>
+                <p>{t('steps.sub')}</p>
+              </div>
+              <div className="agents-intro">
+                <div className="agent-chip">
+                  <div className="agent-avatar">
+                    <Image src="/beiwe-avatar-v1.png" alt="Beiwe" width={72} height={72} className="w-full h-full object-cover" />
+                  </div>
+                  <span className="agent-name">Beiwe</span>
+                  <span className="agent-role">{t('steps.agents.beiweRole')}</span>
+                </div>
+                <div className="agent-chip">
+                  <div className="agent-avatar">
+                    <Image src="/saule-avatar-v1.png" alt="Saule" width={72} height={72} className="w-full h-full object-cover" />
+                  </div>
+                  <span className="agent-name">Saule</span>
+                  <span className="agent-role">{t('steps.agents.sauleRole')}</span>
+                </div>
+              </div>
             </div>
             <div className="steps">
               <div className="step">
