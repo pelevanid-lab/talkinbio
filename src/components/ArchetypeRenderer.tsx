@@ -2,12 +2,13 @@
 
 import { DEFAULT_THEME, Theme, resolveThemeColors } from '@/config/archetypes';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Mail, MessageCircle, Phone, Link as LinkIcon, AtSign } from 'lucide-react';
+import { Mail, MessageCircle, Link as LinkIcon, AtSign } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useLocale } from 'next-intl';
 import { renderColoredSegments, toColorMarkdown, colorLinkComponents, stripColorSyntax, styleUrlTransform } from '@/utils/coloredText';
 import { defaultTitleFor, getHoursLabels, type DayKey } from '@/config/localeTitles';
 import { isVideoUrl } from '@/utils/mediaType';
+import { iconForLinkUrl } from '@/utils/linkIcon';
 
 type RenderCtx = {
   locale: string;
@@ -760,17 +761,6 @@ function renderTestimonials(block: any, ctx: RenderCtx) {
   }
 
   return withSectionBackground(inner, block.id, ctx, block.content?.backgroundImage, block.content?.backgroundOverlay);
-}
-
-// lucide-react no longer ships brand/logo icons (Instagram, Facebook, Youtube, ...) — this only
-// picks generic icons it actually has, and falls back to a plain link icon for everything else.
-function iconForLinkUrl(url: string) {
-  const u = (url || '').toLowerCase();
-  if (u.includes('instagram.com')) return AtSign;
-  if (u.includes('wa.me') || u.includes('whatsapp')) return MessageCircle;
-  if (u.startsWith('mailto:')) return Mail;
-  if (u.startsWith('tel:')) return Phone;
-  return LinkIcon;
 }
 
 function renderLinks(block: any, ctx: RenderCtx) {

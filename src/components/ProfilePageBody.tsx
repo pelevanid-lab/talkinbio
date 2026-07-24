@@ -7,6 +7,7 @@ import ProfileHeader from './ProfileHeader';
 import LanguageSwitcher from './LanguageSwitcher';
 import { Theme, DEFAULT_THEME } from '@/config/archetypes';
 import { avatarFromBlocks } from '@/utils/avatarFromBlocks';
+import { resolveShortcuts } from '@/utils/shortcuts';
 
 type LocalizedText = Partial<Record<'tr' | 'en' | 'ru', string>> | null;
 
@@ -19,6 +20,7 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
 
   const avatarUrl = avatarFromBlocks(blocks);
   const description = tagline?.[locale] || category || undefined;
+  const shortcuts = resolveShortcuts(blocks);
 
   return (
     <>
@@ -30,6 +32,8 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
         activeBlockId={activeBlockId}
         onBack={() => setActiveBlockId(null)}
         topRight={<LanguageSwitcher compact />}
+        shortcuts={shortcuts}
+        onShortcutSelect={setActiveBlockId}
       />
 
       <div className="w-full mt-6">

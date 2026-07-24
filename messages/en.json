@@ -160,6 +160,12 @@
     "appearance": "Appearance",
     "modeLight": "Light",
     "modeDark": "Dark",
+    "shortcuts": "Shortcuts",
+    "shortcutsHint": "Shown under the profile header. Up to 4 links or services.",
+    "shortcutAdd": "+ Add shortcut (link or service)",
+    "shortcutsFull": "Up to 4 shortcuts",
+    "shortcutGroupLinks": "Links",
+    "shortcutGroupServices": "Services",
     "contactMethods": {
       "whatsapp": "Phone & WhatsApp",
       "instagram": "Instagram DM",

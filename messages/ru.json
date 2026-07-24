@@ -160,6 +160,12 @@
     "appearance": "Оформление",
     "modeLight": "Светлое",
     "modeDark": "Тёмное",
+    "shortcuts": "Ярлыки",
+    "shortcutsHint": "Показываются под шапкой профиля. До 4 ссылок или услуг.",
+    "shortcutAdd": "+ Добавить ярлык (ссылку или услугу)",
+    "shortcutsFull": "Не более 4 ярлыков",
+    "shortcutGroupLinks": "Ссылки",
+    "shortcutGroupServices": "Услуги",
     "contactMethods": {
       "whatsapp": "Телефон и WhatsApp",
       "instagram": "Instagram DM",

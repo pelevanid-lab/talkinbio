@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Inbox, Coins } from 'lucide-react';
+import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Inbox, Coins, Tag } from 'lucide-react';
 import ArchetypeRenderer from './ArchetypeRenderer';
 import ProfileHeader from './ProfileHeader';
 import AgentMarkdown from './AgentMarkdown';
@@ -16,6 +16,8 @@ import { useTranslations, useLocale } from 'next-intl';
 import { RECOMMENDED_TYPES, hasRealContent, isRequiredSatisfied } from '@/config/blockTypes';
 import { DEFAULT_THEME, Theme, resolveThemeColors } from '@/config/archetypes';
 import { avatarFromBlocks } from '@/utils/avatarFromBlocks';
+import { collectShortcutCandidates, getShortcuts, resolveShortcuts, shortcutsEqual, type Shortcut } from '@/utils/shortcuts';
+import { iconForLinkUrl } from '@/utils/linkIcon';
 import { googleFontsHref } from '@/utils/googleFonts';
 import { compressImageIfNeeded } from '@/utils/imageCompression';
 
@@ -487,6 +489,32 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
       setTagline(cleaned);
       setIsEditingTagline(false);
       await markNeedsRepublish();
+    }
+  };
+
+  // Kısayollar settings bloğunun content.shortcuts'ında saklanır (layoutMode ile aynı desen,
+  // handleLayoutModeChange). Yeni migration yok. Maks 4.
+  const handleShortcutsChange = async (next: Shortcut[]) => {
+    const settingsBlock = blocks.find(b => b.type === 'settings');
+    try {
+      const { data, error } = settingsBlock
+        ? await supabase.from('blocks').update({
+            content: { ...settingsBlock.content, shortcuts: next },
+          }).eq('id', settingsBlock.id).select().single()
+        : await supabase.from('blocks').insert({
+            business_id: business.id,
+            type: 'settings',
+            title: 'Settings',
+            content: { shortcuts: next },
+            order: 99,
+            is_visible: false,
+          }).select().single();
+      if (error) throw error;
+      setBlocks(settingsBlock ? blocks.map(b => b.id === settingsBlock.id ? data : b) : [...blocks, data]);
+      await markNeedsRepublish();
+    } catch (err) {
+      console.error(err);
+      alert(t('layoutSaveError'));
     }
   };
 
@@ -962,6 +990,66 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 </div>
               </div>
 
+              {/* Shortcuts — up to 4 quick buttons shown under the profile header. Each surfaces an
+                  existing Link (opens URL) or Service (jumps to that section). Stored on the
+                  settings block's content.shortcuts. */}
+              {(() => {
+                const currentShortcuts = getShortcuts(blocks);
+                const candidates = collectShortcutCandidates(blocks, locale)
+                  .filter((cand) => !currentShortcuts.some((s) => shortcutsEqual(s, cand)));
+                const atMax = currentShortcuts.length >= 4;
+                return (
+                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-medium text-slate-500">{t('shortcuts')}</span>
+                      <span className="text-[10px] text-slate-400">{currentShortcuts.length}/4</span>
+                    </div>
+                    {currentShortcuts.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {currentShortcuts.map((s, idx) => {
+                          const Icon = s.kind === 'link' ? iconForLinkUrl(s.url) : Tag;
+                          return (
+                            <span key={idx} className="inline-flex items-center gap-1 pl-2 pr-1 py-1 bg-white border border-slate-200 rounded-full text-xs text-[var(--ink)]">
+                              <Icon className="w-3 h-3 shrink-0 text-slate-400" />
+                              <span className="truncate max-w-[7rem]">{s.label}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleShortcutsChange(currentShortcuts.filter((_, i) => i !== idx))}
+                                className="p-0.5 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <select
+                      value=""
+                      disabled={atMax || candidates.length === 0}
+                      onChange={(e) => {
+                        const cand = candidates[Number(e.target.value)];
+                        if (cand) handleShortcutsChange([...currentShortcuts, cand]);
+                      }}
+                      className="w-full p-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-[var(--coral)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="" disabled>{atMax ? t('shortcutsFull') : t('shortcutAdd')}</option>
+                      {candidates.some((c) => c.kind === 'link') && (
+                        <optgroup label={t('shortcutGroupLinks')}>
+                          {candidates.map((c, i) => c.kind === 'link' ? <option key={i} value={i}>{c.label}</option> : null)}
+                        </optgroup>
+                      )}
+                      {candidates.some((c) => c.kind === 'service') && (
+                        <optgroup label={t('shortcutGroupServices')}>
+                          {candidates.map((c, i) => c.kind === 'service' ? <option key={i} value={i}>{c.label}</option> : null)}
+                        </optgroup>
+                      )}
+                    </select>
+                    <p className="text-[10px] text-slate-400 mt-1">{t('shortcutsHint')}</p>
+                  </div>
+                );
+              })()}
+
               {/* Contact methods — the single source of truth also used by request-access and the
                   setup agent's updateContact tool; not a reorderable page block. */}
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
@@ -1194,6 +1282,8 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 activeBlockId={previewActiveBlockId}
                 onBack={() => setPreviewActiveBlockId(null)}
                 topRight={<div className="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center text-[10px] text-slate-500 font-medium bg-white/50 backdrop-blur-sm shadow-sm uppercase shrink-0">{locale}</div>}
+                shortcuts={resolveShortcuts(blocks)}
+                onShortcutSelect={setPreviewActiveBlockId}
               />
             </div>
 

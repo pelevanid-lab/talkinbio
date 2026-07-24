@@ -160,6 +160,12 @@
     "appearance": "Görünüm",
     "modeLight": "Açık",
     "modeDark": "Koyu",
+    "shortcuts": "Kısayollar",
+    "shortcutsHint": "Profil başlığının altında gösterilir. En fazla 4 bağlantı veya hizmet.",
+    "shortcutAdd": "+ Kısayol ekle (bağlantı veya hizmet)",
+    "shortcutsFull": "En fazla 4 kısayol",
+    "shortcutGroupLinks": "Bağlantılar",
+    "shortcutGroupServices": "Hizmetler",
     "contactMethods": {
       "whatsapp": "Telefon & WhatsApp",
       "instagram": "Instagram DM",
