@@ -3,6 +3,7 @@
 import { ChevronLeft, Tag } from 'lucide-react';
 import { Theme, resolveThemeColors } from '@/config/archetypes';
 import { iconForLinkUrl } from '@/utils/linkIcon';
+import { renderColoredSegments } from '@/utils/coloredText';
 import type { Shortcut } from '@/utils/shortcuts';
 
 // Linktree-style profil başlığı: hem canlı sayfada (ProfilePageBody) hem editör önizlemesinde
@@ -112,7 +113,7 @@ export default function ProfileHeader({
           className="mt-3 text-xl font-bold leading-tight"
           style={{ color: c.text, fontFamily: `"${theme.headingFont}", sans-serif` }}
         >
-          {name}
+          {renderColoredSegments(name)}
         </h1>
 
         {description && (
@@ -120,7 +121,7 @@ export default function ProfileHeader({
             className="mt-1 text-xs leading-snug line-clamp-2 max-w-[46ch]"
             style={{ color: c.textMuted }}
           >
-            {description}
+            {renderColoredSegments(description)}
           </p>
         )}
 

@@ -18,6 +18,7 @@ import { DEFAULT_THEME, Theme, resolveThemeColors } from '@/config/archetypes';
 import { avatarFromBlocks } from '@/utils/avatarFromBlocks';
 import { collectShortcutCandidates, getShortcuts, resolveShortcuts, shortcutsEqual, type Shortcut } from '@/utils/shortcuts';
 import { iconForLinkUrl } from '@/utils/linkIcon';
+import { ColoredTextField, renderColoredSegments } from '@/utils/coloredText';
 import { googleFontsHref } from '@/utils/googleFonts';
 import { compressImageIfNeeded } from '@/utils/imageCompression';
 
@@ -920,16 +921,16 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                   )}
                 </div>
                 {isEditingPageTitle ? (
-                  <input
-                    type="text"
+                  <ColoredTextField
                     value={pageTitle}
-                    onChange={e => setPageTitle(e.target.value)}
+                    onChange={setPageTitle}
                     placeholder={business.name}
-                    className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-[var(--coral)]"
+                    compact
+                    className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus-within:border-[var(--coral)] bg-white min-h-[38px]"
                   />
                 ) : (
                   <div className="text-sm font-medium text-[var(--ink)]">
-                    {pageTitle || business.name}
+                    {pageTitle ? renderColoredSegments(pageTitle) : business.name}
                   </div>
                 )}
               </div>
