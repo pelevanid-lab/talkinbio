@@ -408,6 +408,9 @@
       "applyBtn": "Apply",
       "boldTitle": "Bold",
       "underlineTitle": "Underline",
+      "bulletDotTitle": "Dot Bullet",
+      "bulletDashTitle": "Dash Bullet",
+      "bulletCheckTitle": "Check Bullet",
       "clearFormatTitle": "Clear Formatting",
       "hint": "— select text and click a color/style, or the eraser to remove it"
     }

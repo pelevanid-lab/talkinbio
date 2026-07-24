@@ -408,6 +408,9 @@
       "applyBtn": "Uygula",
       "boldTitle": "Kalın",
       "underlineTitle": "Altı Çizili",
+      "bulletDotTitle": "Nokta Madde",
+      "bulletDashTitle": "Tire Madde",
+      "bulletCheckTitle": "Tik Madde",
       "clearFormatTitle": "Biçimlendirmeyi Kaldır",
       "hint": "— metni seçip bir renge/biçime tıkla, kaldırmak için silgiye tıkla"
     }

@@ -5,7 +5,7 @@ import ContinuousImprovementTabs from '@/components/ContinuousImprovementTabs';
 import { useEffect, useState } from 'react';
 import {
   Target, Users, DollarSign, CalendarClock, MessageCircle,
-  Copy, Check, XCircle, Plus, Trash2, NotebookPen, TrendingUp,
+  Copy, Check, XCircle, Plus, Trash2, NotebookPen, TrendingUp, Pencil, X, Save
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -110,6 +110,8 @@ function Gunluk() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [draft, setDraft] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState('');
 
   // Mount'ta yükle (hydration uyumsuzluğunu önlemek için useEffect)
   useEffect(() => {
@@ -142,6 +144,23 @@ function Gunluk() {
 
   function remove(id: string) {
     setEntries((prev) => prev.filter((e) => e.id !== id));
+  }
+
+  function startEdit(e: Entry) {
+    setEditingId(e.id);
+    setEditDraft(e.text);
+  }
+
+  function saveEdit() {
+    if (!editDraft.trim() || !editingId) return;
+    setEntries(prev => prev.map(entry => entry.id === editingId ? { ...entry, text: editDraft.trim() } : entry));
+    setEditingId(null);
+    setEditDraft('');
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditDraft('');
   }
 
   return (
@@ -183,15 +202,54 @@ function Gunluk() {
             <div key={e.id} className="bg-slate-50 border border-slate-100 rounded-xl p-4">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs font-mono font-bold text-slate-500">{e.date}</span>
-                <button
-                  onClick={() => remove(e.id)}
-                  className="text-slate-300 hover:text-red-500 transition-colors"
-                  aria-label="Sil"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => startEdit(e)}
+                    className="text-slate-300 hover:text-blue-500 transition-colors"
+                    aria-label="Düzenle"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => remove(e.id)}
+                    className="text-slate-300 hover:text-red-500 transition-colors"
+                    aria-label="Sil"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-              <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{e.text}</p>
+              {editingId === e.id ? (
+                <div className="mt-2 flex flex-col gap-2">
+                  <textarea
+                    value={editDraft}
+                    onChange={(ev) => setEditDraft(ev.target.value)}
+                    onKeyDown={(ev) => {
+                      if (ev.key === 'Escape') cancelEdit();
+                      if ((ev.metaKey || ev.ctrlKey) && ev.key === 'Enter') saveEdit();
+                    }}
+                    rows={3}
+                    className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 resize-y focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-400"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={cancelEdit}
+                      className="flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3 py-1.5 rounded-lg"
+                    >
+                      <X className="w-3.5 h-3.5" /> İptal
+                    </button>
+                    <button
+                      onClick={saveEdit}
+                      disabled={!editDraft.trim()}
+                      className="flex items-center gap-1 text-xs font-medium bg-blue-600 text-white hover:bg-blue-700 px-3 py-1.5 rounded-lg disabled:opacity-50"
+                    >
+                      <Save className="w-3.5 h-3.5" /> Kaydet
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{e.text}</p>
+              )}
             </div>
           ))}
         </div>

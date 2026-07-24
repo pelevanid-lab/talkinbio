@@ -408,6 +408,9 @@
       "applyBtn": "Применить",
       "boldTitle": "Жирный",
       "underlineTitle": "Подчёркнутый",
+      "bulletDotTitle": "Маркер: точка",
+      "bulletDashTitle": "Маркер: тире",
+      "bulletCheckTitle": "Маркер: галочка",
       "clearFormatTitle": "Убрать форматирование",
       "hint": "— выделите текст и нажмите на цвет/стиль, чтобы убрать — на ластик"
     }

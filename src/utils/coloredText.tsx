@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { defaultUrlTransform } from 'react-markdown';
 import { useTranslations } from 'next-intl';
-import { Bold, Underline, Eraser } from 'lucide-react';
+import { Bold, Underline, Eraser, List, Minus, Check } from 'lucide-react';
 
 // Shared authoring syntax for inline text styling, entered via the manual editor's toolbar
 // (ColoredTextField below) or typed by hand: `[[metin|attrs]]`, where attrs is a `;`-separated
@@ -123,14 +123,23 @@ function applyAttrsToSpan(span: HTMLElement, attrs: Attrs) {
 function buildDom(root: HTMLElement, text: string) {
   root.innerHTML = '';
   for (const seg of parseColorSegments(text)) {
-    if (seg.color || seg.bold || seg.underline) {
-      const span = document.createElement('span');
-      applyAttrsToSpan(span, seg);
-      span.textContent = seg.text;
-      root.appendChild(span);
-    } else {
-      root.appendChild(document.createTextNode(seg.text));
-    }
+    // Represent embedded newlines as real <br> elements rather than a literal '\n' character
+    // inside a text node — serializeDom already reads BR back as '\n' (see below), and the bullet
+    // toolbar's line-detection depends on every line boundary being a real DOM node it can locate,
+    // not a character it would have to scan text content for.
+    const lines = seg.text.split('\n');
+    lines.forEach((line, i) => {
+      if (i > 0) root.appendChild(document.createElement('br'));
+      if (!line) return;
+      if (seg.color || seg.bold || seg.underline) {
+        const span = document.createElement('span');
+        applyAttrsToSpan(span, seg);
+        span.textContent = line;
+        root.appendChild(span);
+      } else {
+        root.appendChild(document.createTextNode(line));
+      }
+    });
   }
 }
 
@@ -178,6 +187,81 @@ function serializeDom(root: HTMLElement): string {
     }
   });
   return parts.join('');
+}
+
+// Plain-text line prefixes toggled by the bullet toolbar buttons below — rendered as literal
+// characters (not HTML list markup), since downstream description text is displayed via
+// `renderColoredSegments` + `whitespace-pre-line`, not markdown, and needs to survive being
+// copy-pasted verbatim into WhatsApp/etc.
+const BULLET_PREFIXES = ['• ', '- ', '✓ '];
+
+// Finds the "block" scope that contains `node` for line-splitting purposes: the DIV/P ancestor
+// that's a direct child of `root` (contentEditable's one-DIV/P-per-line-on-Enter behavior in
+// Chrome/Safari), or `root` itself when there's no such wrapper yet — a single-line field, a
+// multiline field before the user has pressed Enter, or Firefox's flat bare-<br> style. `root`
+// can itself hold several <br>-separated lines, which findCurrentLine below splits out.
+function lineContainerOf(root: HTMLElement, node: Node): HTMLElement {
+  // A collapsed selection at the very end of the field commonly reports its container as `root`
+  // itself (offset = childNodes.length) rather than inside the last text node — walking up from
+  // `root` via parentNode would otherwise escape the field entirely.
+  if (node === root) return root;
+  let n: Node | null = node;
+  while (n && n.parentNode !== root) n = n.parentNode;
+  if (n && n.nodeType === Node.ELEMENT_NODE && /^(DIV|P)$/.test((n as HTMLElement).tagName)) {
+    return n as HTMLElement;
+  }
+  return root;
+}
+
+// Locates the single line touched by a collapsed point within `block` (a DIV/P line, or root
+// itself when lines are just <br>-separated) — the `<br>` immediately before/after the point (if
+// any), plus the line's first text node so a bullet prefix can be read/written there. `point` must
+// be a collapsed Range at the position to test.
+function findCurrentLine(block: HTMLElement, point: Range): { startMarker: HTMLElement | null; textNode: Text | null } {
+  let startMarker: HTMLElement | null = null;
+  let endMarker: HTMLElement | null = null;
+  for (const br of Array.from(block.querySelectorAll('br'))) {
+    const parent = br.parentNode;
+    if (!parent) continue;
+    const idx = Array.prototype.indexOf.call(parent.childNodes, br);
+    if (point.comparePoint(parent, idx) < 0) {
+      startMarker = br;
+    } else {
+      endMarker = br;
+      break;
+    }
+  }
+
+  const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+  walker.currentNode = startMarker || block;
+  let textNode = walker.nextNode() as Text | null;
+  // A text node found here could belong to the *next* line if the current line is empty —
+  // discard it unless it actually precedes this line's end marker.
+  if (textNode && endMarker && !(endMarker.compareDocumentPosition(textNode) & Node.DOCUMENT_POSITION_PRECEDING)) {
+    textNode = null;
+  }
+  return { startMarker, textNode };
+}
+
+// Toggles `prefix` at the start of the line found by `findCurrentLine`: replaces any other bullet
+// prefix already there, or removes `prefix` itself if it's already present (so clicking the same
+// bullet button twice turns it back off).
+function setLineBullet(block: HTMLElement, point: Range, prefix: string) {
+  const { startMarker, textNode } = findCurrentLine(block, point);
+  if (textNode) {
+    const current = textNode.nodeValue || '';
+    const existing = BULLET_PREFIXES.find((p) => current.startsWith(p));
+    const stripped = existing ? current.slice(existing.length) : current;
+    textNode.nodeValue = existing === prefix ? stripped : prefix + stripped;
+    return;
+  }
+  // Empty line — nothing to toggle off, just insert the marker.
+  const newText = document.createTextNode(prefix);
+  if (startMarker) {
+    startMarker.parentNode!.insertBefore(newText, startMarker.nextSibling);
+  } else {
+    block.insertBefore(newText, block.firstChild);
+  }
 }
 
 // Drop-in replacement for a plain <input>/<textarea> that lets the user select a run of text and
@@ -279,6 +363,26 @@ export function ColoredTextField({
     emitChange();
   };
 
+  // Toggles a bullet prefix on the line under the caret (or the start of the current selection) —
+  // unlike applyFormat/clearFormat this doesn't need a non-empty text selection, since it acts on
+  // the whole line rather than a run of characters.
+  const toggleBullet = (prefix: string) => {
+    const root = rootRef.current;
+    if (!root) return;
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    const range = sel.getRangeAt(0);
+    if (!root.contains(range.commonAncestorContainer)) return;
+
+    const block = lineContainerOf(root, range.startContainer);
+    const point = document.createRange();
+    point.setStart(range.startContainer, range.startOffset);
+    point.collapse(true);
+
+    setLineBullet(block, point, prefix);
+    emitChange();
+  };
+
   const swatchSize = compact ? 'w-4 h-4' : 'w-6 h-6';
   const formatBtnSize = compact ? 'w-4 h-4' : 'w-6 h-6';
   const formatIconSize = compact ? 10 : 14;
@@ -317,6 +421,37 @@ export function ColoredTextField({
         >
           <Underline size={formatIconSize} />
         </button>
+        {multiline && (
+          <>
+            <button
+              type="button"
+              title={t('bulletDotTitle')}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => toggleBullet('• ')}
+              className={`flex items-center justify-center rounded border border-slate-300 shadow-sm shrink-0 text-slate-600 hover:bg-slate-50 ${formatBtnSize}`}
+            >
+              <List size={formatIconSize} />
+            </button>
+            <button
+              type="button"
+              title={t('bulletDashTitle')}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => toggleBullet('- ')}
+              className={`flex items-center justify-center rounded border border-slate-300 shadow-sm shrink-0 text-slate-600 hover:bg-slate-50 ${formatBtnSize}`}
+            >
+              <Minus size={formatIconSize} />
+            </button>
+            <button
+              type="button"
+              title={t('bulletCheckTitle')}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => toggleBullet('✓ ')}
+              className={`flex items-center justify-center rounded border border-slate-300 shadow-sm shrink-0 text-slate-600 hover:bg-slate-50 ${formatBtnSize}`}
+            >
+              <Check size={formatIconSize} />
+            </button>
+          </>
+        )}
         <button
           type="button"
           title={t('clearFormatTitle')}
