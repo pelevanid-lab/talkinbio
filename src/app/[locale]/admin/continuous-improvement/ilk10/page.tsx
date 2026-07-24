@@ -5,7 +5,7 @@ import ContinuousImprovementTabs from '@/components/ContinuousImprovementTabs';
 import { useEffect, useState } from 'react';
 import {
   Target, Users, DollarSign, CalendarClock, MessageCircle,
-  Copy, Check, XCircle, Plus, Trash2, NotebookPen, TrendingUp, Pencil, X, Save
+  Copy, Check, XCircle, Plus, Trash2, NotebookPen, TrendingUp, Pencil, X, Save, Table2
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -73,6 +73,253 @@ const objections = [
 
 const followUp =
   'Selam [isim], o soruyu sormamın sebebi diyetisyenlere özel küçük bir şey hazırlamış olmam — ilgilenirsen 2 dk’lık örnek atarım, ilgilenmezsen hiç dert değil 🙂';
+
+/* ------------------------------------------------------------------ */
+/* Adaylar (Leads) — localStorage, düzenlenebilir tablo                 */
+/* Seed: 2026-07-24 araştırması + önceliklendirme.                     */
+/* ------------------------------------------------------------------ */
+
+type Aday = {
+  id: string;
+  hesap: string;
+  takipci: string;
+  gelir: 'Yüksek' | 'Orta' | 'Düşük';
+  not_: string;
+  asama: 'Bekliyor' | 'Temas' | 'Cevap' | 'Demo' | 'Ödedi' | 'Vazgeçti';
+  oncelik: 'Yüksek' | 'Orta' | 'Düşük';
+};
+
+const ADAYLAR_KEY = 'ilk10-adaylar-v1';
+
+const seedAdaylar: Aday[] = [
+  {
+    id: 'seed-5',
+    hesap: 'diyetisyenfatmalikos',
+    takipci: '15.6K',
+    gelir: 'Orta',
+    not_: 'Bio\'da WP var. Mevcut bir bot karşılama yapmıyor — sorunu zaten kanıtlamış, en sıcak aday.',
+    asama: 'Bekliyor',
+    oncelik: 'Yüksek',
+  },
+  {
+    id: 'seed-2',
+    hesap: 'dyetelifakca',
+    takipci: '4.9K',
+    gelir: 'Orta',
+    not_: 'Bio\'da çok uzun bir anket var. Anket yerine Saule konuşması net pitch açısı — "anketi kaç kişi bitiriyor" ile aç.',
+    asama: 'Bekliyor',
+    oncelik: 'Yüksek',
+  },
+  {
+    id: 'seed-4',
+    hesap: 'dyt.edanurbolukbas',
+    takipci: '8.4K',
+    gelir: 'Orta',
+    not_: 'Bio\'da Shopier var — ödeme almaya alışkın, dijital ürün satıyor.',
+    asama: 'Bekliyor',
+    oncelik: 'Orta',
+  },
+  {
+    id: 'seed-1',
+    hesap: 'diyetisyenecrinavci',
+    takipci: '19.4K',
+    gelir: 'Yüksek',
+    not_: 'Yüksek gelir grubu, ödeme sürtünmesi düşük olmalı.',
+    asama: 'Bekliyor',
+    oncelik: 'Orta',
+  },
+  {
+    id: 'seed-3',
+    hesap: 'diyetisyensedaozguzel',
+    takipci: '3.3K',
+    gelir: 'Orta',
+    not_: 'Bio\'da WP, işletme hesabı ama karşılama mesajı gelmiyor. Takipçi alt sınırda.',
+    asama: 'Bekliyor',
+    oncelik: 'Düşük',
+  },
+  {
+    id: 'seed-6',
+    hesap: 'uzm.dyt.nilhanesim',
+    takipci: '30.7K',
+    gelir: 'Orta',
+    not_: 'Website + doktortakvimi.com. Üst sınırda takipçi, muhtemelen ekip var. DoktorTakvimi rakip sinyali — birkaç diyetisyende görüldü.',
+    asama: 'Bekliyor',
+    oncelik: 'Düşük',
+  },
+];
+
+const asamaRenk: Record<Aday['asama'], string> = {
+  Bekliyor: 'bg-slate-100 text-slate-600',
+  Temas: 'bg-blue-100 text-blue-700',
+  Cevap: 'bg-amber-100 text-amber-700',
+  Demo: 'bg-purple-100 text-purple-700',
+  Ödedi: 'bg-emerald-100 text-emerald-700',
+  Vazgeçti: 'bg-red-100 text-red-600',
+};
+
+const oncelikRenk: Record<Aday['oncelik'], string> = {
+  Yüksek: 'text-red-600',
+  Orta: 'text-amber-600',
+  Düşük: 'text-slate-400',
+};
+
+function Adaylar() {
+  const [adaylar, setAdaylar] = useState<Aday[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(ADAYLAR_KEY);
+      setAdaylar(raw ? JSON.parse(raw) : seedAdaylar);
+    } catch {
+      setAdaylar(seedAdaylar);
+    }
+    setLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    try {
+      localStorage.setItem(ADAYLAR_KEY, JSON.stringify(adaylar));
+    } catch {
+      /* geç */
+    }
+  }, [adaylar, loaded]);
+
+  function update(id: string, field: keyof Aday, value: string) {
+    setAdaylar((prev) => prev.map((a) => (a.id === id ? { ...a, [field]: value } : a)));
+  }
+
+  function remove(id: string) {
+    setAdaylar((prev) => prev.filter((a) => a.id !== id));
+  }
+
+  function addRow() {
+    setAdaylar((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), hesap: '', takipci: '', gelir: 'Orta', not_: '', asama: 'Bekliyor', oncelik: 'Orta' },
+    ]);
+  }
+
+  const inputCls =
+    'w-full text-sm border-0 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:bg-white rounded px-1.5 py-1';
+  const selectCls =
+    'text-xs font-semibold border-0 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500/40 rounded px-1 py-0.5 cursor-pointer';
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
+        <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <Table2 className="w-5 h-5 text-slate-600" /> Adaylar
+        </h2>
+        <button
+          onClick={addRow}
+          className="flex items-center gap-1.5 text-xs font-medium bg-slate-900 text-white px-3 py-1.5 rounded-lg hover:bg-slate-700 transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" /> Yeni aday
+        </button>
+      </div>
+      <p className="text-xs text-slate-500 mb-4">
+        Bu tarayıcıda saklanır, hücrelere tıklayıp doğrudan düzenle. Öncelik sırası: yüksek acı sinyali (mevcut bot/anket sorunu, ödemeye alışkınlık) &gt; nötr.
+      </p>
+
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-x-auto">
+        <table className="w-full text-sm min-w-[900px]">
+          <thead>
+            <tr className="border-b border-slate-100 text-left">
+              <th className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-bold w-[16%]">Hesap</th>
+              <th className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-bold w-[8%]">Takipçi</th>
+              <th className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-bold w-[9%]">Gelir Grubu</th>
+              <th className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-bold">Not</th>
+              <th className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-bold w-[9%]">Aşama</th>
+              <th className="px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-bold w-[7%]">Öncelik</th>
+              <th className="px-3 py-2.5 w-[4%]" />
+            </tr>
+          </thead>
+          <tbody>
+            {adaylar.map((a) => (
+              <tr key={a.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 align-top">
+                <td className="px-2 py-1.5">
+                  <input
+                    value={a.hesap}
+                    onChange={(e) => update(a.id, 'hesap', e.target.value)}
+                    placeholder="@kullaniciadi"
+                    className={`${inputCls} font-medium text-slate-900`}
+                  />
+                </td>
+                <td className="px-2 py-1.5">
+                  <input
+                    value={a.takipci}
+                    onChange={(e) => update(a.id, 'takipci', e.target.value)}
+                    placeholder="0K"
+                    className={inputCls}
+                  />
+                </td>
+                <td className="px-2 py-1.5">
+                  <select
+                    value={a.gelir}
+                    onChange={(e) => update(a.id, 'gelir', e.target.value)}
+                    className={`${selectCls} text-slate-600`}
+                  >
+                    <option>Yüksek</option>
+                    <option>Orta</option>
+                    <option>Düşük</option>
+                  </select>
+                </td>
+                <td className="px-2 py-1.5">
+                  <textarea
+                    value={a.not_}
+                    onChange={(e) => update(a.id, 'not_', e.target.value)}
+                    placeholder="Gözlem, açılış açısı…"
+                    rows={2}
+                    className={`${inputCls} resize-y text-slate-600 leading-snug`}
+                  />
+                </td>
+                <td className="px-2 py-1.5">
+                  <select
+                    value={a.asama}
+                    onChange={(e) => update(a.id, 'asama', e.target.value)}
+                    className={`${selectCls} ${asamaRenk[a.asama]}`}
+                  >
+                    <option>Bekliyor</option>
+                    <option>Temas</option>
+                    <option>Cevap</option>
+                    <option>Demo</option>
+                    <option>Ödedi</option>
+                    <option>Vazgeçti</option>
+                  </select>
+                </td>
+                <td className="px-2 py-1.5">
+                  <select
+                    value={a.oncelik}
+                    onChange={(e) => update(a.id, 'oncelik', e.target.value)}
+                    className={`${selectCls} ${oncelikRenk[a.oncelik]}`}
+                  >
+                    <option>Yüksek</option>
+                    <option>Orta</option>
+                    <option>Düşük</option>
+                  </select>
+                </td>
+                <td className="px-2 py-1.5 text-center">
+                  <button
+                    onClick={() => remove(a.id)}
+                    className="text-slate-300 hover:text-red-500 transition-colors"
+                    aria-label="Sil"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {loaded && adaylar.length === 0 && (
+          <p className="text-sm text-slate-400 text-center py-6">Henüz aday yok. "Yeni aday" ile ekle.</p>
+        )}
+      </div>
+    </section>
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /* Copy button                                                          */
@@ -365,6 +612,9 @@ export default function Ilk10Page() {
             <CopyButton text={followUp} />
           </div>
         </section>
+
+        {/* Adaylar */}
+        <Adaylar />
 
         {/* Günlük */}
         <Gunluk />
