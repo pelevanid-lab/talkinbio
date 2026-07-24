@@ -706,7 +706,7 @@
     "notificationEmailDesc": "Yeni müşteri talepleri hangi e-posta adresine gelsin? Boş bırakırsanız profilinizdeki iletişim e-postası kullanılır.",
     "notificationEmailPlaceholder": "ornek@eposta.com",
     "appointmentTitle": "Randevu Akışı",
-    "appointmentDesc": "Randevu/rezervasyon talebi alsın mı?",
+    "appointmentDesc": "Açıkken Saule ziyaretçinin tercih ettiği gün/saati sorup gelen talebe ekler — takvime otomatik kayıt yapmaz.",
     "appointmentInstructionsLabel": "Randevu Talimatı",
     "appointmentInstructionsPlaceholder": "Örn: Hangi gün ve saatte gelmek istediklerini sor.",
     "appointmentHint": "Bu özellik şu an \"Talepler\" sekmesine lead kaydı oluşturur. Takvim entegrasyonu yakında eklenecektir.",

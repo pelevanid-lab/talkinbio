@@ -706,7 +706,7 @@
     "notificationEmailDesc": "Which email address should new customer requests go to? Leave blank to use the contact email on your profile.",
     "notificationEmailPlaceholder": "you@example.com",
     "appointmentTitle": "Appointment Flow",
-    "appointmentDesc": "Should it take appointment/booking requests?",
+    "appointmentDesc": "When on, Saule asks the visitor's preferred day/time and adds it to the request — it doesn't book anything on a calendar automatically.",
     "appointmentInstructionsLabel": "Appointment Instructions",
     "appointmentInstructionsPlaceholder": "E.g.: Ask which day and time they'd like to come in.",
     "appointmentHint": "This feature currently creates a lead record in the \"Requests\" tab. Calendar integration is coming soon.",
