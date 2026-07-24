@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { Link } from '@/i18n/routing';
-import { LayoutGrid, TrendingUp, Map, Mic, Milestone } from 'lucide-react';
+import { LayoutGrid, TrendingUp, Map, Mic, Milestone, Target } from 'lucide-react';
 
 const tabs = [
   { label: 'Yalın Kanvas', href: '/admin/continuous-improvement', icon: LayoutGrid },
@@ -10,6 +10,7 @@ const tabs = [
   { label: 'Çekim Gücü Yol Haritası', href: '/admin/continuous-improvement/traction-roadmap', icon: Map },
   { label: 'Yol Haritası', href: '/admin/continuous-improvement/roadmap', icon: Milestone },
   { label: 'Yalın Satış Konuşması', href: '/admin/continuous-improvement/lean-pitch', icon: Mic },
+  { label: 'İlk 10', href: '/admin/continuous-improvement/ilk10', icon: Target },
 ];
 
 export default function ContinuousImprovementTabs() {
