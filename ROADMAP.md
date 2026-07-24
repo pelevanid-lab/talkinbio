@@ -2,8 +2,9 @@
 
 > Vizyon: Bireysel çalışanların sosyal medya üzerinden yürüttüğü müşteri görüşmelerini
 > uçtan uca handle eden agentic çözüm. **Beiwe** sayfa kurulumundan agentic marketing'e
-> evrilecek; **Saule** web widget'ından gerçek sosyal medya kanallarına (WhatsApp → Instagram)
-> taşınacak müşteri hizmetleri agent'ı.
+> evrilecek; **Saule** web widget'ından gerçek sosyal medya kanallarına (Telegram →
+> WhatsApp → Instagram) taşınacak müşteri hizmetleri agent'ı. Kanal sırası, Meta onay
+> gerektirmeyen en kolay kanaldan başlar (karar 2026-07-24).
 >
 > **Pusula belgeler** (hepsi Admin > Sürekli Gelişim sekmelerinde, statik olarak kodda —
 > 2026-07-17'de kanvasın DB/AI-düzenleme katmanı kaldırıldı): **Yalın Kanvas** ("neden";
@@ -33,7 +34,11 @@
 > bildirimi, migrationlar Supabase'e uygulandı, UptimeRobot canlıda doğrulandı,
 > hata izleme Vercel Logs üzerinden; Faz 4 (4.1-4.4) baştan sona tamamlandı;
 > Resend gönderici adresi doğrulanmış domaine çevrildi; kod dondurulup Faz T
-> — Uliana pilot test dönemi — başladı, ~3 hafta sürecek)
+> — Uliana pilot test dönemi — başladı, ~3 hafta sürecek; 2026-07-24: S.4 kabul
+> kriterlerinden ikisi tamamlandı — karakter kanon referans seti + OG banner,
+> `@talkinbio` hesabı ve ilk içerik seti yayında; v2 kanal sırası değişti — Telegram
+> (Meta onayı gerektirmediği için, H.1 zincirinden bağımsız) WhatsApp'ın önüne alındı,
+> yeni sıra Faz 5 Telegram → Faz 6 WhatsApp → Faz 7 Instagram DM → Faz 8 Dil/locale)
 
 ## v1 — Faz özeti ve bağımlılıklar
 
@@ -54,9 +59,10 @@
 
 | Faz | Başlık | Not |
 |-----|--------|-----|
-| 5 | WhatsApp kanalı | Meta evrak süreci v1 sırasında bitirilmiş olur |
-| 6 | Instagram DM kanalı | App Review, Faz 5 biter bitmez tetiklenir |
-| 7 | Dil/locale genişlemesi (ar/es/pt) | Fermi'nin MENA+LatAm hedefinin ön koşulu; kanal işinden bağımsız, paralel başlatılabilir |
+| 5 | Telegram kanalı | Meta onayı gerekmez — H.1/Meta evrak zincirinden bağımsız, hemen başlanabilir (karar 2026-07-24) |
+| 6 | WhatsApp kanalı | Meta evrak süreci v1 sırasında bitirilmiş olur |
+| 7 | Instagram DM kanalı | App Review, Faz 6 biter bitmez tetiklenir |
+| 8 | Dil/locale genişlemesi (ar/es/pt) | Fermi'nin MENA+LatAm hedefinin ön koşulu; kanal işinden bağımsız, paralel başlatılabilir |
 
 ---
 
@@ -407,8 +413,8 @@ bu veriyle kalibre edilir.
   - `shared/history` pencere mantığı.
 - CI: GitHub Actions ile `lint + test + build` (repo GitHub'da zaten).
 
-### 2.5 Müşteri Dil Seçimi (Faz 7 Altyapısı)
-- Faz 7'de sistem 6 dilli olduğunda maliyet (Beiwe token hacmi) ve editör karmaşasının patlamaması için, her işletme kendi vitrinine **en fazla 3 dil** seçebilecek kuralının altyapısı kurulur.
+### 2.5 Müşteri Dil Seçimi (Faz 8 Altyapısı)
+- Faz 8'de sistem 6 dilli olduğunda maliyet (Beiwe token hacmi) ve editör karmaşasının patlamaması için, her işletme kendi vitrinine **en fazla 3 dil** seçebilecek kuralının altyapısı kurulur.
 - İşletme sahipleri mevcut (tr, en, ru) diller arasından 1, 2 veya 3 dili aktif etme hakkına sahip olur. DB'de `active_locales` (veya benzeri) ile tutulur.
 
 ### Kabul kriterleri
@@ -422,7 +428,7 @@ bu veriyle kalibre edilir.
       informational/non-blocking bırakıldı — bkz. 2.4 notu).
 - [x] İşletme sahibi sayfası için aktif dilleri (maksimum 3) seçebiliyor
       (EditorClient "Aktif Diller" kartı; şimdilik yalnızca altyapı — sayfa hâlâ 3
-      dilde de yayınlanıyor, Faz 7'de kısıtlayıcı hale gelecek).
+      dilde de yayınlanıyor, Faz 8'de kısıtlayıcı hale gelecek).
 
 **Uygulama notu (2026-07-17):** Faz 2 başladığında kod tabanında hiçbiri
 uygulanmamıştı (`src/agents/` yoktu, `ai@3.4.33`, test/CI yoktu, `active_locales`
@@ -510,8 +516,8 @@ sahne üretimi.
 - [x] Zengin sonuç testi (Rich Results Test) tüm şemaları doğruluyor.
 - [x] Yayınlanan her profil sitemap'te yer alıyor ve Search Console'da indeksleniyor.
 - [ ] UTM ile gelen trafik ve widget imzası dönüşümleri admin panelinde izlenebiliyor.
-- [ ] Saule ve Beiwe için kanon referans seti kuruldu (her karakterde en az 1 sabitlenmiş kare) ve 1200×630 OG banner Karakter Odası'ndan üretildi (S.1'de duran açık iş).
-- [ ] `@talkinbio` hesabı açıldı ve "nedir bu?" sorusunu karşılayan ilk içerik seti yayında.
+- [x] Saule ve Beiwe için kanon referans seti kuruldu (her karakterde en az 1 sabitlenmiş kare) ve 1200×630 OG banner Karakter Odası'ndan üretildi (S.1'de duran açık iş).
+- [x] `@talkinbio` hesabı açıldı ve "nedir bu?" sorusunu karşılayan ilk içerik seti yayında.
 
 ---
 
@@ -546,11 +552,11 @@ Mühendislik işlerinden bağımsız, Çekim Gücü (Traction) Yol Haritasının
 
 ## Faz R — Takım & Büyüme Kaynakları (Sürekli, Paralel)
 
-Ürün (Faz 1-3) ve Pazarlama (Faz S-P) süreçlerinin altından kalkabilmek ve uluslararası ölçeklenmeyi (Faz 7) sağlayabilmek için çekirdek takımın ve stratejik partnerlerin kurgulanması.
+Ürün (Faz 1-3) ve Pazarlama (Faz S-P) süreçlerinin altından kalkabilmek ve uluslararası ölçeklenmeyi (Faz 8) sağlayabilmek için çekirdek takımın ve stratejik partnerlerin kurgulanması.
 
 ### R.1 Lokal Geliştirme Partnerleri
 - **Erken Aşama:** Ukrayna ve Kazakistan (Rusça bölgesi) için ürünün büyümesini, müşteri diyaloglarını ve satışını üstlenecek yerel (local) partnerlerle anlaşılması.
-- **Global Genişleme (Faz 7'ye paralel):** Arapça, İspanyolca ve Portekizce dilleri için; özellikle MENA ve Latin Amerika (LatAm) bölgelerinden o kültürün dinamiklerine hakim "Country Manager" vari yerel partnerlerin bulunması. Müşteri destek ve go-to-market süreçlerinin doğrudan bu partnerler aracılığıyla yerelleştirilmesi.
+- **Global Genişleme (Faz 8'e paralel):** Arapça, İspanyolca ve Portekizce dilleri için; özellikle MENA ve Latin Amerika (LatAm) bölgelerinden o kültürün dinamiklerine hakim "Country Manager" vari yerel partnerlerin bulunması. Müşteri destek ve go-to-market süreçlerinin doğrudan bu partnerler aracılığıyla yerelleştirilmesi.
 
 ### R.2 Çekirdek Mühendislik ve AI Uzmanlığı
 - **İhtiyaç:** Faz 2'deki Agent Çekirdeği Refactor'ü ve Faz 3'teki pazarlama asistanı (Marketing Agent) geçişi için, Vercel AI SDK ve LLM prompt mühendisliği (caching, context diyet) konularında uzman, gerektiğinde danışmanlık/yarı zamanlı destek alınabilecek bir AI/Next.js mühendisi.
@@ -1065,12 +1071,71 @@ eksik olan talep tarafı.
 > başvurusu ücretsizdir ve haftalar sürer. Geliştirme v2'de başlar ama onaylar v1
 > biterken hazır beklemeli — tersi değil.
 
-## Faz 5 — WhatsApp kanalı (~2-3 hafta geliştirme)
+## Faz 5 — Telegram kanalı (~3-5 gün geliştirme)
 
-Saule'nin ilk gerçek sosyal medya kanalı. Instagram'dan önce WhatsApp:
+**Karar (2026-07-24):** v2'nin kanal sırası WhatsApp'tan önce Telegram ile açılır —
+"en kolayıyla başla" ilkesi. Bot API onay/başvuru gerektirmez: BotFather'da birkaç
+dakikada bot oluşturulur, token alınır, webhook bağlanır. WhatsApp/Instagram'ın
+aksine Meta Business Verification, Tech Provider başvurusu veya App Review yoktur —
+dolayısıyla H.1 (şirket kuruluşu) zincirinden tamamen bağımsızdır, hemen başlanabilir.
+Önceden bu bölümde "Kapsam dışı" bir olasılık olarak duruyordu; artık v2'nin ilk fazı.
+
+### 5.0 Neden önce Telegram
+- Meta evrak süreci (Business Verification + Tech Provider) şirket kuruluşuna (H.1)
+  bağlı, o da ilk ödeme taahhüdüne bağlı tetikleyici — bekleme süresi var. Telegram
+  bu zincirin tamamen dışında: onay yok, başvuru yok, bekleme yok.
+- `channel_accounts` mimarisi (Faz 6'da WhatsApp ile de paylaşılacak) burada ucuz ve
+  hızlı bir ilk kanalla erken doğrulanır — WhatsApp'a geçişte mimari risk azalır.
+
+### 5.1 Altyapı
+- BotFather üzerinden bot oluşturma (`@BotFather` → `/newbot`) — manuel, tek seferlik,
+  ücretsiz, geliştirmeden bağımsız yapılabilir.
+- `POST /api/webhooks/telegram` — Telegram Bot API webhook'u (`setWebhook` ile kayıt,
+  gelen mesaj JSON POST).
+- **Migration `000XX_channel_accounts.sql`** — kanal genişlemesinin ortak tablosu,
+  burada kurulur; Faz 6 (WhatsApp) ve Faz 7 (Instagram) üstüne inşa eder, tekrar
+  yazmaz:
+```sql
+create table channel_accounts (
+  id uuid primary key default uuid_generate_v4(),
+  business_id uuid references businesses(id) on delete cascade not null,
+  channel text not null,              -- 'telegram' | 'whatsapp' | 'instagram'
+  external_id text not null,          -- chat_id / phone_number_id / ig business id
+  access_token text,                  -- şifrelenmiş saklama (Supabase Vault)
+  status text default 'pending',
+  created_at timestamptz default now(),
+  unique (channel, external_id)
+);
+```
+- Gelen mesaj → `runSauleTurn` (Faz 2) stream'siz modda (`generateText`) çalışır,
+  cevap Telegram `sendMessage` endpoint'iyle gönderilir.
+- `conversationKey = 'tg:<chat_id>'`.
+
+### 5.2 Telegram'a özgü kurallar
+- 24 saatlik pencere yok — WhatsApp'ın aksine serbest mesajlaşma sınırı yok, bu
+  WhatsApp'a göre daha basit bir ilk implementasyon yapar.
+- Telegram formatting (markdown) desteklenir; Saule prompt'una `channel: 'telegram'`
+  bilgisi eklenir.
+- Mesaj tipleri: ilk sürümde yalnız metin; medya sonraki iterasyon.
+
+### 5.3 Sahip deneyimi
+- Dashboard "Kanallar" sayfasına Telegram eklenir: bot token yapıştır, bağlan, durum
+  göster, bağlantıyı kes.
+- Faz 1'deki Konuşmalar sekmesi kanal filtresine Telegram rozeti eklenir.
+- Lead kaydı kanal-agnostik akışla değişmeden çalışır (`capture_lead`).
+
+### Kabul kriterleri
+- [ ] Telegram botuna atılan mesaja Saule cevap veriyor; konuşma ve lead DB'de.
+- [ ] Transkript ekranında Telegram konuşmaları görünüyor (Web / Telegram rozetleri).
+- [ ] `channel_accounts` şeması WhatsApp'ın (Faz 6) da kullanabileceği şekilde genel
+      tasarlandı — Faz 6'da migration/şema tekrar yazılmıyor, üstüne inşa ediliyor.
+
+## Faz 6 — WhatsApp kanalı (~2-3 hafta geliştirme)
+
+Saule'nin ilk gerçek Meta kanalı. Instagram'dan önce WhatsApp:
 API erişimi çok daha kolay, Türkiye pazarında müşteri iletişiminin ana kanalı.
 
-### 5.0 Stratejik karar (kodlamadan önce netleşmeli)
+### 6.0 Stratejik karar (kodlamadan önce netleşmeli)
 İki model var:
 
 | Model | Nasıl | Artı | Eksi |
@@ -1080,27 +1145,16 @@ API erişimi çok daha kolay, Türkiye pazarında müşteri iletişiminin ana ka
 
 Geliştirme, tek test numarasıyla (Meta test WABA) yapılır.
 
-### 5.1 Altyapı
+### 6.1 Altyapı
 - `POST /api/webhooks/whatsapp` — Meta webhook (GET verify + POST mesaj alımı).
   - İmza doğrulama (`X-Hub-Signature-256`).
   - Webhook stream desteklemez → `runSauleTurn` (Faz 2'de kuruldu) stream'siz modda
     (`generateText`) çalışır, cevap Graph API `messages` endpoint'iyle gönderilir.
-- **Migration `000XX_channel_accounts.sql`:**
-```sql
-create table channel_accounts (
-  id uuid primary key default uuid_generate_v4(),
-  business_id uuid references businesses(id) on delete cascade not null,
-  channel text not null,              -- 'whatsapp' | 'instagram'
-  external_id text not null,          -- phone_number_id / ig business id
-  access_token text,                  -- şifrelenmiş saklama (Supabase Vault)
-  status text default 'pending',
-  created_at timestamptz default now(),
-  unique (channel, external_id)
-);
-```
+- `channel_accounts` tablosu Faz 5.1'de kuruldu — burada yalnızca `channel = 'whatsapp'`
+  satırları eklenir, migration tekrar yazılmaz.
 - Gelen mesaj → `external_id` ile işletme bulunur → `conversationKey = 'wa:<gönderen>'`.
 
-### 5.2 WhatsApp'a özgü kurallar
+### 6.2 WhatsApp'a özgü kurallar
 - **24 saat penceresi:** müşterinin son mesajından 24 saat sonra serbest metin gönderilemez;
   yalnızca onaylı template. İlk sürüm kuralı: pencere dışında Saule cevap üretmez,
   sahibe "cevaplanmamış mesaj" bildirimi düşer (dashboard + e-posta).
@@ -1108,9 +1162,9 @@ create table channel_accounts (
 - Saule prompt'una `channel: 'whatsapp'` bilgisi → daha kısa, mesajlaşma-uyumlu üslup;
   markdown yok (WhatsApp formatına uygun kalın/italik).
 
-### 5.3 Sahip deneyimi
+### 6.3 Sahip deneyimi
 - Dashboard'a "Kanallar" sayfası: WhatsApp bağla (Embedded Signup akışı), durum, bağlantıyı kes.
-- Faz 1'deki Konuşmalar sekmesi kanal filtresi kazanır (Web / WhatsApp rozetleri).
+- Faz 1'deki Konuşmalar sekmesi kanal filtresi kazanır (Web / Telegram / WhatsApp rozetleri).
 - Lead kaydı kanaldan bağımsız aynı akışla çalışır (`capture_lead` zaten kanal-agnostik).
 
 ### Kabul kriterleri
@@ -1118,13 +1172,13 @@ create table channel_accounts (
 - [ ] 24 saat penceresi dışında serbest mesaj denenmiyor; sahip bilgilendiriliyor.
 - [ ] Transkript ekranında WhatsApp konuşmaları görünüyor.
 
-## Faz 6 — Instagram DM kanalı (~2-4 hafta geliştirme + Meta onay süresi)
+## Faz 7 — Instagram DM kanalı (~2-4 hafta geliştirme + Meta onay süresi)
 
-Vizyonun kalbi; mimari olarak Faz 5'in kopyası, zorluk Meta süreçlerinde.
+Vizyonun kalbi; mimari olarak Faz 6'nın kopyası, zorluk Meta süreçlerinde.
 
 - Gereksinimler: IG professional hesap + bağlı Facebook Page,
   `instagram_manage_messages` izni için **App Review**, Business Verification.
-  → **App Review başvurusu Faz 5 biter bitmez (mümkünse Faz 5 sırasında) yapılmalı.**
+  → **App Review başvurusu Faz 6 biter bitmez (mümkünse Faz 6 sırasında) yapılmalı.**
 - `POST /api/webhooks/instagram` — Messenger Platform (Instagram Messaging) webhook'u;
   `channel_accounts` tablosu ve `runSauleTurn` aynen kullanılır (`conversationKey = 'ig:<IGSID>'`).
 - Instagram'a özgü kurallar: 24 saat cevap penceresi (human agent istisnası 7 gün),
@@ -1136,7 +1190,7 @@ Vizyonun kalbi; mimari olarak Faz 5'in kopyası, zorluk Meta süreçlerinde.
 - [ ] Bağlı bir IG hesabının DM'ine Saule cevap veriyor.
 - [ ] API bağlamamış işletmelerde eski handoff akışı bozulmadan çalışıyor.
 
-## Faz 7 — Dil/locale genişlemesi: ar / es / pt
+## Faz 8 — Dil/locale genişlemesi: ar / es / pt
 
 Fermi V.1.1'in global senaryosu ($810K baz, $1,6M stretch) tamamen MENA+LatAm'a dayanır
 ve bu pazarlar Arapça/İspanyolca/Portekizce olmadan adreslenemez — v2 "iş modelinin
@@ -1147,7 +1201,7 @@ kendisi" ise dil genişlemesi onun ön koşuludur. Kapsam (detaylandırılacak):
 - **Maksimum 3 Dil Kuralı:** Sistem toplamda 6 dile çıksa bile, her müşteri/işletme kendi sayfası için en fazla 3 aktif dil seçebilir. Aksi halde Beiwe'nin her işlemde 6 dil üretmesi inanılmaz bir LLM maliyeti yaratır ve editör tarafını kontrol edilemez hale getirir. Bu kuralın altyapısı önceden Faz 2'de (2.5) atılır.
 - Arapça için RTL düzen desteği (ayrı tasarım işi — en maliyetli kalem).
 - Saule zaten model seviyesinde çok dilli; asıl iş UI + içerik şeması tarafında.
-- Kanal işinden (Faz 5-6) bağımsızdır; Meta onayları beklerken paralel yürütülebilir.
+- Kanal işinden (Faz 5-7) bağımsızdır; Meta onayları beklerken paralel yürütülebilir.
 
 ---
 
@@ -1186,16 +1240,13 @@ kendisi" ise dil genişlemesi onun ön koşuludur. Kapsam (detaylandırılacak):
     durumuyla (sayfa + bilgi tabanı + geçmiş üretimler) karşılaştırılması. Ayrı ayrı
     yamanmamalı, tek bir v1.1 işi olarak planlanmalı.
 - **Görsel içerik üretimi** (story şablonları) — İçerik stüdyosu v2.
-- **Telegram kanalı** — Bot API onay gerektirmediği için v2'nin en ucuz kanal kazanımı;
-  `channel_accounts` mimarisi hazır olduğunda hızlıca eklenebilir, hatta Meta onayları
-  gecikirse Faz 5'ten öne alınabilir.
 
 ## Riskler
 
 | Risk | Etki | Önlem |
 |------|------|-------|
 | İlk "evet" geldiğinde şirket kuruluşu (H.1) ay sonu tahsilatına yetişmezse | O pilotun ilk ay ödemesi fatura kesilemeden gecikir | Mali müşavir görüşmesi (tür kararı) ilk "evet" beklenmeden önceden yapılır, böylece tetiklendiği an 5 günlük kuruluş süreci hemen başlar |
-| Meta evrak süreci v1 sırasında ihmal edilirse | v2 başlangıcı haftalarca bloke | Business Verification / Tech Provider başvurusu şirket kurulur kurulmaz yapılır (geliştirmesiz; ön koşulu H.1) |
+| Meta evrak süreci v1 sırasında ihmal edilirse | v2'nin Faz 6 (WhatsApp) ve Faz 7 (Instagram) başlangıcı haftalarca bloke — Faz 5 (Telegram) bundan bağımsız, H.1'i beklemeden başlar | Business Verification / Tech Provider başvurusu, şirket kurulduktan HEMEN SONRA yapılır — öncesinde değil, çünkü başvurunun kendisi şirket evrakı ister (ön koşulu H.1). Risk, sıranın "önce şirket" olması değil, kurulduktan sonra başvurunun unutulup ertelenmesi |
 | AI SDK major migration (2.2) | Widget/stream regresyonları | Ayrı PR; Faz 1'deki transkript ekranı + landing demo regresyon testi olarak kullanılır |
 | Landing demosu anonim trafiğe açık | Token maliyeti | Faz 1.6'daki oturum başına mesaj tavanı; Faz 4'te genel altyapıyla değiştirilir |
 | Tek geliştirici bant genişliği | Fazların uzaması | Faz 3 (marketing) bağımsız modüller halinde; gerekirse 3.2/3.3 lansman sonrasına kayabilir |

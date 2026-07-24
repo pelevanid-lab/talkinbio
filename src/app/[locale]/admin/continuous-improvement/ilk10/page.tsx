@@ -2,10 +2,11 @@
 
 import AdminLayout from '@/components/AdminLayout';
 import ContinuousImprovementTabs from '@/components/ContinuousImprovementTabs';
+import { Link } from '@/i18n/routing';
 import { useEffect, useState } from 'react';
 import {
   Target, Users, DollarSign, CalendarClock, MessageCircle,
-  Copy, Check, XCircle, Plus, Trash2, NotebookPen, TrendingUp, Pencil, X, Save, Table2
+  Copy, Check, XCircle, Plus, Trash2, NotebookPen, TrendingUp, Pencil, X, Save, Table2, BookOpen, ArrowRight
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -22,7 +23,13 @@ const stats = [
   { icon: CalendarClock, label: 'Ritim & hedef', value: 'Günde 10 temas', sub: 'haftada 1-2 kapama · 10 müşteri ≈ 6-10 hafta' },
 ];
 
-const funnel = [
+const funnel: {
+  step: string;
+  title: string;
+  note: string;
+  message: string | null;
+  guideHref?: string;
+}[] = [
   {
     step: '1',
     title: '1. temas — satış değil, cevap için',
@@ -42,6 +49,7 @@ const funnel = [
     title: '3. adım — kişisel demo',
     note: 'Onun gerçek linki/markasıyla 2 dk’lık Loom çek, at. Ürünü değil, hazır sonucunu göster.',
     message: null,
+    guideHref: '/admin/continuous-improvement/ilk10/demo-rehberi',
   },
   {
     step: '4',
@@ -563,10 +571,18 @@ export default function Ilk10Page() {
                   <span className="w-6 h-6 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-mono shrink-0 mt-0.5">
                     {f.step}
                   </span>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-bold text-slate-900 leading-tight">{f.title}</h3>
                     <p className="text-xs text-slate-500 mt-0.5">{f.note}</p>
                   </div>
+                  {f.guideHref && (
+                    <Link
+                      href={f.guideHref}
+                      className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors shrink-0 mt-0.5 whitespace-nowrap"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" /> Nasıl yapılır <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  )}
                 </div>
                 {f.message && (
                   <div className="px-5 py-4 bg-slate-50 flex items-start gap-3">
