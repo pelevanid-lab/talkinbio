@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { Link } from '@/i18n/routing';
-import { LayoutDashboard, Inbox, BarChart3, CreditCard, TrendingUp, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Inbox, BarChart3, CreditCard, TrendingUp, Sparkles, Video } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -15,6 +15,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { label: 'Abonelikler', href: '/admin/subscriptions', icon: CreditCard },
     { label: 'Sürekli Gelişim', href: '/admin/continuous-improvement', icon: TrendingUp },
     { label: 'Karakter Odası', href: '/admin/characters', icon: Sparkles },
+    { label: 'MP4 Stüdyo', href: '/admin/mp4-studio', icon: Video },
   ];
 
   return (
