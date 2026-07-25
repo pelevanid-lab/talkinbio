@@ -898,6 +898,7 @@ function renderContact(block: any, ctx: RenderCtx) {
 const BLOCK_RENDERERS: Record<string, (block: any, ctx: RenderCtx) => React.ReactNode> = {
   about: renderAbout,
   services: renderServices,
+  extra_services: renderServices,
   pricing: renderServices,
   hours: renderHours,
   faq: renderFAQ,

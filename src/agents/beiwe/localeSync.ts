@@ -13,9 +13,9 @@ import { LOCALE_KEYS, type LocaleKey } from '@/config/localeTitles';
 
 // Block types that carry per-locale text worth syncing. `links` is intentionally absent — its
 // items are just {label, url}, neither of which is a translatable per-locale field.
-export type SyncableBlockType = 'about' | 'custom' | 'services' | 'gallery' | 'testimonials' | 'faq' | 'hours';
+export type SyncableBlockType = 'about' | 'custom' | 'services' | 'extra_services' | 'gallery' | 'testimonials' | 'faq' | 'hours';
 
-export const SYNCABLE_TYPES: SyncableBlockType[] = ['about', 'custom', 'services', 'gallery', 'testimonials', 'faq', 'hours'];
+export const SYNCABLE_TYPES: SyncableBlockType[] = ['about', 'custom', 'services', 'extra_services', 'gallery', 'testimonials', 'faq', 'hours'];
 
 export function isSyncableType(type: unknown): type is SyncableBlockType {
   return typeof type === 'string' && (SYNCABLE_TYPES as string[]).includes(type);
@@ -43,7 +43,7 @@ export type BlockLocaleText = {
 
 type AnyContent = Record<string, unknown> & { items?: unknown[] };
 
-const ITEM_TYPES: SyncableBlockType[] = ['services', 'gallery', 'testimonials', 'faq'];
+const ITEM_TYPES: SyncableBlockType[] = ['services', 'extra_services', 'gallery', 'testimonials', 'faq'];
 
 function asObject(v: unknown): Record<string, unknown> {
   return v && typeof v === 'object' ? { ...(v as Record<string, unknown>) } : {};
@@ -51,7 +51,8 @@ function asObject(v: unknown): Record<string, unknown> {
 
 function extractItem(type: SyncableBlockType, item: Record<string, unknown>, loc: LocaleKey): ItemLocaleText {
   switch (type) {
-    case 'services': {
+    case 'services':
+    case 'extra_services': {
       const l = asObject(item[loc]);
       return { title: l.title as string | undefined, description: l.description as string | undefined };
     }
@@ -93,7 +94,8 @@ export function extractLocaleText(type: SyncableBlockType, content: unknown, loc
 
 function mergeItem(type: SyncableBlockType, item: Record<string, unknown>, loc: LocaleKey, payload: ItemLocaleText): void {
   switch (type) {
-    case 'services': {
+    case 'services':
+    case 'extra_services': {
       const l = asObject(item[loc]);
       if (payload.title !== undefined) l.title = payload.title;
       if (payload.description !== undefined) l.description = payload.description;

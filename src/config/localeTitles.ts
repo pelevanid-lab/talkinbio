@@ -6,9 +6,9 @@ export type LocaleKey = 'tr' | 'en' | 'ru';
 export const LOCALE_KEYS: LocaleKey[] = ['tr', 'en', 'ru'];
 
 export const LOCALE_TITLES: Record<LocaleKey, Record<string, string>> = {
-  tr: { about: 'Hakkımda', services: 'Hizmetler', links: 'Bağlantılar', hours: 'Çalışma Saatleri', faq: 'Sıkça Sorulan Sorular', contact: 'İletişim' },
-  en: { about: 'About', services: 'Services', links: 'Links', hours: 'Working Hours', faq: 'FAQ', contact: 'Contact' },
-  ru: { about: 'Обо мне', services: 'Услуги', links: 'Ссылки', hours: 'Часы работы', faq: 'Частые вопросы', contact: 'Контакты' },
+  tr: { about: 'Hakkımda', services: 'Hizmetler', extra_services: 'Özel (Ek Hizmetler)', links: 'Bağlantılar', hours: 'Çalışma Saatleri', faq: 'Sıkça Sorulan Sorular', contact: 'İletişim' },
+  en: { about: 'About', services: 'Services', extra_services: 'Custom (Extra Services)', links: 'Links', hours: 'Working Hours', faq: 'FAQ', contact: 'Contact' },
+  ru: { about: 'Обо мне', services: 'Услуги', extra_services: 'Специальные (Доп. услуги)', links: 'Ссылки', hours: 'Часы работы', faq: 'Частые вопросы', contact: 'Контакты' },
 };
 
 export function getLocaleTitles(locale: string): Record<string, string> {

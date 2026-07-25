@@ -212,7 +212,8 @@
       "custom": "Custom",
       "gallery": "Gallery",
       "testimonials": "Testimonials",
-      "links": "Links"
+      "links": "Links",
+      "extra_services": "Custom (Extra Services)"
     },
     "previewEmpty": "Start chatting with the Setup Assistant.",
     "assistantSuffix": "Assistant",

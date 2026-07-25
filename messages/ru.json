@@ -212,7 +212,8 @@
       "custom": "Свой блок",
       "gallery": "Галерея",
       "testimonials": "Отзывы",
-      "links": "Ссылки"
+      "links": "Ссылки",
+      "extra_services": "Специальные (Доп. услуги)"
     },
     "previewEmpty": "Начните общаться с ассистентом.",
     "assistantSuffix": "Ассистент",

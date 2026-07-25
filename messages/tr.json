@@ -212,7 +212,8 @@
       "custom": "Özel",
       "gallery": "Galeri",
       "testimonials": "Yorumlar",
-      "links": "Bağlantılar"
+      "links": "Bağlantılar",
+      "extra_services": "Özel (Ek Hizmetler)"
     },
     "previewEmpty": "Kurulum Asistanı ile konuşmaya başlayın.",
     "assistantSuffix": "Asistanı",

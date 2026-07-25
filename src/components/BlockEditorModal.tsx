@@ -70,7 +70,7 @@ export default function BlockEditorModal({
     setTitles({ tr: prefill('tr'), en: prefill('en'), ru: prefill('ru') });
 
     if (!block?.content || Object.keys(block.content).length === 0) {
-      if (block?.type === 'services' || block?.type === 'pricing') setContent({ items: [] });
+      if (block?.type === 'services' || block?.type === 'extra_services' || block?.type === 'pricing') setContent({ items: [] });
       else if (block?.type === 'hours') setContent({ schedule: {
         monday: { isOpen: true, openTime: '09:00', closeTime: '18:00' },
         tuesday: { isOpen: true, openTime: '09:00', closeTime: '18:00' },
@@ -191,6 +191,7 @@ export default function BlockEditorModal({
         );
 
       case 'services':
+      case 'extra_services':
         return (
           <div className="space-y-4">
             <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
