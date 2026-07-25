@@ -24,6 +24,34 @@ export function hasRealContent(block: Block | undefined): boolean {
   return false;
 }
 
+export function hasRealContentForLocale(block: Block | undefined, locale: string): boolean {
+  if (!block?.content) return false;
+  const c = block.content;
+
+  if (block.type === 'about' || block.type === 'contact' || block.type === 'custom') {
+    const localizedText = c[locale]?.text || (typeof c.text === 'string' ? c.text : '');
+    return localizedText.trim().length > 0;
+  }
+
+  if (Array.isArray(c.items) && c.items.length > 0) {
+    return c.items.some((item: any) => {
+      const loc = item[locale] || {};
+      const checkStrs = [
+        loc.title, loc.description, loc.caption, loc.quote, loc.question, loc.answer,
+        item.title, item.description, item.caption, item.quote, item.question, item.answer,
+        item.label, item.url
+      ];
+      return checkStrs.some(s => typeof s === 'string' && s.trim().length > 0);
+    });
+  }
+
+  if (c.schedule && typeof c.schedule === 'object' && Object.keys(c.schedule).length > 0) {
+    return true;
+  }
+
+  return false;
+}
+
 export function isRequiredSatisfied(blocks: Block[], hasContactValue: boolean): boolean {
   const hasAboutOrServices = REQUIRED_TYPES.some((type) =>
     blocks.some((b) => b.type === type && hasRealContent(b))

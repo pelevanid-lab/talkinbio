@@ -10,6 +10,7 @@ import { renderColoredSegments, toColorMarkdown, colorLinkComponents, stripColor
 import { defaultTitleFor, getHoursLabels, type DayKey } from '@/config/localeTitles';
 import { isVideoUrl } from '@/utils/mediaType';
 import { iconForLinkUrl } from '@/utils/linkIcon';
+import { hasRealContentForLocale } from '@/config/blockTypes';
 
 type RenderCtx = {
   locale: string;
@@ -973,7 +974,7 @@ export default function ArchetypeRenderer({
   // regardless of what order values the other blocks end up with.
   const visibleBlocks = useMemo(() => {
     const real = blocks
-      .filter(b => b.type !== 'settings' && b.type !== 'contact' && b.is_visible !== false)
+      .filter(b => b.type !== 'settings' && b.type !== 'contact' && b.is_visible !== false && hasRealContentForLocale(b, locale))
       .slice()
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     let values: Record<string, string> = {};
@@ -982,7 +983,7 @@ export default function ArchetypeRenderer({
     if (!hasAnyValue) return real;
     const contactBlock = { id: '__contact__', type: 'contact', content: { method: contactMethod, value: contactValue } };
     return [...real, contactBlock];
-  }, [blocks, contactMethod, contactValue]);
+  }, [blocks, contactMethod, contactValue, locale]);
 
   const styleVars = useMemo(() => {
     const c = resolveThemeColors(theme);
