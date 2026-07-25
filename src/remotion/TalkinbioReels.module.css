@@ -1,0 +1,243 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
+
+.container {
+  --paper: #F4F2ED;
+  --ink: #14231F;
+  --coral: #FF6A5C;
+  --coral-tint: #FFEDE9;
+  --teal: #2B6F5C;
+  --neon: #39FF14;
+  
+  width: 100%; height: 100%;
+  background: #000;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+  position: relative;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- SCENE 1: KINETIC TYPOGRAPHY ---------- */
+.scene1 {
+  background: #000;
+  animation: showScene 5.5s cubic-bezier(0.2, 1, 0.2, 1) forwards;
+}
+
+.s1Content {
+  display: grid;
+  place-items: center;
+  animation: gitGel 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  animation-delay: 2.8s;
+}
+
+.s1TextBefore, .s1TextAfter {
+  grid-area: 1 / 1;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-weight: 800;
+  font-size: 46px;
+  line-height: 1.1;
+  color: var(--coral);
+  text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.s1TextBefore {
+  animation: hideStep 0.1s forwards;
+  animation-delay: 3s;
+}
+
+.s1TextAfter {
+  opacity: 0;
+  animation: showStep 0.1s forwards;
+  animation-delay: 3s;
+}
+
+.s1Line1, .s1Line1After {
+  opacity: 0;
+  transform: translateX(-100px) skewX(10deg);
+}
+
+.s1Line1 {
+  animation: slideInLeft 1.2s cubic-bezier(0.2, 1, 0.2, 1) forwards;
+  animation-delay: 0.5s;
+}
+.s1Line1After {
+  opacity: 1;
+  transform: translateX(0) skewX(0);
+}
+
+.s1Line2, .s1Line2After {
+  opacity: 0;
+  transform: translateX(100px) skewX(-10deg);
+}
+
+.s1Line2 {
+  animation: slideInRight 1.2s cubic-bezier(0.2, 1, 0.2, 1) forwards;
+  animation-delay: 1s;
+}
+.s1Line2After {
+  opacity: 1;
+  transform: translateX(0) skewX(0);
+}
+
+/* ---------- SCENE 2: STORY IMAGES ---------- */
+.scene2 {
+  background: var(--paper);
+  justify-content: flex-start;
+  transform: translateY(100%);
+  opacity: 1;
+  animation: slideUpScene 7s cubic-bezier(0.2, 1, 0.2, 1) forwards;
+  animation-delay: 4s;
+}
+
+.storyImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.story1 { z-index: 1; }
+
+.story2 { 
+  z-index: 2; 
+  opacity: 0; 
+  animation: fadeIn 0.8s forwards; 
+  animation-delay: 6.5s; 
+}
+
+.story3 { 
+  z-index: 3; 
+  opacity: 0; 
+  animation: fadeIn 0.8s forwards; 
+  animation-delay: 9s; 
+}
+
+/* ---------- SCENE 3: BRAND REVEAL ---------- */
+.scene3 {
+  background: var(--teal);
+  color: var(--paper);
+  transform: translateX(100%);
+  opacity: 1;
+  animation: slideLeftScene 5s cubic-bezier(0.2, 1, 0.2, 1) forwards;
+  animation-delay: 11.5s;
+}
+
+.s3Content {
+  text-align: center;
+  padding: 30px;
+  animation: gitGel 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  animation-delay: 14.5s;
+}
+
+.headlineWrapper {
+  display: grid;
+  place-items: center;
+  margin-bottom: 30px;
+}
+
+.textBefore, .textAfter {
+  grid-area: 1 / 1;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-weight: 800;
+  font-size: 46px;
+  line-height: 1.1;
+  white-space: pre-wrap;
+}
+
+.textBefore {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: slideUpFade 1.5s cubic-bezier(0.2, 1, 0.2, 1) forwards, hideStep 0.1s forwards;
+  animation-delay: 12.5s, 14.7s;
+}
+
+.textAfter {
+  opacity: 0;
+  transform: translateY(0);
+  animation: showStep 0.1s forwards;
+  animation-delay: 14.7s;
+}
+
+.ctaPill {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 16px 32px;
+  background: var(--coral);
+  color: var(--ink);
+  border-radius: 100px;
+  opacity: 0;
+  transform: scale(0.8);
+  animation: popIn 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation-delay: 15.5s;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+}
+
+/* --- KEYFRAMES --- */
+@keyframes showScene {
+  0% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes slideUpScene {
+  0% { transform: translateY(100%); }
+  10% { transform: translateY(0); }
+  90% { transform: translateY(0); }
+  100% { transform: translateY(-100%); }
+}
+
+@keyframes slideLeftScene {
+  0% { transform: translateX(100%); }
+  15% { transform: translateX(0); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  0% { opacity: 0; transform: translateX(-100px) skewX(10deg); }
+  100% { opacity: 1; transform: translateX(0) skewX(0); }
+}
+
+@keyframes slideInRight {
+  0% { opacity: 0; transform: translateX(100px) skewX(-10deg); }
+  100% { opacity: 1; transform: translateX(0) skewX(0); }
+}
+
+@keyframes popIn {
+  0% { opacity: 0; transform: translateY(30px) scale(0.9); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes slideUpFade {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gitGel {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-40px) skewX(15deg); }
+  30% { transform: translateX(40px) skewX(-15deg); }
+  45% { transform: translateX(-20px) skewX(5deg); }
+  60% { transform: translateX(20px) skewX(-5deg); }
+  75% { transform: translateX(-10px) skewX(2deg); }
+}
+
+@keyframes hideStep { to { opacity: 0; } }
+@keyframes showStep { to { opacity: 1; } }
+@keyframes fadeIn { to { opacity: 1; } }
