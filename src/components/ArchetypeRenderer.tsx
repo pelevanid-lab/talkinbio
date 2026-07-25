@@ -330,7 +330,7 @@ function renderServices(block: any, ctx: RenderCtx) {
                   <div className="flex justify-between items-start gap-4">
                     <h4 className={`font-semibold text-lg ${headingFont}`}>{renderColoredSegments(itemLoc.title || item.title)}</h4>
                     {item.price && (
-                      <span className="flex items-center gap-2 shrink-0">
+                      <span className="flex items-center gap-3 shrink-0">
                         <span className="font-mono text-sm" style={{ color: 'var(--text-muted)' }}>{item.price}</span>
                         <OrderButton title={itemLoc.title || item.title} />
                       </span>
@@ -371,7 +371,7 @@ function renderServices(block: any, ctx: RenderCtx) {
                     <p className="text-sm opacity-80 mb-3 whitespace-pre-line" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(itemLoc.description || item.description)}</p>
                   )}
                   {item.price && (
-                    <span className="flex items-center gap-2 flex-wrap">
+                    <span className="flex items-center gap-3 flex-wrap">
                       <span className="font-mono px-3 py-1 rounded-full text-sm inline-block" style={{ backgroundColor: 'var(--primary)', color: '#fff' }}>
                         {item.price}
                       </span>
@@ -397,7 +397,7 @@ function renderServices(block: any, ctx: RenderCtx) {
                 <span className={`font-semibold ${headingFont}`}>{renderColoredSegments(itemLoc.title || item.title)}</span>
                 <span className="flex-1 border-b border-dotted opacity-30 translate-y-[-4px]" style={{ borderColor: 'var(--text-muted)' }} />
                 {item.price && (
-                  <span className="flex items-center gap-2 shrink-0">
+                  <span className="flex items-center gap-3 shrink-0">
                     <span className="font-mono text-sm">{item.price}</span>
                     <OrderButton title={itemLoc.title || item.title} />
                   </span>
@@ -452,7 +452,7 @@ function renderServices(block: any, ctx: RenderCtx) {
                     )}
                   </div>
                   {item.price && (
-                    <div className={`flex items-center gap-2 flex-wrap ${layoutVariant === 'list' ? 'mt-3 sm:mt-0 sm:ml-auto shrink-0' : 'shrink-0'}`}>
+                    <div className={`flex items-center gap-3 flex-wrap ${layoutVariant === 'list' ? 'mt-3 sm:mt-0 sm:ml-auto shrink-0' : 'shrink-0'}`}>
                       <span
                         className="font-mono font-medium px-3 py-1 rounded-full text-sm whitespace-nowrap inline-block"
                         style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
