@@ -7,7 +7,7 @@ export const RemotionRoot: React.FC = () => {
     <>
       <Composition
         id="TalkinbioReels"
-        component={TalkinbioReels}
+        component={TalkinbioReels as React.FC<any>}
         durationInFrames={18 * 60} // 18 seconds @ 60fps
         fps={60}
         width={400}
