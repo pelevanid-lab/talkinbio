@@ -9,6 +9,7 @@ const withNextIntl = createNextIntlPlugin();
 // could hit a streamed response and miss the metadata. Setting this option *replaces* Next's
 // list rather than extending it, so we copy the default set here and add Telegram to it.
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["@remotion/bundler", "@remotion/renderer", "esbuild"],
   htmlLimitedBots:
     /[\w-]+-Google|Google-[\w-]+|Chrome-Lighthouse|Slurp|DuckDuckBot|baiduspider|yandex|sogou|bitlybot|tumblr|vkShare|quora link preview|redditbot|ia_archiver|Bingbot|BingPreview|applebot|facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|SkypeUriPreview|Yeti|googleweblight|TelegramBot/i,
 };
