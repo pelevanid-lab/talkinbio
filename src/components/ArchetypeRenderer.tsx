@@ -10,7 +10,7 @@ import { renderColoredSegments, toColorMarkdown, colorLinkComponents, stripColor
 import { defaultTitleFor, getHoursLabels, type DayKey } from '@/config/localeTitles';
 import { isVideoUrl } from '@/utils/mediaType';
 import { iconForLinkUrl } from '@/utils/linkIcon';
-import { hasRealContentForLocale } from '@/config/blockTypes';
+import { hasRealContentForLocale, isItemVisibleInLocale, getLocalizedValue } from '@/config/blockTypes';
 
 type RenderCtx = {
   locale: string;
@@ -21,6 +21,9 @@ type RenderCtx = {
   // (about-standard, contact/custom text) has no card chrome of its own. Renderers that already
   // wrap their items in cards/chips (services, gallery, testimonials, hours, faq, links) ignore it.
   cardWrap: boolean;
+  // Click handler for "Order Now" buttons (see buildOrderNowHandler), or null when the
+  // configured behavior has no usable target — renderServices hides the button in that case.
+  onOrderNowClick: ((message: string) => void) | null;
 };
 
 // Static Tailwind class lookups (never string-interpolated — Tailwind needs literal class names to compile them).
@@ -40,6 +43,15 @@ const CONTACT_METHOD_LABELS: Record<string, Record<string, string>> = {
   email: { tr: 'E-posta', en: 'Email', ru: 'Email' },
   telegram: { tr: 'Telegram', en: 'Telegram', ru: 'Telegram' },
 };
+
+// "Order Now" button next to a service's price (renderServices) — label and the message it
+// hands to Saule when the configured behavior is 'saule' (see buildOrderNowHandler below).
+const ORDER_NOW_LABEL: Record<string, string> = { tr: 'Sipariş Ver', en: 'Order Now', ru: 'Заказать' };
+function orderNowMessage(itemTitle: string, locale: string): string {
+  if (locale === 'en') return `I'd like to order: ${itemTitle}`;
+  if (locale === 'ru') return `Я хочу заказать: ${itemTitle}`;
+  return `${itemTitle} hizmetini sipariş etmek istiyorum`;
+}
 
 // Falls back to the locale's fixed section label (shared with Beiwe's tools and the editor
 // modal) for rows saved before per-locale titles were stored in content, or after a locale's
@@ -263,11 +275,42 @@ function renderTextBlock(block: any, ctx: RenderCtx) {
   );
 }
 
+function getLocalizedItems(block: any, locale: string) {
+  return (block.content?.items || [])
+    .filter((item: any) => isItemVisibleInLocale(item, locale))
+    .map((item: any) => ({
+      ...item,
+      title: getLocalizedValue(item, locale, 'title'),
+      description: getLocalizedValue(item, locale, 'description'),
+      caption: getLocalizedValue(item, locale, 'caption'),
+      quote: getLocalizedValue(item, locale, 'quote'),
+      question: getLocalizedValue(item, locale, 'question'),
+      answer: getLocalizedValue(item, locale, 'answer'),
+      label: getLocalizedValue(item, locale, 'label'),
+      url: getLocalizedValue(item, locale, 'url') // some components look for url, others label, etc.
+    }));
+}
+
 function renderServices(block: any, ctx: RenderCtx) {
-  const { locale, radiusClass, headingFont, theme } = ctx;
+  const { locale, radiusClass, headingFont, theme, onOrderNowClick } = ctx;
   const blockTitle = blockTitleOf(block, locale);
   const layoutVariant = block.content?.layoutVariant || 'grid-cards';
-  const items: any[] = block.content?.items || [];
+  const items: any[] = getLocalizedItems(block, locale);
+
+  // Rendered next to a service's price in every layout variant below, when a click behavior is
+  // configured and resolvable (see buildOrderNowHandler) — hidden entirely otherwise rather than
+  // showing a button that does nothing.
+  const OrderButton = ({ title }: { title: string }) =>
+    onOrderNowClick ? (
+      <button
+        type="button"
+        onClick={() => onOrderNowClick(orderNowMessage(title, locale))}
+        className="text-xs font-semibold px-3 py-1 rounded-full border shrink-0 whitespace-nowrap transition hover:scale-105"
+        style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+      >
+        {ORDER_NOW_LABEL[locale] || ORDER_NOW_LABEL.tr}
+      </button>
+    ) : null;
 
   let inner: React.ReactNode;
 
@@ -286,7 +329,12 @@ function renderServices(block: any, ctx: RenderCtx) {
                 <div className="flex-1">
                   <div className="flex justify-between items-start gap-4">
                     <h4 className={`font-semibold text-lg ${headingFont}`}>{renderColoredSegments(itemLoc.title || item.title)}</h4>
-                    {item.price && <span className="font-mono text-sm shrink-0" style={{ color: 'var(--text-muted)' }}>{item.price}</span>}
+                    {item.price && (
+                      <span className="flex items-center gap-2 shrink-0">
+                        <span className="font-mono text-sm" style={{ color: 'var(--text-muted)' }}>{item.price}</span>
+                        <OrderButton title={itemLoc.title || item.title} />
+                      </span>
+                    )}
                   </div>
                   {(itemLoc.description || item.description) && (
                     <p className="text-sm mt-1 opacity-80 whitespace-pre-line" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(itemLoc.description || item.description)}</p>
@@ -323,8 +371,11 @@ function renderServices(block: any, ctx: RenderCtx) {
                     <p className="text-sm opacity-80 mb-3 whitespace-pre-line" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(itemLoc.description || item.description)}</p>
                   )}
                   {item.price && (
-                    <span className="font-mono px-3 py-1 rounded-full text-sm inline-block" style={{ backgroundColor: 'var(--primary)', color: '#fff' }}>
-                      {item.price}
+                    <span className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono px-3 py-1 rounded-full text-sm inline-block" style={{ backgroundColor: 'var(--primary)', color: '#fff' }}>
+                        {item.price}
+                      </span>
+                      <OrderButton title={itemLoc.title || item.title} />
                     </span>
                   )}
                 </div>
@@ -345,7 +396,12 @@ function renderServices(block: any, ctx: RenderCtx) {
               <div key={idx} className="flex items-baseline gap-3 py-3 border-b last:border-0" style={{ borderColor: 'var(--border)' }}>
                 <span className={`font-semibold ${headingFont}`}>{renderColoredSegments(itemLoc.title || item.title)}</span>
                 <span className="flex-1 border-b border-dotted opacity-30 translate-y-[-4px]" style={{ borderColor: 'var(--text-muted)' }} />
-                {item.price && <span className="font-mono text-sm shrink-0">{item.price}</span>}
+                {item.price && (
+                  <span className="flex items-center gap-2 shrink-0">
+                    <span className="font-mono text-sm">{item.price}</span>
+                    <OrderButton title={itemLoc.title || item.title} />
+                  </span>
+                )}
                 {(itemLoc.description || item.description) && (
                   <span className="w-full basis-full text-sm mt-1 opacity-70 whitespace-pre-line" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(itemLoc.description || item.description)}</span>
                 )}
@@ -396,13 +452,14 @@ function renderServices(block: any, ctx: RenderCtx) {
                     )}
                   </div>
                   {item.price && (
-                    <div className={layoutVariant === 'list' ? 'mt-3 sm:mt-0 sm:ml-auto shrink-0' : 'shrink-0'}>
+                    <div className={`flex items-center gap-2 flex-wrap ${layoutVariant === 'list' ? 'mt-3 sm:mt-0 sm:ml-auto shrink-0' : 'shrink-0'}`}>
                       <span
                         className="font-mono font-medium px-3 py-1 rounded-full text-sm whitespace-nowrap inline-block"
                         style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
                       >
                         {item.price}
                       </span>
+                      <OrderButton title={itemLoc.title || item.title} />
                     </div>
                   )}
                 </div>
@@ -506,13 +563,14 @@ function renderFAQ(block: any, ctx: RenderCtx) {
   const { locale, radiusClass, headingFont } = ctx;
   const blockTitle = blockTitleOf(block, locale);
   const layoutVariant = block.content?.layoutVariant || 'chips';
+  const items = getLocalizedItems(block, locale);
 
   if (layoutVariant === 'numbered') {
     return (
       <section key={block.id}>
         <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="space-y-6">
-          {(block.content?.items || []).map((item: any, idx: number) => {
+          {items.map((item: any, idx: number) => {
             const question = item.question?.[locale] || item.question;
             const answer = item.answer?.[locale] || item.answer;
             return (
@@ -537,7 +595,7 @@ function renderFAQ(block: any, ctx: RenderCtx) {
       <section key={block.id}>
         <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="space-y-2">
-          {(block.content?.items || []).map((item: any, idx: number) => {
+          {items.map((item: any, idx: number) => {
             const question = item.question?.[locale] || item.question;
             const answer = item.answer?.[locale] || item.answer;
             return (
@@ -559,7 +617,7 @@ function renderFAQ(block: any, ctx: RenderCtx) {
     <section key={block.id}>
       <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
       <div className="flex flex-wrap gap-2">
-        {(block.content?.items || []).map((item: any, idx: number) => {
+        {items.map((item: any, idx: number) => {
           const question = item.question?.[locale] || item.question;
           return (
           <button
@@ -581,13 +639,14 @@ function renderGallery(block: any, ctx: RenderCtx) {
   const { locale, radiusClass, headingFont } = ctx;
   const blockTitle = blockTitleOf(block, locale);
   const layoutVariant = block.content?.layoutVariant || 'grid';
+  const items = getLocalizedItems(block, locale);
 
   if (layoutVariant === 'fullbleed-carousel') {
     return (
       <section key={block.id} className="pt-4">
         <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="flex overflow-x-auto snap-x gap-0 hide-scrollbar -mx-4" style={{ scrollbarWidth: 'none' }}>
-          {(block.content?.items || []).map((item: any, idx: number) => {
+          {items.map((item: any, idx: number) => {
             const caption = item.caption?.[locale] || item.caption;
             return (
               <div key={idx} className="relative shrink-0 w-[85%] h-72 snap-center group overflow-hidden">
@@ -614,7 +673,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
       <section key={block.id} className="pt-4">
         <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="flex flex-col gap-4">
-          {(block.content?.items || []).map((item: any, idx: number) => {
+          {items.map((item: any, idx: number) => {
             const caption = item.caption?.[locale] || item.caption;
             return (
               <div key={idx} className={`relative overflow-hidden group h-64 sm:h-80 ${radiusClass}`}>
@@ -641,7 +700,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
       <section key={block.id} className="pt-4">
         <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="columns-2 gap-3 space-y-3">
-          {(block.content?.items || []).map((item: any, idx: number) => {
+          {items.map((item: any, idx: number) => {
             const caption = item.caption?.[locale] || item.caption;
             return (
               <div key={idx} className={`break-inside-avoid relative group overflow-hidden ${radiusClass}`}>
@@ -667,8 +726,8 @@ function renderGallery(block: any, ctx: RenderCtx) {
     <section key={block.id} className="pt-4">
       <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
       <div className="grid grid-cols-2 gap-2 md:gap-4">
-        {(block.content?.items || []).map((item: any, idx: number) => {
-          const caption = item.caption?.[locale] || item.caption;
+        {items.map((item: any, idx: number) => {
+          const caption = item.caption;
           return (
             <div key={idx} className={`relative overflow-hidden group ${radiusClass}`}>
               {isVideoUrl(item.url) ? (
@@ -693,7 +752,7 @@ function renderTestimonials(block: any, ctx: RenderCtx) {
   const { locale, radiusClass, headingFont } = ctx;
   const blockTitle = blockTitleOf(block, locale);
   const layoutVariant = block.content?.layoutVariant || 'scroll-cards';
-  const items: any[] = block.content?.items || [];
+  const items: any[] = getLocalizedItems(block, locale);
 
   let inner: React.ReactNode;
 
@@ -703,8 +762,8 @@ function renderTestimonials(block: any, ctx: RenderCtx) {
         <h2 className={`text-2xl mb-8 font-bold text-center ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="flex flex-col gap-12">
           {items.map((item, idx) => {
-            const quote = item.quote?.[locale] || item.quote;
-            const role = item.role?.[locale] || item.role;
+            const quote = item.quote;
+            const role = item.role;
             return (
               <div key={idx} className="text-center max-w-lg mx-auto">
                 <div className="text-5xl mb-3 opacity-30 font-serif leading-none" style={{ color: 'var(--primary)' }}>"</div>
@@ -723,8 +782,8 @@ function renderTestimonials(block: any, ctx: RenderCtx) {
         <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {items.map((item, idx) => {
-            const quote = item.quote?.[locale] || item.quote;
-            const role = item.role?.[locale] || item.role;
+            const quote = item.quote;
+            const role = item.role;
             return (
               <div key={idx} className={`p-4 border ${radiusClass}`} style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
                 <p className="text-sm italic mb-3 opacity-90 leading-relaxed">{renderColoredSegments(quote)}</p>
@@ -742,8 +801,8 @@ function renderTestimonials(block: any, ctx: RenderCtx) {
         <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
         <div className="flex overflow-x-auto gap-4 pb-4 snap-x hide-scrollbar" style={{ scrollbarWidth: 'none' }}>
           {items.map((item: any, idx: number) => {
-            const quote = item.quote?.[locale] || item.quote;
-            const role = item.role?.[locale] || item.role;
+            const quote = item.quote;
+            const role = item.role;
             return (
               <div
                 key={idx}
@@ -768,7 +827,7 @@ function renderTestimonials(block: any, ctx: RenderCtx) {
 function renderLinks(block: any, ctx: RenderCtx) {
   const { locale, radiusClass, headingFont } = ctx;
   const blockTitle = blockTitleOf(block, locale);
-  const items = block.content?.items || [];
+  const items: any[] = getLocalizedItems(block, locale);
   if (items.length === 0) return null;
   const layoutVariant = block.content?.layoutVariant || 'stacked';
 
@@ -860,6 +919,26 @@ function contactIcon(method: string) {
   }
 }
 
+// Resolves what an "Order Now" button does, per business.saule_settings.orderNowBehavior:
+// 'saule' (default/unset) opens the chat widget with the visitor's intent as their first
+// message (same event the FAQ "chips" variant already dispatches); any other value is a
+// contact method key (whatsapp/instagram/telegram/email) and hands off straight to it via the
+// same wa.me/ig.me/t.me/mailto links as `contactHref` above. Returns null when the configured
+// method has no value filled in (İletişim section) so callers can hide the button instead of
+// rendering a dead click target.
+function buildOrderNowHandler(
+  behavior: string | null | undefined,
+  contactValues: Record<string, string>
+): ((message: string) => void) | null {
+  if (!behavior || behavior === 'saule') {
+    return (message: string) => window.dispatchEvent(new CustomEvent('sendToChat', { detail: message }));
+  }
+  const value = contactValues[behavior];
+  if (!value?.trim()) return null;
+  const url = contactHref(behavior, value);
+  return () => window.open(url, '_blank', 'noopener,noreferrer');
+}
+
 // Synthetic block (see `visibleBlocks` below) built from business.contact_method/contact_value —
 // not a real `blocks` row, so it reads its data from block.content.method/.value instead of the
 // usual per-locale content shape.
@@ -918,6 +997,7 @@ export default function ArchetypeRenderer({
   onActiveBlockChange,
   contactMethod,
   contactValue,
+  orderNowBehavior,
 }: {
   blocks: any[],
   theme?: Theme | null,
@@ -931,6 +1011,8 @@ export default function ArchetypeRenderer({
   // other block) when at least one method has a value, positioned right after services.
   contactMethod?: string | null,
   contactValue?: string | null,
+  // business.saule_settings.orderNowBehavior — see buildOrderNowHandler.
+  orderNowBehavior?: string | null,
 }) {
   const [internalActiveBlockId, setInternalActiveBlockId] = useState<string | null>(null);
   const activeBlockId = controlledActiveBlockId !== undefined ? controlledActiveBlockId : internalActiveBlockId;
@@ -972,18 +1054,26 @@ export default function ArchetypeRenderer({
   // side of any fixed number, so it drifted into the middle of the page instead of staying at the
   // bottom. Sorting the real blocks first and appending contact after guarantees "always last"
   // regardless of what order values the other blocks end up with.
+  // Parsed once and shared by the virtual contact block below and the Order Now click handler.
+  const contactValues = useMemo(() => {
+    try { return contactValue ? JSON.parse(contactValue) : {}; } catch { return {}; }
+  }, [contactValue]);
+
   const visibleBlocks = useMemo(() => {
     const real = blocks
       .filter(b => b.type !== 'settings' && b.type !== 'contact' && b.is_visible !== false && hasRealContentForLocale(b, locale))
       .slice()
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    let values: Record<string, string> = {};
-    try { values = contactValue ? JSON.parse(contactValue) : {}; } catch { values = {}; }
-    const hasAnyValue = (contactMethod || '').split(',').filter(Boolean).some((k) => values[k]?.trim());
+    const hasAnyValue = (contactMethod || '').split(',').filter(Boolean).some((k) => contactValues[k]?.trim());
     if (!hasAnyValue) return real;
     const contactBlock = { id: '__contact__', type: 'contact', content: { method: contactMethod, value: contactValue } };
     return [...real, contactBlock];
-  }, [blocks, contactMethod, contactValue, locale]);
+  }, [blocks, contactMethod, contactValue, contactValues, locale]);
+
+  const onOrderNowClick = useMemo(
+    () => buildOrderNowHandler(orderNowBehavior, contactValues),
+    [orderNowBehavior, contactValues]
+  );
 
   const styleVars = useMemo(() => {
     const c = resolveThemeColors(theme);
@@ -1006,7 +1096,7 @@ export default function ArchetypeRenderer({
   const bodyFont = 'tb-body';
   const cardWrap = theme.layoutStyle === 'card-heavy';
   const sectionGapClass = SECTION_GAP_CLASS[theme.layoutStyle] || 'gap-10';
-  const renderCtx: RenderCtx = { locale, radiusClass, headingFont, theme, cardWrap };
+  const renderCtx: RenderCtx = { locale, radiusClass, headingFont, theme, cardWrap, onOrderNowClick };
 
   const renderBlock = (block: any) => {
     const renderFn = BLOCK_RENDERERS[block.type];

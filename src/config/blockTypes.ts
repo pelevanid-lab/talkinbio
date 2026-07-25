@@ -24,6 +24,28 @@ export function hasRealContent(block: Block | undefined): boolean {
   return false;
 }
 
+export function getLocalizedValue(item: any, locale: string, field: string): string {
+  if (!item) return '';
+  if (item[locale] && item[locale][field] !== undefined) {
+    return item[locale][field] || '';
+  }
+  return item[field] || '';
+}
+
+export function isItemVisibleInLocale(item: any, locale: string): boolean {
+  const checkStrs = [
+    getLocalizedValue(item, locale, 'title'),
+    getLocalizedValue(item, locale, 'description'),
+    getLocalizedValue(item, locale, 'caption'),
+    getLocalizedValue(item, locale, 'quote'),
+    getLocalizedValue(item, locale, 'question'),
+    getLocalizedValue(item, locale, 'answer'),
+    getLocalizedValue(item, locale, 'label'),
+    getLocalizedValue(item, locale, 'url')
+  ];
+  return checkStrs.some(s => typeof s === 'string' && s.trim().length > 0);
+}
+
 export function hasRealContentForLocale(block: Block | undefined, locale: string): boolean {
   if (!block?.content) return false;
   const c = block.content;
@@ -34,15 +56,7 @@ export function hasRealContentForLocale(block: Block | undefined, locale: string
   }
 
   if (Array.isArray(c.items) && c.items.length > 0) {
-    return c.items.some((item: any) => {
-      const loc = item[locale] || {};
-      const checkStrs = [
-        loc.title, loc.description, loc.caption, loc.quote, loc.question, loc.answer,
-        item.title, item.description, item.caption, item.quote, item.question, item.answer,
-        item.label, item.url
-      ];
-      return checkStrs.some(s => typeof s === 'string' && s.trim().length > 0);
-    });
+    return c.items.some((item: any) => isItemVisibleInLocale(item, locale));
   }
 
   if (c.schedule && typeof c.schedule === 'object' && Object.keys(c.schedule).length > 0) {

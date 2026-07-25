@@ -186,6 +186,7 @@ export default async function BusinessProfilePage({ params }: any) {
             category={business.category}
             contactMethod={business.contact_method}
             contactValue={business.contact_value}
+            orderNowBehavior={business.saule_settings?.orderNowBehavior}
           />
 
         </div>

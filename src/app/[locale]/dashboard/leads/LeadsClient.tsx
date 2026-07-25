@@ -12,6 +12,14 @@ import CreditBadge from '@/components/CreditBadge';
 
 const DATE_FNS_LOCALES: Record<string, Locale> = { tr, en: enUS, ru };
 
+// Contact methods offered as an "Order Now" target — same keys as business.contact_value.
+const ORDER_NOW_METHOD_LABELS: Record<string, Record<string, string>> = {
+  whatsapp: { tr: 'WhatsApp', en: 'WhatsApp', ru: 'WhatsApp' },
+  instagram: { tr: 'Instagram', en: 'Instagram', ru: 'Instagram' },
+  telegram: { tr: 'Telegram', en: 'Telegram', ru: 'Telegram' },
+  email: { tr: 'E-posta', en: 'Email', ru: 'Email' },
+};
+
 export default function LeadsClient({ business, initialLeads, initialConversations, initialKnowledge }: { business: any, initialLeads: any[], initialConversations: any[], initialKnowledge: any[] }) {
   const supabase = createClient();
   const t = useTranslations('Leads');
@@ -28,6 +36,20 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
   const [settings, setSettings] = useState(business.saule_settings || {});
   const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
+
+  // Order Now button behavior — always offers "open Saule", plus one option per contact method
+  // that already has a value filled in the editor's İletişim section (disabled otherwise, so the
+  // owner isn't offered a target that would silently do nothing).
+  let orderNowContactValues: Record<string, string> = {};
+  try { orderNowContactValues = business.contact_value ? JSON.parse(business.contact_value) : {}; } catch { orderNowContactValues = {}; }
+  const orderNowOptions = [
+    { key: 'saule', label: t('orderNowSaule'), disabled: false },
+    ...(['whatsapp', 'instagram', 'telegram', 'email'] as const).map((key) => ({
+      key,
+      label: ORDER_NOW_METHOD_LABELS[key][locale] || key,
+      disabled: !orderNowContactValues[key]?.trim(),
+    })),
+  ];
 
   // "Tercih Edilen İletişim Kanalı" seçeneği yalnızca işletmenin Editör'de zaten
   // doldurduğu kanalları listeler — boş bir kanalı "tercih" olarak seçtirmenin anlamı yok.
@@ -305,6 +327,32 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                       <div className="text-xs text-[#4B5A55]">
                         {tone === 'friendly' ? t('toneFriendlyDesc') : tone === 'formal' ? t('toneFormalDesc') : t('toneEnergeticDesc')}
                       </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Order Now Behavior */}
+              <div className="py-4 border-t border-[rgba(20,35,31,0.10)]">
+                <h3 className="text-base font-semibold text-[#14231F] mb-1">{t('orderNowTitle')}</h3>
+                <p className="text-sm text-[#4B5A55] mb-3">{t('orderNowDesc')}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {orderNowOptions.map(({ key, label, disabled }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => setSettings({ ...settings, orderNowBehavior: key })}
+                      className={`p-3 rounded-xl border text-left transition-all ${
+                        (settings.orderNowBehavior || 'saule') === key
+                          ? 'border-[#FF6A5C] bg-[#FFEDE9] ring-1 ring-[#FF6A5C]'
+                          : disabled
+                          ? 'opacity-50 cursor-not-allowed border-[rgba(20,35,31,0.10)]'
+                          : 'border-[rgba(20,35,31,0.10)] hover:bg-[#F4F2ED]'
+                      }`}
+                    >
+                      <div className="font-semibold text-sm text-[#14231F]">{label}</div>
+                      {disabled && <div className="text-xs text-[#8A8880] mt-0.5">{t('orderNowFillContactHint')}</div>}
                     </button>
                   ))}
                 </div>

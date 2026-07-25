@@ -1396,6 +1396,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 onActiveBlockChange={setPreviewActiveBlockId}
                 contactMethod={contactMethod}
                 contactValue={contactValue}
+                orderNowBehavior={business.saule_settings?.orderNowBehavior}
               />
               {blocks.length === 0 && (
                 <div className="text-center p-6 mx-4 mt-24 bg-white rounded-2xl shadow-sm border border-slate-100 text-slate-400 text-sm">
