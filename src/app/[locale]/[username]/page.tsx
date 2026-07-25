@@ -42,15 +42,13 @@ export async function generateMetadata({ params }: any) {
       description,
       url: `/${locale}${path}`,
       siteName: 'Talkinbio',
-      images: [{ url: '/saule-avatar-v1.png', width: 512, height: 512 }],
       locale,
       type: 'profile',
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title,
       description,
-      images: ['/saule-avatar-v1.png'],
     },
   };
 }
