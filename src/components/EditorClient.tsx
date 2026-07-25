@@ -447,7 +447,14 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
   };
 
   const createNewBlock = (type: string, defaultTitle: string) => {
-    setEditingBlock({ isNew: true, type, title: defaultTitle, content: {} });
+    const singletonTypes = ['about', 'services', 'pricing', 'hours', 'faq', 'links', 'gallery', 'testimonials'];
+    const existing = blocks.find(b => b.type === type);
+    
+    if (singletonTypes.includes(type) && existing) {
+      setEditingBlock({ ...existing, isNew: false });
+    } else {
+      setEditingBlock({ isNew: true, type, title: defaultTitle, content: {} });
+    }
   };
 
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);

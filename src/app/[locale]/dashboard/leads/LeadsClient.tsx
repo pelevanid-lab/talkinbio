@@ -15,6 +15,7 @@ const DATE_FNS_LOCALES: Record<string, Locale> = { tr, en: enUS, ru };
 export default function LeadsClient({ business, initialLeads, initialConversations, initialKnowledge }: { business: any, initialLeads: any[], initialConversations: any[], initialKnowledge: any[] }) {
   const supabase = createClient();
   const t = useTranslations('Leads');
+  const tEditor = useTranslations('Editor');
   const locale = useLocale();
   const dateLocale = DATE_FNS_LOCALES[locale] || tr;
   const [activeTab, setActiveTab] = useState<'leads' | 'conversations' | 'settings'>('leads');
@@ -27,6 +28,14 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
   const [settings, setSettings] = useState(business.saule_settings || {});
   const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
+
+  // "Tercih Edilen İletişim Kanalı" seçeneği yalnızca işletmenin Editör'de zaten
+  // doldurduğu kanalları listeler — boş bir kanalı "tercih" olarak seçtirmenin anlamı yok.
+  const contactValues: Record<string, string> = (() => {
+    try { return business.contact_value ? JSON.parse(business.contact_value) : {}; } catch { return {}; }
+  })();
+  const CONTACT_METHOD_ORDER = ['whatsapp', 'instagram', 'telegram', 'email'] as const;
+  const availableContactMethods = CONTACT_METHOD_ORDER.filter((m) => contactValues[m]?.trim());
 
   const handleMarkSeen = async (leadId: string) => {
     // Optimistic update
@@ -312,6 +321,28 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                   <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FF6A5C]"></div>
                 </label>
               </div>
+              {settings.leadCaptureEnabled === false && (
+                <div className="bg-[#F4F2ED] p-4 rounded-xl -mt-2 mb-2 animate-in fade-in slide-in-from-top-2">
+                  <label className="block text-sm font-semibold text-[#14231F] mb-2 font-mono uppercase text-xs tracking-wider">{t('preferredContactMethodLabel')}</label>
+                  {availableContactMethods.length > 0 ? (
+                    <>
+                      <select
+                        value={settings.preferredContactMethod || ''}
+                        onChange={(e) => setSettings({ ...settings, preferredContactMethod: e.target.value || undefined })}
+                        className="w-full p-3 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F] bg-white"
+                      >
+                        <option value="">{t('preferredContactMethodPlaceholder')}</option>
+                        {availableContactMethods.map((method) => (
+                          <option key={method} value={method}>{tEditor(`contactMethods.${method}`)}</option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-[#8A8880] mt-2">{t('preferredContactMethodHint')}</p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-[#4B5A55]">{t('preferredContactMethodEmptyHint')}</p>
+                  )}
+                </div>
+              )}
 
               {/* Notification Email */}
               <div className="py-4 border-t border-[rgba(20,35,31,0.10)]">

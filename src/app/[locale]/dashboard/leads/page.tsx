@@ -14,7 +14,7 @@ export default async function LeadsDashboardPage() {
   // Fetch business of user
   const { data: business } = await supabase
     .from('businesses')
-    .select('id, name, username, saule_settings, credit_balance')
+    .select('id, name, username, saule_settings, credit_balance, contact_method, contact_value')
     .eq('owner_id', userData.user.id)
     .single();
 
