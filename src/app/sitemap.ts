@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
 
-const baseUrl = 'https://www.talkinbio.com';
+const baseUrl = 'https://talkinbio.com';
 const locales = ['tr', 'en', 'ru'];
 
 // Helper to generate hreflang alternates

@@ -78,18 +78,32 @@ export default async function HomePage({ params }: any) {
     '@graph': [
       {
         '@type': 'WebSite',
-        '@id': 'https://www.talkinbio.com/#website',
-        url: 'https://www.talkinbio.com/',
+        '@id': 'https://talkinbio.com/#website',
+        url: 'https://talkinbio.com/',
         name: 'Talkinbio',
         description: t('hero.sub'),
         inLanguage: locale
       },
       {
         '@type': 'Organization',
-        '@id': 'https://www.talkinbio.com/#organization',
+        '@id': 'https://talkinbio.com/#organization',
         name: 'Talkinbio',
-        url: 'https://www.talkinbio.com/',
-        logo: 'https://www.talkinbio.com/icon.svg'
+        url: 'https://talkinbio.com/',
+        logo: 'https://talkinbio.com/icon.svg'
+      },
+      {
+        '@type': 'SoftwareApplication',
+        '@id': 'https://talkinbio.com/#software',
+        name: 'Talkinbio',
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'Any',
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD'
+        },
+        description: t('hero.sub'),
+        url: 'https://talkinbio.com/'
       }
     ]
   };

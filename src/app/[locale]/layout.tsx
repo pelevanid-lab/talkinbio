@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return {
     title: meta.title,
     description: meta.description,
-    metadataBase: new URL('https://www.talkinbio.com'),
+    metadataBase: new URL('https://talkinbio.com'),
     alternates: {
       canonical: `/${locale}`,
       languages: {
