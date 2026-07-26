@@ -50,7 +50,7 @@ export default function MediaUploader({ value, onChange, label, bucket = "media"
       const { data, error: uploadError } = await supabase.storage
         .from(bucket)
         .upload(filePath, processedFile, {
-          cacheControl: '3600',
+          cacheControl: '31536000',
           upsert: false
         });
 

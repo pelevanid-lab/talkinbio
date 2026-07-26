@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
   const { error } = await supabaseAdmin.storage
     .from('media')
-    .upload(objectPath, bytes, { contentType: file.type, cacheControl: '3600' });
+    .upload(objectPath, bytes, { contentType: file.type, cacheControl: '31536000' });
 
   if (error) {
     console.error('[characters/scene-ref] upload failed', error);

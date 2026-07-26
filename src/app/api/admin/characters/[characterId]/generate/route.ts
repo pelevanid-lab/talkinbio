@@ -149,7 +149,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
       const objectPath = `characters/${characterId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.png`;
       const { error: uploadError } = await supabaseAdmin.storage
         .from('media')
-        .upload(objectPath, bytes, { contentType: 'image/png', cacheControl: '3600' });
+        .upload(objectPath, bytes, { contentType: 'image/png', cacheControl: '31536000' });
       if (uploadError) throw uploadError;
 
       const {
