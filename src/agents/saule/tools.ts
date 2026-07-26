@@ -37,6 +37,13 @@ export async function insertLeadAndNotify({
   preferredDatetime,
   notificationEmail,
 }: InsertLeadAndNotifyParams): Promise<{ success: boolean; message: string }> {
+  // Faz 1.7: editör test konuşmalarından lead yazılmaz. Lead capture sadece ziyaretçilerin
+  // (preview: false) girişlerinden tutulur. Böylece test konuşmalarındaki demo veriler
+  // lead paneline karışmaz ve silinen test talepleri tekrar oluşturulamaz.
+  if (isPreview) {
+    return { success: true, message: 'Test konuşmasında lead tutulmuyor.' };
+  }
+
   const { error } = await supabaseAdmin.from('leads').insert({
     business_id: businessId,
     conversation_id: conversationId,
@@ -57,8 +64,8 @@ export async function insertLeadAndNotify({
   // necessarily the same inbox.
   const recipientEmail = notificationEmail?.trim() || contactValues.email;
 
-  // Send email via Resend (skipped for editor preview test conversations — Faz 1.7)
-  if (!isPreview && process.env.RESEND_API_KEY && recipientEmail) {
+  // Send email via Resend to owner
+  if (process.env.RESEND_API_KEY && recipientEmail) {
     try {
       const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://talkinbio.com';
       const resend = new Resend(process.env.RESEND_API_KEY);
@@ -141,9 +148,10 @@ export type CaptureAccessRequestToolParams = {
   supabaseAdmin: SupabaseClient;
   businessId: string;
   conversationId: string;
+  isPreview: boolean;
 };
 
-export function captureAccessRequestTool({ supabaseAdmin, businessId, conversationId }: CaptureAccessRequestToolParams) {
+export function captureAccessRequestTool({ supabaseAdmin, businessId, conversationId, isPreview }: CaptureAccessRequestToolParams) {
   return tool({
     description: "Ziyaretçi Talkinbio'ya erken erişim talebinde bulunmak istediğinde, isim ve e-posta bilgisini verdiyse bu aracı çalıştır.",
     inputSchema: z.object({
@@ -152,6 +160,11 @@ export function captureAccessRequestTool({ supabaseAdmin, businessId, conversati
       category: z.string().optional().describe('Ziyaretçinin işletme kategorisi/sektörü (varsa)'),
     }),
     execute: async ({ name, email, category }: { name: string; email: string; category?: string }) => {
+      // Test konuşmalarından erken erişim talebinin tutulması yok
+      if (isPreview) {
+        return { success: true, message: 'Test konuşmasında erken erişim talebi tutulmuyor.' };
+      }
+
       const baseUsername = name.toLowerCase().replace(/[^a-z0-9]/g, '');
       const username = baseUsername + Math.floor(Math.random() * 10000);
       const { error } = await supabaseAdmin.from('onboarding_requests').insert({

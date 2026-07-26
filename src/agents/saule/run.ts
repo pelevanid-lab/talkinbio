@@ -169,7 +169,7 @@ export async function runSauleTurn({
     allowSystemInMessages: true,
     messages: modelMessages,
     tools: isDemoBusiness
-      ? { capture_access_request: captureAccessRequestTool({ supabaseAdmin, businessId, conversationId }) }
+      ? { capture_access_request: captureAccessRequestTool({ supabaseAdmin, businessId, conversationId, isPreview }) }
       : sauleSettings.leadCaptureEnabled !== false
       ? { capture_lead: captureLeadTool({ supabaseAdmin, businessId, conversationId, contactValues, directLinks, isPreview, notificationEmail: sauleSettings.notificationEmail }) }
       : {},
