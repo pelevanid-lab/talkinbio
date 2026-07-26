@@ -254,7 +254,7 @@ export const CHARACTERS: Record<CharacterId, CharacterDefinition> = {
     role: 'Kurucu — vizyonu anlatan, ürünün arkasındaki isim',
     summary:
       'Otuzlu yaşlarında, kısa saçlı ve tepesi hafif seyrek, kısa kahverengi sakallı. Sıcak bir gülümsemeye ve doğrudan kameraya bakan, güven veren bir duruşa sahip.',
-    referenceFile: 'enes-avatar-v1.webp',
+    referenceFile: 'enes-avatar-v1.png',
     accentColor: '#174A54',
     identityPrompt: [
       'The person is Enes: a man in his early thirties of Turkish heritage.',
