@@ -10,9 +10,9 @@
 // bakılarak yazıldı. Avatar dosyaları değişirse buradaki tarifler de güncellenmelidir,
 // yoksa referans görselle metin birbirini çeker ve kimlik kayar.
 
-export type CharacterId = 'saule' | 'beiwe';
+export type CharacterId = 'saule' | 'beiwe' | 'enes';
 
-export const CHARACTER_IDS: CharacterId[] = ['saule', 'beiwe'];
+export const CHARACTER_IDS: CharacterId[] = ['saule', 'beiwe', 'enes'];
 
 export function isCharacterId(value: unknown): value is CharacterId {
   return typeof value === 'string' && (CHARACTER_IDS as string[]).includes(value);
@@ -248,6 +248,41 @@ const SHARED_SCENE_PRESETS: ScenePreset[] = [
 /* ------------------------------------------------------------------ */
 
 export const CHARACTERS: Record<CharacterId, CharacterDefinition> = {
+  enes: {
+    id: 'enes',
+    name: 'Enes',
+    role: 'Kurucu — vizyonu anlatan, ürünün arkasındaki isim',
+    summary:
+      'Otuzlu yaşlarında, kısa saçlı ve tepesi hafif seyrek, kısa kahverengi sakallı. Sıcak bir gülümsemeye ve doğrudan kameraya bakan, güven veren bir duruşa sahip.',
+    referenceFile: 'enes-avatar-v1.webp',
+    accentColor: '#174A54',
+    identityPrompt: [
+      'The person is Enes: a man in his early thirties of Turkish heritage.',
+      'Slightly bald on top with short hair on the sides, short well-kept brown beard.',
+      'Warm and confident expression, friendly eyes, looking directly at the viewer.',
+      'His face, hair length and build must match the reference image exactly.'
+    ].join(' '),
+    wardrobePrompt:
+      'Keep his clothing casual yet professional — a plain dark gray or black t-shirt. Avoid logos, patterns, or bright colors.',
+    scenePresets: [
+      ...SHARED_SCENE_PRESETS,
+      {
+        id: 'home-office',
+        label: 'Ev ofisinde çalışırken',
+        group: 'Ortam',
+        prompt: 'Sitting in a cozy home office with a blurred bookshelf in the background, warm and inviting lighting.',
+        textSpace: 'right',
+      },
+      {
+        id: 'explaining-product',
+        label: 'Ürünü anlatırken',
+        group: 'Aksiyon',
+        prompt: 'Gesturing with his hands confidently, leaning slightly forward to explain the product vision, bright professional lighting.',
+        aspectRatio: '16:9',
+        textSpace: 'left',
+      },
+    ],
+  },
   saule: {
     id: 'saule',
     name: 'Saule',
