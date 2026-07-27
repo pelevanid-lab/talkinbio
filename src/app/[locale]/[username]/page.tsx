@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import ChatWidget from '@/components/ChatWidget';
 import ProfilePageBody from '@/components/ProfilePageBody';
@@ -53,8 +53,9 @@ export async function generateMetadata({ params }: any) {
   };
 }
 
-export default async function BusinessProfilePage({ params }: any) {
+export default async function BusinessProfilePage({ params, searchParams }: any) {
   const { username, locale } = await params;
+  const sp = await searchParams;
   const t = await getTranslations({ locale, namespace: 'PublicPage' });
   const supabase = await createClient();
 
@@ -84,8 +85,23 @@ export default async function BusinessProfilePage({ params }: any) {
       const cookieStore = await cookies();
       const visitorSessionId = cookieStore.get('visitor_session_id')?.value;
       if (visitorSessionId) {
+        let source = 'direct';
+        if (sp?.utm_source) {
+          source = sp.utm_source;
+        } else {
+          const reqHeaders = await headers();
+          const referer = reqHeaders.get('referer') || '';
+          if (referer.includes('instagram.com')) source = 'instagram';
+          else if (referer.includes('tiktok.com')) source = 'tiktok';
+          else if (referer.includes('google.com')) source = 'google';
+          else if (referer.includes('t.co') || referer.includes('twitter.com')) source = 'twitter';
+          else if (referer.includes('youtube.com')) source = 'youtube';
+          else if (referer.includes('facebook.com')) source = 'facebook';
+          else if (referer) source = 'referral';
+        }
+
         await supabase.from('page_views').upsert(
-          { business_id: business.id, visitor_session_id: visitorSessionId, view_date: new Date().toISOString().slice(0, 10) },
+          { business_id: business.id, visitor_session_id: visitorSessionId, view_date: new Date().toISOString().slice(0, 10), source },
           { onConflict: 'business_id,view_date,visitor_session_id', ignoreDuplicates: true }
         );
       }

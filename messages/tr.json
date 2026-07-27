@@ -93,7 +93,7 @@
     },
     "cta": {
       "eyebrow": "Stop linking. Start talking.",
-    "title": "Bio'ndaki link, bugün konuşmaya başlasın.",
+      "title": "Bio'ndaki link, bugün konuşmaya başlasın.",
       "sub": "Kurulum 10 dakika sürer · erken erişim kontenjanı sınırlı.",
       "startFree": "Erken erişime başvur",
       "demo": "Örnek bir sayfa gör"
@@ -756,7 +756,8 @@
       "editTooltip": "Düzenle",
       "deactivateTooltip": "Pasifleştir",
       "activateTooltip": "Aktifleştir"
-    }
+    },
+    "navAnalytics": "Analiz"
   },
   "MediaUploader": {
     "defaultLabel": "Görsel Seç veya Sürükle",

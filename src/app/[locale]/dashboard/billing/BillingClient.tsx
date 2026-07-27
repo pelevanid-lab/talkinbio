@@ -102,6 +102,9 @@ export default function BillingClient({ business, usageEvents, ownerEmail }: { b
             <a href="/dashboard/editor" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
               {t('navEditor')}
             </a>
+            <a href="/dashboard/analytics" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
+              {t('navAnalytics')}
+            </a>
           </div>
         </div>
       </header>

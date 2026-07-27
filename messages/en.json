@@ -93,7 +93,7 @@
     },
     "cta": {
       "eyebrow": "Stop linking. Start talking.",
-    "title": "Let your bio link start talking today.",
+      "title": "Let your bio link start talking today.",
       "sub": "Setup takes 10 minutes · early access spots are limited.",
       "startFree": "Apply for early access",
       "demo": "See a sample page"
@@ -756,7 +756,8 @@
       "editTooltip": "Edit",
       "deactivateTooltip": "Deactivate",
       "activateTooltip": "Activate"
-    }
+    },
+    "navAnalytics": "Analytics"
   },
   "MediaUploader": {
     "defaultLabel": "Choose or Drag an Image",

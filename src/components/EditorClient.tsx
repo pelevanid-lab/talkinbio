@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Inbox, Coins, Tag } from 'lucide-react';
+import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Inbox, Coins, Tag, BarChart3 } from 'lucide-react';
 import ArchetypeRenderer from './ArchetypeRenderer';
 import ProfileHeader from './ProfileHeader';
 import AgentMarkdown from './AgentMarkdown';
@@ -686,6 +686,14 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
               >
                 <Inbox className="w-5 h-5" />
                 <span className="hidden md:inline">{t('leadsNavLabel')}</span>
+              </a>
+              <a
+                href="/dashboard/analytics"
+                className="p-2 bg-slate-100 text-[var(--ink)] hover:bg-slate-200 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-colors"
+                title="Analiz"
+              >
+                <BarChart3 className="w-5 h-5" />
+                <span className="hidden md:inline">Analiz</span>
               </a>
               <button
                 className="md:hidden p-2 bg-[var(--coral-tint)] text-[var(--coral)] rounded-lg font-medium text-sm flex items-center"
