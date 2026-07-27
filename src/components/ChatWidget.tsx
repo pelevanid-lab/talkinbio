@@ -204,8 +204,8 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-[var(--border-light)] bg-white">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border border-[var(--border-light)]">
-                    <Image src="/saule-avatar-v1.png" alt="Saule" width={40} height={40} className="w-full h-full object-cover" />
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border border-[var(--border-light)] p-[2px] bg-[var(--paper)]">
+                    <div className="orb-container orb-saule"></div>
                   </div>
                   <div>
                     <h3 className="font-semibold text-[var(--ink)] font-bricolage">Saule</h3>

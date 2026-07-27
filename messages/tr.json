@@ -105,6 +105,111 @@
       "brandLink": "talkinbio.com/sen",
       "tagline": "Stop linking. Start talking.",
       "rights": "© 2026 talkinbio. Tüm hakları saklıdır."
+    },
+    "twoPlatforms": {
+      "title": "Aynı temele dayalı iki yapay zeka platformu",
+      "sauleTitle": "Müşterilerinizle Konuşur",
+      "sauleDesc": "Saule Assistant, sayfanıza gelen ziyaretçilerin sorularını yanıtlar, fiyat verir, randevu ayarlar ve iletişim bilgilerini alarak size potansiyel müşteriler (lead) yaratır. 7/24 uyanık bir dijital çalışandır.",
+      "beiweTitle": "Sayfanızı Yönetir",
+      "beiweDesc": "Beiwe Creative, işletmenizle ilgili detayları arka planda sizden öğrenen ve bu bilgileri profesyonel bir web sayfasına dönüştüren yaratıcı bir ajandır. İçerik ve tasarım tamamen otomatiktir."
+    },
+    "showcase": {
+      "title": "Yapay zekanın işletmelere<br />kattığı gücü keşfedin",
+      "sauleTab": "Saule Assistant",
+      "beiweTab": "Beiwe Creative",
+      "saule": {
+        "kuafor": {
+          "title": "Kuaför & Güzellik Merkezi",
+          "desc": "Saniyeler içinde randevu sistemi oluşturun ve portfolyo sayfanızla sosyal medyadan doğrudan müşteri kazanın."
+        },
+        "spa": {
+          "title": "Masaj Spa",
+          "desc": "Yoğunlukta çağrıları kaçırmayın; asistanınız sizin yerinize randevuları ayarlasın, fiyat versin."
+        },
+        "antrenor": {
+          "title": "Kişisel Antrenör",
+          "desc": "Öğrencilerinize beslenme listelerini ve antrenman programlarını anında yollayan, sorularını yanıtlayan akıllı asistanınız."
+        },
+        "diyet": {
+          "title": "Diyet & Sağlıklı Yaşam",
+          "desc": "Saule sizin için yüzlerce sağlıklı yaşam sorusunu önceki paylaşımlarınızdan ve sayfanızdan bilgi alarak anında yanıtlasın."
+        }
+      },
+      "beiwe": {
+        "store": {
+          "title": "Ürün ve Hizmet Vitrini",
+          "desc": "Sosyal medya hesaplarınıza ekleyeceğiniz tek bir bağlantıyla tüm ürün ve hizmetlerinizi profesyonelce sergileyin."
+        },
+        "portfolio": {
+          "title": "Saniyeler İçinde Web Tasarımı",
+          "desc": "Kod veya şablonlarla uğraşmayın. Sadece işletmenizi anlatın, Beiwe anında premium bir portfolyo oluştursun."
+        },
+        "booking": {
+          "title": "Merkezi Yönetim Sistemi",
+          "desc": "Fiyatlarınızı, çalışma saatlerinizi ve randevu takviminizi yapay zekayla sohbet ederek saniyeler içinde güncelleyin."
+        },
+        "gallery": {
+          "title": "Zengin Medya Galerisi",
+          "desc": "İşlerinizi en iyi şekilde yansıtmak için sayfanıza dilediğiniz an fotoğraf, video ve görsel galeriler ekleyin."
+        }
+      }
+    },
+    "updates": {
+      "title": "Haberler & Gelişmeler",
+      "allPosts": "Tüm yazılar",
+      "post1": {
+        "badge": "Talkinbio V2 Yayında",
+        "title": "Talkinbio V2 ile yepyeni bir altyapı ve gelişmiş yapay zeka özellikleri",
+        "meta": "Ürün · 28 Temmuz 2026"
+      },
+      "post2": {
+        "badge": "Saule Eğitimi",
+        "title": "Asistanınızı sadece 5 dakikada nasıl eğitirsiniz? Yeni rehber yayında.",
+        "meta": "Kılavuz · 15 Temmuz 2026"
+      },
+      "post3": {
+        "badge": "Gelişmiş Analitik",
+        "title": "Müşteri taleplerini veriye dönüştürün: Gelişmiş analitik paneli artık kullanımda.",
+        "meta": "Özellik · 02 Temmuz 2026"
+      }
+    },
+    "heroTexts": {
+      "subtitle": "İşletmeniz için eksiksiz yapay zeka platformu. Ziyaretçilerinizle 7/24 etkileşim kuran <strong className=\"text-[var(--ink)] font-semibold\">Saule Assistant</strong>'tan, içeriğinizi saniyeler içinde kuran <strong className=\"text-[var(--ink)] font-semibold\">Beiwe Creative</strong>'e kadar.",
+      "btnEarly": "Erken erişim",
+      "btnHow": "Nasıl çalışır?",
+      "btnPricing": "Fiyatlandırma"
+    },
+    "nasil": {
+      "title": "Aynı temele dayalı iki yapay zeka platformu",
+      "sauleDesc": "Konuşkan yapay zeka ajanınızı yapılandırın, canlıya alın ve anında müşteri ilişkilerinizi yönetin.",
+      "beiweDesc": "İşletmeniz için içerik oluşturun. <br/>Kelimelerinizi anında profesyonel bir web sitesine dönüştürür."
+    },
+    "deepSaule": {
+      "title": "Saule Assistant",
+      "desc": "İşletmenizi tanıyan, soruları cevaplayan ve potansiyel müşterileri satışa yönlendiren yapay zeka asistanınızı saniyeler içinde yapılandırın ve sitenize ekleyin.",
+      "btn": "Hemen Başla",
+      "f1Title": "7/24 Kesintisiz İletişim",
+      "f1Desc": "Ziyaretçileriniz günün her saati soru sorabilir, Saule işletmenizi tanıyarak anında ve doğal dilde cevap verir.",
+      "f2Title": "Talep Yönetimi & Analitik",
+      "f2Desc": "İlgilenen her ziyaretçinin adı, iletişim bilgisi ve özel talebi otomatik olarak toplanır ve size raporlanır.",
+      "f3Title": "Çoklu Dil Desteği",
+      "f3Desc": "Ziyaretçi hangi dilde yazarsa asistanınız o dilde cevap verir, siz sadece kendi dilinizde yönetirsiniz.",
+      "f4Title": "Hemen Yayında",
+      "f4Desc": "Karmaşık diyalog akışları kurmanıza gerek yok. İşletmenizi anlatın, asistanınız saniyeler içinde öğrenip göreve başlasın."
+    },
+    "deepBeiwe": {
+      "title": "Beiwe Creative",
+      "desc1": "İçeriğinizi ve sayfanızı saniyeler içinde kurgulayan yapay zeka.",
+      "desc2": "Sadece işletmenizi anlatarak profesyonel web siteleri, sosyal medya bağlantı sayfaları ve zengin içerikler oluşturun. Tek bir AI platformunda her şey hazır.",
+      "btn": "Hemen Başla",
+      "f1Title": "Otomatik Tasarım",
+      "f1Desc": "Tema, şablon veya düzen seçmekle vakit kaybetmeyin. Web sayfanız, içeriğinize ve markanıza göre otomatik olarak tasarlanır.",
+      "f2Title": "Tek Merkezden Yönetim",
+      "f2Desc": "Fiyatlar, saatler ve hizmetler... Beiwe ile yaptığınız sade bir sohbet, anında web sitenize bilgi olarak yansır.",
+      "f3Title": "Tüm Platformlara Hazır",
+      "f3Desc": "Instagram, WhatsApp, TikTok. Oluşturduğunuz tek bağlantı profili tüm sosyal medya platformlarına kusursuz uyum sağlar.",
+      "f4Title": "Zengin Medya Desteği",
+      "f4Desc": "Hizmetlerinizi sadece metinle değil, fotoğraf ve videolarla zenginleştirerek ziyaretçilerinize yüksek kaliteli bir deneyim sunun."
     }
   },
   "RequestAccess": {

@@ -236,6 +236,20 @@
   color: var(--muted);
 }
 
+/* Ambient glow behind hero */
+#landing-page .hero::before {
+  content: "";
+  position: absolute;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(255, 106, 92, 0.08) 0%, rgba(43, 111, 92, 0.04) 40%, rgba(244, 242, 237, 0) 70%);
+  z-index: 0;
+  pointer-events: none;
+}
+
 /* ---- phone mockup ---- */
 #landing-page .phone-stage {
   display: flex;
@@ -724,6 +738,106 @@
   font-size: 14px;
   color: var(--ink-soft);
 }
+
+/* ---- hero tabs (Segmented Control style) ---- */
+#landing-page .hero-tabs-container {
+  padding-top: 40px;
+  position: relative;
+  z-index: 10;
+}
+
+#landing-page .hero-tabs-nav {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(20, 35, 31, 0.04);
+  padding: 6px;
+  border-radius: 100px;
+  gap: 4px;
+  margin: 0 auto 50px;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+#landing-page .hero-tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 24px 8px 10px;
+  border-radius: 100px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+#landing-page .hero-tab:hover:not(.active) {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+#landing-page .hero-tab.active {
+  color: var(--ink);
+  background: var(--paper-raised);
+  border-color: rgba(20, 35, 31, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+#landing-page .hero-tab .orb-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  padding: 2px;
+  border: 1px solid rgba(20, 35, 31, 0.08);
+  background: var(--paper);
+  transition: transform 0.3s ease;
+}
+
+#landing-page .hero-tab.active .orb-icon {
+  transform: scale(1.05);
+  border-color: rgba(20, 35, 31, 0.15);
+}
+
+/* ---- beiwe demo box (Premium Glass) ---- */
+#landing-page .beiwe-demo-box {
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+#landing-page .beiwe-demo-inner {
+  width: 100%;
+  max-width: 440px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 32px;
+  padding: 48px 36px;
+  box-shadow: 0 30px 60px -12px rgba(20, 35, 31, 0.12), inset 0 1px 0 rgba(255, 255, 255, 1);
+  border: 1px solid rgba(20, 35, 31, 0.06);
+  position: relative;
+  z-index: 2;
+}
+
+/* ---- Entry Animations ---- */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+
 
 @media (prefers-reduced-motion: reduce) {
   #landing-page * {

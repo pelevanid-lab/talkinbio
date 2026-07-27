@@ -2,7 +2,8 @@ import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import Image from 'next/image';
 import { Link } from '@/i18n/routing';
-import LandingMockup from '@/components/LandingMockup';
+import LandingHeroTabs from '@/components/LandingHeroTabs';
+import ShowcaseSection from '@/components/ShowcaseSection';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { isConversationActive } from '@/utils/conversationWindow';
 import './landing.css';
@@ -137,42 +138,41 @@ export default async function HomePage({ params }: any) {
       </header>
 
       <main>
-        <section className="hero">
-          <div className="wrap hero-grid">
-            <div>
-              <span className="eyebrow">{t('hero.eyebrow')}</span>
-              <h1>
-                {t('hero.headlinePrefix')}
+        <section className="hero relative">
+          <div className="wrap">
+            <div className="max-w-[800px] mb-12 relative z-10">
+              <h1 className="animate-fade-up" style={{ fontSize: 'clamp(48px, 7vw, 84px)', letterSpacing: '-0.04em', lineHeight: '1.02' }}>
+                Stop linking.
                 <br />
-                <span className="strike">{t('hero.headlineStrike')}</span> {t('hero.headlineSuffix')}
-                <span style={{ color: 'var(--coral)' }}>talkinbio.</span>
+                Start talking.
               </h1>
-              <p className="sub">{t('hero.sub')}</p>
-              <div className="hero-ctas">
-                <Link href="/request-access" className="btn btn-primary">
-                  {t('hero.startFree')}
+              <p 
+                className="sub animate-fade-up delay-100 text-xl md:text-2xl text-slate-600 mt-6 mb-8 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: t.raw('heroTexts.subtitle') }}
+              />
+              <div className="hero-ctas animate-fade-up delay-200 flex flex-wrap gap-4">
+                <Link href="/request-access" className="btn btn-primary" style={{ padding: '16px 32px', fontSize: '17px' }}>
+                  {t('heroTexts.btnEarly')}
                 </Link>
-                <a href="#nasil-calisir" className="btn btn-ghost">
-                  {t('hero.howItWorks')}
+                <a href="#nasil-calisir" className="btn btn-ghost bg-white" style={{ padding: '16px 32px', fontSize: '17px' }}>
+                  {t('heroTexts.btnHow')}
                 </a>
-                <Link href="/pricing" className="btn btn-ghost" style={{ fontSize: '0.9rem' }}>
-                  {t('nav.pricing')}
-                </Link>
-                <Link href="/stakeholders" className="btn btn-ghost" style={{ fontSize: '0.9rem' }}>
-                  {t('nav.stakeholders')}
+                <Link href="/pricing" className="btn btn-ghost bg-white" style={{ padding: '16px 32px', fontSize: '17px' }}>
+                  {t('heroTexts.btnPricing')}
                 </Link>
               </div>
-              <p className="hero-note">{t('hero.note')}</p>
             </div>
 
-            <LandingMockup
-              businessId={demoBusinessId}
-              businessName="Talkinbio"
-              locale={locale}
-              initialMessages={demoInitialMessages}
-              blocks={demoBlocks}
-              theme={demoTheme}
-            />
+            <div className="animate-fade-up delay-300 relative z-10">
+              <LandingHeroTabs 
+                texts={{}}
+                demoBusinessId={demoBusinessId}
+                locale={locale}
+                demoInitialMessages={demoInitialMessages}
+                demoBlocks={demoBlocks}
+                demoTheme={demoTheme}
+              />
+            </div>
           </div>
         </section>
 
@@ -182,115 +182,227 @@ export default async function HomePage({ params }: any) {
           </div>
         </div>
 
-        <section id="nasil-calisir">
-          <div className="wrap">
-            <div className="steps-head">
-              <div className="section-head">
-                <h2>{t('steps.title')}</h2>
-                <p>{t('steps.sub')}</p>
-              </div>
-              <div className="agents-intro">
-                <div className="agent-chip">
-                  <div className="agent-avatar">
-                    <Image src="/beiwe-avatar-v1.png" alt="Beiwe" width={72} height={72} className="w-full h-full object-cover" />
-                  </div>
-                  <span className="agent-name">Beiwe</span>
-                  <span className="agent-role">{t('steps.agents.beiweRole')}</span>
+        <section className="py-24 bg-white border-t border-slate-100">
+          <div className="wrap flex flex-col lg:flex-row gap-12 lg:gap-24">
+            <div className="w-full lg:w-[40%] flex flex-col justify-center">
+              <h2 className="text-4xl md:text-[56px] font-bold text-[var(--ink)] mb-8 tracking-tight leading-[1.1]" style={{ fontFamily: 'var(--font-bricolage)', letterSpacing: '-0.02em' }}>
+                {t('twoPlatforms.title')}
+              </h2>
+            </div>
+            
+            <div className="w-full lg:w-[60%] flex flex-col gap-16">
+              
+              <div className="flex flex-col sm:flex-row gap-6 items-start">
+                <div className="w-24 h-24 rounded-[32px] shrink-0 border border-slate-200/50 bg-[#F4F2ED] flex items-center justify-center relative overflow-hidden shadow-sm">
+                   <div className="w-16 h-16 rounded-full orb-saule animate-orbPulse"></div>
+                   <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px]"></div>
                 </div>
-                <div className="agent-chip">
-                  <div className="agent-avatar">
-                    <Image src="/saule-avatar-v1.png" alt="Saule" width={72} height={72} className="w-full h-full object-cover" />
-                  </div>
-                  <span className="agent-name">Saule</span>
-                  <span className="agent-role">{t('steps.agents.sauleRole')}</span>
+                <div>
+                  <h3 className="text-xl font-bold text-[var(--ink)] mb-3 flex items-center gap-3" style={{ fontFamily: 'var(--font-bricolage)' }}>
+                    <div className="px-2 py-0.5 rounded-full bg-[var(--coral-tint)] text-[var(--coral)] text-xs font-bold tracking-wider" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>SAULE</div>
+                    {t('twoPlatforms.sauleTitle')}
+                  </h3>
+                  <p className="text-slate-500 leading-relaxed text-[15px]">
+                    {t('twoPlatforms.sauleDesc')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-6 items-start">
+                <div className="w-24 h-24 rounded-[32px] shrink-0 border border-slate-200/50 bg-[#F4F2ED] flex items-center justify-center relative overflow-hidden shadow-sm">
+                   <div className="w-16 h-16 rounded-full orb-beiwe animate-orbPulse" style={{ animationDelay: '1s' }}></div>
+                   <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px]"></div>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-[var(--ink)] mb-3 flex items-center gap-3" style={{ fontFamily: 'var(--font-bricolage)' }}>
+                    <div className="px-2 py-0.5 rounded-full bg-slate-100 text-[var(--ink)] text-xs font-bold tracking-wider" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>BEIWE</div>
+                    {t('twoPlatforms.beiweTitle')}
+                  </h3>
+                  <p className="text-slate-500 leading-relaxed text-[15px]">
+                    {t('twoPlatforms.beiweDesc')}
+                  </p>
                 </div>
               </div>
             </div>
-            <div className="steps">
-              <div className="step">
-                <div className="step-num mono">01</div>
-                <h3>{t('steps.step1.title')}</h3>
-                <p>{t('steps.step1.desc')}</p>
-              </div>
-              <div className="step">
-                <div className="step-num mono">02</div>
-                <h3>{t('steps.step2.title')}</h3>
-                <p>{t('steps.step2.desc')}</p>
-              </div>
-              <div className="step">
-                <div className="step-num mono">03</div>
-                <h3>{t('steps.step3.title')}</h3>
-                <p>{t('steps.step3.desc')}</p>
+          </div>
+          
+          <div className="h-24 md:h-32 w-full"></div>
+          <div className="wrap">
+            {/* Dashboard Mockup Area */}
+            <div className="bg-[#F8FAFC] rounded-[32px] p-6 md:p-12 border border-slate-200/60 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] overflow-hidden relative">
+              <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 justify-center items-center lg:items-stretch min-h-[400px]">
+                
+                {/* Placeholder for Saule Dashboard Screenshot */}
+                <div className="w-full lg:w-[55%] min-h-[240px] aspect-[4/3] lg:aspect-auto bg-white rounded-2xl border border-slate-200 shadow-2xl shadow-slate-200/50 flex flex-col overflow-hidden relative z-20 transform lg:translate-x-4 lg:-translate-y-4 hover:z-30 transition-transform">
+                  <div className="h-10 border-b border-slate-100 flex items-center px-4 gap-2">
+                    <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                    <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                    <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                    <div className="text-[10px] text-slate-400 font-medium ml-2 uppercase tracking-widest">Saule Analytics</div>
+                  </div>
+                  <div className="flex-1 p-8 flex items-center justify-center text-center">
+                    <div>
+                      <div className="w-24 h-24 mx-auto mb-4"><div className="orb-container orb-saule"></div></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Placeholder for Beiwe Dashboard Screenshot */}
+                <div className="w-full lg:w-[45%] min-h-[240px] aspect-[4/3] lg:aspect-auto bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col overflow-hidden relative z-10 transform lg:-translate-x-4 lg:translate-y-4 hover:z-20 transition-transform">
+                  <div className="h-10 border-b border-slate-100 flex items-center px-4 gap-2">
+                    <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                    <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                    <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                    <div className="text-[10px] text-slate-400 font-medium ml-2 uppercase tracking-widest">Beiwe Studio</div>
+                  </div>
+                  <div className="flex-1 p-8 flex items-center justify-center text-center">
+                    <div>
+                      <div className="w-16 h-16 mx-auto mb-4"><div className="orb-container orb-beiwe"></div></div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
         </section>
 
-        <section>
-          <div className="wrap">
-            <div className="section-head">
-              <h2>{t('features.title')}</h2>
-              <p>{t('features.sub')}</p>
+        {/* Deep Dive: Saule Assistant */}
+        <section className="py-24 border-t border-slate-200/50 bg-white">
+          <div className="wrap flex flex-col lg:flex-row gap-12 lg:gap-24">
+            <div className="w-full lg:w-[40%]">
+              <h2 className="text-4xl md:text-5xl font-bold text-[var(--ink)] mb-6 tracking-tight" style={{ fontFamily: 'var(--font-bricolage)', letterSpacing: '-0.02em' }}>
+                {t('deepSaule.title')}
+              </h2>
+              <p className="text-xl text-[var(--ink)] font-semibold mb-4 leading-snug">
+                {t('deepSaule.desc')}
+              </p>
+              <Link href="/request-access" className="text-[var(--coral)] font-semibold hover:underline flex items-center gap-2">
+                {t('deepSaule.btn')} <span aria-hidden="true">&rarr;</span>
+              </Link>
             </div>
-            <div className="features">
-              <div className="feature">
-                <div className="feature-icon"><span></span></div>
-                <h3>{t('features.feat1.title')}</h3>
-                <p>{t('features.feat1.desc')}</p>
+            
+            <div className="w-full lg:w-[60%] grid grid-cols-1 sm:grid-cols-2 gap-8 md:gap-12">
+              <div>
+                <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepSaule.f1Title')}</h4>
+                <p className="text-slate-500 leading-relaxed text-[15px]">{t('deepSaule.f1Desc')}</p>
               </div>
-              <div className="feature">
-                <div className="feature-icon"><span></span></div>
-                <h3>{t('features.feat2.title')}</h3>
-                <p>{t('features.feat2.desc')}</p>
+              <div>
+                <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepSaule.f2Title')}</h4>
+                <p className="text-slate-500 leading-relaxed text-[15px]">{t('deepSaule.f2Desc')}</p>
               </div>
-              <div className="feature">
-                <div className="feature-icon"><span></span></div>
-                <h3>{t('features.feat3.title')}</h3>
-                <p>{t('features.feat3.desc')}</p>
+              <div>
+                <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepSaule.f3Title')}</h4>
+                <p className="text-slate-500 leading-relaxed text-[15px]">{t('deepSaule.f3Desc')}</p>
               </div>
-              <div className="feature">
-                <div className="feature-icon"><span></span></div>
-                <h3>{t('features.feat4.title')}</h3>
-                <p>{t('features.feat4.desc')}</p>
-              </div>
-              <div className="feature">
-                <div className="feature-icon"><span></span></div>
-                <h3>{t('features.feat5.title')}</h3>
-                <p>{t('features.feat5.desc')}</p>
-              </div>
-              <div className="feature">
-                <div className="feature-icon"><span></span></div>
-                <h3>{t('features.feat6.title')}</h3>
-                <p>{t('features.feat6.desc')}</p>
+              <div>
+                <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepSaule.f4Title')}</h4>
+                <p className="text-slate-500 leading-relaxed text-[15px]">{t('deepSaule.f4Desc')}</p>
               </div>
             </div>
           </div>
         </section>
 
-        <section>
-          <div className="wrap">
-            <div className="audience">
-              <div className="section-head">
-                <h2>{t('audience.title')}</h2>
-                <p>{t('audience.sub')}</p>
+        {/* Deep Dive: Beiwe Creative */}
+        <section className="py-24 border-t border-slate-200/50 bg-[#F8FAFC]">
+          <div className="wrap flex flex-col lg:flex-row gap-12 lg:gap-24">
+            <div className="w-full lg:w-[40%]">
+              <h2 className="text-4xl md:text-5xl font-bold text-[var(--ink)] mb-6 tracking-tight" style={{ fontFamily: 'var(--font-bricolage)', letterSpacing: '-0.02em' }}>
+                {t('deepBeiwe.title')}
+              </h2>
+              <p className="text-xl text-[var(--ink)] font-semibold mb-4 leading-snug">
+                {t('deepBeiwe.desc1')}
+              </p>
+              <p className="text-slate-500 text-lg leading-relaxed mb-8">
+                {t('deepBeiwe.desc2')}
+              </p>
+              <Link href="/request-access" className="text-[var(--teal)] font-semibold hover:underline flex items-center gap-2">
+                {t('deepBeiwe.btn')} <span aria-hidden="true">&rarr;</span>
+              </Link>
+            </div>
+            
+            <div className="w-full lg:w-[60%] grid grid-cols-1 sm:grid-cols-2 gap-8 md:gap-12">
+              <div>
+                <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepBeiwe.f1Title')}</h4>
+                <p className="text-slate-500 leading-relaxed text-[15px]">{t('deepBeiwe.f1Desc')}</p>
               </div>
-              <div className="chip-row">
-                {t.raw('audience.chips').map((chip: string, index: number) => (
-                  <span key={index} className="chip">{chip}</span>
-                ))}
+              <div>
+                <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepBeiwe.f2Title')}</h4>
+                <p className="text-slate-500 leading-relaxed text-[15px]">{t('deepBeiwe.f2Desc')}</p>
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepBeiwe.f3Title')}</h4>
+                <p className="text-slate-500 leading-relaxed text-[15px]">{t('deepBeiwe.f3Desc')}</p>
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepBeiwe.f4Title')}</h4>
+                <p className="text-slate-500 leading-relaxed text-[15px]">{t('deepBeiwe.f4Desc')}</p>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="cta-final" id="basla">
+        <ShowcaseSection />
+
+        <section className="py-20 md:py-32 bg-white border-t border-slate-100">
           <div className="wrap">
-            <span className="eyebrow">{t('cta.eyebrow')}</span>
-            <h2>{t('cta.title')}</h2>
-            <p>{t('cta.sub')}</p>
-            <div className="cta-buttons">
-              <Link href="/request-access" className="btn btn-primary">{t('cta.startFree')}</Link>
-              <Link href="/talkinbio" className="btn btn-ghost">{t('cta.demo')}</Link>
+            <div className="flex justify-between items-end mb-12">
+              <h2 className="text-3xl md:text-5xl font-bold text-[var(--ink)] tracking-tight" style={{ fontFamily: 'var(--font-bricolage)', letterSpacing: '-0.02em' }}>
+                {t('updates.title')}
+              </h2>
+              <Link href="#" className="px-5 py-2 rounded-full border border-slate-200 text-[var(--ink)] font-semibold text-sm hover:bg-slate-50 transition-colors hidden sm:block">
+                {t('updates.allPosts')}
+              </Link>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+              {/* Post 1 */}
+              <Link href="#" className="group block">
+                <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden relative mb-5 bg-slate-100">
+                  {/* Coral Gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#FF6A5C] via-[#ff8478] to-[#FFEDE9] opacity-90 transition-transform duration-700 group-hover:scale-105"></div>
+                  <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }}></div>
+                  <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
+                    <h3 className="text-white text-2xl font-bold drop-shadow-sm max-w-[200px] leading-tight">{t('updates.post1.badge')}</h3>
+                  </div>
+                </div>
+                <h4 className="text-[var(--ink)] font-bold text-lg mb-2 group-hover:text-[var(--coral)] transition-colors line-clamp-2">{t('updates.post1.title')}</h4>
+                <p className="text-[var(--muted)] text-sm font-medium">{t('updates.post1.meta')}</p>
+              </Link>
+
+              {/* Post 2 */}
+              <Link href="#" className="group block">
+                <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden relative mb-5 bg-slate-100">
+                  {/* Teal Gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#2B6F5C] via-[#3a967c] to-[#14231F] opacity-90 transition-transform duration-700 group-hover:scale-105"></div>
+                  <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }}></div>
+                  <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
+                    <h3 className="text-white text-2xl font-bold drop-shadow-sm max-w-[200px] leading-tight">{t('updates.post2.badge')}</h3>
+                  </div>
+                </div>
+                <h4 className="text-[var(--ink)] font-bold text-lg mb-2 group-hover:text-[var(--coral)] transition-colors line-clamp-2">{t('updates.post2.title')}</h4>
+                <p className="text-[var(--muted)] text-sm font-medium">{t('updates.post2.meta')}</p>
+              </Link>
+
+              {/* Post 3 */}
+              <Link href="#" className="group block">
+                <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden relative mb-5 bg-slate-100">
+                  {/* Ink Gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#14231F] via-[#4B5A55] to-[#8A8880] opacity-90 transition-transform duration-700 group-hover:scale-105"></div>
+                  <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }}></div>
+                  <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
+                    <h3 className="text-white text-2xl font-bold drop-shadow-sm max-w-[200px] leading-tight">{t('updates.post3.badge')}</h3>
+                  </div>
+                </div>
+                <h4 className="text-[var(--ink)] font-bold text-lg mb-2 group-hover:text-[var(--coral)] transition-colors line-clamp-2">{t('updates.post3.title')}</h4>
+                <p className="text-[var(--muted)] text-sm font-medium">{t('updates.post3.meta')}</p>
+              </Link>
+            </div>
+            
+            <div className="mt-8 text-center sm:hidden">
+               <Link href="#" className="px-5 py-2 rounded-full border border-slate-200 text-[var(--ink)] font-semibold text-sm inline-block">
+                {t('updates.allPosts')}
+              </Link>
             </div>
           </div>
         </section>

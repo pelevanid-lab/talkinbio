@@ -839,8 +839,8 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 {messages.map((m, idx) => (
                   <div key={idx} className={`flex items-end gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     {m.role !== 'user' && (
-                      <div className="w-7 h-7 rounded-full overflow-hidden border border-slate-200 shrink-0 mb-0.5">
-                        <Image src="/beiwe-avatar-v1.png" alt="Beiwe" width={28} height={28} className="w-full h-full object-cover" />
+                      <div className="w-7 h-7 rounded-full overflow-hidden border border-slate-200 shrink-0 mb-0.5 p-[1px] bg-white">
+                        <div className="orb-container orb-beiwe"></div>
                       </div>
                     )}
                     <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${m.role === 'user' ? 'bg-[var(--ink)] text-white' : 'bg-white border border-slate-200 text-slate-800 shadow-sm'}`}>
@@ -856,8 +856,8 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 ))}
                 {isChatLoading && (
                   <div className="flex items-end gap-2 justify-start">
-                    <div className="w-7 h-7 rounded-full overflow-hidden border border-slate-200 shrink-0 mb-0.5">
-                      <Image src="/beiwe-avatar-v1.png" alt="Beiwe" width={28} height={28} className="w-full h-full object-cover" />
+                    <div className="w-7 h-7 rounded-full overflow-hidden border border-slate-200 shrink-0 mb-0.5 p-[1px] bg-white">
+                      <div className="orb-container orb-beiwe"></div>
                     </div>
                     <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm flex items-center space-x-2">
                       <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></div>
