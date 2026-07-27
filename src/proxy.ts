@@ -54,6 +54,7 @@ export async function proxy(request: NextRequest) {
       sameSite: 'strict',
       maxAge: 60 * 60 * 24 * 365, // 1 year
     });
+    request.cookies.set('visitor_session_id', sessionId);
   }
 
   await supabase.auth.getUser();
