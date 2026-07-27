@@ -59,17 +59,17 @@ export default function LandingHeroTabs({
               <p style={{ textAlign: 'center', fontSize: '0.95rem', color: '#64748b', marginBottom: '32px', padding: '0 16px', lineHeight: '1.5' }}>
                 Instagram profilinizi veya web sitenizi verin, sayfanızı <strong className="text-slate-700 font-semibold">saniyeler içinde</strong> kuralım.
               </p>
-              <div style={{ display: 'flex', gap: '6px', padding: '6px', backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '9999px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), inset 0 2px 4px rgba(0,0,0,0.02)' }} className="focus-within:ring-2 focus-within:ring-[#38F9D7]/50 focus-within:border-[#38F9D7] transition-all max-w-[400px] mx-auto">
+              <form onSubmit={(e) => { e.preventDefault(); window.location.href = '/request-access'; }} style={{ display: 'flex', gap: '6px', padding: '6px', backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '9999px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), inset 0 2px 4px rgba(0,0,0,0.02)' }} className="focus-within:ring-2 focus-within:ring-[#38F9D7]/50 focus-within:border-[#38F9D7] transition-all max-w-[400px] mx-auto">
                 <input
                   type="text"
                   placeholder="instagram.com/kullaniciadi"
                   style={{ width: '100%', padding: '10px 18px', backgroundColor: 'transparent', fontSize: '0.9rem', outline: 'none', border: 'none', color: '#0f172a' }}
                   className="placeholder:text-slate-400 font-medium"
                 />
-                <button style={{ backgroundColor: '#0f172a', color: 'white', padding: '10px 24px', borderRadius: '9999px', fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', border: 'none', transition: 'all 0.2s' }} className="hover:bg-slate-800 hover:shadow-lg active:scale-95">
+                <button type="submit" style={{ backgroundColor: '#0f172a', color: 'white', padding: '10px 24px', borderRadius: '9999px', fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', border: 'none', transition: 'all 0.2s' }} className="hover:bg-slate-800 hover:shadow-lg active:scale-95">
                   Hemen Kur
                 </button>
-              </div>
+              </form>
             </div>
           </div>
         )}
