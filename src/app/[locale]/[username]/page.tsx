@@ -100,13 +100,16 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
           else if (referer) source = 'referral';
         }
 
-        await supabase.from('page_views').upsert(
-          { business_id: business.id, visitor_session_id: visitorSessionId, view_date: new Date().toISOString().slice(0, 10), source },
-          { onConflict: 'business_id,view_date,visitor_session_id', ignoreDuplicates: true }
+        const { error } = await supabase.from('page_views').insert(
+          { business_id: business.id, visitor_session_id: visitorSessionId, view_date: new Date().toISOString().slice(0, 10), source }
         );
+        // Error code 23505 is unique_violation, which means they already visited today
+        if (error && error.code !== '23505') {
+          console.error('Failed to record page view', error);
+        }
       }
     } catch (err) {
-      console.error('Failed to record page view', err);
+      console.error('Exception recording page view', err);
     }
   }
 
