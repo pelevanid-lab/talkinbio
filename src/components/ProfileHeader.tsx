@@ -22,6 +22,7 @@ export default function ProfileHeader({
   theme,
   activeBlockId,
   onBack,
+  topLeft,
   topRight,
   shortcuts,
   onShortcutSelect,
@@ -33,6 +34,7 @@ export default function ProfileHeader({
   theme: Theme;
   activeBlockId?: string | null;
   onBack?: () => void;
+  topLeft?: React.ReactNode;
   topRight?: React.ReactNode;
   // Başlık altındaki kısayol butonları (maks 4). Link → URL açar; Hizmet → onShortcutSelect(blockId)
   // ile ilgili bölümü açar (linktree kartı). resolveShortcuts ile hazırlanıp geçilir.
@@ -50,7 +52,7 @@ export default function ProfileHeader({
   if (minimal) {
     return (
       <div className="w-full flex items-center justify-between min-h-[32px]" style={{ color: c.text }}>
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           {activeBlockId && onBack && (
             <button
               type="button"
@@ -61,6 +63,7 @@ export default function ProfileHeader({
               <ChevronLeft className="w-5 h-5" />
             </button>
           )}
+          {!activeBlockId && topLeft}
         </div>
         {topRight}
       </div>
@@ -74,16 +77,19 @@ export default function ProfileHeader({
       <div className="flex flex-col items-center text-center">
         <div className="relative w-full flex justify-center">
           {/* Sol slot — avatar üst kenarına hizalı */}
-          <div className="absolute left-0 top-0 flex items-center" style={{ color: c.text }}>
-            <a
-              href="https://talkinbio.com/?utm_source=widget&utm_medium=profile_logo&utm_campaign=attribution"
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs font-bold tracking-tight hover:opacity-100 transition"
-              style={{ color: c.textMuted, opacity: 0.5, fontFamily: `"${theme.headingFont}", sans-serif` }}
-            >
-              talkinbio
-            </a>
+          <div className="absolute left-0 top-0 flex items-center gap-2" style={{ color: c.text }}>
+            {topLeft}
+            {!topLeft && (
+              <a
+                href="https://talkinbio.com/?utm_source=widget&utm_medium=profile_logo&utm_campaign=attribution"
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-bold tracking-tight hover:opacity-100 transition"
+                style={{ color: c.textMuted, opacity: 0.5, fontFamily: `"${theme.headingFont}", sans-serif` }}
+              >
+                talkinbio
+              </a>
+            )}
           </div>
 
           {/* Avatar (orta) */}
