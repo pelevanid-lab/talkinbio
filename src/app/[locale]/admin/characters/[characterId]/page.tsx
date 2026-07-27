@@ -4,7 +4,7 @@ import AdminLayout from '@/components/AdminLayout';
 import CharacterRoomTabs from '@/components/CharacterRoomTabs';
 import CharacterRoomClient from '@/components/CharacterRoomClient';
 import { supabaseAdmin } from '@/utils/supabase/admin';
-import { CHARACTERS, isCharacterId, type CharacterShot } from '@/config/characters';
+import { CHARACTERS, isCharacterId, type CharacterShot, type CharacterMotion } from '@/config/characters';
 
 export default async function CharacterRoomPage({ params }: { params: Promise<{ characterId: string }> }) {
   await requireAdmin();
@@ -21,11 +21,22 @@ export default async function CharacterRoomPage({ params }: { params: Promise<{ 
     .order('created_at', { ascending: false })
     .limit(120);
 
+  const { data: motions } = await supabaseAdmin
+    .from('character_motions')
+    .select('*')
+    .eq('character_id', characterId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
   return (
     <AdminLayout>
       <h1 className="text-3xl font-bold text-slate-900 mb-6">Karakter Odası</h1>
       <CharacterRoomTabs />
-      <CharacterRoomClient character={character} initialShots={(shots || []) as CharacterShot[]} />
+      <CharacterRoomClient 
+        character={character} 
+        initialShots={(shots || []) as CharacterShot[]} 
+        initialMotions={(motions || []) as CharacterMotion[]} 
+      />
     </AdminLayout>
   );
 }

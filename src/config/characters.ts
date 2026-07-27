@@ -267,7 +267,7 @@ export const CHARACTERS: Record<CharacterId, CharacterDefinition> = {
     scenePresets: [
       ...SHARED_SCENE_PRESETS,
       {
-        id: 'home-office',
+        id: 'enes-home-office',
         label: 'Ev ofisinde çalışırken',
         group: 'Ortam',
         prompt: 'Sitting in a cozy home office with a blurred bookshelf in the background, warm and inviting lighting.',
@@ -428,6 +428,17 @@ export interface CharacterShot {
   aspect_ratio: string | null;
   overlay: OverlayConfig | null;
   is_canon: boolean;
+  created_at: string;
+}
+
+/** `character_motions` satırının uygulama tarafındaki karşılığı. */
+export interface CharacterMotion {
+  id: string;
+  character_id: CharacterId;
+  source_image_url: string;
+  audio_url: string;
+  video_url: string;
+  model: string;
   created_at: string;
 }
 

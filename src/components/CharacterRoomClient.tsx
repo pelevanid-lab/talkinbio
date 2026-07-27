@@ -24,20 +24,24 @@ import {
   type AspectRatio,
   type CharacterDefinition,
   type CharacterShot,
+  type CharacterMotion,
   type Resolution,
   type ScenePreset,
 } from '@/config/characters';
 import CharacterOverlayEditor from '@/components/CharacterOverlayEditor';
+import MotionSection from '@/components/MotionSection';
 
 const PRESET_GROUPS: ScenePreset['group'][] = ['Kadraj', 'Ortam', 'Aksiyon'];
 
 type Props = {
   character: CharacterDefinition;
   initialShots: CharacterShot[];
+  initialMotions: CharacterMotion[];
 };
 
-export default function CharacterRoomClient({ character, initialShots }: Props) {
+export default function CharacterRoomClient({ character, initialShots, initialMotions }: Props) {
   const [shots, setShots] = useState<CharacterShot[]>(initialShots);
+  const [motions, setMotions] = useState<CharacterMotion[]>(initialMotions);
   const [presetIds, setPresetIds] = useState<string[]>([]);
   const [intent, setIntent] = useState('');
   const [rawPrompt, setRawPrompt] = useState('');
@@ -504,6 +508,15 @@ export default function CharacterRoomClient({ character, initialShots }: Props) 
           }}
         />
       )}
+
+      {/* Motion (Video Üretimi) */}
+      <MotionSection 
+        characterId={character.id}
+        shots={shots}
+        motions={motions}
+        onMotionCreated={(newMotion: CharacterMotion) => setMotions((prev) => [newMotion, ...prev])}
+        onMotionDeleted={(motionId: string) => setMotions((prev) => prev.filter((m) => m.id !== motionId))}
+      />
     </div>
   );
 }
