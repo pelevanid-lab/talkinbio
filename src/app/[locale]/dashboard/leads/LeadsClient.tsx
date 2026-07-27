@@ -147,9 +147,7 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
               </button>
             </div>
             <CreditBadge balance={business.credit_balance ?? 0} />
-            <a href="/dashboard/content" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
-              {t('navContent')}
-            </a>
+
             <a href="/dashboard/editor" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
               {t('navEditor')}
             </a>
