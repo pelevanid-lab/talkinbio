@@ -30,6 +30,7 @@ import {
 } from '@/config/characters';
 import CharacterOverlayEditor from '@/components/CharacterOverlayEditor';
 import MotionSection from '@/components/MotionSection';
+import StudioSection from '@/components/StudioSection';
 
 const PRESET_GROUPS: ScenePreset['group'][] = ['Kadraj', 'Ortam', 'Aksiyon'];
 
@@ -510,13 +511,16 @@ export default function CharacterRoomClient({ character, initialShots, initialMo
       )}
 
       {/* Motion (Video Üretimi) */}
-      <MotionSection 
+      <MotionSection
         characterId={character.id}
         shots={shots}
         motions={motions}
         onMotionCreated={(newMotion: CharacterMotion) => setMotions((prev) => [newMotion, ...prev])}
         onMotionDeleted={(motionId: string) => setMotions((prev) => prev.filter((m) => m.id !== motionId))}
       />
+
+      {/* Post-Prodüksiyon Stüdyosu — 3. katman, Motion videolarını cutaway/overlay/müzikle işler */}
+      <StudioSection characterId={character.id} motions={motions} />
     </div>
   );
 }

@@ -9,8 +9,8 @@
 
 import type { OverlayConfig, OverlayFont, OverlayLocale } from '@/config/characters';
 
-/** Kenar boşluğu, kısa kenarın yüzdesi olarak. */
-const PADDING_RATIO = 0.06;
+/** Kenar boşluğu, kısa kenarın yüzdesi olarak. Studio wordmark'ı da aynı oranı kullanıyor. */
+export const PADDING_RATIO = 0.06;
 const LINE_HEIGHT = 1.15;
 const SUBLINE_GAP = 0.45;
 
@@ -26,7 +26,12 @@ export function resolveFontFamily(font: OverlayFont): string {
   return resolved || 'sans-serif';
 }
 
-function loadImage(url: string): Promise<HTMLImageElement> {
+/**
+ * Export edildi: Studio'nun cutaway/overlay görsellerini önceden yüklerken aynı CORS-güvenli
+ * kalıbı kullanıyoruz. `crossOrigin` `src` atanmadan ÖNCE set edilmeli, yoksa retroaktif
+ * uygulanmıyor — bu inceliği burada bırakıp tekrar yazmamak riski azaltıyor.
+ */
+export function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new window.Image();
     // Supabase storage public nesneleri CORS başlığı gönderiyor; bu olmadan canvas
@@ -38,7 +43,14 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+/**
+ * Satır sarma, karartma şeridi ve wordmark aşağıda EXPORT edildi — Studio (post-prodüksiyon,
+ * bkz. `src/utils/studioRenderer.ts`) video karesine aynı görsel dili bindirirken bunları
+ * yeniden yazmak yerine buradan çağırıyor. `composeOverlayPng`'in kendi çizim akışı bilerek
+ * DOKUNULMADAN bırakıldı — davranışı değişmesin diye, yeni ihtiyaç `drawTextBlock` ile
+ * ayrı bir yoldan karşılanıyor (aşağıda).
+ */
+export function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
   const lines: string[] = [];
 
   for (const paragraph of text.split('\n')) {
@@ -64,6 +76,49 @@ function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
   }
 
   return lines;
+}
+
+export type TextBlockStyle = {
+  fontFamily: string;
+  /** Piksel cinsinden punto — çağıran taraf yüzdeyi (headlineSize gibi) zaten piksele çevirmiş olmalı. */
+  sizePx: number;
+  weight?: number;
+  color: string;
+  align: CanvasTextAlign;
+};
+
+export type DrawTextBlockParams = {
+  text: string;
+  /** Çizimin başlayacağı üst-sol köşe değil, `align`'a göre hizalama noktası (composeOverlayPng'teki anchorX/cursorY ile aynı kalıp). */
+  x: number;
+  y: number;
+  maxWidth: number;
+  style: TextBlockStyle;
+};
+
+/**
+ * `composeOverlayPng`'in headline/subline'a özel akışından bilerek AYRI: Studio'nun
+ * serbest konumlu tek metin overlay'i (StudioTextOverlay) başlık/alt satır ayrımı değil,
+ * tek bir bloktur. Sarma (`wrapLines`) ve punto/hizalama mantığı aynı kalsın diye buraya
+ * çıkarıldı, ama composeOverlayPng'in kendi çizim döngüsü davranış değişmesin diye
+ * DOKUNULMADAN bırakıldı.
+ *
+ * Çizilen toplam yüksekliği (px) döner — çağıran taraf sonraki elemanı buna göre konumlayabilsin diye.
+ */
+export function drawTextBlock(ctx: CanvasRenderingContext2D, { text, x, y, maxWidth, style }: DrawTextBlockParams): number {
+  const weight = style.weight ?? 700;
+  ctx.font = `${weight} ${style.sizePx}px ${style.fontFamily}`;
+  ctx.textAlign = style.align;
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = style.color;
+
+  const lines = wrapLines(ctx, text, maxWidth);
+  let cursorY = y;
+  for (const line of lines) {
+    ctx.fillText(line, x, cursorY);
+    cursorY += style.sizePx * LINE_HEIGHT;
+  }
+  return cursorY - y;
 }
 
 type Block = { text: string; size: number; weight: number };
@@ -164,7 +219,7 @@ export async function composeOverlayPng({ imageUrl, overlay, locale }: ComposePa
 }
 
 /** Metnin arkasına yumuşak karartma — açık zeminlerde okunabilirliği kurtarır. */
-function drawScrim(
+export function drawScrim(
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
   vertical: 'top' | 'center' | 'bottom',
@@ -192,9 +247,9 @@ function drawScrim(
   ctx.fillRect(0, bandTop, canvas.width, bandHeight);
 }
 
-function drawWordmark(
+export function drawWordmark(
   ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
+  canvas: { width: number; height: number },
   family: string,
   padding: number,
   textVertical: 'top' | 'center' | 'bottom',

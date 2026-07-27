@@ -3,7 +3,13 @@ import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { FalError, generateCharacterMotion } from '@/utils/fal';
 import { isCharacterId } from '@/config/characters';
-import { findMotionModel, motionMaxSeconds, motionResolutions } from '@/config/motionModels';
+import {
+  findMotionModel,
+  motionAudioMime,
+  motionMaxSeconds,
+  motionResolutions,
+  MOTION_AUDIO_EXTENSIONS,
+} from '@/config/motionModels';
 
 export const maxDuration = 300;
 
@@ -18,18 +24,33 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
     return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
   }
 
+  // catch bloğunda hata bağlamını loglayabilmek için try dışında tanımlanıyor —
+  // hatanın hangi aşamada oluştuğuna göre biri veya ikisi de tanımsız kalabilir.
+  let sourceImageUrl: string | undefined;
+  let audioUrl: string | undefined;
+
   try {
     const formData = await req.formData();
     const file = formData.get('audio') as File;
-    const sourceImageUrl = formData.get('sourceImageUrl') as string;
+    sourceImageUrl = formData.get('sourceImageUrl') as string;
 
     if (!file || !sourceImageUrl) {
       return NextResponse.json({ error: 'Ses dosyası ve kaynak görsel zorunludur.' }, { status: 400 });
     }
 
-    // MP4 videolarının da ses (audio_url) olarak kabul edilmesini destekliyoruz
-    if (!file.type.startsWith('audio/') && file.type !== 'video/mp4') {
-      return NextResponse.json({ error: 'Lütfen geçerli bir ses dosyası veya MP4 yükleyin.' }, { status: 400 });
+    // Formatı UZANTIDAN belirliyoruz, `file.type`'tan değil: tarayıcı m4a için
+    // `audio/x-m4a` gibi standart olmayan bir değer verebiliyor ve dosya Supabase'ten
+    // o başlıkla servis edilince fal "Audio format is invalid" ile reddediyor.
+    const contentType = motionAudioMime(file.name);
+    if (!contentType) {
+      return NextResponse.json(
+        {
+          error: `Bu format desteklenmiyor. Desteklenenler: ${MOTION_AUDIO_EXTENSIONS.map((e) =>
+            e.toUpperCase(),
+          ).join(', ')}.`,
+        },
+        { status: 400 },
+      );
     }
 
     const model = findMotionModel(formData.get('model'));
@@ -82,16 +103,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
 
     // 1 - Yüklenen ses dosyasını Supabase'e kaydet
     const audioBuffer = Buffer.from(await file.arrayBuffer());
-    const ext = file.name.split('.').pop() || 'mp3';
+    const ext = file.name.split('.').pop()!.toLowerCase();
     const audioPath = `characters/${characterId}/audios/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    
+
     const { error: uploadError } = await supabaseAdmin.storage
       .from('media')
-      .upload(audioPath, audioBuffer, { contentType: file.type, cacheControl: '31536000' });
+      .upload(audioPath, audioBuffer, { contentType, cacheControl: '31536000' });
       
     if (uploadError) throw uploadError;
 
-    const { data: { publicUrl: audioUrl } } = supabaseAdmin.storage.from('media').getPublicUrl(audioPath);
+    ({ data: { publicUrl: audioUrl } } = supabaseAdmin.storage.from('media').getPublicUrl(audioPath));
 
     // 2 - fal.ai konuşan-avatar çağrısı
     const result = await generateCharacterMotion({
@@ -138,11 +159,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
     return NextResponse.json({ motion: inserted });
 
   } catch (err) {
+    // Zaman aşımında fal'ın işi arka planda bitmiş olabilir (para zaten harcandı).
+    // Kurtarma için gereken her şeyi tek satırda logluyoruz: request_id'yi FalError
+    // zaten mesajına gömüyor, buraya da audio/görsel URL'lerini ekliyoruz — yoksa
+    // hangi ses/kareyle üretildiği elle (storage zaman damgasına bakarak) bulunmak
+    // zorunda kalıyor.
+    const context = `character=${characterId} sourceImageUrl=${sourceImageUrl} audioUrl=${audioUrl}`;
     if (err instanceof FalError) {
-      console.error('[characters/motion] fal failed', err.message);
+      console.error('[characters/motion] fal failed', err.message, context);
       return NextResponse.json({ error: err.userMessage }, { status: 502 });
     }
-    console.error('[characters/motion] failed', err);
+    console.error('[characters/motion] failed', err, context);
     return NextResponse.json({ error: 'Video üretilirken bir hata oluştu.' }, { status: 500 });
   }
 }

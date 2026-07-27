@@ -12,6 +12,37 @@
 
 export type MotionResolution = '720p' | '1080p';
 
+/**
+ * Kabul edilen ses formatları — uzantıdan KANONİK MIME'a.
+ *
+ * DENEYLE bulundu, dokümanla değil. `.m4a` iki kez denendi ve ikisinde de fal
+ * "Audio format is invalid" döndürdü — ikincisinde Content-Type doğru (`audio/mp4`,
+ * RFC 4337) gitmesine rağmen. Yani konteynerin kendisi reddediliyor.
+ *
+ * DİKKAT: fal'ın model sayfalarındaki "kabul edilen dosya türleri: mp3, ogg, wav, m4a,
+ * aac" satırı yanıltıcı — o, sitedeki playground YÜKLEYİCİSİNİN kabul ettiği türler,
+ * modelin doğrulayıcısının değil. Kling geliştirici kılavuzunun düzyazısı (MP3/WAV/AAC)
+ * ve OmniHuman kılavuzunun önerisi ("MP3 128kbps+ veya 16-bit PCM WAV") gerçeğe yakın.
+ * Yeni format eklemeden önce gerçekten bir istek atıp doğrulayın.
+ *
+ * Tablonun ikinci işi MIME'ı NORMALLEŞTİRMEK: yükleme eskiden `file.type`'ı olduğu gibi
+ * Supabase'e yazıyordu, tarayıcı ise m4a'da `audio/x-m4a` gibi standart dışı değerler
+ * veriyor. Aynı tuzak WAV'da da var — bazı tarayıcılar `audio/x-wav` veya `audio/wave`
+ * döndürüyor. Bu yüzden `file.type`'a güvenmiyoruz, Content-Type'ı hep buradan yazıyoruz.
+ */
+export const MOTION_AUDIO_MIME: Record<string, string> = {
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
+};
+
+export const MOTION_AUDIO_EXTENSIONS = Object.keys(MOTION_AUDIO_MIME);
+
+/** Dosya adının uzantısına karşılık gelen kanonik MIME; desteklenmiyorsa undefined. */
+export function motionAudioMime(fileName: string): string | undefined {
+  const ext = fileName.split('.').pop()?.toLowerCase();
+  return ext ? MOTION_AUDIO_MIME[ext] : undefined;
+}
+
 export type MotionModel = {
   /** fal queue endpoint kimliği — DB'nin `model` kolonuna bu yazılıyor. */
   id: string;

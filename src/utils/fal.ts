@@ -16,10 +16,19 @@ const POLL_INTERVAL_MS = 2_000;
 const POLL_TIMEOUT_MS = 240_000;
 
 /**
- * Motion görselden çok daha yavaş (30s'lik 1080p video birkaç dakika sürebiliyor),
- * bu yüzden 300s bütçesinin sonuna kadar bekliyoruz.
+ * Motion görselden çok daha yavaş (30s'lik 1080p video birkaç dakika sürebiliyor).
+ *
+ * Bu değer route'taki `maxDuration=300` ile UYUMLU DEĞİL — bilerek. `maxDuration` Next.js'in
+ * route segment ayarı ve SADECE Vercel'e deploy edilince işliyor; `next dev`/`next start`'ta
+ * (yani local test ve kendi sunucumuzda) hiçbir etkisi yok, gerçek bir tavan yok. Burayı
+ * cömert tuttuk ki local'de ağır model/uzun ses kombinasyonları zaman aşımına takılmasın.
+ *
+ * DİKKAT: Vercel'e deploy edildiğinde `maxDuration=300` yine devreye girer ve bu süreden
+ * önce isteği keser — o zaman bu değerin bir önemi kalmaz. Ağır modellerle (1080p, uzun ses)
+ * production'a çıkmadan önce isteğin hemen dönüp durumun ayrıca sorgulandığı arka plan
+ * iş mimarisine geçilmeli; bu sadece local test için bir rahatlatma.
  */
-const MOTION_POLL_TIMEOUT_MS = 285_000;
+const MOTION_POLL_TIMEOUT_MS = 540_000;
 
 export class FalError extends Error {
   readonly userMessage: string;
@@ -133,7 +142,10 @@ async function submitAndPoll<T>(
   const startedAt = Date.now();
   for (;;) {
     if (Date.now() - startedAt > opts.timeoutMs) {
-      throw new FalError(opts.timeoutMessage);
+      // requestId'yi hata mesajına gömüyoruz: iş fal tarafında bizim sınırımızdan
+      // sonra bitmiş olabilir (para zaten harcandı), bu tek kurtarma ipucu —
+      // console.error zaten err.message'ı logluyor, oradan okunabilir olsun.
+      throw new FalError(opts.timeoutMessage, `requestId=${requestId} model=${model}`);
     }
 
     await sleep(POLL_INTERVAL_MS);
@@ -143,7 +155,7 @@ async function submitAndPoll<T>(
 
     if (status.status === 'COMPLETED') break;
     if (status.status && !['IN_QUEUE', 'IN_PROGRESS'].includes(status.status)) {
-      throw new FalError(opts.failMessage, JSON.stringify(status));
+      throw new FalError(opts.failMessage, `requestId=${requestId} ${JSON.stringify(status)}`);
     }
   }
 
@@ -266,7 +278,7 @@ export async function generateCharacterMotion(params: GenerateMotionParams): Pro
   );
 
   if (!result.video?.url) {
-    throw new FalError('fal.ai video döndürmedi.', JSON.stringify(result));
+    throw new FalError('fal.ai video döndürmedi.', `requestId=${requestId} ${JSON.stringify(result)}`);
   }
 
   return {

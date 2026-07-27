@@ -5,11 +5,15 @@ import { Loader2, Video, Upload, Play, CheckCircle2, Trash2 } from 'lucide-react
 import type { CharacterShot, CharacterMotion } from '@/config/characters';
 import {
   DEFAULT_MOTION_MODEL_ID,
-  MOTION_MODELS,
+  motionAudioMime,
   motionMaxSeconds,
   motionResolutions,
+  MOTION_AUDIO_EXTENSIONS,
+  MOTION_MODELS,
   type MotionResolution,
 } from '@/config/motionModels';
+
+const AUDIO_LABEL = MOTION_AUDIO_EXTENSIONS.map((e) => e.toUpperCase()).join(', ');
 
 /** Dosyanın süresini tarayıcıda ölçer; okunamazsa null döner (sunucu yine de sınırı uygular). */
 function readMediaDuration(file: File): Promise<number | null> {
@@ -60,7 +64,8 @@ export default function MotionSection({ characterId, shots, motions, onMotionCre
   const tooLong = audioSeconds !== null && audioSeconds > maxSeconds;
   const tooShort = audioSeconds !== null && audioSeconds < model.minAudioSeconds;
   const tooBig = audioFile !== null && audioFile.size > maxBytes;
-  const audioRejected = tooLong || tooShort || tooBig;
+  const badFormat = audioFile !== null && !motionAudioMime(audioFile.name);
+  const audioRejected = tooLong || tooShort || tooBig || badFormat;
 
   const handleAudioPicked = async (file: File | null) => {
     setAudioFile(file);
@@ -100,11 +105,13 @@ export default function MotionSection({ characterId, shots, motions, onMotionCre
     }
     if (audioRejected) {
       setError(
-        tooBig
-          ? `${model.label} için ses dosyası en fazla ${model.maxAudioMb}MB olabilir.`
-          : tooShort
-            ? `${model.label} en az ${model.minAudioSeconds} saniyelik ses istiyor.`
-            : `Ses ${Math.round(audioSeconds!)} saniye — ${model.label} ${activeResolution} için üst sınır ${maxSeconds} saniye.`,
+        badFormat
+          ? `Bu format desteklenmiyor. Desteklenenler: ${AUDIO_LABEL}.`
+          : tooBig
+            ? `${model.label} için ses dosyası en fazla ${model.maxAudioMb}MB olabilir.`
+            : tooShort
+              ? `${model.label} en az ${model.minAudioSeconds} saniyelik ses istiyor.`
+              : `Ses ${Math.round(audioSeconds!)} saniye — ${model.label} ${activeResolution} için üst sınır ${maxSeconds} saniye.`,
       );
       return;
     }
@@ -217,7 +224,7 @@ export default function MotionSection({ characterId, shots, motions, onMotionCre
               <input
                 type="file"
                 ref={fileInputRef}
-                accept="audio/*,video/mp4"
+                accept={MOTION_AUDIO_EXTENSIONS.map((e) => `.${e}`).join(',')}
                 onChange={(e) => handleAudioPicked(e.target.files?.[0] || null)}
                 className="hidden"
                 id="audio-upload"
@@ -228,7 +235,7 @@ export default function MotionSection({ characterId, shots, motions, onMotionCre
               >
                 <Upload className="w-5 h-5 text-slate-400" />
                 <span className="text-sm font-medium text-slate-600">
-                  {audioFile ? audioFile.name : 'MP3, WAV veya MP4 dosyası seçin'}
+                  {audioFile ? audioFile.name : 'Ses dosyası seçin'}
                 </span>
               </label>
               {audioFile && (
@@ -239,6 +246,7 @@ export default function MotionSection({ characterId, shots, motions, onMotionCre
                 >
                   <span>{(audioFile.size / 1024 / 1024).toFixed(2)} MB</span>
                   {audioSeconds !== null && <span>· {audioSeconds.toFixed(1)} sn</span>}
+                  {badFormat && <span>· desteklenen: {AUDIO_LABEL}</span>}
                   {tooBig && <span>· sınır {model.maxAudioMb}MB</span>}
                   {tooLong && <span>· sınır {maxSeconds} sn</span>}
                   {tooShort && <span>· en az {model.minAudioSeconds} sn</span>}
