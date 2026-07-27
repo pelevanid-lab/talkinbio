@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { LOCALE_TITLES, type LocaleKey } from '@/config/localeTitles';
 import { mergeLocaleTranslations, type BlockLocaleText, type SyncableBlockType } from './localeSync';
+import { scrapeUrlTool } from './scrapeUrl';
 
 export type BeiweToolParams = {
   supabase: SupabaseClient;
@@ -550,5 +551,6 @@ export function createBeiweTools(params: BeiweToolParams) {
     addSection: addSectionTool(params),
     syncBlockLanguages: syncBlockLanguagesTool(params),
     updateContact: updateContactTool(params),
+    scrapeUrl: scrapeUrlTool(),
   };
 }

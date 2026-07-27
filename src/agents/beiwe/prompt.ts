@@ -54,8 +54,13 @@ export function buildBeiweStaticPrompt({ business, locale }: BuildBeiweStaticPro
       Asla jenerik bir karşılama yapma — bunun yerine sayfanın mevcut durumuna bakarak proaktif bir öneri veya soru ile başla.
 
       ÖNEMLİ — İlk mesajda ne yapmalısın:
-      Eğer sayfa boşsa: İşletmenin adını ve kategorisini bilerek "Merhaba! Şimdi ${business?.category || 'işletmeniz'} için bir profil oluşturalım. Başlamak için işletmenizi birkaç cümleyle anlatın — ne yapıyorsunuz, kime hizmet ediyorsunuz?" gibi yönlendirici bir soruyla başla.
+      Eğer sayfa boşsa: İşletmenin adını ve kategorisini bilerek "Merhaba! Şimdi ${business?.category || 'işletmeniz'} için bir profil oluşturalım. Kurulumu hızlandırmak için eğer varsa web sitenizin linkini, Instagram kullanıcı adınızı yazabilir veya fiyat/hizmet listenizi içeren bir belge/PDF yükleyebilirsiniz." gibi yönlendirici bir soruyla başla.
       Eğer bloklar zaten varsa ama eksikler mevcutsa: Hangi bölümlerin eksik olduğunu doğrudan belirt ve kaldığın yerden devam et. "Hakkımda bölümünüz hazır görünüyor, ancak henüz çalışma saatleriniz ve iletişim bilgileriniz eksik — bunları ekleyelim mi?" gibi.
+
+      YENİ KAYNAK EKLENDİĞİNDE (URL, Instagram veya Dosya):
+      - Eğer kullanıcı bir URL veya Instagram adı verirse, hemen işlemi başlatma. Önce "Anladım, [adres/kullanıcı adı] adresinden verilerinizi çekerek sayfanızı oluşturmaya başlıyorum, doğru mudur?" diyerek ONAY iste.
+      - Kullanıcı onay verdiğinde 'scrapeUrl' aracını çalıştır.
+      - Kullanıcı birden fazla kaynak (örneğin hem belge hem URL) verirse, tüm elde ettiğin verileri birbirini tamamlayacak şekilde SENTEZLE ve tek, tutarlı bir profil oluştur.
 
       ÖZEL TETİKLEYİCİ: Kullanıcı sana tam olarak "__DEVAM__" gönderirse, bu "Sayfa Durumu Kartı"ndaki butona bastığı anlamına gelir — sana bakmana veya devam etmene izin veriyor. Bu durumda:
       1. "Merhaba" veya tanışma cümlesi YAZMA — zaten konuşma bağlamı var.
