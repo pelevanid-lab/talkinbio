@@ -40,9 +40,12 @@ function BlockMenu({ blocks, locale, c, onSelect }: { blocks: any[], locale: str
       </button>
       {open && (
         <div 
-          className="absolute top-full left-0 mt-2 w-48 rounded-xl border shadow-lg overflow-hidden flex flex-col py-1 z-50"
+          className="absolute top-full right-0 mt-2 w-48 rounded-xl border shadow-lg overflow-hidden flex flex-col py-1 z-50"
           style={{ backgroundColor: c.surface, borderColor: c.border }}
         >
+          <div className="px-4 py-3 border-b flex justify-center" style={{ borderColor: c.border }}>
+            <LanguageSwitcher compact />
+          </div>
           {visibleBlocks.map(b => {
             const title = b.content?.[locale]?.title || defaultTitleFor(b.type, locale) || b.title || b.type;
             return (
@@ -91,12 +94,7 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
           theme={resolvedTheme}
           activeBlockId={activeBlockId}
           onBack={() => setActiveBlockId(null)}
-          topLeft={<BlockMenu blocks={blocks} locale={locale} c={c} onSelect={setActiveBlockId} />}
-          topRight={
-            <div className="flex items-center px-2.5 py-1 rounded-full border" style={{ borderColor: c.border, backgroundColor: c.surface }}>
-              <LanguageSwitcher compact />
-            </div>
-          }
+          topRight={<BlockMenu blocks={blocks} locale={locale} c={c} onSelect={setActiveBlockId} />}
           shortcuts={shortcuts}
           onShortcutSelect={setActiveBlockId}
           minimal={minimalHeader}
