@@ -24,5 +24,9 @@ For all future UI changes, new pages, and component designs in this repository, 
    - Shadows: Only use shadows for highly elevated floating elements (like phone mockups). Use borders (`0.5px solid var(--border)`) for normal cards.
    - Transitions: Keep them subtle and short (e.g., `transform .15s ease, opacity .15s`).
 
+4. **Logo & Identity**:
+   - **Main Logo (Wide spaces):** The word "talkinbio" in completely black (`#14231F`), lowercase, Bricolage Grotesque weight 800, with 3 black dots positioned directly underneath the word "talk".
+   - **Compact Logo (Favicon, Avatars, Tight spaces):** A cream (`#F4F2ED`) squircle (rounded square) containing exactly 3 large black (`#14231F`) dots centered inside it.
+
 Do not use default Tailwind colors (like `bg-blue-500` or `text-gray-700`) if they conflict with the brand palette. Map Tailwind config to these exact hex codes if building new Tailwind components.
 <!-- END:talkinbio-brand-rules -->

@@ -98,7 +98,7 @@ export default function ProfileHeader({
             className="w-36 h-36 rounded-full overflow-hidden flex items-center justify-center shrink-0 border"
             style={{ backgroundColor: c.surface, borderColor: c.border }}
           >
-            {name.toLowerCase() === 'talkinbio' ? (
+            {name.toLowerCase().includes('talkinbio') ? (
               <SauleIcon size={144} className="w-full h-full" />
             ) : avatarUrl ? (
               <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />

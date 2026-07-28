@@ -277,8 +277,8 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
                 {messages.map((m) => (
                   <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`flex max-w-[85%] ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-end gap-2`}>
-                      <div className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 ${m.role === 'user' ? 'bg-slate-200 text-slate-600' : 'border border-[var(--border-light)]'}`}>
-                        {m.role === 'user' ? <User className="w-4 h-4" /> : <Image src="/saule-avatar-v1.png" alt="Saule" width={32} height={32} className="w-full h-full object-cover" />}
+                      <div className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 ${m.role === 'user' ? 'bg-slate-200 text-slate-600' : 'border border-[var(--border-light)] bg-[var(--paper)] p-0.5'}`}>
+                        {m.role === 'user' ? <User className="w-4 h-4" /> : <SauleIcon size={32} className="w-full h-full" />}
                       </div>
                       <div className={`px-4 py-3 rounded-2xl text-sm ${m.role === 'user' ? 'bg-[var(--ink)] text-white rounded-br-sm' : 'bg-white border border-[var(--border-light)] text-[var(--ink)] shadow-sm rounded-bl-sm'}`}>
                         {m.role === 'user' ? getMessageText(m) : (
@@ -291,8 +291,8 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
                 {isLoading && (
                   <div className="flex justify-start">
                     <div className="flex items-end gap-2">
-                      <div className="w-8 h-8 rounded-full overflow-hidden border border-[var(--border-light)] flex items-center justify-center flex-shrink-0">
-                        <Image src="/saule-avatar-v1.png" alt="Saule" width={32} height={32} className="w-full h-full object-cover" />
+                      <div className="w-8 h-8 rounded-full overflow-hidden border border-[var(--border-light)] bg-[var(--paper)] p-0.5 flex items-center justify-center flex-shrink-0">
+                        <SauleIcon size={32} className="w-full h-full" />
                       </div>
                       <div className="px-4 py-3 bg-white border border-[var(--border-light)] rounded-2xl rounded-bl-sm shadow-sm flex space-x-1">
                         <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce"></div>
@@ -364,8 +364,8 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
           {/* Quick preview of last message */}
           <div className="bg-white border border-[var(--border-light)] rounded-2xl shadow-lg p-4 flex items-center justify-between mb-4 transform transition group-hover:-translate-y-1">
             <div className="flex items-center space-x-3 overflow-hidden">
-              <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border border-[var(--border-light)]">
-                <Image src="/saule-avatar-v1.png" alt="Saule" width={40} height={40} className="w-full h-full object-cover" />
+              <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border border-[var(--border-light)] bg-[var(--paper)] p-[2px]">
+                <SauleIcon size={40} className="w-full h-full" />
               </div>
               <div className="truncate">
                 <p className="text-xs text-[var(--teal)] font-medium mb-0.5">Saule</p>

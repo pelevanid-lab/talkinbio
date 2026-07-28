@@ -10,12 +10,15 @@ import { PLANS, EXTRA_PACK } from '@/config/plans';
 import '../landing.css';
 
 const LogoSVG = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="130 30 350 90" width="150" height="40" role="img" aria-labelledby="logoTitle">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="130 15 350 135" width="160" height="60" role="img" aria-labelledby="logoTitle">
     <title id="logoTitle">Talkinbio</title>
     <defs>
       <style>{`.word { font-family: 'Bricolage Grotesque', 'Arial Black', sans-serif; font-weight: 800; }`}</style>
     </defs>
     <text x="130" y="102" className="word" fontSize="64" fill="#14231F" letterSpacing="-1.5">talkinbio</text>
+    <circle cx="152" cy="118" r="5.5" fill="#14231F"/>
+    <circle cx="174" cy="118" r="5.5" fill="#14231F"/>
+    <circle cx="196" cy="118" r="5.5" fill="#14231F"/>
   </svg>
 );
 

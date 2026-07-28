@@ -161,7 +161,11 @@ function renderAbout(block: any, ctx: RenderCtx) {
     return (
       <section key={block.id} className={`relative overflow-hidden ${radiusClass} h-[440px] shadow-xl flex items-end group`}>
         <div className="absolute inset-0 z-0">
-          {isVideoUrl(mediaUrl) ? (
+          {ctx.businessName?.toLowerCase().includes('talkinbio') ? (
+            <div className="w-full h-full flex items-center justify-center bg-slate-900">
+              <SauleIcon size={320} className="object-contain" />
+            </div>
+          ) : isVideoUrl(mediaUrl) ? (
             <video src={mediaUrl} className="w-full h-full object-cover" autoPlay loop muted playsInline />
           ) : (
             <img src={mediaUrl} alt={blockTitle} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -186,8 +190,10 @@ function renderAbout(block: any, ctx: RenderCtx) {
     return (
       <section key={block.id} className="pt-4">
         <div className={`flex flex-row overflow-hidden border shadow-md ${radiusClass}`} style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <div className="w-2/5 shrink-0 relative">
-            {isVideoUrl(mediaUrl) ? (
+          <div className="w-2/5 shrink-0 relative flex items-center justify-center bg-slate-100">
+            {ctx.businessName?.toLowerCase().includes('talkinbio') ? (
+              <SauleIcon size={160} className="object-contain" />
+            ) : isVideoUrl(mediaUrl) ? (
               <video src={mediaUrl} className="w-full h-full object-cover absolute inset-0" autoPlay loop muted playsInline />
             ) : (
               <img src={mediaUrl} alt={blockTitle} className="w-full h-full object-cover absolute inset-0" />
@@ -207,7 +213,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
   }
 
   // Standard layout
-  const isTalkinbio = ctx.businessName.toLowerCase() === 'talkinbio';
+  const isTalkinbio = ctx.businessName?.toLowerCase().includes('talkinbio');
   const MediaElement = mediaUrl || isTalkinbio ? (
     <div className={`overflow-hidden shadow-sm ${radiusClass} ${pos === 'middle' ? 'my-6' : pos === 'top' ? 'mb-6' : 'mt-6'}`}>
       {isTalkinbio ? (
@@ -251,9 +257,12 @@ function renderTextBlock(block: any, ctx: RenderCtx) {
 
   const mediaUrl = block.content?.mediaUrl;
   const pos = block.content?.mediaPosition || 'middle';
-  const MediaElement = mediaUrl ? (
+  const isTalkinbio = ctx.businessName?.toLowerCase().includes('talkinbio');
+  const MediaElement = mediaUrl || isTalkinbio ? (
     <div className={`overflow-hidden shadow-sm ${radiusClass} ${pos === 'middle' ? 'my-6' : pos === 'top' ? 'mb-6' : 'mt-6'}`}>
-      {isVideoUrl(mediaUrl) ? (
+      {isTalkinbio ? (
+        <SauleIcon size={240} className="w-full max-h-96 object-contain" />
+      ) : isVideoUrl(mediaUrl) ? (
         <video src={mediaUrl} className="w-full max-h-96 object-cover" controls />
       ) : (
         <img src={mediaUrl} alt={blockTitle} className="w-full max-h-96 object-cover" />
