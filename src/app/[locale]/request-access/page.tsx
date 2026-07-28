@@ -8,16 +8,12 @@ import { CheckCircle2, Loader2, ArrowLeft, X } from 'lucide-react';
 import '../landing.css'; // Import brand styles
 
 const LogoSVG = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" width="140" height="35" role="img" aria-labelledby="logoTitle">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="130 30 350 90" width="150" height="40" role="img" aria-labelledby="logoTitle">
     <title id="logoTitle">Talkinbio</title>
-    <g transform="translate(4,26)">
-      <rect x="0" y="0" width="108" height="108" rx="26" fill="#14231F"/>
-      <rect x="14" y="37" width="80" height="34" rx="17" fill="#FF6A5C"/>
-      <circle cx="34" cy="54" r="4.5" fill="#14231F"/>
-      <circle cx="54" cy="54" r="4.5" fill="#14231F"/>
-      <circle cx="74" cy="54" r="4.5" fill="#14231F"/>
-    </g>
-    <text x="140" y="102" className="word" fontSize="64" fill="#14231F" letterSpacing="-1.5" style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 800 }}>talkin<tspan fill="#FF6A5C">bio</tspan></text>
+    <defs>
+      <style>{`.word { font-family: 'Bricolage Grotesque', 'Arial Black', sans-serif; font-weight: 800; }`}</style>
+    </defs>
+    <text x="130" y="102" className="word" fontSize="64" fill="#14231F" letterSpacing="-1.5">talkinbio</text>
   </svg>
 );
 

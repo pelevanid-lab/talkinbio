@@ -5,23 +5,17 @@ import { Link } from '@/i18n/routing';
 import LandingHeroTabs from '@/components/LandingHeroTabs';
 import ShowcaseSection from '@/components/ShowcaseSection';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { SauleIcon, BeiweIcon } from '@/components/AgentIcons';
 import { isConversationActive } from '@/utils/conversationWindow';
 import './landing.css';
 
 const LogoSVG = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" width="220" height="55" role="img" aria-labelledby="logoTitle">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="130 30 350 90" width="150" height="40" role="img" aria-labelledby="logoTitle">
     <title id="logoTitle">Talkinbio</title>
     <defs>
       <style>{`.word { font-family: 'Bricolage Grotesque', 'Arial Black', sans-serif; font-weight: 800; }`}</style>
     </defs>
-    <g transform="translate(4,26)">
-      <rect x="0" y="0" width="108" height="108" rx="26" fill="#14231F"/>
-      <rect x="14" y="37" width="80" height="34" rx="17" fill="#FF6A5C"/>
-      <circle cx="34" cy="54" r="4.5" fill="#14231F"/>
-      <circle cx="54" cy="54" r="4.5" fill="#14231F"/>
-      <circle cx="74" cy="54" r="4.5" fill="#14231F"/>
-    </g>
-    <text x="140" y="102" className="word" fontSize="64" fill="#14231F" letterSpacing="-1.5">talkin<tspan fill="#FF6A5C">bio</tspan></text>
+    <text x="130" y="102" className="word" fontSize="64" fill="#14231F" letterSpacing="-1.5">talkinbio</text>
   </svg>
 );
 
@@ -122,7 +116,7 @@ export default async function HomePage({ params }: any) {
             <LogoSVG />
           </Link>
           <div className="links" style={{ display: 'none' }}></div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div className="hidden md:flex items-center gap-5">
             <LanguageSwitcher />
             <Link href="/pricing" className="btn btn-ghost" style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}>
               {t('nav.pricing')}
@@ -134,6 +128,9 @@ export default async function HomePage({ params }: any) {
               {t('nav.startFree')}
             </Link>
           </div>
+          <button className="md:hidden p-2 text-[var(--ink)]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+          </button>
         </div>
       </header>
 
@@ -194,7 +191,7 @@ export default async function HomePage({ params }: any) {
               
               <div className="flex flex-col sm:flex-row gap-6 items-start">
                 <div className="w-24 h-24 rounded-[32px] shrink-0 border border-slate-200/50 bg-[#F4F2ED] flex items-center justify-center relative overflow-hidden shadow-sm">
-                   <div className="w-16 h-16 rounded-full orb-saule animate-orbPulse"></div>
+                   <div className="animate-orbPulse"><SauleIcon size={64} /></div>
                    <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px]"></div>
                 </div>
                 <div>
@@ -210,7 +207,7 @@ export default async function HomePage({ params }: any) {
 
               <div className="flex flex-col sm:flex-row gap-6 items-start">
                 <div className="w-24 h-24 rounded-[32px] shrink-0 border border-slate-200/50 bg-[#F4F2ED] flex items-center justify-center relative overflow-hidden shadow-sm">
-                   <div className="w-16 h-16 rounded-full orb-beiwe animate-orbPulse" style={{ animationDelay: '1s' }}></div>
+                   <div className="animate-orbPulse" style={{ animationDelay: '1s' }}><BeiweIcon size={64} /></div>
                    <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px]"></div>
                 </div>
                 <div>
@@ -242,7 +239,7 @@ export default async function HomePage({ params }: any) {
                   </div>
                   <div className="flex-1 p-8 flex items-center justify-center text-center">
                     <div>
-                      <div className="w-24 h-24 mx-auto mb-4"><div className="orb-container orb-saule"></div></div>
+                      <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center"><SauleIcon size={96} /></div>
                     </div>
                   </div>
                 </div>
@@ -257,7 +254,7 @@ export default async function HomePage({ params }: any) {
                   </div>
                   <div className="flex-1 p-8 flex items-center justify-center text-center">
                     <div>
-                      <div className="w-16 h-16 mx-auto mb-4"><div className="orb-container orb-beiwe"></div></div>
+                      <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center"><BeiweIcon size={64} /></div>
                     </div>
                   </div>
                 </div>

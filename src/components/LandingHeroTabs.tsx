@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Link } from '@/i18n/routing';
 import LandingMockup from './LandingMockup';
+import { SauleIcon, BeiweIcon } from './AgentIcons';
 
 export default function LandingHeroTabs({
   texts,
@@ -21,8 +22,8 @@ export default function LandingHeroTabs({
           className={`hero-tab ${activeTab === 'saule' ? 'active' : ''}`}
           onClick={() => setActiveTab('saule')}
         >
-          <div className="orb-icon">
-            <div className="orb-container orb-saule"></div>
+          <div className="flex-shrink-0">
+            <SauleIcon size={32} />
           </div>
           Saule Assistant
         </button>
@@ -30,8 +31,8 @@ export default function LandingHeroTabs({
           className={`hero-tab ${activeTab === 'beiwe' ? 'active' : ''}`}
           onClick={() => setActiveTab('beiwe')}
         >
-          <div className="orb-icon">
-            <div className="orb-container orb-beiwe"></div>
+          <div className="flex-shrink-0">
+            <BeiweIcon size={32} />
           </div>
           Beiwe Creative
         </button>
@@ -51,7 +52,7 @@ export default function LandingHeroTabs({
           <div className="beiwe-demo-box py-12 md:py-24">
             <div className="beiwe-demo-inner group mx-auto">
               <div style={{ width: '100px', height: '100px', margin: '0 auto 28px', transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }} className="group-hover:scale-110 group-hover:-translate-y-2">
-                <div className="orb-container orb-beiwe shadow-2xl shadow-[#38F9D7]/30"></div>
+                <BeiweIcon size={100} className="drop-shadow-2xl" />
               </div>
               <h3 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#0f172a', textAlign: 'center', marginBottom: '12px', letterSpacing: '-0.02em', fontFamily: 'var(--font-bricolage)' }}>
                 Sihirli Kurulum

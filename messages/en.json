@@ -133,6 +133,10 @@
         "diyet": {
           "title": "Diet & Wellness",
           "desc": "Let Saule instantly answer hundreds of wellness questions by extracting knowledge from your past posts and page."
+        },
+        "tattoo": {
+          "title": "Tattoo Studio",
+          "desc": "Your AI assistant that answers customers' questions, recommends the right artist, and schedules appointments."
         }
       },
       "beiwe": {

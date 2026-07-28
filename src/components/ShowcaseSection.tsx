@@ -23,7 +23,14 @@ export default function ShowcaseSection() {
         icon: '💆‍♀️',
         desc: t('saule.spa.desc'),
         image: '/showcase/saule_spa_1785185442109.png',
-        size: 'md:col-span-8 md:row-span-1'
+        size: 'md:col-span-4 md:row-span-1'
+      },
+      {
+        title: t('saule.tattoo.title'),
+        icon: '🎨',
+        desc: t('saule.tattoo.desc'),
+        image: '/showcase/saule_tattoo.png',
+        size: 'md:col-span-4 md:row-span-1'
       },
       {
         title: t('saule.antrenor.title'),

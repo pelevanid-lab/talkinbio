@@ -5,6 +5,7 @@ import { Theme, resolveThemeColors } from '@/config/archetypes';
 import { iconForLinkUrl } from '@/utils/linkIcon';
 import { renderColoredSegments } from '@/utils/coloredText';
 import type { Shortcut } from '@/utils/shortcuts';
+import { SauleIcon } from './AgentIcons';
 
 // Linktree-style profil başlığı: hem canlı sayfada (ProfilePageBody) hem editör önizlemesinde
 // (EditorClient mockup) kullanılan tek bileşen — böylece ikisi birebir aynı görünür.
@@ -97,7 +98,9 @@ export default function ProfileHeader({
             className="w-36 h-36 rounded-full overflow-hidden flex items-center justify-center shrink-0 border"
             style={{ backgroundColor: c.surface, borderColor: c.border }}
           >
-            {avatarUrl ? (
+            {name.toLowerCase() === 'talkinbio' ? (
+              <SauleIcon size={144} className="w-full h-full" />
+            ) : avatarUrl ? (
               <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
             ) : (
               <span

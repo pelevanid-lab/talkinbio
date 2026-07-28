@@ -448,13 +448,13 @@ export default function CharacterRoomClient({ character, initialShots, initialMo
                     </button>
                     <a
                       href={shot.image_url}
-                      download
+                      download={`${character.id}-${shot.id.slice(0, 8)}.png`}
                       target="_blank"
                       rel="noreferrer"
-                      className="p-1.5 rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50"
-                      title="Ham görseli indir"
+                      className="p-1.5 text-slate-500 hover:text-slate-900 bg-slate-100 rounded-lg hover:bg-slate-200"
+                      title="Orijinali indir"
                     >
-                      <Download className="w-3.5 h-3.5" />
+                      <Download className="w-4 h-4" />
                     </a>
                     <button
                       onClick={() => toggleCanon(shot)}

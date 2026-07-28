@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useChat, UIMessage } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SauleIcon } from './AgentIcons';
 import { Send, X, MessageCircle, User, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
@@ -204,8 +205,8 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-[var(--border-light)] bg-white">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border border-[var(--border-light)] p-[2px] bg-[var(--paper)]">
-                    <div className="orb-container orb-saule"></div>
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border border-[var(--border-light)] p-[2px] bg-[var(--paper)] flex items-center justify-center">
+                    <SauleIcon size={34} />
                   </div>
                   <div>
                     <h3 className="font-semibold text-[var(--ink)] font-bricolage">Saule</h3>

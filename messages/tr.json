@@ -133,6 +133,10 @@
         "diyet": {
           "title": "Diyet & Sağlıklı Yaşam",
           "desc": "Saule sizin için yüzlerce sağlıklı yaşam sorusunu önceki paylaşımlarınızdan ve sayfanızdan bilgi alarak anında yanıtlasın."
+        },
+        "tattoo": {
+          "title": "Dövme Stüdyosu",
+          "desc": "Müşterilerinizin sorularını yanıtlayan ve onlara uygun sanatçıyı önerip randevu oluşturan yapay zeka asistanınız."
         }
       },
       "beiwe": {

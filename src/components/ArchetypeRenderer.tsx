@@ -11,6 +11,7 @@ import { defaultTitleFor, getHoursLabels, type DayKey } from '@/config/localeTit
 import { isVideoUrl } from '@/utils/mediaType';
 import { iconForLinkUrl } from '@/utils/linkIcon';
 import { hasRealContentForLocale, isItemVisibleInLocale, getLocalizedValue } from '@/config/blockTypes';
+import { SauleIcon } from './AgentIcons';
 
 type RenderCtx = {
   locale: string;
@@ -24,6 +25,7 @@ type RenderCtx = {
   // Click handler for "Order Now" buttons (see buildOrderNowHandler), or null when the
   // configured behavior has no usable target — renderServices hides the button in that case.
   onOrderNowClick: ((message: string) => void) | null;
+  businessName: string;
 };
 
 // Static Tailwind class lookups (never string-interpolated — Tailwind needs literal class names to compile them).
@@ -205,9 +207,12 @@ function renderAbout(block: any, ctx: RenderCtx) {
   }
 
   // Standard layout
-  const MediaElement = mediaUrl ? (
+  const isTalkinbio = ctx.businessName.toLowerCase() === 'talkinbio';
+  const MediaElement = mediaUrl || isTalkinbio ? (
     <div className={`overflow-hidden shadow-sm ${radiusClass} ${pos === 'middle' ? 'my-6' : pos === 'top' ? 'mb-6' : 'mt-6'}`}>
-      {isVideoUrl(mediaUrl) ? (
+      {isTalkinbio ? (
+        <SauleIcon size={240} className="w-full max-h-96 object-contain" />
+      ) : isVideoUrl(mediaUrl) ? (
         <video src={mediaUrl} className="w-full max-h-96 object-cover" controls />
       ) : (
         <img src={mediaUrl} alt={blockTitle} className="w-full max-h-96 object-cover" />
@@ -1096,7 +1101,7 @@ export default function ArchetypeRenderer({
   const bodyFont = 'tb-body';
   const cardWrap = theme.layoutStyle === 'card-heavy';
   const sectionGapClass = SECTION_GAP_CLASS[theme.layoutStyle] || 'gap-10';
-  const renderCtx: RenderCtx = { locale, radiusClass, headingFont, theme, cardWrap, onOrderNowClick };
+  const renderCtx: RenderCtx = { locale, radiusClass, headingFont, theme, cardWrap, onOrderNowClick, businessName };
 
   const renderBlock = (block: any) => {
     const renderFn = BLOCK_RENDERERS[block.type];
