@@ -147,7 +147,7 @@ export default async function HomePage({ params }: any) {
                 Start talking.
               </h1>
               <p 
-                className="sub animate-fade-up delay-100 text-xl md:text-2xl text-slate-600 mt-6 mb-8 leading-relaxed"
+                className="sub animate-fade-up delay-100 text-xl md:text-2xl text-[var(--ink-soft)] mt-6 mb-8 leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: t.raw('heroTexts.subtitle') }}
               />
               <div className="hero-ctas animate-fade-up delay-200 flex flex-wrap gap-4">
@@ -182,7 +182,7 @@ export default async function HomePage({ params }: any) {
           </div>
         </div>
 
-        <section className="py-24 bg-white border-t border-slate-100">
+        <section className="py-24 bg-white border-t border-[var(--border)]">
           <div className="wrap flex flex-col lg:flex-row gap-12 lg:gap-24">
             <div className="w-full lg:w-[40%] flex flex-col justify-center">
               <h2 className="text-4xl md:text-[56px] font-bold text-[var(--ink)] mb-8 tracking-tight leading-[1.1]" style={{ fontFamily: 'var(--font-bricolage)', letterSpacing: '-0.02em' }}>
@@ -193,7 +193,7 @@ export default async function HomePage({ params }: any) {
             <div className="w-full lg:w-[60%] flex flex-col gap-16">
               
               <div className="flex flex-col sm:flex-row gap-6 items-start">
-                <div className="w-24 h-24 rounded-[32px] shrink-0 border border-slate-200/50 bg-[#F4F2ED] flex items-center justify-center relative overflow-hidden shadow-sm">
+                <div className="w-24 h-24 rounded-[32px] shrink-0 border border-[var(--border)] bg-[var(--paper)] flex items-center justify-center relative overflow-hidden shadow-sm">
                    <div className="animate-orbPulse"><SauleIcon size={64} /></div>
                    <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px]"></div>
                 </div>
@@ -202,23 +202,23 @@ export default async function HomePage({ params }: any) {
                     <div className="px-2 py-0.5 rounded-full bg-[var(--coral-tint)] text-[var(--coral)] text-xs font-bold tracking-wider" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>SAULE</div>
                     {t('twoPlatforms.sauleTitle')}
                   </h3>
-                  <p className="text-slate-500 leading-relaxed text-[15px]">
+                  <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">
                     {t('twoPlatforms.sauleDesc')}
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-6 items-start">
-                <div className="w-24 h-24 rounded-[32px] shrink-0 border border-slate-200/50 bg-[#F4F2ED] flex items-center justify-center relative overflow-hidden shadow-sm">
+                <div className="w-24 h-24 rounded-[32px] shrink-0 border border-[var(--border)] bg-[var(--paper)] flex items-center justify-center relative overflow-hidden shadow-sm">
                    <div className="animate-orbPulse" style={{ animationDelay: '1s' }}><BeiweIcon size={64} /></div>
                    <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px]"></div>
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-[var(--ink)] mb-3 flex items-center gap-3" style={{ fontFamily: 'var(--font-bricolage)' }}>
-                    <div className="px-2 py-0.5 rounded-full bg-slate-100 text-[var(--ink)] text-xs font-bold tracking-wider" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>BEIWE</div>
+                    <div className="px-2 py-0.5 rounded-full bg-[var(--teal-tint)] text-[var(--teal-deep)] text-xs font-bold tracking-wider" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>BEIWE</div>
                     {t('twoPlatforms.beiweTitle')}
                   </h3>
-                  <p className="text-slate-500 leading-relaxed text-[15px]">
+                  <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">
                     {t('twoPlatforms.beiweDesc')}
                   </p>
                 </div>
@@ -229,16 +229,16 @@ export default async function HomePage({ params }: any) {
           <div className="h-24 md:h-32 w-full"></div>
           <div className="wrap">
             {/* Dashboard Mockup Area */}
-            <div className="bg-[#F8FAFC] rounded-[32px] p-6 md:p-12 border border-slate-200/60 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] overflow-hidden relative">
+            <div className="bg-[var(--paper)] rounded-[32px] p-6 md:p-12 border border-[var(--border)] shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] overflow-hidden relative">
               <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 justify-center items-center lg:items-stretch min-h-[400px]">
                 
                 {/* Placeholder for Saule Dashboard Screenshot */}
-                <div className="w-full lg:w-[55%] min-h-[240px] aspect-[4/3] lg:aspect-auto bg-white rounded-2xl border border-slate-200 shadow-2xl shadow-slate-200/50 flex flex-col overflow-hidden relative z-20 transform lg:translate-x-4 lg:-translate-y-4 hover:z-30 transition-transform">
-                  <div className="h-10 border-b border-slate-100 flex items-center px-4 gap-2">
+                <div className="w-full lg:w-[55%] min-h-[240px] aspect-[4/3] lg:aspect-auto bg-white rounded-2xl border border-[var(--border)] shadow-2xl shadow-slate-200/50 flex flex-col overflow-hidden relative z-20 transform lg:translate-x-4 lg:-translate-y-4 hover:z-30 transition-transform">
+                  <div className="h-10 border-b border-[var(--border)] flex items-center px-4 gap-2">
                     <div className="w-3 h-3 rounded-full bg-slate-200"></div>
                     <div className="w-3 h-3 rounded-full bg-slate-200"></div>
                     <div className="w-3 h-3 rounded-full bg-slate-200"></div>
-                    <div className="text-[10px] text-slate-400 font-medium ml-2 uppercase tracking-widest">Saule Analytics</div>
+                    <div className="text-[10px] text-[var(--muted)] font-medium ml-2 uppercase tracking-widest">Saule Analytics</div>
                   </div>
                   <div className="flex-1 p-8 flex items-center justify-center text-center">
                     <div>
@@ -248,12 +248,12 @@ export default async function HomePage({ params }: any) {
                 </div>
 
                 {/* Placeholder for Beiwe Dashboard Screenshot */}
-                <div className="w-full lg:w-[45%] min-h-[240px] aspect-[4/3] lg:aspect-auto bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col overflow-hidden relative z-10 transform lg:-translate-x-4 lg:translate-y-4 hover:z-20 transition-transform">
-                  <div className="h-10 border-b border-slate-100 flex items-center px-4 gap-2">
+                <div className="w-full lg:w-[45%] min-h-[240px] aspect-[4/3] lg:aspect-auto bg-white rounded-2xl border border-[var(--border)] shadow-xl shadow-slate-200/50 flex flex-col overflow-hidden relative z-10 transform lg:-translate-x-4 lg:translate-y-4 hover:z-20 transition-transform">
+                  <div className="h-10 border-b border-[var(--border)] flex items-center px-4 gap-2">
                     <div className="w-3 h-3 rounded-full bg-slate-200"></div>
                     <div className="w-3 h-3 rounded-full bg-slate-200"></div>
                     <div className="w-3 h-3 rounded-full bg-slate-200"></div>
-                    <div className="text-[10px] text-slate-400 font-medium ml-2 uppercase tracking-widest">Beiwe Studio</div>
+                    <div className="text-[10px] text-[var(--muted)] font-medium ml-2 uppercase tracking-widest">Beiwe Studio</div>
                   </div>
                   <div className="flex-1 p-8 flex items-center justify-center text-center">
                     <div>
@@ -268,7 +268,7 @@ export default async function HomePage({ params }: any) {
         </section>
 
         {/* Deep Dive: Saule Assistant */}
-        <section className="py-24 border-t border-slate-200/50 bg-white">
+        <section className="py-24 border-t border-[var(--border)] bg-white">
           <div className="wrap flex flex-col lg:flex-row gap-12 lg:gap-24">
             <div className="w-full lg:w-[40%]">
               <h2 className="text-4xl md:text-5xl font-bold text-[var(--ink)] mb-6 tracking-tight" style={{ fontFamily: 'var(--font-bricolage)', letterSpacing: '-0.02em' }}>
@@ -285,26 +285,26 @@ export default async function HomePage({ params }: any) {
             <div className="w-full lg:w-[60%] grid grid-cols-1 sm:grid-cols-2 gap-8 md:gap-12">
               <div>
                 <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepSaule.f1Title')}</h4>
-                <p className="text-slate-500 leading-relaxed text-[15px]">{t('deepSaule.f1Desc')}</p>
+                <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">{t('deepSaule.f1Desc')}</p>
               </div>
               <div>
                 <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepSaule.f2Title')}</h4>
-                <p className="text-slate-500 leading-relaxed text-[15px]">{t('deepSaule.f2Desc')}</p>
+                <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">{t('deepSaule.f2Desc')}</p>
               </div>
               <div>
                 <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepSaule.f3Title')}</h4>
-                <p className="text-slate-500 leading-relaxed text-[15px]">{t('deepSaule.f3Desc')}</p>
+                <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">{t('deepSaule.f3Desc')}</p>
               </div>
               <div>
                 <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepSaule.f4Title')}</h4>
-                <p className="text-slate-500 leading-relaxed text-[15px]">{t('deepSaule.f4Desc')}</p>
+                <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">{t('deepSaule.f4Desc')}</p>
               </div>
             </div>
           </div>
         </section>
 
         {/* Deep Dive: Beiwe Creative */}
-        <section className="py-24 border-t border-slate-200/50 bg-[#F8FAFC]">
+        <section className="py-24 border-t border-[var(--border)] bg-[var(--paper)]">
           <div className="wrap flex flex-col lg:flex-row gap-12 lg:gap-24">
             <div className="w-full lg:w-[40%]">
               <h2 className="text-4xl md:text-5xl font-bold text-[var(--ink)] mb-6 tracking-tight" style={{ fontFamily: 'var(--font-bricolage)', letterSpacing: '-0.02em' }}>
@@ -313,10 +313,10 @@ export default async function HomePage({ params }: any) {
               <p className="text-xl text-[var(--ink)] font-semibold mb-4 leading-snug">
                 {t('deepBeiwe.desc1')}
               </p>
-              <p className="text-slate-500 text-lg leading-relaxed mb-8">
+              <p className="text-[var(--ink-soft)] text-lg leading-relaxed mb-8">
                 {t('deepBeiwe.desc2')}
               </p>
-              <Link href="/request-access" className="text-[var(--teal)] font-semibold hover:underline flex items-center gap-2">
+              <Link href="/request-access" className="text-[var(--teal-deep)] font-semibold hover:underline flex items-center gap-2">
                 {t('deepBeiwe.btn')} <span aria-hidden="true">&rarr;</span>
               </Link>
             </div>
@@ -324,19 +324,19 @@ export default async function HomePage({ params }: any) {
             <div className="w-full lg:w-[60%] grid grid-cols-1 sm:grid-cols-2 gap-8 md:gap-12">
               <div>
                 <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepBeiwe.f1Title')}</h4>
-                <p className="text-slate-500 leading-relaxed text-[15px]">{t('deepBeiwe.f1Desc')}</p>
+                <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">{t('deepBeiwe.f1Desc')}</p>
               </div>
               <div>
                 <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepBeiwe.f2Title')}</h4>
-                <p className="text-slate-500 leading-relaxed text-[15px]">{t('deepBeiwe.f2Desc')}</p>
+                <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">{t('deepBeiwe.f2Desc')}</p>
               </div>
               <div>
                 <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepBeiwe.f3Title')}</h4>
-                <p className="text-slate-500 leading-relaxed text-[15px]">{t('deepBeiwe.f3Desc')}</p>
+                <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">{t('deepBeiwe.f3Desc')}</p>
               </div>
               <div>
                 <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepBeiwe.f4Title')}</h4>
-                <p className="text-slate-500 leading-relaxed text-[15px]">{t('deepBeiwe.f4Desc')}</p>
+                <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">{t('deepBeiwe.f4Desc')}</p>
               </div>
             </div>
           </div>
@@ -344,13 +344,13 @@ export default async function HomePage({ params }: any) {
 
         <ShowcaseSection />
 
-        <section className="py-20 md:py-32 bg-white border-t border-slate-100">
+        <section className="py-20 md:py-32 bg-white border-t border-[var(--border)]">
           <div className="wrap">
             <div className="flex justify-between items-end mb-12">
               <h2 className="text-3xl md:text-5xl font-bold text-[var(--ink)] tracking-tight" style={{ fontFamily: 'var(--font-bricolage)', letterSpacing: '-0.02em' }}>
                 {t('updates.title')}
               </h2>
-              <Link href="#" className="px-5 py-2 rounded-full border border-slate-200 text-[var(--ink)] font-semibold text-sm hover:bg-slate-50 transition-colors hidden sm:block">
+              <Link href="#" className="px-5 py-2 rounded-full border border-[var(--border)] text-[var(--ink)] font-semibold text-sm hover:bg-[var(--paper)] transition-colors hidden sm:block">
                 {t('updates.allPosts')}
               </Link>
             </div>
@@ -358,8 +358,8 @@ export default async function HomePage({ params }: any) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
               {/* Post 1 */}
               <Link href="#" className="group block">
-                <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden relative mb-5 bg-slate-100">
-                  {/* Coral Gradient */}
+                <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden relative mb-5 bg-[var(--paper)]">
+                  {/* Coral Gradient — Saule */}
                   <div className="absolute inset-0 bg-gradient-to-br from-[#FF6A5C] via-[#ff8478] to-[#FFEDE9] opacity-90 transition-transform duration-700 group-hover:scale-105"></div>
                   <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }}></div>
                   <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
@@ -372,35 +372,35 @@ export default async function HomePage({ params }: any) {
 
               {/* Post 2 */}
               <Link href="#" className="group block">
-                <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden relative mb-5 bg-slate-100">
-                  {/* Teal Gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#2B6F5C] via-[#3a967c] to-[#14231F] opacity-90 transition-transform duration-700 group-hover:scale-105"></div>
+                <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden relative mb-5 bg-[var(--paper)]">
+                  {/* Teal Gradient — Beiwe */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#50e3c2] via-[#3a967c] to-[#14231F] opacity-90 transition-transform duration-700 group-hover:scale-105"></div>
                   <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }}></div>
                   <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
                     <h3 className="text-white text-2xl font-bold drop-shadow-sm max-w-[200px] leading-tight">{t('updates.post2.badge')}</h3>
                   </div>
                 </div>
-                <h4 className="text-[var(--ink)] font-bold text-lg mb-2 group-hover:text-[var(--coral)] transition-colors line-clamp-2">{t('updates.post2.title')}</h4>
+                <h4 className="text-[var(--ink)] font-bold text-lg mb-2 group-hover:text-[var(--teal-deep)] transition-colors line-clamp-2">{t('updates.post2.title')}</h4>
                 <p className="text-[var(--muted)] text-sm font-medium">{t('updates.post2.meta')}</p>
               </Link>
 
               {/* Post 3 */}
               <Link href="#" className="group block">
-                <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden relative mb-5 bg-slate-100">
-                  {/* Ink Gradient */}
+                <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden relative mb-5 bg-[var(--paper)]">
+                  {/* Ink Gradient — neutral */}
                   <div className="absolute inset-0 bg-gradient-to-br from-[#14231F] via-[#4B5A55] to-[#8A8880] opacity-90 transition-transform duration-700 group-hover:scale-105"></div>
                   <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }}></div>
                   <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
                     <h3 className="text-white text-2xl font-bold drop-shadow-sm max-w-[200px] leading-tight">{t('updates.post3.badge')}</h3>
                   </div>
                 </div>
-                <h4 className="text-[var(--ink)] font-bold text-lg mb-2 group-hover:text-[var(--coral)] transition-colors line-clamp-2">{t('updates.post3.title')}</h4>
+                <h4 className="text-[var(--ink)] font-bold text-lg mb-2 group-hover:text-[var(--ink-soft)] transition-colors line-clamp-2">{t('updates.post3.title')}</h4>
                 <p className="text-[var(--muted)] text-sm font-medium">{t('updates.post3.meta')}</p>
               </Link>
             </div>
-            
+
             <div className="mt-8 text-center sm:hidden">
-               <Link href="#" className="px-5 py-2 rounded-full border border-slate-200 text-[var(--ink)] font-semibold text-sm inline-block">
+               <Link href="#" className="px-5 py-2 rounded-full border border-[var(--border)] text-[var(--ink)] font-semibold text-sm inline-block">
                 {t('updates.allPosts')}
               </Link>
             </div>

@@ -91,23 +91,23 @@ export default function ShowcaseSection() {
             dangerouslySetInnerHTML={{ __html: t.raw('title') }}
           />
           
-          <div className="inline-flex bg-[#F4F2ED] rounded-full p-1.5 border border-slate-200/50 shadow-inner">
-            <button 
+          <div className="inline-flex bg-[var(--paper)] rounded-full p-1.5 border border-[var(--border)] shadow-inner">
+            <button
               onClick={() => setActiveTab('saule')}
               className={`px-6 py-2.5 rounded-full text-[15px] font-semibold transition-all duration-300 ${
-                activeTab === 'saule' 
-                  ? 'bg-white shadow-sm text-[var(--ink)]' 
-                  : 'text-slate-500 hover:text-[var(--ink)]'
+                activeTab === 'saule'
+                  ? 'bg-white shadow-sm text-[var(--ink)]'
+                  : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
               }`}
             >
               {t('sauleTab')}
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('beiwe')}
               className={`px-6 py-2.5 rounded-full text-[15px] font-semibold transition-all duration-300 ${
-                activeTab === 'beiwe' 
-                  ? 'bg-white shadow-sm text-[var(--ink)]' 
-                  : 'text-slate-500 hover:text-[var(--ink)]'
+                activeTab === 'beiwe'
+                  ? 'bg-white shadow-sm text-[var(--ink)]'
+                  : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
               }`}
             >
               {t('beiweTab')}
@@ -117,7 +117,7 @@ export default function ShowcaseSection() {
         
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[300px]">
           {currentShowcase.map((item, idx) => (
-            <div key={item.title + activeTab} className={`${item.size} relative rounded-[32px] overflow-hidden group animate-fade-up bg-slate-900`} style={{ animationDelay: `${idx * 100}ms` }}>
+            <div key={item.title + activeTab} className={`${item.size} relative rounded-[32px] overflow-hidden group animate-fade-up bg-[var(--ink)]`} style={{ animationDelay: `${idx * 100}ms` }}>
               <Image 
                 src={item.image} 
                 alt={item.title}

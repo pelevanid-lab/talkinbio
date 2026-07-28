@@ -70,7 +70,7 @@ export const BeiweIcon = ({ className = '', size = 32 }: AgentIconProps) => (
       </style>
     </defs>
     <circle cx="54" cy="54" r="54" fill="#14231F"/>
-    <rect x="14" y="37" width="80" height="34" rx="17" fill="#38F9D7" className="beiwe-pill"/>
+    <rect x="14" y="37" width="80" height="34" rx="17" fill="#50e3c2" className="beiwe-pill"/>
     <circle cx="34" cy="54" r="4.5" fill="#14231F" className="beiwe-dot-1"/>
     <circle cx="54" cy="54" r="4.5" fill="#14231F" className="beiwe-dot-2"/>
     <circle cx="74" cy="54" r="4.5" fill="#14231F" className="beiwe-dot-3"/>
