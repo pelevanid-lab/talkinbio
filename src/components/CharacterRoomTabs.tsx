@@ -27,13 +27,17 @@ export default function CharacterRoomTabs() {
                   : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
               }`}
             >
-              <Image
-                src={`/${character.referenceFile}`}
-                alt=""
-                width={24}
-                height={24}
-                className={`w-6 h-6 rounded-full object-cover ${isActive ? '' : 'grayscale opacity-70'}`}
-              />
+              {character.referenceFile ? (
+                <Image
+                  src={character.referenceFile.startsWith('http') ? character.referenceFile : `/${character.referenceFile}`}
+                  alt=""
+                  width={24}
+                  height={24}
+                  className={`w-6 h-6 rounded-full object-cover ${isActive ? '' : 'grayscale opacity-70'}`}
+                />
+              ) : (
+                <div className={`w-6 h-6 rounded-full bg-slate-200 border border-slate-300 ${isActive ? '' : 'grayscale opacity-70'}`} />
+              )}
               {character.name}
             </Link>
           );

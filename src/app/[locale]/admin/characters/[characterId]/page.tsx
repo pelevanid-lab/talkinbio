@@ -12,7 +12,19 @@ export default async function CharacterRoomPage({ params }: { params: Promise<{ 
   const { characterId } = await params;
   if (!isCharacterId(characterId)) notFound();
 
-  const character = CHARACTERS[characterId];
+  let character = { ...CHARACTERS[characterId] };
+
+  // Veritabanından dinamik veriyi (identity_prompt, vb.) çek
+  const { data: profile } = await supabaseAdmin
+    .from('character_profiles')
+    .select('*')
+    .eq('id', characterId)
+    .single();
+
+  if (profile) {
+    if (profile.identity_prompt) character.identityPrompt = profile.identity_prompt;
+    if (profile.reference_image_url) character.referenceFile = profile.reference_image_url;
+  }
 
   const { data: shots } = await supabaseAdmin
     .from('character_shots')

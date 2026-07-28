@@ -10,9 +10,9 @@
 // bakılarak yazıldı. Avatar dosyaları değişirse buradaki tarifler de güncellenmelidir,
 // yoksa referans görselle metin birbirini çeker ve kimlik kayar.
 
-export type CharacterId = 'saule' | 'beiwe' | 'enes';
+export type CharacterId = 'saule' | 'beiwe' | 'enes' | 'enes2';
 
-export const CHARACTER_IDS: CharacterId[] = ['saule', 'beiwe', 'enes'];
+export const CHARACTER_IDS: CharacterId[] = ['saule', 'beiwe', 'enes', 'enes2'];
 
 export function isCharacterId(value: unknown): value is CharacterId {
   return typeof value === 'string' && (CHARACTER_IDS as string[]).includes(value);
@@ -46,6 +46,36 @@ export interface ScenePreset {
   textSpace?: TextSpace;
 }
 
+export interface StagingOption {
+  id: string;
+  label: string;
+  prompt: string;
+}
+
+export const STAGING_POSES: StagingOption[] = [
+  { id: 'sitting',    label: 'Oturuyor',      prompt: 'seated in a relaxed upright position' },
+  { id: 'standing',   label: 'Ayakta',        prompt: 'standing, full or three-quarter body visible' },
+  { id: 'half-turn',  label: 'Yarı profil',   prompt: 'three-quarter side profile, body angled 45°' },
+  { id: 'direct',     label: 'Ön cephe',      prompt: 'facing camera directly, confident posture' },
+  { id: 'leaning',    label: 'Yaslanıyor',    prompt: 'leaning casually against a surface' },
+];
+
+export const STAGING_OUTFITS: StagingOption[] = [
+  { id: 'casual',   label: 'Günlük',        prompt: 'casual everyday outfit, comfortable and relaxed' },
+  { id: 'business', label: 'Profesyonel',   prompt: 'professional business attire, polished look' },
+  { id: 'sport',    label: 'Spor',          prompt: 'athletic sportswear, active and energetic' },
+  { id: 'elegant',  label: 'Şık / Akşam',  prompt: 'elegant evening or smart-casual outfit' },
+];
+
+export const STAGING_BACKGROUNDS: StagingOption[] = [
+  { id: 'cafe',       label: 'Kafe',          prompt: 'warm cozy café interior, bokeh background' },
+  { id: 'office',     label: 'Ofis',          prompt: 'modern bright office space, city view window' },
+  { id: 'outdoors',   label: 'Açık Hava',     prompt: 'outdoor urban street or park, natural daylight' },
+  { id: 'studio',     label: 'Stüdyo Beyaz',  prompt: 'clean white studio backdrop, professional look' },
+  { id: 'home',       label: 'Ev / Salon',    prompt: 'cozy living room interior, warm soft lighting' },
+  { id: 'nature',     label: 'Doğa',          prompt: 'natural outdoor greenery, soft forest or garden' },
+];
+
 export interface CharacterDefinition {
   id: CharacterId;
   name: string;
@@ -53,10 +83,10 @@ export interface CharacterDefinition {
   role: string;
   /** Kilitli kimliğin Türkçe, insan okuru için özeti. */
   summary: string;
-  /** `public/` altındaki kanonik avatar dosyası. */
-  referenceFile: string;
-  /** Kilitli — her prompt'un başına eklenir. */
-  identityPrompt: string;
+  /** `public/` altındaki kanonik avatar dosyası veya db'den gelen url. */
+  referenceFile?: string;
+  /** Kilitli — her prompt'un başına eklenir. DB'den gelebilir. */
+  identityPrompt?: string;
   /** Gardırop paleti; sahne kıyafet değiştirse bile bu sınırların içinde kalır. */
   wardrobePrompt: string;
   /** UI vurgusu ve metin katmanının varsayılan rengi. */
@@ -248,6 +278,32 @@ const SHARED_SCENE_PRESETS: ScenePreset[] = [
 /* ------------------------------------------------------------------ */
 
 export const CHARACTERS: Record<CharacterId, CharacterDefinition> = {
+  enes2: {
+    id: 'enes2',
+    name: 'Enes (2)',
+    role: 'Kurucu — (Test Profili)',
+    summary: 'Dinamik onboarding testi profili.',
+    accentColor: '#174A54',
+    wardrobePrompt: 'Keep his clothing casual yet professional — a plain dark gray or black t-shirt. Avoid logos, patterns, or bright colors.',
+    scenePresets: [
+      ...SHARED_SCENE_PRESETS,
+      {
+        id: 'enes2-home-office',
+        label: 'Ev ofisinde çalışırken',
+        group: 'Ortam',
+        prompt: 'Sitting in a cozy home office with a blurred bookshelf in the background, warm and inviting lighting.',
+        textSpace: 'right',
+      },
+      {
+        id: 'enes2-explaining-product',
+        label: 'Ürünü anlatırken',
+        group: 'Aksiyon',
+        prompt: 'Gesturing with his hands confidently, leaning slightly forward to explain the product vision, bright professional lighting.',
+        aspectRatio: '16:9',
+        textSpace: 'left',
+      },
+    ],
+  },
   enes: {
     id: 'enes',
     name: 'Enes',
@@ -428,6 +484,8 @@ export interface CharacterShot {
   aspect_ratio: string | null;
   overlay: OverlayConfig | null;
   is_canon: boolean;
+  /** 1-10 arası benzerlik puanı — kullanıcının kendi yüzüne ne kadar benzediğini değlendirdiği skor. LoRA eğitim verisi seçiminde kullanılır. */
+  similarity_score: number | null;
   created_at: string;
 }
 

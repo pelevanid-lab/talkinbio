@@ -1,12 +1,16 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, useCallback } from 'react';
 import Image from 'next/image';
 import {
+  Brain,
+  CheckCircle2,
   ChevronDown,
+  ChevronRight,
   Download,
   Loader2,
   Lock,
+  Mic,
   Pin,
   PinOff,
   Sparkles,
@@ -14,6 +18,7 @@ import {
   Type,
   Upload,
   X,
+  Zap,
 } from 'lucide-react';
 import {
   ASPECT_RATIOS,
@@ -29,11 +34,179 @@ import {
   type ScenePreset,
 } from '@/config/characters';
 import CharacterOverlayEditor from '@/components/CharacterOverlayEditor';
+import StagingSection from '@/components/StagingSection';
 import MotionSection from '@/components/MotionSection';
 import StudioSection from '@/components/StudioSection';
+import VideoExtractor from '@/components/VideoExtractor';
 
 const PRESET_GROUPS: ScenePreset['group'][] = ['Kadraj', 'Ortam', 'Aksiyon'];
+const LORA_TRAINING_THRESHOLD = 15; // >=8 puanlı bu kadar kare → LoRA butonu aktif
 
+/* ------------------------------------------------------------------ */
+/* StepIndicator                                                        */
+/* ------------------------------------------------------------------ */
+type StepStatus = 'done' | 'active' | 'locked';
+
+function StepIndicator({
+  steps,
+  activeStep,
+}: {
+  steps: { label: string; icon: React.ReactNode }[];
+  activeStep: number;
+}) {
+  return (
+    <div className="flex items-start gap-0 w-full overflow-x-auto pb-1">
+      {steps.map((step, i) => {
+        const status: StepStatus =
+          i < activeStep ? 'done' : i === activeStep ? 'active' : 'locked';
+        return (
+          <div key={i} className="flex items-center flex-1 min-w-0">
+            <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+              <div
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                  status === 'done'
+                    ? 'bg-emerald-500 text-white'
+                    : status === 'active'
+                      ? 'bg-blue-600 text-white ring-4 ring-blue-100'
+                      : 'bg-slate-100 text-slate-400'
+                }`}
+              >
+                {status === 'done' ? <CheckCircle2 className="w-5 h-5" /> : step.icon}
+              </div>
+              <span
+                className={`text-[10px] font-medium text-center leading-tight whitespace-nowrap ${
+                  status === 'done'
+                    ? 'text-emerald-600'
+                    : status === 'active'
+                      ? 'text-blue-700'
+                      : 'text-slate-400'
+                }`}
+              >
+                {step.label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <div
+                className={`h-0.5 flex-1 mx-2 mt-[-18px] rounded-full transition-all ${
+                  i < activeStep ? 'bg-emerald-400' : 'bg-slate-200'
+                }`}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* SimilarityRating                                                     */
+/* ------------------------------------------------------------------ */
+function SimilarityRating({
+  shotId,
+  score,
+  onChange,
+}: {
+  shotId: string;
+  score: number | null;
+  onChange: (score: number) => void;
+}) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const display = hovered ?? score;
+
+  const color = (n: number) => {
+    if (n <= 3) return 'bg-red-500';
+    if (n <= 6) return 'bg-amber-400';
+    if (n <= 8) return 'bg-emerald-500';
+    return 'bg-amber-400'; // gold-ish via amber
+  };
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-0.5">
+        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+          <button
+            key={n}
+            onMouseEnter={() => setHovered(n)}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => onChange(n)}
+            title={`${n}/10`}
+            className={`h-2 flex-1 rounded-full transition-all ${
+              display !== null && n <= display
+                ? color(display)
+                : 'bg-slate-200 hover:bg-slate-300'
+            }`}
+          />
+        ))}
+      </div>
+      <p className="text-[10px] text-slate-400 text-center">
+        {display !== null ? `Benzerlik: ${display}/10` : 'Puan ver →'}
+      </p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* StepSection wrapper                                                  */
+/* ------------------------------------------------------------------ */
+function StepSection({
+  step,
+  title,
+  subtitle,
+  locked,
+  lockedMsg,
+  children,
+}: {
+  step: number;
+  title: string;
+  subtitle?: string;
+  locked?: boolean;
+  lockedMsg?: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(true);
+
+  return (
+    <section
+      className={`rounded-2xl border shadow-sm overflow-hidden transition-all ${
+        locked ? 'border-slate-200 bg-slate-50 opacity-70' : 'border-slate-200 bg-white'
+      }`}
+    >
+      <button
+        onClick={() => !locked && setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-6 py-4 text-left"
+        disabled={locked}
+      >
+        <div className="flex items-center gap-3">
+          <span
+            className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center flex-shrink-0 ${
+              locked
+                ? 'bg-slate-200 text-slate-400'
+                : 'bg-blue-600 text-white'
+            }`}
+          >
+            {step}
+          </span>
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+            {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+          </div>
+        </div>
+        {locked ? (
+          <span className="text-xs text-slate-400 italic">{lockedMsg}</span>
+        ) : (
+          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+        )}
+      </button>
+
+      {!locked && open && <div className="px-6 pb-6 space-y-5">{children}</div>}
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Main component                                                       */
+/* ------------------------------------------------------------------ */
 type Props = {
   character: CharacterDefinition;
   initialShots: CharacterShot[];
@@ -59,20 +232,37 @@ export default function CharacterRoomClient({ character, initialShots, initialMo
   const [busyShotId, setBusyShotId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [overlayShot, setOverlayShot] = useState<CharacterShot | null>(null);
+  const [analyzingIdentity, setAnalyzingIdentity] = useState(false);
+  const [isRetraining, setIsRetraining] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  /* Derived state */
   const selectedPresets = useMemo(
     () => presetIds.map((id) => character.scenePresets.find((p) => p.id === id)).filter(Boolean) as ScenePreset[],
     [character.scenePresets, presetIds],
   );
   const canonShots = useMemo(() => shots.filter((s) => s.is_canon), [shots]);
-  const effectiveAspect = aspectRatio || selectedPresets.find(p => p.aspectRatio)?.aspectRatio || '4:5';
+  const ratedShots = useMemo(() => shots.filter((s) => s.similarity_score !== null), [shots]);
+  const highScoreShots = useMemo(() => shots.filter((s) => (s.similarity_score ?? 0) >= 8), [shots]);
+  const effectiveAspect = aspectRatio || selectedPresets.find((p) => p.aspectRatio)?.aspectRatio || '4:5';
 
+  /* Step logic */
+  const twinDone = canonShots.length > 0 || !!character.referenceFile;
+  const hasStagedShots = shots.some((s) => !s.is_canon && s.created_at);
+  const loraReady = highScoreShots.length >= LORA_TRAINING_THRESHOLD;
+  
+  // En az 3 kanon karesi (veya video ile otomatik 3 kare) olana kadar onboarding sürer
+  // Veya kullanıcı manuel "yeniden eğit" dediyse.
+  const needsOnboarding = canonShots.length < 3 || isRetraining;
+
+  const activeStep = needsOnboarding ? 0 : (!twinDone ? 0 : !hasStagedShots ? 1 : 2);
+
+  /* Handlers */
   const handlePresetToggle = (preset: ScenePreset) => {
     setPresetIds((prev) => {
       const otherGroupPresets = prev.filter(
-        (id) => character.scenePresets.find((p) => p.id === id)?.group !== preset.group
+        (id) => character.scenePresets.find((p) => p.id === id)?.group !== preset.group,
       );
       if (prev.includes(preset.id)) return otherGroupPresets;
       return [...otherGroupPresets, preset.id];
@@ -102,7 +292,16 @@ export default function CharacterRoomClient({ character, initialShots, initialMo
           allowSceneText,
         }),
       });
-      const data = await res.json();
+
+      let data;
+      const text = await res.text();
+      try {
+        data = JSON.parse(text);
+      } catch {
+        console.error('Parse error. Response text:', text);
+        throw new Error(`Sunucu Hatası (${res.status}): JSON bekleniyordu ama başka bir yanıt geldi.`);
+      }
+
       if (!res.ok) throw new Error(data.error || 'Üretilemedi.');
       setShots((prev) => [...(data.shots as CharacterShot[]), ...prev]);
     } catch (err) {
@@ -164,341 +363,551 @@ export default function CharacterRoomClient({ character, initialShots, initialMo
     }
   };
 
+  const rateSimilarity = useCallback(async (shot: CharacterShot, score: number) => {
+    // Optimistic update
+    setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, similarity_score: score } : s)));
+    try {
+      const res = await fetch(`/api/admin/characters/shots/${shot.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ similarityScore: score }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        // Revert on error
+        setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, similarity_score: shot.similarity_score } : s)));
+        console.error('Puan kaydedilemedi:', data.error);
+      }
+    } catch {
+      setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, similarity_score: shot.similarity_score } : s)));
+    }
+  }, []);
+
+  const handleOnboardingExtracted = async (files: File[]) => {
+    setAnalyzingIdentity(true);
+    setError(null);
+    try {
+      // 1. Resimleri yükle
+      const uploadedUrls: string[] = [];
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/admin/characters/scene-ref', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Resim yüklenemedi.');
+        uploadedUrls.push(data.url);
+      }
+
+      // 2. Gemini ile analiz et ve profili oluştur
+      const analyzeRes = await fetch('/api/admin/characters/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ characterId: character.id, imageUrls: uploadedUrls }),
+      });
+      const analyzeData = await analyzeRes.json();
+      if (!analyzeRes.ok) throw new Error(analyzeData.error || 'Analiz edilemedi.');
+
+      // 3. Yüklenenleri canon olarak kaydet
+      const newShots: CharacterShot[] = [];
+      for (const url of uploadedUrls) {
+        const shotRes = await fetch('/api/admin/characters/shots', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ characterId: character.id, imageUrl: url }),
+        });
+        const shotData = await shotRes.json();
+        if (shotRes.ok && shotData.shot) newShots.push(shotData.shot);
+      }
+      
+      setShots((prev) => [...newShots, ...prev]);
+      setIsRetraining(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Kurulum sırasında hata oluştu.');
+    } finally {
+      setAnalyzingIdentity(false);
+    }
+  };
+
+  /* Card border style */
+  const cardBorder = (shot: CharacterShot) => {
+    if (shot.is_canon) return 'border-blue-500 ring-1 ring-blue-500';
+    const sc = shot.similarity_score;
+    if (!sc) return 'border-slate-200';
+    if (sc >= 9) return 'border-amber-400 ring-1 ring-amber-300';
+    if (sc >= 7) return 'border-emerald-400 ring-1 ring-emerald-200';
+    if (sc <= 3) return 'border-red-300';
+    return 'border-slate-200';
+  };
+
+  const cardOpacity = (shot: CharacterShot) => {
+    if (shot.similarity_score !== null && shot.similarity_score <= 3) return 'opacity-60';
+    return '';
+  };
+
+  /* ---------------------------------------------------------------- */
+  /* Render                                                            */
+  /* ---------------------------------------------------------------- */
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] gap-6 items-start">
-        {/* Karakter kartı */}
-        <aside className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <Image
-            src={`/${character.referenceFile}`}
-            alt={character.name}
-            width={512}
-            height={512}
-            className="w-full aspect-square object-cover"
-          />
-          <div className="p-5 space-y-3">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">{character.name}</h2>
-              <p className="text-xs text-slate-500">{character.role}</p>
-            </div>
-            <p className="text-sm text-slate-600 leading-relaxed">{character.summary}</p>
+    <div className="space-y-5">
 
-            <div className="flex items-start gap-2 rounded-lg bg-slate-50 border border-slate-200 p-3">
-              <Lock className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Kimlik tanımı kodda kilitli (<code className="text-[11px]">src/config/characters.ts</code>) — buradan
-                değiştirilemez. Tutarlılığın kaynağı bu.
-              </p>
-            </div>
-
-            <div className="text-xs text-slate-500">
-              Kanon referans:{' '}
-              <span className="font-semibold text-slate-700">
-                {canonShots.length}/{MAX_CANON_SHOTS}
-              </span>{' '}
-              — galeriden sabitlediğin kareler sonraki üretimlere referans olur.
-            </div>
-          </div>
-        </aside>
-
-        {/* Üretim paneli */}
-        <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
-          <div className="space-y-3">
-            {PRESET_GROUPS.map((group) => (
-              <div key={group}>
-                <p className="text-xs font-medium text-slate-500 mb-1.5">{group}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {character.scenePresets
-                    .filter((p) => p.group === group)
-                    .map((p) => (
-                      <button
-                        key={p.id}
-                        onClick={() => handlePresetToggle(p)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                          presetIds.includes(p.id)
-                            ? 'bg-blue-600 border-blue-600 text-white'
-                            : 'bg-white border-slate-300 text-slate-600 hover:border-slate-400'
-                        }`}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Sahneyi tarif et (Türkçe)</label>
-            <textarea
-              value={intent}
-              onChange={(e) => setIntent(e.target.value)}
-              rows={3}
-              placeholder="Kafede laptopta çalışıyor, akşam ışığı, kameraya bakmıyor. Sol taraf metin için boş kalsın."
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <p className="text-xs text-slate-400 mt-1">
-              Yazdığın metin İngilizce sahne prompt&apos;una çevrilir; karakterin yüzü kilitli katmandan gelir.
-            </p>
-          </div>
-
-          {/* Sahne referansı */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              Sahne referansı <span className="font-normal text-slate-400">(opsiyonel, en fazla {MAX_SCENE_REFS})</span>
-            </label>
-            <div className="flex flex-wrap items-center gap-2">
-              {sceneRefUrls.map((url) => (
-                <div key={url} className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt="" className="w-full h-full object-cover" />
-                  <button
-                    onClick={() => setSceneRefUrls((prev) => prev.filter((u) => u !== url))}
-                    className="absolute top-0.5 right-0.5 bg-slate-900/70 text-white rounded p-0.5"
-                    aria-label="Kaldır"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-              {sceneRefUrls.length < MAX_SCENE_REFS && (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="w-16 h-16 rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-slate-400 hover:border-slate-400 disabled:opacity-50"
-                >
-                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                </button>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) uploadSceneRef(file);
-                }}
+      {/* Header */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-6 items-start">
+          {/* Karakter kartı */}
+          <div className="flex items-center gap-4">
+            {character.referenceFile ? (
+              <Image
+                src={character.referenceFile.startsWith('http') ? character.referenceFile : `/${character.referenceFile}`}
+                alt={character.name}
+                width={72}
+                height={72}
+                className="w-18 h-18 rounded-xl object-cover border border-slate-200 flex-shrink-0"
               />
-            </div>
-            <p className="text-xs text-slate-400 mt-1.5">
-              Gerçek ekran görüntüsü yükleyip &quot;laptop ekranına yerleştir&quot; diyebilirsin — model kendi
-              uydurduğu arayüz metnini okunaklı yazamaz.
-            </p>
-          </div>
-
-          {/* Gelişmiş */}
-          <div className="border-t border-slate-200 pt-4">
-            <button
-              onClick={() => setShowAdvanced((v) => !v)}
-              className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900"
-            >
-              <ChevronDown className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
-              Gelişmiş
-            </button>
-
-            {showAdvanced && (
-              <div className="mt-4 space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">
-                    Ham prompt (İngilizce) — doldurulursa Türkçe tarif yok sayılır
-                  </label>
-                  <textarea
-                    value={rawPrompt}
-                    onChange={(e) => setRawPrompt(e.target.value)}
-                    rows={3}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">En-boy</label>
-                    <select
-                      value={aspectRatio}
-                      onChange={(e) => setAspectRatio(e.target.value as AspectRatio | '')}
-                      className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
-                    >
-                      <option value="">Şablondan ({effectiveAspect})</option>
-                      {ASPECT_RATIOS.map((a) => (
-                        <option key={a.value} value={a.value}>
-                          {a.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Çözünürlük</label>
-                    <select
-                      value={resolution}
-                      onChange={(e) => setResolution(e.target.value as Resolution)}
-                      className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
-                    >
-                      <option value="1K">1K</option>
-                      <option value="2K">2K</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Adet</label>
-                    <select
-                      value={numImages}
-                      onChange={(e) => setNumImages(Number(e.target.value))}
-                      className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
-                    >
-                      {Array.from({ length: MAX_IMAGES_PER_RUN }, (_, i) => i + 1).map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Seed</label>
-                    <input
-                      value={seed}
-                      onChange={(e) => setSeed(e.target.value.replace(/[^0-9]/g, ''))}
-                      placeholder="rastgele"
-                      className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
-                    />
-                  </div>
-                </div>
-
-                <label className="flex items-start gap-2 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={allowSceneText}
-                    onChange={(e) => setAllowSceneText(e.target.checked)}
-                    className="rounded border-slate-300 mt-0.5"
-                  />
-                  <span>
-                    Sahnede fiziksel yazıya izin ver (tabela, kupa, tişört).
-                    <span className="block text-xs text-slate-400">
-                      Slogan ve tanıtım cümlesi için bunu değil, üretimden sonraki metin katmanını kullan.
-                    </span>
-                  </span>
-                </label>
+            ) : canonShots[0] ? (
+              <Image
+                src={canonShots[0].image_url}
+                alt={character.name}
+                width={72}
+                height={72}
+                className="w-18 h-18 rounded-xl object-cover border border-slate-200 flex-shrink-0"
+              />
+            ) : (
+              <div className="w-18 h-18 rounded-xl border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center flex-shrink-0 text-slate-400 text-xs text-center p-2">
+                Fotoğraf<br/>Bekleniyor
               </div>
             )}
+            <div>
+              <h1 className="text-lg font-bold text-slate-900">{character.name}</h1>
+              <p className="text-xs text-slate-500">{character.role}</p>
+              <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
+                <span className="flex items-center gap-1">
+                  <Lock className="w-3 h-3" /> Kimlik kilitli
+                </span>
+                <span>Kanon: <strong className="text-slate-800">{canonShots.length}/{MAX_CANON_SHOTS}</strong></span>
+                <span>Puan: <strong className="text-slate-800">{ratedShots.length}/{shots.length}</strong></span>
+                {!needsOnboarding && (
+                  <button 
+                    onClick={() => setIsRetraining(true)}
+                    className="ml-2 text-blue-600 hover:underline flex items-center gap-1"
+                  >
+                    Yüzü Yeniden Tanıt
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {/* Step indicator */}
+          <StepIndicator
+            activeStep={activeStep}
+            steps={[
+              { label: 'Twin Oluştur', icon: <span className="text-[11px]">1</span> },
+              { label: 'Sahne Üret', icon: <span className="text-[11px]">2</span> },
+              { label: 'Ses & Klonla', icon: <Mic className="w-3.5 h-3.5" /> },
+              { label: 'Video Üret', icon: <Zap className="w-3.5 h-3.5" /> },
+              { label: 'Post Production', icon: <span className="text-[11px]">5</span> },
+            ]}
+          />
+        </div>
 
-          <div className="flex items-center gap-3 pt-1">
-            <button
-              onClick={generate}
-              disabled={generating}
-              className="flex items-center gap-2 bg-blue-600 text-white rounded-lg px-5 py-2.5 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
-            >
-              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {generating ? 'Üretiliyor…' : 'Üret'}
-            </button>
-            <span className="text-xs text-slate-400">
-              ~${(ESTIMATED_COST_PER_IMAGE_USD * numImages).toFixed(2)} (tahmin, doğrulanmadı) · üretim 1-2 dk sürebilir
+        {/* LoRA progress */}
+        <div className="mt-4 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+              <Brain className="w-3.5 h-3.5 text-purple-500" />
+              LoRA Eğitim Hazırlığı
+            </div>
+            <span className="text-xs text-slate-500">
+              {highScoreShots.length} / {LORA_TRAINING_THRESHOLD} yüksek puanlı kare
             </span>
           </div>
-        </section>
+          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-purple-400 to-purple-600 rounded-full transition-all"
+              style={{ width: `${Math.min(100, (highScoreShots.length / LORA_TRAINING_THRESHOLD) * 100)}%` }}
+            />
+          </div>
+          {loraReady && (
+            <div className="mt-2">
+              <button className="flex items-center gap-2 bg-purple-600 text-white rounded-lg px-4 py-2 text-xs font-semibold hover:bg-purple-700">
+                <Brain className="w-3.5 h-3.5" />
+                LoRA Eğitimini Başlat — Sprint 2&apos;de aktif
+              </button>
+            </div>
+          )}
+          {!loraReady && (
+            <p className="text-[10px] text-slate-400 mt-1">
+              Galerideki karelere puan vererek LoRA eğitim verisini oluştur. ≥8 puan alan kareler eğitimde kullanılır.
+            </p>
+          )}
+        </div>
       </div>
 
-      {/* Galeri */}
-      <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-        <h2 className="text-lg font-bold text-slate-900 mb-4">
-          Galeri <span className="text-sm font-normal text-slate-400">({shots.length})</span>
-        </h2>
+      {/* ─── ADIM 0: Onboarding ──────────────────────────────── */}
+      {needsOnboarding && (
+        <div className="relative">
+          {isRetraining && canonShots.length > 0 && (
+            <button 
+              onClick={() => setIsRetraining(false)}
+              className="absolute -top-10 right-0 text-xs text-slate-500 hover:text-slate-900 z-10"
+            >
+              İptal et
+            </button>
+          )}
+          <VideoExtractor onExtracted={handleOnboardingExtracted} isProcessing={analyzingIdentity} />
+        </div>
+      )}
 
-        {shots.length === 0 ? (
-          <p className="text-sm text-slate-500">
-            Henüz kare yok. Bir şablon seçip &quot;Üret&quot;e bas — beğendiğin kareyi kanon olarak sabitlediğinde
-            sonraki üretimler ona da benzemeye başlar.
-          </p>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-            {shots.map((shot) => (
-              <div
-                key={shot.id}
-                className={`rounded-xl overflow-hidden border ${
-                  shot.is_canon ? 'border-blue-500 ring-1 ring-blue-500' : 'border-slate-200'
-                }`}
-              >
-                <div className="relative bg-slate-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={shot.image_url} alt="" className="w-full block" />
-                  {shot.is_canon && (
-                    <span className="absolute top-2 left-2 bg-blue-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                      KANON
-                    </span>
-                  )}
-                </div>
+      {/* ─── ADIM 1: AI Twin Oluştur ──────────────────────────────── */}
+      {!needsOnboarding && (
+        <StepSection
+          step={1}
+          title="AI Twin Oluştur"
+          subtitle="Referans görsellerinden twin kareleri üret, puanla ve kanon olarak sabitle"
+        >
+        {/* Preset seçimi */}
+        <div className="space-y-3">
+          {PRESET_GROUPS.map((group) => (
+            <div key={group}>
+              <p className="text-xs font-medium text-slate-500 mb-1.5">{group}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {character.scenePresets
+                  .filter((p) => p.group === group)
+                  .map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => handlePresetToggle(p)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        presetIds.includes(p.id)
+                          ? 'bg-blue-600 border-blue-600 text-white'
+                          : 'bg-white border-slate-300 text-slate-600 hover:border-slate-400'
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+              </div>
+            </div>
+          ))}
+        </div>
 
-                <div className="p-3 space-y-2">
-                  <p className="text-xs text-slate-500 line-clamp-2" title={shot.user_intent || shot.prompt}>
-                    {shot.user_intent || shot.preset_id || '—'}
-                  </p>
-                  <div className="flex items-center gap-1 text-[11px] text-slate-400">
-                    <span>{shot.aspect_ratio}</span>
-                    {shot.seed !== null && <span>· seed {shot.seed}</span>}
-                  </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Sahneyi tarif et (Türkçe)</label>
+          <textarea
+            value={intent}
+            onChange={(e) => setIntent(e.target.value)}
+            rows={2}
+            placeholder="Kafede laptopta çalışıyor, akşam ışığı, kameraya bakmıyor."
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setOverlayShot(shot)}
-                      className="flex-1 flex items-center justify-center gap-1 bg-slate-900 text-white rounded-lg px-2 py-1.5 text-xs font-medium hover:bg-slate-800"
-                    >
-                      <Type className="w-3.5 h-3.5" />
-                      Metin
-                    </button>
-                    <a
-                      href={shot.image_url}
-                      download={`${character.id}-${shot.id.slice(0, 8)}.png`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="p-1.5 text-slate-500 hover:text-slate-900 bg-slate-100 rounded-lg hover:bg-slate-200"
-                      title="Orijinali indir"
-                    >
-                      <Download className="w-4 h-4" />
-                    </a>
-                    <button
-                      onClick={() => toggleCanon(shot)}
-                      disabled={busyShotId === shot.id}
-                      className="p-1.5 rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50 disabled:opacity-50"
-                      title={shot.is_canon ? 'Kanon işaretini kaldır' : 'Kanon referans yap'}
-                    >
-                      {busyShotId === shot.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : shot.is_canon ? (
-                        <PinOff className="w-3.5 h-3.5" />
-                      ) : (
-                        <Pin className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                    <button
-                      onClick={() => removeShot(shot)}
-                      disabled={busyShotId === shot.id}
-                      className="p-1.5 rounded-lg border border-slate-300 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                      title="Sil"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  {shot.user_intent && (
-                    <button
-                      onClick={() => {
-                        setIntent(shot.user_intent || '');
-                        setPresetIds(shot.preset_id ? shot.preset_id.split(',') : []);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      className="w-full text-[11px] text-slate-400 hover:text-slate-700 text-left"
-                    >
-                      Tarifi tekrar kullan
-                    </button>
-                  )}
-                </div>
+        {/* Sahne referansı */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            Sahne referansı <span className="font-normal text-slate-400">(opsiyonel, en fazla {MAX_SCENE_REFS})</span>
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            {sceneRefUrls.map((url) => (
+              <div key={url} className="relative w-14 h-14 rounded-lg overflow-hidden border border-slate-200">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt="" className="w-full h-full object-cover" />
+                <button
+                  onClick={() => setSceneRefUrls((prev) => prev.filter((u) => u !== url))}
+                  className="absolute top-0.5 right-0.5 bg-slate-900/70 text-white rounded p-0.5"
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
               </div>
             ))}
+            {sceneRefUrls.length < MAX_SCENE_REFS && (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="w-14 h-14 rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-slate-400 hover:border-slate-400 disabled:opacity-50"
+              >
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              </button>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) uploadSceneRef(file);
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Gelişmiş */}
+        <div className="border-t border-slate-100 pt-3">
+          <button
+            onClick={() => setShowAdvanced((v) => !v)}
+            className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-900"
+          >
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+            Gelişmiş seçenekler
+          </button>
+
+          {showAdvanced && (
+            <div className="mt-3 space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Ham prompt (İngilizce)</label>
+                <textarea
+                  value={rawPrompt}
+                  onChange={(e) => setRawPrompt(e.target.value)}
+                  rows={2}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">En-boy</label>
+                  <select
+                    value={aspectRatio}
+                    onChange={(e) => setAspectRatio(e.target.value as AspectRatio | '')}
+                    className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+                  >
+                    <option value="">Şablondan ({effectiveAspect})</option>
+                    {ASPECT_RATIOS.map((a) => (
+                      <option key={a.value} value={a.value}>{a.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Çözünürlük</label>
+                  <select
+                    value={resolution}
+                    onChange={(e) => setResolution(e.target.value as Resolution)}
+                    className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+                  >
+                    <option value="1K">1K</option>
+                    <option value="2K">2K</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Adet</label>
+                  <select
+                    value={numImages}
+                    onChange={(e) => setNumImages(Number(e.target.value))}
+                    className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+                  >
+                    {Array.from({ length: MAX_IMAGES_PER_RUN }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Seed</label>
+                  <input
+                    value={seed}
+                    onChange={(e) => setSeed(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="rastgele"
+                    className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+                  />
+                </div>
+              </div>
+              <label className="flex items-start gap-2 text-xs text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={allowSceneText}
+                  onChange={(e) => setAllowSceneText(e.target.checked)}
+                  className="rounded border-slate-300 mt-0.5"
+                />
+                Sahnede fiziksel yazıya izin ver (tabela, kupa, tişört)
+              </label>
+            </div>
+          )}
+        </div>
+
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={generate}
+            disabled={generating}
+            className="flex items-center gap-2 bg-blue-600 text-white rounded-lg px-5 py-2.5 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
+          >
+            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {generating ? 'Üretiliyor…' : 'Twin Üret'}
+          </button>
+          <span className="text-xs text-slate-400">
+            ~${(ESTIMATED_COST_PER_IMAGE_USD * numImages).toFixed(2)} · 1-2 dk
+          </span>
+        </div>
+
+        {/* Galeri */}
+        {shots.length > 0 && (
+          <div className="border-t border-slate-100 pt-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-slate-800">
+                Galeri <span className="text-slate-400 font-normal">({shots.length} kare)</span>
+              </h3>
+              <p className="text-xs text-slate-400">Puanla → kanon sabitle → Adım 2&apos;ye geç</p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+              {shots.map((shot) => (
+                <div
+                  key={shot.id}
+                  className={`rounded-xl overflow-hidden border transition-all ${cardBorder(shot)} ${cardOpacity(shot)}`}
+                >
+                  <div className="relative bg-slate-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={shot.image_url} alt="" className="w-full block" />
+                    {shot.is_canon && (
+                      <span className="absolute top-2 left-2 bg-blue-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                        KANON
+                      </span>
+                    )}
+                    {shot.similarity_score !== null && shot.similarity_score >= 9 && (
+                      <span className="absolute top-2 right-2 text-base" title="Çok yüksek benzerlik">✨</span>
+                    )}
+                  </div>
+
+                  <div className="p-2.5 space-y-2">
+                    {/* Puan widget */}
+                    <SimilarityRating
+                      shotId={shot.id}
+                      score={shot.similarity_score ?? null}
+                      onChange={(score) => rateSimilarity(shot, score)}
+                    />
+
+                    {/* Eylemler */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setOverlayShot(shot)}
+                        className="flex-1 flex items-center justify-center gap-1 bg-slate-900 text-white rounded-lg px-2 py-1.5 text-xs font-medium hover:bg-slate-800"
+                      >
+                        <Type className="w-3 h-3" />
+                        Metin
+                      </button>
+                      <a
+                        href={shot.image_url}
+                        download={`${character.id}-${shot.id.slice(0, 8)}.png`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 text-slate-500 hover:text-slate-900 bg-slate-100 rounded-lg hover:bg-slate-200"
+                        title="İndir"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </a>
+                      <button
+                        onClick={() => toggleCanon(shot)}
+                        disabled={busyShotId === shot.id}
+                        className="p-1.5 rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50 disabled:opacity-50"
+                        title={shot.is_canon ? 'Kanon işaretini kaldır' : 'Kanon referans yap'}
+                      >
+                        {busyShotId === shot.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : shot.is_canon ? (
+                          <PinOff className="w-3.5 h-3.5" />
+                        ) : (
+                          <Pin className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => removeShot(shot)}
+                        disabled={busyShotId === shot.id}
+                        className="p-1.5 rounded-lg border border-slate-300 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                        title="Sil"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {shot.user_intent && (
+                      <button
+                        onClick={() => {
+                          setIntent(shot.user_intent || '');
+                          setPresetIds(shot.preset_id ? shot.preset_id.split(',') : []);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="w-full text-[10px] text-slate-400 hover:text-slate-600 text-left truncate"
+                      >
+                        ↺ Tarifi tekrar kullan
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
-      </section>
+      </StepSection>
+      )}
 
+      {/* ─── ADIM 2: Sahne Üret ───────────────────────────────────── */}
+      <StepSection
+        step={2}
+        title="Sahne Üret — Twin'ini Yeni Ortamlarda Göster"
+        subtitle="Kanon twin'in farklı poz, kıyafet ve mekanlarla sahne görselleri"
+        locked={!twinDone}
+        lockedMsg="Önce Adım 1'de kanon kare sabitle"
+      >
+        <StagingSection
+          characterId={character.id}
+          canonShots={canonShots}
+          onShotAdded={(newShots) => setShots((prev) => [...newShots, ...prev])}
+        />
+      </StepSection>
+
+      {/* ─── ADIM 3: Ses Temizle & Klonla ────────────────────────── */}
+      <StepSection
+        step={3}
+        title="Ses Temizle & Klonla"
+        subtitle="Ses kalitesini artır, arka plan gürültüsünü temizle, sesini klonla"
+        locked={!twinDone}
+        lockedMsg="Önce Adım 1'i tamamla"
+      >
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-center space-y-2">
+          <Mic className="w-8 h-8 text-slate-300 mx-auto" />
+          <p className="text-sm font-medium text-slate-600">Ses Stüdyosu — Sprint 2</p>
+          <p className="text-xs text-slate-400">fal.ai MiniMax TTS entegrasyonu ile iki mod:</p>
+          <div className="flex gap-3 justify-center mt-2">
+            <div className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-600">
+              🎙️ <strong>Klon Kullan</strong><br />
+              <span className="text-slate-400">Ses yükle → temizle → klonla</span>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-600">
+              🔊 <strong>Temizle & Seslendir</strong><br />
+              <span className="text-slate-400">Ses yükle → temizle → standart ses</span>
+            </div>
+          </div>
+        </div>
+      </StepSection>
+
+      {/* ─── ADIM 4: Video Üret ───────────────────────────────────── */}
+      <StepSection
+        step={4}
+        title="Video Üret"
+        subtitle="Sahne görseli + ses ile konuşan video oluştur"
+        locked={!twinDone}
+        lockedMsg="Önce Adım 1'i tamamla"
+      >
+        <MotionSection
+          characterId={character.id}
+          shots={shots}
+          motions={motions}
+          onMotionCreated={(newMotion: CharacterMotion) => setMotions((prev) => [newMotion, ...prev])}
+          onMotionDeleted={(motionId: string) => setMotions((prev) => prev.filter((m) => m.id !== motionId))}
+        />
+      </StepSection>
+
+      {/* ─── ADIM 5: Post Production ──────────────────────────────── */}
+      <StepSection
+        step={5}
+        title="Post Production"
+        subtitle="Müzik, altyazı, cutaway, branding overlay ve export"
+        locked={motions.length === 0}
+        lockedMsg="Önce Adım 4'te video üret"
+      >
+        <StudioSection characterId={character.id} motions={motions} />
+      </StepSection>
+
+      {/* Overlay Editor */}
       {overlayShot && (
         <CharacterOverlayEditor
           shot={overlayShot}
@@ -509,18 +918,6 @@ export default function CharacterRoomClient({ character, initialShots, initialMo
           }}
         />
       )}
-
-      {/* Motion (Video Üretimi) */}
-      <MotionSection
-        characterId={character.id}
-        shots={shots}
-        motions={motions}
-        onMotionCreated={(newMotion: CharacterMotion) => setMotions((prev) => [newMotion, ...prev])}
-        onMotionDeleted={(motionId: string) => setMotions((prev) => prev.filter((m) => m.id !== motionId))}
-      />
-
-      {/* Post-Prodüksiyon Stüdyosu — 3. katman, Motion videolarını cutaway/overlay/müzikle işler */}
-      <StudioSection characterId={character.id} motions={motions} />
     </div>
   );
 }

@@ -51,7 +51,22 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
   if (!isCharacterId(characterId)) {
     return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
   }
-  const character = CHARACTERS[characterId];
+  let character = { ...CHARACTERS[characterId] };
+
+  const { data: profile } = await supabaseAdmin
+    .from('character_profiles')
+    .select('*')
+    .eq('id', characterId)
+    .single();
+
+  if (profile) {
+    if (profile.identity_prompt) character.identityPrompt = profile.identity_prompt;
+    if (profile.reference_image_url) character.referenceFile = profile.reference_image_url;
+  }
+
+  if (!character.identityPrompt) {
+    return NextResponse.json({ error: 'Karakter kimliği (identity_prompt) bulunamadı. Lütfen önce yüzünüzü tanıtın.' }, { status: 400 });
+  }
 
   const body = (await req.json()) as Body;
   const presetIds = body.presetIds || (body.presetId ? [body.presetId] : []);
@@ -98,7 +113,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
 
     /* 2 — Referanslar. Sıra önemli: kimlik önce, sahne sonra; prompt'taki rol
        etiketi bu sıraya göre yazılıyor. */
-    const identityRefs: string[] = [await publicImageAsDataUri(character.referenceFile)];
+    const identityRefs: string[] = [];
+    if (character.referenceFile) {
+      identityRefs.push(await publicImageAsDataUri(character.referenceFile));
+    }
 
     const { data: canonShots } = await supabaseAdmin
       .from('character_shots')

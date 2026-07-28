@@ -159,7 +159,8 @@ export default function MotionSection({ characterId, shots, motions, onMotionCre
         <div className="space-y-6">
           {/* Görsel Seçimi */}
           <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">1. Referans Görsel Seç</h3>
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">1. Referans Görsel Seç</h3>
+            <p className="text-xs text-slate-500 mb-3">Videoda konuşturmak istediğiniz kareyi (ister gerçek fotoğrafınız, ister ürettiğiniz AI Twin) seçin.</p>
             {shots.length === 0 ? (
               <p className="text-sm text-slate-500">Önce yukarıdan bir görsel üretmelisiniz.</p>
             ) : (

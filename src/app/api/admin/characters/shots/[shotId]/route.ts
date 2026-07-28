@@ -22,12 +22,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ shotId
   }
 
   const { shotId } = await params;
-  const body = (await req.json()) as { isCanon?: boolean; overlay?: unknown };
+  const body = (await req.json()) as { isCanon?: boolean; overlay?: unknown; similarityScore?: number | null };
   const patch: Record<string, unknown> = {};
 
   if (typeof body.isCanon === 'boolean') {
     if (body.isCanon) {
-      // Referans bütçesi sabit: kanon kare sayısı sınırı aşarsa kimlik sadakati düşer.
+      // Referans bütçesi sabit: kanon kare sayısı sınırı aşarsa kimlik sadıkati düşer.
       const { data: shot } = await supabaseAdmin
         .from('character_shots')
         .select('character_id')
@@ -53,6 +53,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ shotId
 
   if (body.overlay !== undefined) {
     patch.overlay = body.overlay;
+  }
+
+  if (body.similarityScore !== undefined) {
+    if (body.similarityScore !== null && (body.similarityScore < 1 || body.similarityScore > 10 || !Number.isInteger(body.similarityScore))) {
+      return NextResponse.json({ error: 'Puan 1-10 arasında tam sayı olmalıdır.' }, { status: 400 });
+    }
+    patch.similarity_score = body.similarityScore;
   }
 
   if (Object.keys(patch).length === 0) {
