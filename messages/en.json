@@ -81,15 +81,15 @@
       ]
     },
     "mockup": {
-      "services": "Services",
-      "servicesDesc": "Massage, skin care, hair",
-      "prices": "Prices",
-      "pricesDesc": "Packages starting from $20",
-      "hours": "Working hours",
-      "hoursDesc": "Every day 10:00 – 19:00",
-      "msg1": "Is Saturday at 15:00 available?",
-      "msg2": "Yes, 15:00 works! Can I get your name and number?",
-      "typing": "typing..."
+      "title": "Recent Sales & Appointments",
+      "subtitle": "Closed automatically by Assistant Agent",
+      "live": "Live",
+      "service1": "In-Person Training",
+      "paid": "Paid",
+      "closed": "Sale Closed",
+      "service2": "Online Consultation",
+      "pending": "Pending",
+      "appointment": "Appt. Booked"
     },
     "cta": {
       "eyebrow": "Stop linking. Start talking.",
@@ -106,12 +106,14 @@
       "tagline": "Stop linking. Start talking.",
       "rights": "© 2026 talkinbio. All rights reserved."
     },
-    "twoPlatforms": {
-      "title": "Two AI platforms built on the same foundation",
-      "sauleTitle": "Talks to your customers",
-      "sauleDesc": "Assistant Agent answers visitors' questions on your page, gives pricing, books appointments, and captures leads. A 24/7 digital employee.",
-      "beiweTitle": "Manages your page",
-      "beiweDesc": "Creative Agent learns your business details in the background and transforms them into a professional web page. Content and design are fully automatic."
+    "threeDots": {
+      "title": "What do the 3 dots in our logo mean?",
+      "dot1Title": "Create Content",
+      "dot1Desc": "No need to stress over what to post. Provide a simple photo, and get professional, brand-aligned social media posts ready in seconds.",
+      "dot2Title": "Reply Instantly",
+      "dot2Desc": "Don't worry about messages piling up while you work or sleep. Your smart assistant represents your business and your work perfectly and replies 24/7.",
+      "dot3Title": "Close Sales",
+      "dot3Desc": "It doesn't just provide information; it persuades visitors and closes sales. Booked appointments come directly to your dashboard as a list."
     },
     "showcase": {
       "title": "Discover the power of AI<br />for your business",

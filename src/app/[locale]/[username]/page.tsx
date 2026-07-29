@@ -105,7 +105,7 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
         );
         // Error code 23505 is unique_violation, which means they already visited today
         if (error && error.code !== '23505') {
-          console.error('Failed to record page view', error);
+          console.error('Failed to record page view:', error.message || error, 'Code:', error.code);
         }
       }
     } catch (err) {

@@ -53,6 +53,27 @@ export function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
+export type LoadedMedia = { element: HTMLImageElement | HTMLVideoElement; width: number; height: number };
+
+export function loadMedia(url: string, isVideo: boolean = false): Promise<LoadedMedia> {
+  if (isVideo) {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      video.crossOrigin = 'anonymous';
+      video.muted = true;
+      video.playsInline = true;
+      video.onloadeddata = () => {
+        video.currentTime = Math.min(0.1, video.duration || 0);
+      };
+      video.onseeked = () => resolve({ element: video, width: video.videoWidth, height: video.videoHeight });
+      video.onerror = reject;
+      video.src = url;
+      video.load();
+    });
+  }
+  return loadImage(url).then(img => ({ element: img, width: img.naturalWidth, height: img.naturalHeight }));
+}
+
 /**
  * Satır sarma, karartma şeridi ve wordmark aşağıda EXPORT edildi — Studio (post-prodüksiyon,
  * bkz. `src/utils/studioRenderer.ts`) video karesine aynı görsel dili bindirirken bunları

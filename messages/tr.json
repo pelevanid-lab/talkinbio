@@ -81,15 +81,15 @@
       ]
     },
     "mockup": {
-      "services": "Hizmetler",
-      "servicesDesc": "Masaj, cilt bakımı, saç",
-      "prices": "Fiyatlar",
-      "pricesDesc": "₺600'den başlayan paketler",
-      "hours": "Çalışma saatleri",
-      "hoursDesc": "Her gün 10:00 – 19:00",
-      "msg1": "Cumartesi saat 15:00 müsait mi?",
-      "msg2": "Evet, 15:00 uygun! Adını ve numaranı alabilir miyim?",
-      "typing": "yazıyor..."
+      "title": "Son Satışlar & Randevular",
+      "subtitle": "Assistant Agent tarafından otomatik kapatıldı",
+      "live": "Canlı",
+      "service1": "Yüz Yüze Bireysel Eğitim",
+      "paid": "Ödendi",
+      "closed": "Satış Kapandı",
+      "service2": "Online Danışmanlık",
+      "pending": "Bekliyor",
+      "appointment": "Randevu Alındı"
     },
     "cta": {
       "eyebrow": "Stop linking. Start talking.",
@@ -106,12 +106,14 @@
       "tagline": "Stop linking. Start talking.",
       "rights": "© 2026 talkinbio. Tüm hakları saklıdır."
     },
-    "twoPlatforms": {
-      "title": "Aynı temele dayalı iki yapay zeka platformu",
-      "sauleTitle": "Müşterilerinizle Konuşur",
-      "sauleDesc": "Assistant Agent, sayfanıza gelen ziyaretçilerin sorularını yanıtlar, fiyat verir, randevu ayarlar ve iletişim bilgilerini alarak size potansiyel müşteriler (lead) yaratır. 7/24 uyanık bir dijital çalışandır.",
-      "beiweTitle": "Sayfanızı Yönetir",
-      "beiweDesc": "Creative Agent, işletmenizle ilgili detayları arka planda sizden öğrenen ve bu bilgileri profesyonel bir web sayfasına dönüştüren yaratıcı bir ajandır. İçerik ve tasarım tamamen otomatiktir."
+    "threeDots": {
+      "title": "Logomuzdaki 3 nokta ne anlatıyor?",
+      "dot1Title": "İçerik Üretmek",
+      "dot1Desc": "Ne çekeceğim diye düşünmenize gerek yok. Sıradan bir fotoğrafınızı verin, markanıza uygun profesyonel gönderiler saniyeler içinde hazır olsun.",
+      "dot2Title": "Anında Cevaplamak",
+      "dot2Desc": "Çalışırken veya uyurken gelen mesajları dert etmeyin. Sizin yerinize işletmenizi ve işinizi en iyi şekilde anlatan yardımcınız, ziyaretçilerinize 7/24 cevap verir.",
+      "dot3Title": "Satış Kapatmak",
+      "dot3Desc": "Sadece bilgi verilmez; ziyaretçiler ikna edilir ve satış kapatılır. Alınan randevular doğrudan önünüze liste olarak gelir."
     },
     "showcase": {
       "title": "Yapay zekanın işletmelere<br />kattığı gücü keşfedin",

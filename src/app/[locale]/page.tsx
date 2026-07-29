@@ -194,163 +194,141 @@ export default async function HomePage({ params }: any) {
           </div>
         </div>
 
-        <section className="py-24 bg-white border-t border-[var(--border)]">
-          <div className="wrap flex flex-col lg:flex-row gap-12 lg:gap-24">
-            <div className="w-full lg:w-[40%] flex flex-col justify-center">
-              <h2 className="text-4xl md:text-[56px] font-bold text-[var(--ink)] mb-8 tracking-tight leading-[1.1]" style={{ fontFamily: 'var(--font-bricolage)', letterSpacing: '-0.02em' }}>
-                {t('twoPlatforms.title')}
-              </h2>
-            </div>
+        <section className="py-24 bg-[var(--paper)] border-t border-[var(--border)]">
+          <div className="wrap max-w-4xl mx-auto flex flex-col gap-24">
             
-            <div className="w-full lg:w-[60%] flex flex-col gap-16">
-              
-              <div className="flex flex-col sm:flex-row gap-6 items-start">
-                <div className="w-24 h-24 rounded-[32px] shrink-0 border border-[var(--border)] bg-[var(--paper)] flex items-center justify-center relative overflow-hidden shadow-sm">
-                   <div className="animate-orbPulse"><SauleIcon size={64} /></div>
-                   <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px]"></div>
+            {/* Item 1 */}
+            <div className="flex flex-col gap-8">
+              <div className="flex flex-col sm:flex-row gap-6 items-start group">
+                <div className="w-16 h-16 rounded-[20px] shrink-0 border border-[var(--border)] bg-white flex items-center justify-center relative shadow-sm transition-transform group-hover:scale-105">
+                  <span className="font-bricolage font-bold text-2xl text-[var(--ink)]">1</span>
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-[var(--ink)] mb-3 flex items-center gap-3" style={{ fontFamily: 'var(--font-bricolage)' }}>
-                    <div className="px-2 py-0.5 rounded-full bg-[var(--coral-tint)] text-[var(--coral)] text-xs font-bold tracking-wider" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>ASSISTANT</div>
-                    {t('twoPlatforms.sauleTitle')}
+                <div className="pt-1">
+                  <h3 className="text-2xl font-bold text-[var(--ink)] mb-3" style={{ fontFamily: 'var(--font-bricolage)' }}>
+                    {t('threeDots.dot1Title')}
                   </h3>
-                  <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">
-                    {t('twoPlatforms.sauleDesc')}
+                  <p className="text-[var(--ink-soft)] text-lg leading-relaxed max-w-2xl">
+                    {t('threeDots.dot1Desc')}
                   </p>
                 </div>
               </div>
-
-              <div className="flex flex-col sm:flex-row gap-6 items-start">
-                <div className="w-24 h-24 rounded-[32px] shrink-0 border border-[var(--border)] bg-[var(--paper)] flex items-center justify-center relative overflow-hidden shadow-sm">
-                   <div className="animate-orbPulse" style={{ animationDelay: '1s' }}><BeiweIcon size={64} /></div>
-                   <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px]"></div>
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-[var(--ink)] mb-3 flex items-center gap-3" style={{ fontFamily: 'var(--font-bricolage)' }}>
-                    <div className="px-2 py-0.5 rounded-full bg-[var(--teal-tint)] text-[var(--teal-deep)] text-xs font-bold tracking-wider" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>CREATIVE</div>
-                    {t('twoPlatforms.beiweTitle')}
-                  </h3>
-                  <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">
-                    {t('twoPlatforms.beiweDesc')}
-                  </p>
-                </div>
+              {/* Image Placeholder */}
+              <div className="w-full aspect-[16/9] sm:aspect-[21/9] bg-[var(--paper)] rounded-[24px] border border-[var(--border)] shadow-sm flex items-center justify-center relative overflow-hidden">
+                 <Image src="/mockup-1.png" alt="Podcast Room" fill priority sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px" className="object-cover object-top" />
               </div>
+              <a href="https://www.instagram.com/talkinbio_/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[var(--ink-soft)] hover:text-[var(--ink)] font-medium transition-colors text-sm px-2 -mt-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                @talkinbio_
+              </a>
             </div>
-          </div>
-          
-          <div className="h-24 md:h-32 w-full"></div>
-          <div className="wrap">
-            {/* Dashboard Mockup Area */}
-            <div className="bg-[var(--paper)] rounded-[32px] p-6 md:p-12 border border-[var(--border)] shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] overflow-hidden relative">
-              <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 justify-center items-center lg:items-stretch min-h-[400px]">
+
+            {/* Item 2 */}
+            <div className="flex flex-col gap-8">
+              <div className="flex flex-col sm:flex-row gap-6 items-start group">
+                <div className="w-16 h-16 rounded-[20px] shrink-0 border border-[var(--border)] bg-white flex items-center justify-center relative shadow-sm transition-transform group-hover:scale-105">
+                  <span className="font-bricolage font-bold text-2xl text-[var(--ink)]">2</span>
+                </div>
+                <div className="pt-1">
+                  <h3 className="text-2xl font-bold text-[var(--ink)] mb-3" style={{ fontFamily: 'var(--font-bricolage)' }}>
+                    {t('threeDots.dot2Title')}
+                  </h3>
+                  <p className="text-[var(--ink-soft)] text-lg leading-relaxed max-w-2xl">
+                    {t('threeDots.dot2Desc')}
+                  </p>
+                </div>
+              </div>
+              {/* Video Mockup */}
+              <div className="w-full aspect-video bg-[var(--paper)] rounded-[24px] border border-[var(--border)] shadow-sm flex items-center justify-center relative overflow-hidden">
+                 <video src="/mockup-2.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover object-center" />
+              </div>
+              <a href="https://talkinbio.com/ulianapehlivan" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[var(--ink-soft)] hover:text-[var(--ink)] font-medium transition-colors text-sm px-2 -mt-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <rect x="2" y="2" width="20" height="20" rx="6" fill="currentColor" opacity="0.15"/>
+                  <circle cx="7.5" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="16.5" cy="12" r="1.5" fill="currentColor"/>
+                </svg>
+                talkinbio.com/ulianapehlivan
+              </a>
+            </div>
+
+            {/* Item 3 */}
+            <div className="flex flex-col gap-8">
+              <div className="flex flex-col sm:flex-row gap-6 items-start group">
+                <div className="w-16 h-16 rounded-[20px] shrink-0 border border-[var(--border)] bg-white flex items-center justify-center relative shadow-sm transition-transform group-hover:scale-105">
+                  <span className="font-bricolage font-bold text-2xl text-[var(--ink)]">3</span>
+                </div>
+                <div className="pt-1">
+                  <h3 className="text-2xl font-bold text-[var(--ink)] mb-3" style={{ fontFamily: 'var(--font-bricolage)' }}>
+                    {t('threeDots.dot3Title')}
+                  </h3>
+                  <p className="text-[var(--ink-soft)] text-lg leading-relaxed max-w-2xl">
+                    {t('threeDots.dot3Desc')}
+                  </p>
+                </div>
+              </div>
+              {/* Fake UI Mockup for Sales */}
+              <div className="w-full bg-[var(--paper)] rounded-[24px] border border-[var(--border)] shadow-sm relative overflow-hidden p-4 sm:p-10 flex items-center justify-center">
                 
-                {/* Placeholder for Saule Dashboard Screenshot */}
-                <div className="w-full lg:w-[55%] min-h-[240px] aspect-[4/3] lg:aspect-auto bg-white rounded-2xl border border-[var(--border)] shadow-2xl shadow-slate-200/50 flex flex-col overflow-hidden relative z-20 transform lg:translate-x-4 lg:-translate-y-4 hover:z-30 transition-transform">
-                  <div className="h-10 border-b border-[var(--border)] flex items-center px-4 gap-2">
-                    <div className="w-3 h-3 rounded-full bg-slate-200"></div>
-                    <div className="w-3 h-3 rounded-full bg-slate-200"></div>
-                    <div className="w-3 h-3 rounded-full bg-slate-200"></div>
-                    <div className="text-[10px] text-[var(--muted)] font-medium ml-2 uppercase tracking-widest">Assistant Analytics</div>
-                  </div>
-                  <div className="flex-1 p-8 flex items-center justify-center text-center">
+                {/* Dashboard Card */}
+                <div className="w-full max-w-2xl bg-white border border-[var(--border)] rounded-[20px] shadow-sm overflow-hidden" style={{ fontFamily: 'var(--font-inter)' }}>
+                  <div className="border-b border-[var(--border)] p-4 sm:p-5 flex justify-between items-center bg-[#FDFCFB]">
                     <div>
-                      <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center"><SauleIcon size={96} /></div>
+                      <h4 className="font-semibold text-[var(--ink)] text-base sm:text-lg">{t('mockup.title')}</h4>
+                      <p className="text-xs sm:text-sm text-[var(--ink-soft)] mt-1">{t('mockup.subtitle')}</p>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-2 bg-[var(--ink)] text-white px-3 py-1.5 rounded-[100px] text-xs font-medium">
+                      <span className="w-2 h-2 rounded-full bg-[var(--beiwe-accent)] animate-pulse"></span>
+                      {t('mockup.live')}
                     </div>
                   </div>
-                </div>
-
-                {/* Placeholder for Beiwe Dashboard Screenshot */}
-                <div className="w-full lg:w-[45%] min-h-[240px] aspect-[4/3] lg:aspect-auto bg-white rounded-2xl border border-[var(--border)] shadow-xl shadow-slate-200/50 flex flex-col overflow-hidden relative z-10 transform lg:-translate-x-4 lg:translate-y-4 hover:z-20 transition-transform">
-                  <div className="h-10 border-b border-[var(--border)] flex items-center px-4 gap-2">
-                    <div className="w-3 h-3 rounded-full bg-slate-200"></div>
-                    <div className="w-3 h-3 rounded-full bg-slate-200"></div>
-                    <div className="w-3 h-3 rounded-full bg-slate-200"></div>
-                    <div className="text-[10px] text-[var(--muted)] font-medium ml-2 uppercase tracking-widest">Creative Studio</div>
-                  </div>
-                  <div className="flex-1 p-8 flex items-center justify-center text-center">
-                    <div>
-                      <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center"><BeiweIcon size={64} /></div>
+                  
+                  <div className="divide-y divide-[var(--border)]">
+                    {/* Item 1 */}
+                    <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#F9F9F9] transition-colors">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center text-[var(--saule-accent)] font-bold shrink-0 text-sm">AY</div>
+                        <div>
+                          <p className="font-semibold text-[var(--ink)] text-sm sm:text-base">Ayşe Yılmaz</p>
+                          <p className="text-xs sm:text-sm text-[var(--ink-soft)] mt-0.5">{t('mockup.service1')}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 w-full sm:w-auto border-t border-[var(--border)] sm:border-0 pt-3 sm:pt-0 mt-1 sm:mt-0">
+                        <div className="text-left sm:text-right">
+                          <p className="font-bold text-[var(--ink)] text-sm sm:text-base">$850</p>
+                          <p className="text-[10px] sm:text-xs text-[var(--ink-soft)] uppercase tracking-wide">{t('mockup.paid')}</p>
+                        </div>
+                        <div className="bg-[#E8F8F5] text-[#145C4B] px-2.5 py-1 rounded-[100px] text-[11px] sm:text-xs font-semibold whitespace-nowrap border border-[#BCE8DE]">
+                          {t('mockup.closed')}
+                        </div>
+                      </div>
                     </div>
+                    
+                    {/* Item 2 */}
+                    <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#F9F9F9] transition-colors">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-600 font-bold shrink-0 text-sm">MK</div>
+                        <div>
+                          <p className="font-semibold text-[var(--ink)] text-sm sm:text-base">Murat Kaya</p>
+                          <p className="text-xs sm:text-sm text-[var(--ink-soft)] mt-0.5">{t('mockup.service2')}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 w-full sm:w-auto border-t border-[var(--border)] sm:border-0 pt-3 sm:pt-0 mt-1 sm:mt-0">
+                        <div className="text-left sm:text-right">
+                          <p className="font-bold text-[var(--ink)] text-sm sm:text-base">$200</p>
+                          <p className="text-[10px] sm:text-xs text-[var(--ink-soft)] uppercase tracking-wide">{t('mockup.pending')}</p>
+                        </div>
+                        <div className="bg-[#FFF8E6] text-[#8C6D1F] px-2.5 py-1 rounded-[100px] text-[11px] sm:text-xs font-semibold whitespace-nowrap border border-[#F5E1A4]">
+                          {t('mockup.appointment')}
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
+              </div>
+            </div>
 
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Deep Dive: Saule Assistant */}
-        <section className="py-24 border-t border-[var(--border)] bg-white">
-          <div className="wrap flex flex-col lg:flex-row gap-12 lg:gap-24">
-            <div className="w-full lg:w-[40%]">
-              <h2 className="text-4xl md:text-5xl font-bold text-[var(--ink)] mb-6 tracking-tight" style={{ fontFamily: 'var(--font-bricolage)', letterSpacing: '-0.02em' }}>
-                {t('deepSaule.title')}
-              </h2>
-              <p className="text-xl text-[var(--ink)] font-semibold mb-4 leading-snug">
-                {t('deepSaule.desc')}
-              </p>
-              <Link href="/request-access" className="text-[var(--coral)] font-semibold hover:underline flex items-center gap-2">
-                {t('deepSaule.btn')} <span aria-hidden="true">&rarr;</span>
-              </Link>
-            </div>
-            
-            <div className="w-full lg:w-[60%] grid grid-cols-1 sm:grid-cols-2 gap-8 md:gap-12">
-              <div>
-                <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepSaule.f1Title')}</h4>
-                <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">{t('deepSaule.f1Desc')}</p>
-              </div>
-              <div>
-                <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepSaule.f2Title')}</h4>
-                <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">{t('deepSaule.f2Desc')}</p>
-              </div>
-              <div>
-                <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepSaule.f3Title')}</h4>
-                <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">{t('deepSaule.f3Desc')}</p>
-              </div>
-              <div>
-                <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepSaule.f4Title')}</h4>
-                <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">{t('deepSaule.f4Desc')}</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Deep Dive: Beiwe Creative */}
-        <section className="py-24 border-t border-[var(--border)] bg-[var(--paper)]">
-          <div className="wrap flex flex-col lg:flex-row gap-12 lg:gap-24">
-            <div className="w-full lg:w-[40%]">
-              <h2 className="text-4xl md:text-5xl font-bold text-[var(--ink)] mb-6 tracking-tight" style={{ fontFamily: 'var(--font-bricolage)', letterSpacing: '-0.02em' }}>
-                {t('deepBeiwe.title')}
-              </h2>
-              <p className="text-xl text-[var(--ink)] font-semibold mb-4 leading-snug">
-                {t('deepBeiwe.desc1')}
-              </p>
-              <p className="text-[var(--ink-soft)] text-lg leading-relaxed mb-8">
-                {t('deepBeiwe.desc2')}
-              </p>
-              <Link href="/request-access" className="text-[var(--teal-deep)] font-semibold hover:underline flex items-center gap-2">
-                {t('deepBeiwe.btn')} <span aria-hidden="true">&rarr;</span>
-              </Link>
-            </div>
-            
-            <div className="w-full lg:w-[60%] grid grid-cols-1 sm:grid-cols-2 gap-8 md:gap-12">
-              <div>
-                <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepBeiwe.f1Title')}</h4>
-                <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">{t('deepBeiwe.f1Desc')}</p>
-              </div>
-              <div>
-                <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepBeiwe.f2Title')}</h4>
-                <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">{t('deepBeiwe.f2Desc')}</p>
-              </div>
-              <div>
-                <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepBeiwe.f3Title')}</h4>
-                <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">{t('deepBeiwe.f3Desc')}</p>
-              </div>
-              <div>
-                <h4 className="text-lg font-bold text-[var(--ink)] mb-2">{t('deepBeiwe.f4Title')}</h4>
-                <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">{t('deepBeiwe.f4Desc')}</p>
-              </div>
-            </div>
           </div>
         </section>
 
@@ -362,59 +340,59 @@ export default async function HomePage({ params }: any) {
               <h2 className="text-3xl md:text-5xl font-bold text-[var(--ink)] tracking-tight" style={{ fontFamily: 'var(--font-bricolage)', letterSpacing: '-0.02em' }}>
                 {t('updates.title')}
               </h2>
-              <Link href="/updates" className="px-5 py-2 rounded-full border border-[var(--border)] text-[var(--ink)] font-semibold text-sm hover:bg-[var(--paper)] transition-colors hidden sm:block">
+              <div className="px-5 py-2 rounded-full border border-[var(--border)] text-[var(--ink)] font-semibold text-sm cursor-default hidden sm:block">
                 {t('updates.allPosts')}
-              </Link>
+              </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
               {/* Post 1 */}
-              <Link href="/updates/talkinbio-v2-yayinda" className="group block">
+              <div className="group block cursor-default">
                 <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden relative mb-5 bg-[var(--paper)]">
                   {/* Coral Gradient — Saule */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#FF6A5C] via-[#ff8478] to-[#FFEDE9] opacity-90 transition-transform duration-700 group-hover:scale-105"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#FF6A5C] via-[#ff8478] to-[#FFEDE9] opacity-90 transition-transform duration-700"></div>
                   <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }}></div>
                   <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
                     <h3 className="text-white text-2xl font-bold drop-shadow-sm max-w-[200px] leading-tight">{t('updates.post1.badge')}</h3>
                   </div>
                 </div>
-                <h4 className="text-[var(--ink)] font-bold text-lg mb-2 group-hover:text-[var(--coral)] transition-colors line-clamp-2">{t('updates.post1.title')}</h4>
+                <h4 className="text-[var(--ink)] font-bold text-lg mb-2 line-clamp-2">{t('updates.post1.title')}</h4>
                 <p className="text-[var(--muted)] text-sm font-medium">{t('updates.post1.meta')}</p>
-              </Link>
+              </div>
 
               {/* Post 2 */}
-              <Link href="/updates/saule-egitimi" className="group block">
+              <div className="group block cursor-default">
                 <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden relative mb-5 bg-[var(--paper)]">
                   {/* Teal Gradient — Beiwe */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#50e3c2] via-[#3a967c] to-[#14231F] opacity-90 transition-transform duration-700 group-hover:scale-105"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#50e3c2] via-[#3a967c] to-[#14231F] opacity-90 transition-transform duration-700"></div>
                   <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }}></div>
                   <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
                     <h3 className="text-white text-2xl font-bold drop-shadow-sm max-w-[200px] leading-tight">{t('updates.post2.badge')}</h3>
                   </div>
                 </div>
-                <h4 className="text-[var(--ink)] font-bold text-lg mb-2 group-hover:text-[var(--teal-deep)] transition-colors line-clamp-2">{t('updates.post2.title')}</h4>
+                <h4 className="text-[var(--ink)] font-bold text-lg mb-2 line-clamp-2">{t('updates.post2.title')}</h4>
                 <p className="text-[var(--muted)] text-sm font-medium">{t('updates.post2.meta')}</p>
-              </Link>
+              </div>
 
               {/* Post 3 */}
-              <Link href="/updates/gelismis-analitik" className="group block">
+              <div className="group block cursor-default">
                 <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden relative mb-5 bg-[var(--paper)]">
                   {/* Ink Gradient — neutral */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#14231F] via-[#4B5A55] to-[#8A8880] opacity-90 transition-transform duration-700 group-hover:scale-105"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#14231F] via-[#4B5A55] to-[#8A8880] opacity-90 transition-transform duration-700"></div>
                   <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }}></div>
                   <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
                     <h3 className="text-white text-2xl font-bold drop-shadow-sm max-w-[200px] leading-tight">{t('updates.post3.badge')}</h3>
                   </div>
                 </div>
-                <h4 className="text-[var(--ink)] font-bold text-lg mb-2 group-hover:text-[var(--ink-soft)] transition-colors line-clamp-2">{t('updates.post3.title')}</h4>
+                <h4 className="text-[var(--ink)] font-bold text-lg mb-2 line-clamp-2">{t('updates.post3.title')}</h4>
                 <p className="text-[var(--muted)] text-sm font-medium">{t('updates.post3.meta')}</p>
-              </Link>
+              </div>
             </div>
 
             <div className="mt-8 text-center sm:hidden">
-               <Link href="/updates" className="px-5 py-2 rounded-full border border-[var(--border)] text-[var(--ink)] font-semibold text-sm inline-block">
+               <div className="px-5 py-2 rounded-full border border-[var(--border)] text-[var(--ink)] font-semibold text-sm inline-block cursor-default">
                 {t('updates.allPosts')}
-              </Link>
+              </div>
             </div>
           </div>
         </section>

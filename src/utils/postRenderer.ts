@@ -9,7 +9,7 @@
 // Ortak parçalar (satır sarma, karartma, font çözümleme) `imageOverlay.ts`'ten
 // yeniden kullanılıyor — kopyalanmadı.
 
-import { loadImage, resolveFontFamily, wrapLines } from '@/utils/imageOverlay';
+import { loadMedia, resolveFontFamily, wrapLines } from '@/utils/imageOverlay';
 import type { OverlayFont } from '@/config/characters';
 import { BRAND, type PostFormat, type PostTemplate } from '@/config/post';
 
@@ -27,6 +27,7 @@ export type RenderPostParams = {
   texts: PostTexts;
   /** `imageMode: 'none'` şablonlarda yok sayılır. */
   imageUrl?: string | null;
+  isVideo?: boolean;
 };
 
 /** roundRect her yerde yok; yoksa düz dikdörtgene düş. */
@@ -117,7 +118,7 @@ function paintWordmark(
  * desteği sınırlı olduğu için Rusça metinde `inter`'a düşüyoruz (aynı gerekçe
  * `OVERLAY_FONTS` notunda da var).
  */
-export async function renderPost({ canvas, template, format, texts, imageUrl }: RenderPostParams): Promise<void> {
+export async function renderPost({ canvas, template, format, texts, imageUrl, isVideo }: RenderPostParams): Promise<void> {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas oluşturulamadı.');
 
@@ -161,7 +162,8 @@ export async function renderPost({ canvas, template, format, texts, imageUrl }: 
   const textHeight =
     (headline?.height ?? 0) + (subline?.height ?? 0) + (headline && subline ? blockGap : 0);
 
-  const img = template.imageMode !== 'none' && imageUrl ? await loadImage(imageUrl) : null;
+  const mediaObj = template.imageMode !== 'none' && imageUrl ? await loadMedia(imageUrl, isVideo) : null;
+  const img = mediaObj?.element || null;
 
   if (template.imageMode === 'contain') {
     // Başlık üstte, görsel altta kalan alanda çerçeveli.
@@ -181,13 +183,13 @@ export async function renderPost({ canvas, template, format, texts, imageUrl }: 
       // Alt boşluk: wordmark için yer bırak.
       const boxHeight = height - boxTop - padding * 1.8;
       const boxWidth = width - padding * 2;
-      if (boxHeight > 0) {
-        const fit = fitContain(img.naturalWidth, img.naturalHeight, boxWidth, boxHeight);
+      if (boxHeight > 0 && mediaObj) {
+        const fit = fitContain(mediaObj.width, mediaObj.height, boxWidth, boxHeight);
         const radius = Math.min(fit.w, fit.h) * IMAGE_RADIUS_RATIO;
         ctx.save();
         roundedRectPath(ctx, padding + fit.x, boxTop + fit.y, fit.w, fit.h, radius);
         ctx.clip();
-        ctx.drawImage(img, padding + fit.x, boxTop + fit.y, fit.w, fit.h);
+        ctx.drawImage(mediaObj.element, padding + fit.x, boxTop + fit.y, fit.w, fit.h);
         ctx.restore();
       }
     }
@@ -197,9 +199,9 @@ export async function renderPost({ canvas, template, format, texts, imageUrl }: 
   }
 
   if (template.imageMode === 'cover') {
-    if (img) {
-      const src = fitCoverSource(img.naturalWidth, img.naturalHeight, width, height);
-      ctx.drawImage(img, src.sx, src.sy, src.sw, src.sh, 0, 0, width, height);
+    if (mediaObj) {
+      const src = fitCoverSource(mediaObj.width, mediaObj.height, width, height);
+      ctx.drawImage(mediaObj.element, src.sx, src.sy, src.sw, src.sh, 0, 0, width, height);
     }
 
     if (template.scrim === 'full') {

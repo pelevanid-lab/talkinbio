@@ -38,6 +38,7 @@ export default function BeiwePostClient({ shots }: Props) {
   const [locale, setLocale] = useState<OverlayLocale>('tr');
   const [texts, setTexts] = useState<Record<OverlayLocale, PostTexts>>(EMPTY_TEXTS);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isVideo, setIsVideo] = useState(false);
   const [uploadedName, setUploadedName] = useState<string | null>(null);
   const [showGallery, setShowGallery] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -65,9 +66,10 @@ export default function BeiwePostClient({ shots }: Props) {
         format,
         texts: texts[targetLocale],
         imageUrl: needsImage ? imageUrl : null,
+        isVideo,
       });
     },
-    [template, format, texts, imageUrl, needsImage],
+    [template, format, texts, imageUrl, needsImage, isVideo],
   );
 
   useEffect(() => {
@@ -97,6 +99,7 @@ export default function BeiwePostClient({ shots }: Props) {
     const url = URL.createObjectURL(file);
     objectUrlRef.current = url;
     setImageUrl(url);
+    setIsVideo(file.type.startsWith('video/'));
     setUploadedName(file.name);
   };
 
@@ -106,6 +109,7 @@ export default function BeiwePostClient({ shots }: Props) {
       objectUrlRef.current = null;
     }
     setImageUrl(shot.image_url);
+    setIsVideo(false);
     setUploadedName(null);
     setShowGallery(false);
   };
@@ -116,6 +120,7 @@ export default function BeiwePostClient({ shots }: Props) {
       objectUrlRef.current = null;
     }
     setImageUrl(null);
+    setIsVideo(false);
     setUploadedName(null);
   };
 
@@ -270,7 +275,7 @@ export default function BeiwePostClient({ shots }: Props) {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/png,image/jpeg,image/webp"
+                  accept="image/png,image/jpeg,image/webp,video/mp4,video/webm,video/quicktime"
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
