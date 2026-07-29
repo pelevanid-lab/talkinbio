@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
-import { FalError, generateCharacterMotion } from '@/utils/fal';
+import { FalError, generateCharacterMotion, enhanceAudio } from '@/utils/fal';
 import { isCharacterId } from '@/config/characters';
 import {
   findMotionModel,
@@ -31,40 +31,48 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
 
   try {
     const formData = await req.formData();
-    const file = formData.get('audio') as File;
-    sourceImageUrl = formData.get('sourceImageUrl') as string;
+    const file = formData.get('audio') as File | null;
+    sourceImageUrl = formData.get('sourceImageUrl') as string | null || undefined;
+    let audioUrlStr = formData.get('audioUrl') as string | null;
+    const shouldEnhance = formData.get('enhanceAudio') === 'true';
 
-    if (!file || !sourceImageUrl) {
-      return NextResponse.json({ error: 'Ses dosyası ve kaynak görsel zorunludur.' }, { status: 400 });
+    if (!sourceImageUrl) {
+      return NextResponse.json({ error: 'Kaynak görsel zorunludur.' }, { status: 400 });
     }
 
-    // Formatı UZANTIDAN belirliyoruz, `file.type`'tan değil: tarayıcı m4a için
-    // `audio/x-m4a` gibi standart olmayan bir değer verebiliyor ve dosya Supabase'ten
-    // o başlıkla servis edilince fal "Audio format is invalid" ile reddediyor.
-    const contentType = motionAudioMime(file.name);
-    if (!contentType) {
-      return NextResponse.json(
-        {
-          error: `Bu format desteklenmiyor. Desteklenenler: ${MOTION_AUDIO_EXTENSIONS.map((e) =>
-            e.toUpperCase(),
-          ).join(', ')}.`,
-        },
-        { status: 400 },
-      );
+    if (!file && !audioUrlStr) {
+      return NextResponse.json({ error: 'Ses dosyası veya ses linki zorunludur.' }, { status: 400 });
     }
 
-    const model = findMotionModel(formData.get('model'));
+    const model = findMotionModel(formData.get('model') as string);
     if (!model) {
-      return NextResponse.json({ error: 'Bilinmeyen model.' }, { status: 400 });
+      return NextResponse.json({ error: 'Model bulunamadı.' }, { status: 400 });
     }
 
-    // Boyut ve süre sınırları modele göre değişiyor: Kling ses dosyasını 5MB ve 2-60 sn
-    // ile sınırlıyor, OmniHuman çok daha cömert ama 1080p'de 30 sn'de kesiyor.
-    if (file.size > model.maxAudioMb * 1024 * 1024) {
-      return NextResponse.json(
-        { error: `${model.label} için ses dosyası en fazla ${model.maxAudioMb}MB olabilir.` },
-        { status: 400 },
-      );
+    if (file) {
+      // Formatı UZANTIDAN belirliyoruz, `file.type`'tan değil: tarayıcı m4a için
+      // `audio/x-m4a` gibi standart olmayan bir değer verebiliyor ve dosya Supabase'ten
+      // o başlıkla servis edilince fal "Audio format is invalid" ile reddediyor.
+      const contentType = motionAudioMime(file.name);
+      if (!contentType) {
+        return NextResponse.json(
+          {
+            error: `Bu format desteklenmiyor. Desteklenenler: ${MOTION_AUDIO_EXTENSIONS.map((e) =>
+              e.toUpperCase(),
+            ).join(', ')}.`,
+          },
+          { status: 400 },
+        );
+      }
+
+      // Boyut ve süre sınırları modele göre değişiyor: Kling ses dosyasını 5MB ve 2-60 sn
+      // ile sınırlıyor, OmniHuman çok daha cömert ama 1080p'de 30 sn'de kesiyor.
+      if (file.size > model.maxAudioMb * 1024 * 1024) {
+        return NextResponse.json(
+          { error: `${model.label} için ses dosyası en fazla ${model.maxAudioMb}MB olabilir.` },
+          { status: 400 },
+        );
+      }
     }
 
     // Model `resolution` kabul etmiyorsa gövdeye eklenmiyor, ama süre sınırı yine
@@ -101,24 +109,37 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
       }
     }
 
-    // 1 - Yüklenen ses dosyasını Supabase'e kaydet
-    const audioBuffer = Buffer.from(await file.arrayBuffer());
-    const ext = file.name.split('.').pop()!.toLowerCase();
-    const audioPath = `characters/${characterId}/audios/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    // 1 - Ses dosyasını Supabase'e kaydet (eğer dışarıdan file geldiyse)
+    if (file) {
+      const audioBuffer = Buffer.from(await file.arrayBuffer());
+      const ext = file.name.split('.').pop()!.toLowerCase();
+      const audioPath = `characters/${characterId}/audios/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from('media')
-      .upload(audioPath, audioBuffer, { contentType, cacheControl: '31536000' });
-      
-    if (uploadError) throw uploadError;
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from('media')
+        .upload(audioPath, audioBuffer, { contentType: motionAudioMime(file.name) || 'audio/mpeg', cacheControl: '31536000' });
+        
+      if (uploadError) throw uploadError;
 
-    ({ data: { publicUrl: audioUrl } } = supabaseAdmin.storage.from('media').getPublicUrl(audioPath));
+      ({ data: { publicUrl: audioUrl } } = supabaseAdmin.storage.from('media').getPublicUrl(audioPath));
+      audioUrlStr = audioUrl;
+    }
+
+    // 1.5 - Ses iyileştirme isteniyorsa (deepfilternet3)
+    let finalAudioUrlForMotion = audioUrlStr!;
+    if (shouldEnhance) {
+      const enhanced = await enhanceAudio({ audioUrl: finalAudioUrlForMotion });
+      finalAudioUrlForMotion = enhanced.audioUrl;
+    }
+    
+    // finalAudioUrlForMotion değişkenini global audioUrl olarak ayarlayalım (loglarda gözükmesi için)
+    audioUrl = finalAudioUrlForMotion;
 
     // 2 - fal.ai konuşan-avatar çağrısı
     const result = await generateCharacterMotion({
       model,
       imageUrl: sourceImageUrl,
-      audioUrl,
+      audioUrl: finalAudioUrlForMotion,
       resolution,
       prompt,
       turboMode,

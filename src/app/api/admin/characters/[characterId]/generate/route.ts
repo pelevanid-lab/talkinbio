@@ -111,42 +111,73 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
       scene = presetPrompt!;
     }
 
-    /* 2 — Referanslar. Sıra önemli: kimlik önce, sahne sonra; prompt'taki rol
-       etiketi bu sıraya göre yazılıyor. */
+    const useLora = profile?.lora_status === 'ready' && !!profile?.lora_url;
+    const loraUrl = useLora ? profile.lora_url : undefined;
+    const loraTrigger = (useLora && profile.lora_trigger_word) ? profile.lora_trigger_word + ' ' : '';
+
     const identityRefs: string[] = [];
-    if (character.referenceFile) {
-      identityRefs.push(await publicImageAsDataUri(character.referenceFile));
-    }
+    
+    if (!useLora) {
+      if (character.referenceFile) {
+        identityRefs.push(await publicImageAsDataUri(character.referenceFile));
+      }
 
-    const { data: canonShots } = await supabaseAdmin
-      .from('character_shots')
-      .select('image_url')
-      .eq('character_id', characterId)
-      .eq('is_canon', true)
-      .order('created_at', { ascending: false })
-      .limit(MAX_CANON_SHOTS);
+      const { data: canonShots } = await supabaseAdmin
+        .from('character_shots')
+        .select('image_url')
+        .eq('character_id', characterId)
+        .eq('is_canon', true)
+        .order('similarity_score', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false })
+        .limit(MAX_CANON_SHOTS);
 
-    for (const shot of canonShots || []) {
-      if (shot.image_url) identityRefs.push(shot.image_url);
+      for (const shot of canonShots || []) {
+        if (shot.image_url) {
+          try {
+            const check = await fetch(shot.image_url, { method: 'HEAD' });
+            if (check.ok) {
+              identityRefs.push(shot.image_url);
+            } else {
+              console.warn(`[generate] Atlanan bozuk kanon görseli (${check.status}): ${shot.image_url}`);
+            }
+          } catch (e) {
+            console.warn(`[generate] Kanon görseli erişilemez durumda: ${shot.image_url}`);
+          }
+        }
+      }
+
+      if (identityRefs.length === 0) {
+        return NextResponse.json(
+          { error: 'Karakter kimliği için geçerli bir kanon fotoğraf bulunamadı. Galerideki bozuk fotoğrafları (çarpı işareti olanları) silip yeniden yükleyin.' },
+          { status: 400 }
+        );
+      }
     }
 
     const imageUrls = [...identityRefs, ...sceneRefUrls];
 
     /* 3 — Nihai prompt: kilitli kimlik + sahne + gardırop + stil + boşluk + roller + negatifler. */
     const finalPrompt = [
-      character.identityPrompt,
+      loraTrigger + character.identityPrompt,
       scene,
       character.wardrobePrompt,
       STYLE_PROMPT,
       textSpaceInstruction(textSpace),
-      referenceRoleInstruction(identityRefs.length, sceneRefUrls.length),
+      useLora ? null : referenceRoleInstruction(identityRefs.length, sceneRefUrls.length),
       buildNegativePrompt(body.allowSceneText === true),
     ]
       .filter(Boolean)
       .join('\n\n');
 
-    const model = process.env.CHARACTER_IMAGE_MODEL || DEFAULT_IMAGE_MODEL;
+    const model = useLora 
+      ? 'fal-ai/flux-lora' 
+      : (process.env.CHARACTER_IMAGE_MODEL || DEFAULT_IMAGE_MODEL);
 
+    // fal-ai modelleri (ör. PuLID) image_urls alanındaki tüm resimlerde yüz arar.
+    // Eğer sahne referansı (yüz içermeyen bir laptop ekranı vb.) gönderirsek 
+    // model "Could not generate images" hatası vererek çöker.
+    // Bu yüzden sadece identityRefs'leri image_urls olarak gönderiyoruz.
+    // LoRA aktifse identityRefs boştur.
     const result = await generateCharacterImage({
       model,
       prompt: finalPrompt,
@@ -155,6 +186,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
       resolution,
       numImages,
       seed: typeof body.seed === 'number' ? body.seed : undefined,
+      loraUrl,
     });
 
     /* 4 — fal'ın geçici URL'lerini kendi storage'ımıza taşı; galeri kalıcı olmalı. */

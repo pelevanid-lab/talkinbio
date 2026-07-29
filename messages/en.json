@@ -119,24 +119,24 @@
       "beiweTab": "Beiwe Creative",
       "saule": {
         "kuafor": {
-          "title": "Hair & Beauty Salon",
-          "desc": "Create an appointment system in seconds and win clients directly from social media with your portfolio page."
+          "title": "Automated Booking System",
+          "desc": "At hair & beauty salons, create an appointment system in seconds and win clients directly from social media with your portfolio page."
         },
         "spa": {
-          "title": "Massage Spa",
-          "desc": "Don't miss calls during busy hours; let your assistant schedule appointments and give prices for you."
+          "title": "Instant Replies During Busy Hours",
+          "desc": "Don't miss calls during your spa's busiest hours; let your assistant schedule appointments and give prices for you."
         },
         "antrenor": {
-          "title": "Personal Trainer",
-          "desc": "A smart assistant that instantly sends diet lists and workout programs to your students, and answers their questions."
+          "title": "Instant Plans & Answers",
+          "desc": "For personal trainers: a smart assistant that instantly sends diet lists and workout programs to your students, and answers their questions."
         },
         "diyet": {
-          "title": "Diet & Wellness",
-          "desc": "Let Saule instantly answer hundreds of wellness questions by extracting knowledge from your past posts and page."
+          "title": "Smart Answers From Your Past Content",
+          "desc": "On diet & wellness pages, let Saule instantly answer hundreds of questions by pulling knowledge from your past posts and page."
         },
         "tattoo": {
-          "title": "Tattoo Studio",
-          "desc": "Your AI assistant that answers customers' questions, recommends the right artist, and schedules appointments."
+          "title": "Personalized Routing & Recommendations",
+          "desc": "Your AI assistant for tattoo studios that answers customer questions, recommends the right artist, and books appointments."
         }
       },
       "beiwe": {

@@ -3,50 +3,71 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
+  Captions,
   Download,
+  ImageIcon,
   Loader2,
   Music,
   Pause,
   Play,
   Save,
+  Sparkles,
+  Timer,
   Trash2,
   Type,
   Upload,
+  Video,
 } from 'lucide-react';
-import type { CharacterMotion } from '@/config/characters';
+import type { CharacterClip } from '@/config/clips';
 import { OVERLAY_FONTS, type OverlayFont } from '@/config/characters';
 import {
+  MAX_CAPTIONS,
   MAX_CUTAWAYS,
   MAX_OVERLAYS,
   MAX_OVERLAY_TEXT_LENGTH,
   MAX_PROJECT_NAME_LENGTH,
+  MAX_COUNTDOWN_STEPS,
+  MAX_ZOOMS,
+  MIN_COUNTDOWN_STEPS,
   STUDIO_ASPECT_RATIOS,
+  DEFAULT_COUNTDOWN,
+  DEFAULT_COUNTDOWN_DURATION,
   DEFAULT_TIMELINE,
   studioAspectPreset,
   type StudioAsset,
   type StudioAssetKind,
+  type StudioCaption,
+  type StudioCountdown,
   type StudioCutaway,
   type StudioFit,
   type StudioImageOverlay,
   type StudioProject,
   type StudioTextOverlay,
   type StudioTimeline,
+  type StudioVideoOverlay,
+  type StudioZoom,
+  parseStudioTimeline,
 } from '@/config/studio';
+import { countdownPlan, scheduleCountdownBeeps } from '@/utils/countdown';
 import { downloadBlob } from '@/utils/imageOverlay';
+import { PLATFORM_TARGET_LUFS, loudnessNormalizationGain, measureIntegratedLoudness } from '@/utils/loudness';
 import {
   collectStudioImageUrls,
+  collectStudioVideoOverlayUrls,
   drawFrame,
   exportFileExtension,
+  exportHasIncompatibleAudio,
   exportTimeline,
   pickExportMimeType,
   preloadStudioImages,
+  syncVideoOverlays,
 } from '@/utils/studioRenderer';
 
-type Selection = { type: 'cutaway' | 'overlay'; id: string } | null;
+type Selection = { type: 'cutaway' | 'overlay' | 'zoom'; id: string } | null;
 
 type Props = {
   characterId: string;
-  motion: CharacterMotion;
+  motion: CharacterClip;
   project: StudioProject | null;
   assets: StudioAsset[];
   onAssetUploaded: (asset: StudioAsset) => void;
@@ -66,7 +87,13 @@ export default function StudioEditor({
   onProjectSaved,
   onBack,
 }: Props) {
-  const [timeline, setTimeline] = useState<StudioTimeline>(project?.timeline ?? DEFAULT_TIMELINE);
+  // `project.timeline` DB'den ham (doğrulanmamış) geliyor — bu proje daha ÖNCEKİ bir şemayla
+  // (ör. zoom/altyazı/videoVolume alanları eklenmeden önce) kaydedilmiş olabilir. `parseStudioTimeline`
+  // eksik alanları makul varsayılanlara tamamlıyor, yoksa `timeline.captions.find(...)` gibi bir
+  // erişim eski bir projede undefined üzerinde patlar.
+  const [timeline, setTimeline] = useState<StudioTimeline>(
+    () => (project?.timeline && parseStudioTimeline(project.timeline)) || DEFAULT_TIMELINE,
+  );
   const [projectId, setProjectId] = useState<string | null>(project?.id ?? null);
   const [projectName, setProjectName] = useState(project?.name ?? 'Adsız proje');
 
@@ -78,13 +105,36 @@ export default function StudioEditor({
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [exportProgress, setExportProgress] = useState(0);
+  // Export'un iki aşaması var: önce ses gürlüğü ölçülür (ilerleme yüzdesi anlamsız, birkaç
+  // saniye), sonra gerçek zamanlı kayıt başlar. Kullanıcı ilk aşamada "%0'da takıldı"
+  // sanmasın diye buton metni ayrışıyor.
+  const [exportStage, setExportStage] = useState<'measuring' | 'recording'>('recording');
   const [error, setError] = useState<string | null>(null);
+  const [transcribing, setTranscribing] = useState(false);
+  const [enhancingAudio, setEnhancingAudio] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const musicAudioRef = useRef<HTMLAudioElement>(null);
+  const enhancedAudioRef = useRef<HTMLAudioElement>(null);
   const rafRef = useRef<number | null>(null);
+  // Export ilerleme çubuğu ve buton yüzdesi — BİLEREK React state DEĞİL. Önceki turda
+  // setExportProgress'i 150ms'de bire kısmıştık ama her tetiklendiğinde YİNE koca editör
+  // ağacını (canvas + 360px'lik tüm kontrol paneli) yeniden render ediyordu; ölçülen export
+  // dosyasında tam o periyotla (~150-300ms'de bir) 90-116ms'lik kare donmaları çıktı —
+  // reconciliation'ın kendisi darboğazdı, sıklığı değil. Burada DOM'a doğrudan yazıyoruz,
+  // React hiç araya girmiyor.
+  const progressFillRef = useRef<HTMLDivElement>(null);
+  const progressLabelRef = useRef<HTMLSpanElement>(null);
+  // Önizleme biplerinin AudioContext'i — export'unkinden AYRI ve yalnızca osilatör çalıyor.
+  // Export'taki bağlam `createMediaElementSource` ile video elementini de grafiğe alıyor;
+  // burada ona hiç dokunmuyoruz, çünkü bir medya elementi kalıcı olarak tek bir grafiğe
+  // bağlanır — önizleme uğruna bağlasaydık export'un ses yönlendirmesini bozardık.
+  const previewAudioCtxRef = useRef<AudioContext | null>(null);
+  const cancelBeepsRef = useRef<(() => void) | null>(null);
+  // Ölçülen LUFS kaynak+kırpma aralığı başına önbelleklenir — aynı projeyi ikinci kez dışa
+  // aktarırken sesi yeniden indirip çözmek gereksiz (ölçüm deterministik).
+  const loudnessCacheRef = useRef<Map<string, number>>(new Map());
 
   // rAF döngüsü ve export uzun ömürlü callback'ler — her render'da yeniden kurulmadıkları
   // için `timeline`/`imageCache`'i doğrudan closure'dan değil ref'ten okuyorlar, yoksa
@@ -100,10 +150,46 @@ export default function StudioEditor({
     imageCacheRef.current = imageCache;
   }, [imageCache]);
 
+  // Video-overlay'lerin canlı <video> elementleri — imageCache'in aksine React state'te
+  // TUTULMUYOR (video elementini state'e koymak gereksiz re-render tetikler); bunun yerine
+  // aşağıda hidden <video> olarak render edilip ref callback'iyle bu Map'e yazılıyorlar.
+  // SADECE redraw/tick/export gibi render-DIŞI (effect/handler/rAF) kod bu ref'i okuyabilir —
+  // render sırasında `.current` okumak React'in kurallarına aykırı (bkz. react-hooks/refs).
+  // İnteraktif kutunun en-boy oranı gibi RENDER'da lazım olan bilgi için ayrıca
+  // `videoOverlayAspects` state'i tutuluyor, metadata yüklenince güncelleniyor.
+  const videoOverlayElsRef = useRef<Map<string, HTMLVideoElement>>(new Map());
+  const [videoOverlayAspects, setVideoOverlayAspects] = useState<Map<string, number>>(new Map());
+  const videoOverlayUrls = collectStudioVideoOverlayUrls(timeline);
+
   const preset = studioAspectPreset(timeline.aspectRatio);
   const effectiveDuration = Math.max(0, (timeline.trim.end || videoDuration) - timeline.trim.start);
 
   const updateTimeline = (patch: Partial<StudioTimeline>) => setTimeline((prev) => ({ ...prev, ...patch }));
+
+  /** Önizleme bipleri için AudioContext'i ilk ihtiyaçta açar (kullanıcı etkileşimi öncesi açmak tarayıcı tarafından engelleniyor). */
+  const ensurePreviewAudioContext = (): AudioContext | null => {
+    if (previewAudioCtxRef.current) return previewAudioCtxRef.current;
+    const Ctor =
+      window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctor) return null;
+    previewAudioCtxRef.current = new Ctor();
+    return previewAudioCtxRef.current;
+  };
+
+  useEffect(() => {
+    return () => {
+      cancelBeepsRef.current?.();
+      previewAudioCtxRef.current?.close().catch(() => {});
+    };
+  }, []);
+
+  /** Intro'nun geri sayım ayarlarını kısmi günceller — geri sayım yoksa hiçbir şey yapmaz. */
+  const updateCountdown = (patch: Partial<StudioCountdown>) =>
+    setTimeline((prev) =>
+      prev.intro?.countdown
+        ? { ...prev, intro: { ...prev.intro, countdown: { ...prev.intro.countdown, ...patch } } }
+        : prev,
+    );
 
   // --- Görsel önbellek: cutaway/overlay'lerin referans ettiği görseller önceden yüklenir ---
   // Bağımlılık `timeline`'ın tamamı değil, sadece görsel URL'lerinin İÇERİK anahtarı —
@@ -127,7 +213,15 @@ export default function StudioEditor({
     if (!canvas || !video) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    drawFrame({ ctx, timeline: timelineRef.current, time, video, assets: imageCacheRef.current });
+    syncVideoOverlays(timelineRef.current.overlays, time, !video.paused, videoOverlayElsRef.current);
+    drawFrame({
+      ctx,
+      timeline: timelineRef.current,
+      time,
+      video,
+      assets: imageCacheRef.current,
+      videoOverlays: videoOverlayElsRef.current,
+    });
   };
 
   // Format değişince canvas'ın piksel boyutu değişir — mevcut kareyi hemen yeniden çiz,
@@ -140,6 +234,28 @@ export default function StudioEditor({
     redraw(currentTime);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preset.width, preset.height]);
+
+  // Duraklatılmışken bir alan elle düzenlenince (ör. zoom hedefi, cutaway fit'i, overlay
+  // opaklığı) canvas'ı hemen yeniden çiz — yoksa değişiklik ancak play/scrub tetiklenince
+  // görünür olur, bu da özellikle zoom hedefini konumlarken kafa karıştırıcı olurdu.
+  useEffect(() => {
+    if (!playing) redraw(currentTime);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeline]);
+
+  // `enhancedAudioUrl` varsa anlatım ONDAN çalınır — orijinal video sesi hem hoparlörde
+  // duyulmasın hem Web Audio grafiğine (export) karışmasın diye `muted` yapılıyor
+  // (studioRenderer.exportTimeline de aynı bayrağa göre hangi kaynağı kaydedeceğine karar veriyor).
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.muted = !!timeline.enhancedAudioUrl;
+  }, [timeline.enhancedAudioUrl]);
+
+  // Anlatım ses seviyesi — aktif kaynak orijinal video mu yoksa iyileştirilmiş ses mi
+  // olduğuna bakılmaksızın ikisine de uygulanıyor (sadece biri gerçekten duyulur/kaydedilir).
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.volume = timeline.videoVolume;
+    if (enhancedAudioRef.current) enhancedAudioRef.current.volume = timeline.videoVolume;
+  }, [timeline.videoVolume]);
 
   const stopLoop = () => {
     if (rafRef.current !== null) {
@@ -159,9 +275,16 @@ export default function StudioEditor({
     if (video.currentTime >= sourceEnd || video.ended) {
       video.pause();
       musicAudioRef.current?.pause();
+      enhancedAudioRef.current?.pause();
       setPlaying(false);
       rafRef.current = null;
       return;
+    }
+    // İyileştirilmiş ses videoyla BAĞIMSIZ oynuyor (ayrı <audio> elementi) — uzun
+    // oynatmada birikebilecek kaymayı burada da düzeltiyoruz (export'taki tick() ile aynı mantık).
+    const enhancedEl = enhancedAudioRef.current;
+    if (tl.enhancedAudioUrl && enhancedEl && Math.abs(enhancedEl.currentTime - video.currentTime) > 0.15) {
+      enhancedEl.currentTime = video.currentTime;
     }
     const t = video.currentTime - tl.trim.start;
     redraw(t);
@@ -176,6 +299,9 @@ export default function StudioEditor({
     if (playing) {
       video.pause();
       musicAudioRef.current?.pause();
+      enhancedAudioRef.current?.pause();
+      cancelBeepsRef.current?.();
+      cancelBeepsRef.current = null;
       setPlaying(false);
       stopLoop();
       return;
@@ -190,7 +316,34 @@ export default function StudioEditor({
       musicAudioRef.current.volume = timeline.music?.volume ?? 0.5;
       musicAudioRef.current.play().catch(() => {});
     }
+    if (timeline.enhancedAudioUrl && enhancedAudioRef.current) {
+      enhancedAudioRef.current.currentTime = video.currentTime;
+      enhancedAudioRef.current.play().catch(() => {});
+    }
     await video.play();
+
+    // Geri sayım bipleri önizlemede de duyulmalı — yoksa kullanıcı ritmi ancak export'tan
+    // sonra duyar. Ses grafiği export'takiyle aynı `scheduleCountdownBeeps`'ten geliyor;
+    // buradaki tek fark, oynatma intro'nun ortasından başlatılabildiği için geçmiş biplerin
+    // atlanması (`fromTime`).
+    const countdown = timeline.intro?.countdown;
+    if (countdown?.sound) {
+      const elapsed = video.currentTime - timeline.trim.start;
+      if (elapsed < timeline.intro!.duration) {
+        const audioCtx = ensurePreviewAudioContext();
+        if (audioCtx) {
+          await audioCtx.resume().catch(() => {});
+          cancelBeepsRef.current = scheduleCountdownBeeps(
+            audioCtx,
+            audioCtx.destination,
+            countdownPlan(timeline.intro!.duration, countdown.steps),
+            audioCtx.currentTime,
+            Math.max(0, elapsed),
+          );
+        }
+      }
+    }
+
     rafRef.current = requestAnimationFrame(loop);
   };
 
@@ -200,12 +353,18 @@ export default function StudioEditor({
     if (playing) {
       video.pause();
       musicAudioRef.current?.pause();
+      enhancedAudioRef.current?.pause();
+      // Zamanlanmış bipler AudioContext saatinde ilerliyor; scrub ile görüntü kaydığında
+      // iptal edilmezlerse yanlış noktada duyulurlardı.
+      cancelBeepsRef.current?.();
+      cancelBeepsRef.current = null;
       setPlaying(false);
       stopLoop();
     }
     const target = timeline.trim.start + timelineTime;
     const onSeeked = () => {
       video.removeEventListener('seeked', onSeeked);
+      if (enhancedAudioRef.current) enhancedAudioRef.current.currentTime = target;
       redraw(timelineTime);
       setCurrentTime(timelineTime);
     };
@@ -225,7 +384,40 @@ export default function StudioEditor({
     video.currentTime = timeline.trim.start;
   };
 
-  // --- Cutaway / Overlay / Müzik düzenleme yardımcıları ---
+  // --- Cutaway / Overlay / Zoom / Müzik düzenleme yardımcıları ---
+
+  const addZoom = () => {
+    if (timeline.zooms.length >= MAX_ZOOMS) {
+      setError(`En fazla ${MAX_ZOOMS} zoom eklenebilir.`);
+      return;
+    }
+    const start = currentTime;
+    const end = Math.min(effectiveDuration || start + 4, start + 4);
+    const item: StudioZoom = {
+      id: crypto.randomUUID(),
+      startTime: start,
+      endTime: end,
+      x: 50,
+      y: 50,
+      scale: 1.6,
+      transition: 0.4,
+    };
+    updateTimeline({ zooms: [...timeline.zooms, item] });
+    setSelected({ type: 'zoom', id: item.id });
+  };
+
+  const updateZoom = (id: string, patch: Partial<StudioZoom>) =>
+    updateTimeline({ zooms: timeline.zooms.map((z) => (z.id === id ? { ...z, ...patch } : z)) });
+
+  const removeZoom = (id: string) => {
+    updateTimeline({ zooms: timeline.zooms.filter((z) => z.id !== id) });
+    if (selected?.type === 'zoom' && selected.id === id) setSelected(null);
+  };
+
+  // Whisper marka/uydurma kelimeleri (ör. "talkinbio") bilmediği en yakın gerçek kelimeye
+  // ("Tolkien") yuvarlayabiliyor — metni elle düzeltebilmek gerekiyor.
+  const updateCaption = (id: string, patch: Partial<StudioCaption>) =>
+    updateTimeline({ captions: timeline.captions.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
 
   const addCutaway = (assetUrl: string) => {
     if (timeline.cutaways.length >= MAX_CUTAWAYS) {
@@ -257,6 +449,28 @@ export default function StudioEditor({
     const item: StudioImageOverlay = {
       id: crypto.randomUUID(),
       kind: 'image',
+      assetUrl,
+      startTime: start,
+      endTime: end,
+      x: 62,
+      y: 6,
+      width: 28,
+      opacity: 1,
+    };
+    updateTimeline({ overlays: [...timeline.overlays, item] });
+    setSelected({ type: 'overlay', id: item.id });
+  };
+
+  const addVideoOverlay = (assetUrl: string) => {
+    if (timeline.overlays.length >= MAX_OVERLAYS) {
+      setError(`En fazla ${MAX_OVERLAYS} overlay eklenebilir.`);
+      return;
+    }
+    const start = currentTime;
+    const end = Math.min(effectiveDuration || start + 4, start + 4);
+    const item: StudioVideoOverlay = {
+      id: crypto.randomUUID(),
+      kind: 'video',
       assetUrl,
       startTime: start,
       endTime: end,
@@ -305,6 +519,11 @@ export default function StudioEditor({
       overlays: timeline.overlays.map((o) => (o.id === id && o.kind === 'image' ? { ...o, ...patch } : o)),
     });
 
+  const updateVideoOverlay = (id: string, patch: Partial<StudioVideoOverlay>) =>
+    updateTimeline({
+      overlays: timeline.overlays.map((o) => (o.id === id && o.kind === 'video' ? { ...o, ...patch } : o)),
+    });
+
   const updateTextOverlay = (id: string, patch: Partial<StudioTextOverlay>) =>
     updateTimeline({
       overlays: timeline.overlays.map((o) => (o.id === id && o.kind === 'text' ? { ...o, ...patch } : o)),
@@ -338,6 +557,67 @@ export default function StudioEditor({
     }
   };
 
+  // --- Ses iyileştirme / karaoke altyazı (fal.ai) ---
+
+  const enhanceMotionAudio = async () => {
+    setEnhancingAudio(true);
+    setError(null);
+    try {
+      // Harici yüklenen klip'lerin ayrı bir audio_url'i yok — video_url'e düşüyoruz
+      // (fal-ai/elevenlabs/audio-isolation ikisini de kabul ediyor).
+      const res = await fetch(`/api/admin/characters/${characterId}/studio/enhance-audio`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          motion.audio_url ? { audioUrl: motion.audio_url } : { videoUrl: motion.video_url },
+        ),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Ses iyileştirilemedi.');
+      updateTimeline({ enhancedAudioUrl: data.audioUrl });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ses iyileştirilemedi.');
+    } finally {
+      setEnhancingAudio(false);
+    }
+  };
+
+  const transcribeCaptions = async () => {
+    setTranscribing(true);
+    setError(null);
+    try {
+      // whisper'ın audio_url alanı mp4'ü doğrudan kabul ediyor — harici yüklenen klip'lerin
+      // ayrı bir audio_url'i olmadığında video_url'e düşüyoruz.
+      const res = await fetch(`/api/admin/characters/${characterId}/studio/transcribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audioUrl: motion.audio_url || motion.video_url }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Altyazı çıkarılamadı.');
+
+      // Whisper zaman damgaları orijinal (kırpılmamış) sesin başından itibaren — geri kalan
+      // her şeyle AYNI koordinat sistemine (0 = trim.start) geçiriyoruz ki drawFrame'in
+      // `time >= c.startTime` karşılaştırması diğer öğelerle tutarlı kalsın.
+      const words = data.words as { text: string; start: number; end: number }[];
+      const captions: StudioCaption[] = words
+        .map((w) => ({
+          id: crypto.randomUUID(),
+          text: w.text,
+          startTime: w.start - timeline.trim.start,
+          endTime: w.end - timeline.trim.start,
+        }))
+        .filter((c) => c.endTime > 0)
+        .slice(0, MAX_CAPTIONS);
+
+      updateTimeline({ captions });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Altyazı çıkarılamadı.');
+    } finally {
+      setTranscribing(false);
+    }
+  };
+
   const saveProject = async () => {
     setSaving(true);
     setError(null);
@@ -366,9 +646,13 @@ export default function StudioEditor({
   const exportHint = (() => {
     const mt = pickExportMimeType();
     if (!mt) return 'Bu tarayıcı video kaydını desteklemeyebilir — Chrome ya da Edge dene.';
-    return mt.startsWith('video/mp4')
-      ? null
-      : 'Bu tarayıcı MP4 yerine WebM üretecek — Instagram’a yüklemeden önce dönüştürmen gerekebilir.';
+    if (!mt.startsWith('video/mp4')) {
+      return 'Bu tarayıcı MP4 yerine WebM üretecek — Instagram’a yüklemeden önce dönüştürmen gerekebilir.';
+    }
+    if (exportHasIncompatibleAudio(mt)) {
+      return 'Bu tarayıcı MP4 kabına AAC yerine Opus ses koyuyor — Instagram’da ses çalmayabilir. Yükledikten sonra sesi kontrol et.';
+    }
+    return null;
   })();
 
   const handleExport = async () => {
@@ -379,21 +663,58 @@ export default function StudioEditor({
     if (playing) {
       video.pause();
       musicAudioRef.current?.pause();
+      cancelBeepsRef.current?.();
+      cancelBeepsRef.current = null;
       setPlaying(false);
       stopLoop();
     }
 
     setExporting(true);
-    setExportProgress(0);
+    if (progressFillRef.current) progressFillRef.current.style.width = '0%';
+    setExportStage('measuring');
     setError(null);
     try {
+      // Instagram yüklenen videoyu ~-14 LUFS'a normalize ediyor; ham Motion çıktısı ~-22 LUFS
+      // civarında olduğu için aradaki farkı platform kendi yükseltiyor ve oda gürültüsünü de
+      // beraberinde kaldırıyor. Aynı yükseltmeyi burada, temiz kaynak üzerinde yapıyoruz.
+      // Müzik varsa hedef 1 LU aşağı çekiliyor: miks üstüne binen müzik yatağı toplam gürlüğü
+      // zaten yukarı taşır, aksi hâlde hedefi aşıp limitleyiciyi sürekli çalıştırırdık.
+      const narrationUrl = timeline.enhancedAudioUrl || motion.video_url;
+      const trimEnd = timeline.trim.end || video.duration;
+      const cacheKey = `${narrationUrl}|${timeline.trim.start}|${trimEnd}`;
+      let measuredLufs = loudnessCacheRef.current.get(cacheKey) ?? null;
+      if (measuredLufs === null) {
+        measuredLufs = await measureIntegratedLoudness(narrationUrl, timeline.trim.start, trimEnd);
+        if (measuredLufs !== null) loudnessCacheRef.current.set(cacheKey, measuredLufs);
+      }
+      // Ölçülemediyse (kodek/CORS/sessiz kaynak) sese hiç dokunulmuyor — yanlış tahminle
+      // yükseltmektense olduğu gibi bırakmak güvenli.
+      const targetLufs = timeline.music ? PLATFORM_TARGET_LUFS - 1 : PLATFORM_TARGET_LUFS;
+      const loudnessGain = measuredLufs === null ? 1 : loudnessNormalizationGain(measuredLufs, targetLufs);
+
+      setExportStage('recording');
+
+      // Export gerçek zamanlı çalışıyor (bkz. exportTimeline) — onProgress her rAF karesinde
+      // (30-60/sn) çağrılıyor. Önceki turda bunu setState'e (150ms throttle ile) bağlamıştık;
+      // ÖLÇÜM gösterdi ki throttle'lı bile olsa her tetiklenişinde koca editör ağacını (canvas
+      // + 360px'lik tüm kontrol paneli) yeniden render ettiriyordu ve o reconciliation'ın
+      // kendisi 50-100ms sürüyordu — kayıt döngüsüyle TAM o periyotta (150-300ms'de bir)
+      // çakışıp exported videoda ölçülen kare donmalarına yol açtı. Bu sefer React'a hiç
+      // uğramıyoruz: DOM'a doğrudan yazıyoruz (bkz. progressFillRef/progressLabelRef).
       const result = await exportTimeline({
         timeline,
         video,
         canvas,
         assets: imageCache,
+        videoOverlays: videoOverlayElsRef.current,
         musicAudio: musicAudioRef.current || undefined,
-        onProgress: setExportProgress,
+        enhancedAudio: enhancedAudioRef.current || undefined,
+        loudnessGain,
+        onProgress: (fraction) => {
+          const pct = Math.round(Math.min(1, fraction) * 100);
+          if (progressFillRef.current) progressFillRef.current.style.width = `${pct}%`;
+          if (progressLabelRef.current) progressLabelRef.current.textContent = `Dışa aktarılıyor… %${pct}`;
+        },
       });
       const ext = exportFileExtension(result.mimeType);
       downloadBlob(result.blob, `${characterId}-${Date.now()}.${ext}`);
@@ -448,11 +769,11 @@ export default function StudioEditor({
         {/* Sol: önizleme + transport + zaman şeridi + export */}
         <div className="space-y-3 min-w-0">
           <div className="relative bg-black rounded-xl overflow-hidden flex items-center justify-center h-[560px]">
-            <div 
+            <div
               className="relative max-w-full max-h-full"
-              style={{ 
-                aspectRatio: `${preset.width}/${preset.height}`, 
-                width: preset.width >= preset.height ? '100%' : 'auto', 
+              style={{
+                aspectRatio: `${preset.width}/${preset.height}`,
+                width: preset.width >= preset.height ? '100%' : 'auto',
                 height: preset.height > preset.width ? '100%' : 'auto',
                 containerType: 'size'
               }}
@@ -470,19 +791,22 @@ export default function StudioEditor({
                 onSelect={setSelected}
                 updateOverlayCommon={updateOverlayCommon}
                 updateImageOverlay={updateImageOverlay}
+                updateVideoOverlay={updateVideoOverlay}
                 updateTextOverlay={updateTextOverlay}
+                updateZoom={updateZoom}
                 imageCache={imageCache}
+                videoOverlayAspects={videoOverlayAspects}
                 onDropAsset={(url, kind, x, y) => {
                   const start = currentTime;
-                  const end = Math.min(effectiveDuration || start + 3, start + 3);
-                  if (kind === 'image') {
+                  const end = Math.min(effectiveDuration || start + (kind === 'video' ? 4 : 3), start + (kind === 'video' ? 4 : 3));
+                  if (kind === 'image' || kind === 'video') {
                     if (timeline.overlays.length >= MAX_OVERLAYS) {
                       setError(`En fazla ${MAX_OVERLAYS} overlay eklenebilir.`);
                       return;
                     }
-                    const item: StudioImageOverlay = {
+                    const item: StudioImageOverlay | StudioVideoOverlay = {
                       id: crypto.randomUUID(),
-                      kind: 'image',
+                      kind,
                       assetUrl: url,
                       startTime: start,
                       endTime: end,
@@ -506,6 +830,38 @@ export default function StudioEditor({
                 onLoadedMetadata={handleLoadedMetadata}
               />
               {timeline.music && <audio ref={musicAudioRef} src={timeline.music.assetUrl} className="hidden" />}
+              {timeline.enhancedAudioUrl && (
+                <audio
+                  ref={enhancedAudioRef}
+                  src={timeline.enhancedAudioUrl}
+                  crossOrigin="anonymous"
+                  className="hidden"
+                />
+              )}
+              {videoOverlayUrls.map((url) => (
+                <video
+                  key={url}
+                  ref={(el) => {
+                    if (el) videoOverlayElsRef.current.set(url, el);
+                    else videoOverlayElsRef.current.delete(url);
+                  }}
+                  src={url}
+                  crossOrigin="anonymous"
+                  muted
+                  playsInline
+                  preload="auto"
+                  onLoadedMetadata={(e) => {
+                    const el = e.currentTarget;
+                    const aspect = (el.videoWidth || 16) / (el.videoHeight || 9);
+                    setVideoOverlayAspects((prev) => new Map(prev).set(url, aspect));
+                  }}
+                  // `display:none` (Tailwind `hidden`) VERİLMEZ: bazı tarayıcılar display:none
+                  // <video>'nun kare decode'unu durdurur/kısar, canvas'a çizilecek kare hiç
+                  // gelmez. Ana kaynak videoyla AYNI numara: layout'ta gerçek (1px) yer kaplayan
+                  // ama görünmez bir eleman — decode canlı kalıyor.
+                  className="absolute w-px h-px opacity-0 pointer-events-none"
+                />
+              ))}
               {timeline.aspectRatio === '9:16' && (
                 <>
                   <div className="absolute inset-x-0 top-[14%] border-t border-dashed border-amber-400/70 pointer-events-none" />
@@ -546,12 +902,12 @@ export default function StudioEditor({
           />
 
           <div className="pt-2 border-t border-slate-200 space-y-2">
-            {exporting && (
+            {exporting && exportStage === 'recording' && (
               <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                <div
-                  className="bg-blue-600 h-full transition-all"
-                  style={{ width: `${Math.round(exportProgress * 100)}%` }}
-                />
+                {/* Genişlik export tick döngüsünden DOĞRUDAN DOM'a yazılıyor (bkz. handleExport) —
+                    React state'e bağlarsak her karede koca editör ağacını yeniden render ettirip
+                    tam da ölçtüğümüz kare donmalarına geri dönerdik. */}
+                <div ref={progressFillRef} className="bg-blue-600 h-full transition-all" style={{ width: '0%' }} />
               </div>
             )}
             {exportHint && <p className="text-xs text-amber-700">{exportHint}</p>}
@@ -561,7 +917,13 @@ export default function StudioEditor({
               className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
             >
               {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              {exporting ? `Dışa aktarılıyor… %${Math.round(exportProgress * 100)}` : 'Dışa Aktar'}
+              {!exporting ? (
+                'Dışa Aktar'
+              ) : exportStage === 'measuring' ? (
+                'Ses seviyesi ölçülüyor…'
+              ) : (
+                <span ref={progressLabelRef}>Dışa aktarılıyor… %0</span>
+              )}
             </button>
             <p className="text-xs text-slate-400 text-center">
               Gerçek zamanlı kaydediliyor — {effectiveDuration.toFixed(0)} sn&apos;lik video ≈{' '}
@@ -618,7 +980,24 @@ export default function StudioEditor({
                 {timeline.intro ? (
                   <div className="rounded-lg border border-slate-200 p-2 space-y-2">
                     <div className="flex justify-between items-start">
-                      <img src={timeline.intro.assetUrl} alt="" className="w-10 h-10 rounded object-cover" />
+                      {timeline.intro.assetUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={timeline.intro.assetUrl} alt="" className="w-10 h-10 rounded object-cover" />
+                      ) : (
+                        // Görselsiz geri sayım intro'su — küçük önizleme olarak noktaları gösteriyoruz.
+                        <div
+                          className="w-10 h-10 rounded flex items-center justify-center gap-0.5 border border-slate-200"
+                          style={{ backgroundColor: timeline.intro.countdown?.background ?? '#F2EFE6' }}
+                        >
+                          {Array.from({ length: timeline.intro.countdown?.steps ?? 3 }).map((_, i) => (
+                            <span
+                              key={i}
+                              className="w-1 h-1 rounded-full"
+                              style={{ backgroundColor: timeline.intro!.countdown?.color ?? '#14231F' }}
+                            />
+                          ))}
+                        </div>
+                      )}
                       <button onClick={() => updateTimeline({ intro: null })} className="p-1 text-slate-400 hover:text-red-600">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -626,26 +1005,45 @@ export default function StudioEditor({
                     <div>
                       <NumberField label="Süre(sn)" value={timeline.intro.duration} onChange={(v) => updateTimeline({ intro: { ...timeline.intro!, duration: Math.max(0.1, v) } })} compact />
                     </div>
-                    <div className="flex gap-1">
-                      {(['cover', 'contain'] as StudioFit[]).map((fit) => (
-                        <button
-                          key={fit}
-                          onClick={() => updateTimeline({ intro: { ...timeline.intro!, fit } })}
-                          className={`text-[11px] px-2 py-0.5 rounded-full border ${timeline.intro!.fit === fit ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-300 text-slate-500'}`}
-                        >
-                          {fit === 'cover' ? 'Kırp' : 'Sığdır'}
-                        </button>
-                      ))}
-                    </div>
+                    {timeline.intro.assetUrl && (
+                      <div className="flex gap-1">
+                        {(['cover', 'contain'] as StudioFit[]).map((fit) => (
+                          <button
+                            key={fit}
+                            onClick={() => updateTimeline({ intro: { ...timeline.intro!, fit } })}
+                            className={`text-[11px] px-2 py-0.5 rounded-full border ${timeline.intro!.fit === fit ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-300 text-slate-500'}`}
+                          >
+                            {fit === 'cover' ? 'Kırp' : 'Sığdır'}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <AssetPicker
-                    kind="image"
-                    assets={assets}
-                    uploading={uploading}
-                    onUpload={(f) => uploadAsset(f, 'image').then((a) => a && updateTimeline({ intro: { assetUrl: a.url, duration: 2, fit: 'cover' } }))}
-                    onPick={(a) => updateTimeline({ intro: { assetUrl: a.url, duration: 2, fit: 'cover' } })}
-                  />
+                  <div className="space-y-2">
+                    <AssetPicker
+                      kind="image"
+                      assets={assets}
+                      uploading={uploading}
+                      onUpload={(f) => uploadAsset(f, 'image').then((a) => a && updateTimeline({ intro: { assetUrl: a.url, duration: 2, fit: 'cover', countdown: null } }))}
+                      onPick={(a) => updateTimeline({ intro: { assetUrl: a.url, duration: 2, fit: 'cover', countdown: null } })}
+                    />
+                    <button
+                      onClick={() =>
+                        updateTimeline({
+                          intro: {
+                            assetUrl: null,
+                            duration: DEFAULT_COUNTDOWN_DURATION,
+                            fit: 'cover',
+                            countdown: DEFAULT_COUNTDOWN,
+                          },
+                        })
+                      }
+                      className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 py-1.5 text-[11px] font-medium text-slate-600 hover:border-slate-900 hover:text-slate-900"
+                    >
+                      <Timer className="w-3.5 h-3.5" /> Geri sayım
+                    </button>
+                  </div>
                 )}
               </div>
               <div className="space-y-2">
@@ -653,7 +1051,8 @@ export default function StudioEditor({
                 {timeline.outro ? (
                   <div className="rounded-lg border border-slate-200 p-2 space-y-2">
                     <div className="flex justify-between items-start">
-                      <img src={timeline.outro.assetUrl} alt="" className="w-10 h-10 rounded object-cover" />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={timeline.outro.assetUrl ?? undefined} alt="" className="w-10 h-10 rounded object-cover" />
                       <button onClick={() => updateTimeline({ outro: null })} className="p-1 text-slate-400 hover:text-red-600">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -678,12 +1077,74 @@ export default function StudioEditor({
                     kind="image"
                     assets={assets}
                     uploading={uploading}
-                    onUpload={(f) => uploadAsset(f, 'image').then((a) => a && updateTimeline({ outro: { assetUrl: a.url, duration: 2, fit: 'cover' } }))}
-                    onPick={(a) => updateTimeline({ outro: { assetUrl: a.url, duration: 2, fit: 'cover' } })}
+                    onUpload={(f) => uploadAsset(f, 'image').then((a) => a && updateTimeline({ outro: { assetUrl: a.url, duration: 2, fit: 'cover', countdown: null } }))}
+                    onPick={(a) => updateTimeline({ outro: { assetUrl: a.url, duration: 2, fit: 'cover', countdown: null } })}
                   />
                 )}
               </div>
             </div>
+
+            {/* Geri sayım ayarları tam genişlikte: intro hücresi (2 sütunun biri) bu kadar
+                kontrolü taşıyamayacak kadar dar. */}
+            {timeline.intro?.countdown && (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2.5 mb-6">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-slate-700">
+                  <Timer className="w-3.5 h-3.5" /> Geri sayım
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <NumberField
+                    label="Nokta"
+                    value={timeline.intro.countdown.steps}
+                    step={1}
+                    min={MIN_COUNTDOWN_STEPS}
+                    onChange={(v) => updateCountdown({ steps: Math.round(Math.min(MAX_COUNTDOWN_STEPS, Math.max(MIN_COUNTDOWN_STEPS, v))) })}
+                    compact
+                  />
+                  <label className="text-[11px] text-slate-500 flex items-center gap-1">
+                    Nokta rengi
+                    <input
+                      type="color"
+                      value={timeline.intro.countdown.color}
+                      onChange={(e) => updateCountdown({ color: e.target.value })}
+                      className="w-7 h-7 rounded border border-slate-300 bg-white"
+                    />
+                  </label>
+                  {!timeline.intro.assetUrl && (
+                    <label className="text-[11px] text-slate-500 flex items-center gap-1">
+                      Zemin
+                      <input
+                        type="color"
+                        value={timeline.intro.countdown.background}
+                        onChange={(e) => updateCountdown({ background: e.target.value })}
+                        className="w-7 h-7 rounded border border-slate-300 bg-white"
+                      />
+                    </label>
+                  )}
+                  <div className="flex gap-1">
+                    {(['drain', 'fill'] as const).map((direction) => (
+                      <button
+                        key={direction}
+                        onClick={() => updateCountdown({ direction })}
+                        className={`text-[11px] px-2 py-1 rounded-full border ${timeline.intro!.countdown!.direction === direction ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-300 text-slate-500'}`}
+                      >
+                        {direction === 'drain' ? 'Sönerek' : 'Yanarak'}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => updateCountdown({ sound: !timeline.intro!.countdown!.sound })}
+                    className={`text-[11px] px-2 py-1 rounded-full border ${timeline.intro.countdown.sound ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-300 text-slate-500'}`}
+                  >
+                    {timeline.intro.countdown.sound ? 'Bip sesi açık' : 'Bip sesi kapalı'}
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Vuruşlar {(timeline.intro.duration / (timeline.intro.countdown.steps + 1)).toFixed(2)} sn arayla; sonuncudan sonra uzun
+                  &quot;yayın&quot; bipi çalar. Intro sesi kesmediği için geri sayım konuşmanın ÜSTÜNE biner — süreyi
+                  konuşmaya başlamadan önceki sessizliğe göre ayarla.
+                </p>
+              </div>
+            )}
 
             <div className="flex items-baseline justify-between mb-1.5">
               <h3 className="text-sm font-semibold text-slate-900">Cutaway&apos;ler</h3>
@@ -740,12 +1201,64 @@ export default function StudioEditor({
 
           <div>
             <div className="flex items-baseline justify-between mb-1.5">
+              <h3 className="text-sm font-semibold text-slate-900">Zoom (kamera yakınlaştırma)</h3>
+              <span className="text-xs text-slate-400">
+                {timeline.zooms.length}/{MAX_ZOOMS}
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mb-2">
+              Bu aralıkta tüm kare (video + üstündeki overlay) hedef noktaya doğru büyür — ör. el trackpad&apos;e
+              değince ekrana yaklaşmak için. Oynatma başlığındaki ana eklenir. Eklendikten (ya da bir zoom satırına
+              tıklandıktan) sonra önizlemede yeşil kare belirir — onu ekranın üzerine sürükle ya da önizlemeye
+              tıkla, X%/Y%&apos;yi elle girmene gerek yok.
+            </p>
+            <button
+              onClick={addZoom}
+              disabled={timeline.zooms.length >= MAX_ZOOMS}
+              className="text-xs font-medium rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-slate-500 hover:border-slate-400 disabled:opacity-50"
+            >
+              + Zoom ekle
+            </button>
+            <div className="mt-3 space-y-2">
+              {timeline.zooms.map((z) => (
+                <div
+                  key={z.id}
+                  onClick={() => setSelected({ type: 'zoom', id: z.id })}
+                  className={`rounded-lg border p-2 cursor-pointer ${
+                    selected?.id === z.id ? 'border-blue-400 bg-blue-50' : 'border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 flex flex-wrap gap-x-3 gap-y-1">
+                      <NumberField label="Başl." value={z.startTime} onChange={(v) => updateZoom(z.id, { startTime: v })} compact />
+                      <NumberField label="Bit." value={z.endTime} onChange={(v) => updateZoom(z.id, { endTime: v })} compact />
+                    </div>
+                    <button onClick={() => removeZoom(z.id)} className="p-1.5 text-slate-400 hover:text-red-600 shrink-0">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+                    <NumberField label="Hedef X%" value={z.x} min={0} step={1} onChange={(v) => updateZoom(z.id, { x: clampPct(v) })} compact />
+                    <NumberField label="Hedef Y%" value={z.y} min={0} step={1} onChange={(v) => updateZoom(z.id, { y: clampPct(v) })} compact />
+                    <NumberField label="Ölçek" value={z.scale} min={1} step={0.1} onChange={(v) => updateZoom(z.id, { scale: Math.max(1, Math.min(4, v)) })} compact />
+                    <NumberField label="Geçiş(sn)" value={z.transition} min={0} step={0.1} onChange={(v) => updateZoom(z.id, { transition: Math.max(0, Math.min(3, v)) })} compact />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-baseline justify-between mb-1.5">
               <h3 className="text-sm font-semibold text-slate-900">Overlay&apos;ler</h3>
               <span className="text-xs text-slate-400">
                 {timeline.overlays.length}/{MAX_OVERLAYS}
               </span>
             </div>
-            <p className="text-xs text-slate-400 mb-2">Videonun üstüne biner — logo, ikinci görsel ya da metin.</p>
+            <p className="text-xs text-slate-400 mb-2">
+              Videonun üstüne biner — logo, ikinci görsel/video ya da metin. Ekrana monte edilecek görüntü için video
+              yükle, konumunu ekranın üzerine sürükle ve zaman aralığını (ör. elin trackpad&apos;e değdiği ~4 sn) ayarla.
+            </p>
             <div className="flex items-center gap-2">
               <AssetPicker
                 kind="image"
@@ -753,6 +1266,13 @@ export default function StudioEditor({
                 uploading={uploading}
                 onUpload={(f) => uploadAsset(f, 'image').then((a) => a && addImageOverlay(a.url))}
                 onPick={(a) => addImageOverlay(a.url)}
+              />
+              <AssetPicker
+                kind="video"
+                assets={assets}
+                uploading={uploading}
+                onUpload={(f) => uploadAsset(f, 'video').then((a) => a && addVideoOverlay(a.url))}
+                onPick={(a) => addVideoOverlay(a.url)}
               />
               <button
                 onClick={addTextOverlay}
@@ -773,7 +1293,7 @@ export default function StudioEditor({
                 >
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
-                      {o.kind === 'image' ? 'GÖRSEL' : 'METİN'}
+                      {o.kind === 'image' ? 'GÖRSEL' : o.kind === 'video' ? 'VİDEO' : 'METİN'}
                     </span>
                     <div className="flex-1" />
                     <button onClick={() => removeOverlay(o.id)} className="p-1 text-slate-400 hover:text-red-600">
@@ -784,6 +1304,10 @@ export default function StudioEditor({
                   {o.kind === 'image' && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={o.assetUrl} alt="" className="w-10 h-10 rounded object-cover mb-1.5" />
+                  )}
+
+                  {o.kind === 'video' && (
+                    <video src={o.assetUrl} muted className="w-10 h-10 rounded object-cover mb-1.5" />
                   )}
 
                   {o.kind === 'text' && (
@@ -807,6 +1331,16 @@ export default function StudioEditor({
                         min={5}
                         step={1}
                         onChange={(v) => updateImageOverlay(o.id, { width: clampPct(v) })}
+                        compact
+                      />
+                    )}
+                    {o.kind === 'video' && (
+                      <NumberField
+                        label="Genişlik%"
+                        value={o.width}
+                        min={5}
+                        step={1}
+                        onChange={(v) => updateVideoOverlay(o.id, { width: clampPct(v) })}
                         compact
                       />
                     )}
@@ -858,6 +1392,45 @@ export default function StudioEditor({
           </div>
 
           <div>
+            <h3 className="text-sm font-semibold text-slate-900 mb-2">Anlatım Sesi</h3>
+            <label className="flex items-center gap-2 text-xs text-slate-500 mb-3">
+              Ses seviyesi
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={timeline.videoVolume}
+                onChange={(e) => updateTimeline({ videoVolume: Number(e.target.value) })}
+                className="flex-1"
+              />
+            </label>
+            {timeline.enhancedAudioUrl ? (
+              <div className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                <span className="text-xs text-emerald-700 font-medium flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                  Ses iyileştirildi
+                </span>
+                <button
+                  onClick={() => updateTimeline({ enhancedAudioUrl: null })}
+                  className="text-xs text-slate-500 hover:text-red-600 shrink-0"
+                >
+                  Geri al
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={enhanceMotionAudio}
+                disabled={enhancingAudio}
+                className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs font-medium text-slate-600 hover:border-slate-400 disabled:opacity-50"
+              >
+                {enhancingAudio ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                {enhancingAudio ? 'İyileştiriliyor…' : 'Sesi iyileştir (gürültü temizle)'}
+              </button>
+            )}
+          </div>
+
+          <div>
             <h3 className="text-sm font-semibold text-slate-900 mb-2">Müzik</h3>
             {timeline.music ? (
               <div className="rounded-lg border border-slate-200 p-2 space-y-2">
@@ -893,6 +1466,113 @@ export default function StudioEditor({
                 }
                 onPick={(a) => updateTimeline({ music: { assetUrl: a.url, volume: 0.5 } })}
               />
+            )}
+          </div>
+
+          <div>
+            <div className="flex items-baseline justify-between mb-1.5">
+              <h3 className="text-sm font-semibold text-slate-900">Altyazı (karaoke)</h3>
+              {timeline.captions.length > 0 && (
+                <span className="text-xs text-slate-400">{timeline.captions.length} kelime</span>
+              )}
+            </div>
+            <p className="text-xs text-slate-400 mb-2">
+              Sesi otomatik yazıya döker, tek tek kelimeleri ekrana vurgulu şekilde (TikTok/Reels tarzı) düşürür.
+            </p>
+            <div className="flex items-center gap-2 mb-3">
+              <button
+                onClick={transcribeCaptions}
+                disabled={transcribing}
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs font-medium text-slate-600 hover:border-slate-400 disabled:opacity-50"
+              >
+                {transcribing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Captions className="w-3.5 h-3.5" />}
+                {transcribing
+                  ? 'Çıkarılıyor…'
+                  : timeline.captions.length > 0
+                    ? 'Yeniden oluştur'
+                    : 'Altyazıları oluştur'}
+              </button>
+              {timeline.captions.length > 0 && (
+                <button
+                  onClick={() => updateTimeline({ captions: [] })}
+                  className="p-2 text-slate-400 hover:text-red-600 shrink-0"
+                  title="Altyazıları temizle"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {timeline.captions.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
+                  <NumberField
+                    label="X%"
+                    value={timeline.captionStyle.x}
+                    min={0}
+                    step={1}
+                    onChange={(v) => updateTimeline({ captionStyle: { ...timeline.captionStyle, x: clampPct(v) } })}
+                    compact
+                  />
+                  <NumberField
+                    label="Y%"
+                    value={timeline.captionStyle.y}
+                    min={0}
+                    step={1}
+                    onChange={(v) => updateTimeline({ captionStyle: { ...timeline.captionStyle, y: clampPct(v) } })}
+                    compact
+                  />
+                  <NumberField
+                    label="Punto%"
+                    value={timeline.captionStyle.fontSize}
+                    min={1}
+                    step={0.5}
+                    onChange={(v) => updateTimeline({ captionStyle: { ...timeline.captionStyle, fontSize: v } })}
+                    compact
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={timeline.captionStyle.font}
+                    onChange={(e) =>
+                      updateTimeline({ captionStyle: { ...timeline.captionStyle, font: e.target.value as OverlayFont } })
+                    }
+                    className="rounded border border-slate-300 px-1.5 py-1 text-xs"
+                  >
+                    {OVERLAY_FONTS.map((f) => (
+                      <option key={f.value} value={f.value}>
+                        {f.label}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="color"
+                    value={timeline.captionStyle.color}
+                    onChange={(e) => updateTimeline({ captionStyle: { ...timeline.captionStyle, color: e.target.value } })}
+                    className="w-7 h-7 rounded border border-slate-300 bg-white"
+                  />
+                </div>
+
+                <details className="pt-1">
+                  <summary className="text-xs text-slate-500 cursor-pointer select-none hover:text-slate-700">
+                    Kelimeleri düzenle
+                  </summary>
+                  <div className="mt-2 max-h-56 overflow-y-auto space-y-1 pr-1">
+                    {timeline.captions.map((c) => (
+                      <div key={c.id} className="flex items-center gap-2">
+                        <span className="text-[10px] text-slate-400 w-9 shrink-0 tabular-nums text-right">
+                          {c.startTime.toFixed(1)}s
+                        </span>
+                        <input
+                          value={c.text}
+                          onChange={(e) => updateCaption(c.id, { text: e.target.value })}
+                          className="flex-1 rounded border border-slate-300 px-1.5 py-0.5 text-xs"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              </div>
             )}
           </div>
 
@@ -957,6 +1637,11 @@ function AssetPicker({
   const inputRef = useRef<HTMLInputElement>(null);
   const filtered = assets.filter((a) => a.kind === kind);
   const accept = kind === 'image' ? 'image/*' : kind === 'audio' ? 'audio/*' : 'video/*';
+  // Görsel/video yükleme butonları aynı boş-durum ikonuna sahip olmasın diye (ikisi de
+  // sadece "Upload" oku gösteriyordu, hangisinin hangisi olduğu belli olmuyordu) tür bazlı
+  // ikon + tooltip kullanılıyor.
+  const KindIcon = kind === 'image' ? ImageIcon : kind === 'video' ? Video : Music;
+  const kindLabel = kind === 'image' ? 'Görsel yükle' : kind === 'video' ? 'Video yükle' : 'Ses yükle';
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -975,6 +1660,8 @@ function AssetPicker({
           {kind === 'image' ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={asset.url} alt="" className="w-full h-full object-cover" />
+          ) : kind === 'video' ? (
+            <video src={asset.url} muted className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
               <Music className="w-5 h-5" />
@@ -985,9 +1672,17 @@ function AssetPicker({
       <button
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
-        className="w-14 h-14 rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-slate-400 hover:border-slate-400 disabled:opacity-50 shrink-0"
+        title={kindLabel}
+        className="relative w-14 h-14 rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-slate-400 hover:border-slate-400 disabled:opacity-50 shrink-0"
       >
-        {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+        {uploading ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <>
+            <KindIcon className="w-5 h-5" />
+            <Upload className="w-2.5 h-2.5 absolute bottom-1 right-1 bg-white rounded-full ring-1 ring-slate-200 p-0.5 text-slate-400" />
+          </>
+        )}
       </button>
       <input
         ref={inputRef}
@@ -1036,6 +1731,29 @@ function TimelineStrip({
           title="Outro" 
         />
       )}
+      {timeline.zooms.map((z) => (
+        <button
+          key={z.id}
+          onClick={() => onSelect({ type: 'zoom', id: z.id })}
+          className={`absolute inset-y-0 border-x ${
+            selected?.id === z.id ? 'bg-emerald-400/40 border-emerald-600' : 'bg-emerald-400/20 border-emerald-500/50'
+          }`}
+          style={{ left: pct(z.startTime), width: `calc(${pct(z.endTime)} - ${pct(z.startTime)})` }}
+          title="Zoom"
+        />
+      ))}
+      {timeline.captions.length > 0 && (
+        // Yüzlerce kelimeyi tek tek çizmek yerine (DOM şişirir, tek tek seçilebilir de
+        // değiller — stil tek bir yerden yönetiliyor) TEK bir kapsama şeridi gösteriliyor.
+        <div
+          className="absolute top-1 bottom-1 rounded bg-sky-400/25 border border-sky-400/50"
+          style={{
+            left: pct(timeline.captions[0].startTime),
+            width: `calc(${pct(timeline.captions[timeline.captions.length - 1].endTime)} - ${pct(timeline.captions[0].startTime)})`,
+          }}
+          title={`Altyazı (${timeline.captions.length} kelime)`}
+        />
+      )}
       {timeline.cutaways.map((c) => (
         <button
           key={c.id}
@@ -1051,7 +1769,7 @@ function TimelineStrip({
           onClick={() => onSelect({ type: 'overlay', id: o.id })}
           className={`absolute bottom-0.5 h-3.5 rounded ${selected?.id === o.id ? 'bg-purple-600' : 'bg-purple-300'}`}
           style={{ left: pct(o.startTime), width: `calc(${pct(o.endTime)} - ${pct(o.startTime)})` }}
-          title={o.kind === 'image' ? 'Görsel overlay' : 'Metin overlay'}
+          title={o.kind === 'image' ? 'Görsel overlay' : o.kind === 'video' ? 'Video overlay' : 'Metin overlay'}
         />
       ))}
       <div className="absolute top-0 bottom-0 w-px bg-slate-900" style={{ left: pct(currentTime) }} />
@@ -1066,9 +1784,12 @@ function InteractiveOverlayLayer({
   onSelect,
   updateOverlayCommon,
   updateImageOverlay,
+  updateVideoOverlay,
   updateTextOverlay,
+  updateZoom,
   onDropAsset,
   imageCache,
+  videoOverlayAspects,
 }: {
   timeline: StudioTimeline;
   currentTime: number;
@@ -1076,9 +1797,12 @@ function InteractiveOverlayLayer({
   onSelect: (s: Selection) => void;
   updateOverlayCommon: (id: string, patch: any) => void;
   updateImageOverlay: (id: string, patch: any) => void;
+  updateVideoOverlay: (id: string, patch: any) => void;
   updateTextOverlay: (id: string, patch: any) => void;
+  updateZoom: (id: string, patch: Partial<StudioZoom>) => void;
   onDropAsset: (url: string, kind: string, x: number, y: number) => void;
   imageCache: Map<string, HTMLImageElement>;
+  videoOverlayAspects: Map<string, number>;
 }) {
   const layerRef = useRef<HTMLDivElement>(null);
 
@@ -1101,6 +1825,9 @@ function InteractiveOverlayLayer({
   };
 
   const activeOverlays = timeline.overlays.filter((o) => currentTime >= o.startTime && currentTime < o.endTime);
+  // Zoom hedefi, overlay'lerin aksine SADECE aktifse değil seçiliyken her zaman gösterilir —
+  // kullanıcı hangi zamanda olursa olsun hedefi görüp konumlandırabilsin diye.
+  const selectedZoom = selected?.type === 'zoom' ? timeline.zooms.find((z) => z.id === selected.id) : undefined;
 
   return (
     <div
@@ -1109,7 +1836,15 @@ function InteractiveOverlayLayer({
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       onClick={(e) => {
-        if (e.target === layerRef.current) onSelect(null);
+        if (e.target !== layerRef.current) return;
+        if (selectedZoom) {
+          const rect = layerRef.current.getBoundingClientRect();
+          const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+          const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+          updateZoom(selectedZoom.id, { x, y });
+          return;
+        }
+        onSelect(null);
       }}
     >
       {activeOverlays.map((o) => (
@@ -1120,11 +1855,74 @@ function InteractiveOverlayLayer({
           onSelect={() => onSelect({ type: 'overlay', id: o.id })}
           updateCommon={(patch: any) => updateOverlayCommon(o.id, patch)}
           updateImage={(patch: any) => updateImageOverlay(o.id, patch)}
+          updateVideo={(patch: any) => updateVideoOverlay(o.id, patch)}
           updateText={(patch: any) => updateTextOverlay(o.id, patch)}
           containerRef={layerRef}
           imageCache={imageCache}
+          videoOverlayAspects={videoOverlayAspects}
         />
       ))}
+      {selectedZoom && (
+        <ZoomTargetMarker
+          zoom={selectedZoom}
+          containerRef={layerRef}
+          onDrag={(x, y) => updateZoom(selectedZoom.id, { x, y })}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Zoom'un yakınlaşacağı noktayı önizlemede gösterir ve sürüklenebilir yapar — kare, mevcut
+ * `scale` ile zoom yapıldığında ekranda kalacak alanı (100/scale %) önizler, böylece
+ * kullanıcı ekranın sınırlarına göre hedefi gözle ayarlayabiliyor (bkz. ekran görüntüsündeki
+ * elle çizilmiş daire — bu bileşen aynı ihtiyacı sürükle-bırak ile karşılıyor).
+ */
+function ZoomTargetMarker({
+  zoom,
+  containerRef,
+  onDrag,
+}: {
+  zoom: StudioZoom;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  onDrag: (x: number, y: number) => void;
+}) {
+  const boxSize = Math.min(90, 100 / zoom.scale);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    const container = containerRef.current;
+    if (!container) return;
+
+    const move = (moveEvent: PointerEvent) => {
+      const rect = container.getBoundingClientRect();
+      const x = Math.max(0, Math.min(100, ((moveEvent.clientX - rect.left) / rect.width) * 100));
+      const y = Math.max(0, Math.min(100, ((moveEvent.clientY - rect.top) / rect.height) * 100));
+      onDrag(x, y);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <div
+      className="absolute border-2 border-emerald-400 bg-emerald-400/10 cursor-move flex items-center justify-center"
+      style={{
+        left: `${zoom.x}%`,
+        top: `${zoom.y}%`,
+        width: `${boxSize}%`,
+        height: `${boxSize}%`,
+        transform: 'translate(-50%, -50%)',
+      }}
+      onPointerDown={handlePointerDown}
+      title="Yakınlaşma hedefi — sürükle ya da önizlemeye tıkla"
+    >
+      <div className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-white shadow" />
     </div>
   );
 }
@@ -1135,18 +1933,22 @@ function InteractiveOverlayItem({
   onSelect,
   updateCommon,
   updateImage,
+  updateVideo,
   updateText,
   containerRef,
   imageCache,
+  videoOverlayAspects,
 }: {
-  overlay: StudioImageOverlay | StudioTextOverlay;
+  overlay: StudioImageOverlay | StudioTextOverlay | StudioVideoOverlay;
   isSelected: boolean;
   onSelect: () => void;
   updateCommon: (patch: any) => void;
   updateImage: (patch: any) => void;
+  updateVideo: (patch: any) => void;
   updateText: (patch: any) => void;
   containerRef: React.RefObject<HTMLDivElement | null>;
   imageCache: Map<string, HTMLImageElement>;
+  videoOverlayAspects: Map<string, number>;
 }) {
   const handlePointerDown = (e: React.PointerEvent) => {
     e.stopPropagation();
@@ -1182,7 +1984,7 @@ function InteractiveOverlayItem({
     e.stopPropagation();
     const startX = e.clientX;
     const startY = e.clientY;
-    const startWidth = overlay.kind === 'image' ? overlay.width : overlay.fontSize;
+    const startWidth = overlay.kind === 'text' ? overlay.fontSize : overlay.width;
     const container = containerRef.current;
     if (!container) return;
 
@@ -1191,6 +1993,9 @@ function InteractiveOverlayItem({
       if (overlay.kind === 'image') {
         const dx = ((moveEvent.clientX - startX) / rect.width) * 100;
         updateImage({ width: Math.max(5, Math.min(100, startWidth + dx)) });
+      } else if (overlay.kind === 'video') {
+        const dx = ((moveEvent.clientX - startX) / rect.width) * 100;
+        updateVideo({ width: Math.max(5, Math.min(100, startWidth + dx)) });
       } else {
         const dy = ((moveEvent.clientY - startY) / rect.height) * 100;
         updateText({ fontSize: Math.max(1, Math.min(100, startWidth + dy)) });
@@ -1206,22 +2011,14 @@ function InteractiveOverlayItem({
     window.addEventListener('pointerup', onPointerUp);
   };
 
-  // For images, we try to compute height so the bounding box perfectly matches
-  let boxHeight = 'auto';
-  if (overlay.kind === 'image') {
-    const img = imageCache.get(overlay.assetUrl);
-    if (img) {
-      const imgAspect = (img.naturalWidth || 1) / (img.naturalHeight || 1);
-      // Box width is overlay.width% of container width.
-      // Box height% = Box width% / imgAspect * (containerAspect / 1). 
-      // Actually it's easier to let CSS do it if we use aspect-ratio!
-      boxHeight = 'auto'; // we will use aspect-ratio inline style
-    }
-  }
-
-  const imgAspect = overlay.kind === 'image' && imageCache.get(overlay.assetUrl)
-    ? (imageCache.get(overlay.assetUrl)!.naturalWidth || 1) / (imageCache.get(overlay.assetUrl)!.naturalHeight || 1)
-    : undefined;
+  // Görsel/video overlay'lerin sınır kutusu, medyanın kendi en-boy oranını kullanır (CSS
+  // aspect-ratio ile) — böylece sürükle-boyutlandır kutusu gerçek çizilen alanla eşleşir.
+  const imgAspect =
+    overlay.kind === 'image' && imageCache.get(overlay.assetUrl)
+      ? (imageCache.get(overlay.assetUrl)!.naturalWidth || 1) / (imageCache.get(overlay.assetUrl)!.naturalHeight || 1)
+      : overlay.kind === 'video'
+        ? videoOverlayAspects.get(overlay.assetUrl) ?? 16 / 9 // metadata henüz yüklenmediyse makul bir varsayılan
+        : undefined;
 
   return (
     <div
@@ -1231,7 +2028,7 @@ function InteractiveOverlayItem({
       style={{
         left: `${overlay.x}%`,
         top: `${overlay.y}%`,
-        width: overlay.kind === 'image' ? `${overlay.width}%` : 'auto',
+        width: overlay.kind === 'image' || overlay.kind === 'video' ? `${overlay.width}%` : 'auto',
         aspectRatio: imgAspect ? `${imgAspect}` : undefined,
         padding: overlay.kind === 'text' ? '2px' : '0',
         transform: 'translate(0, 0)',

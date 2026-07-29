@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
   Brain,
@@ -29,15 +30,17 @@ import {
   type AspectRatio,
   type CharacterDefinition,
   type CharacterShot,
-  type CharacterMotion,
   type Resolution,
   type ScenePreset,
 } from '@/config/characters';
+import type { CharacterClip } from '@/config/clips';
 import CharacterOverlayEditor from '@/components/CharacterOverlayEditor';
 import StagingSection from '@/components/StagingSection';
-import MotionSection from '@/components/MotionSection';
+import PodcastRoom from '@/components/rooms/PodcastRoom';
 import StudioSection from '@/components/StudioSection';
 import VideoExtractor from '@/components/VideoExtractor';
+import InstagramImporter from '@/components/InstagramImporter';
+import VoiceStudio from '@/components/VoiceStudio';
 
 const PRESET_GROUPS: ScenePreset['group'][] = ['Kadraj', 'Ortam', 'Aksiyon'];
 const LORA_TRAINING_THRESHOLD = 15; // >=8 puanlı bu kadar kare → LoRA butonu aktif
@@ -210,12 +213,13 @@ function StepSection({
 type Props = {
   character: CharacterDefinition;
   initialShots: CharacterShot[];
-  initialMotions: CharacterMotion[];
+  initialClips: CharacterClip[];
 };
 
-export default function CharacterRoomClient({ character, initialShots, initialMotions }: Props) {
+export default function CharacterRoomClient({ character, initialShots, initialClips }: Props) {
+  const router = useRouter();
   const [shots, setShots] = useState<CharacterShot[]>(initialShots);
-  const [motions, setMotions] = useState<CharacterMotion[]>(initialMotions);
+  const [clips, setClips] = useState<CharacterClip[]>(initialClips);
   const [presetIds, setPresetIds] = useState<string[]>([]);
   const [intent, setIntent] = useState('');
   const [rawPrompt, setRawPrompt] = useState('');
@@ -232,10 +236,16 @@ export default function CharacterRoomClient({ character, initialShots, initialMo
   const [busyShotId, setBusyShotId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [overlayShot, setOverlayShot] = useState<CharacterShot | null>(null);
+  
+  // Yeni Onboarding Akışı State'leri
+  const [onboardingGenerating, setOnboardingGenerating] = useState(false);
+  const [onboardingTwin, setOnboardingTwin] = useState<CharacterShot | null>(null);
   const [analyzingIdentity, setAnalyzingIdentity] = useState(false);
   const [isRetraining, setIsRetraining] = useState(false);
+  const [showInstagramImporter, setShowInstagramImporter] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const canonInputRef = useRef<HTMLInputElement>(null);
 
   /* Derived state */
   const selectedPresets = useMemo(
@@ -247,16 +257,26 @@ export default function CharacterRoomClient({ character, initialShots, initialMo
   const highScoreShots = useMemo(() => shots.filter((s) => (s.similarity_score ?? 0) >= 8), [shots]);
   const effectiveAspect = aspectRatio || selectedPresets.find((p) => p.aspectRatio)?.aspectRatio || '4:5';
 
-  /* Step logic */
-  const twinDone = canonShots.length > 0 || !!character.referenceFile;
+  const isPreset = character.id === 'saule' || character.id === 'beiwe';
+  const hasCanonShot = isPreset || canonShots.length > 0;
   const hasStagedShots = shots.some((s) => !s.is_canon && s.created_at);
+  const hasSuccessfulTwin = shots.some((s) => (s.similarity_score ?? 0) >= 9);
   const loraReady = highScoreShots.length >= LORA_TRAINING_THRESHOLD;
   
-  // En az 3 kanon karesi (veya video ile otomatik 3 kare) olana kadar onboarding sürer
+  // Hiç kanon (referans) yüklenmediyse onboarding (kamera+dosya) başlar
   // Veya kullanıcı manuel "yeniden eğit" dediyse.
-  const needsOnboarding = canonShots.length < 3 || isRetraining;
+  const needsOnboarding = !hasCanonShot || isRetraining;
 
-  const activeStep = needsOnboarding ? 0 : (!twinDone ? 0 : !hasStagedShots ? 1 : 2);
+  let activeStep = 0;
+  if (needsOnboarding) {
+    activeStep = 0;
+  } else if (!hasSuccessfulTwin) {
+    activeStep = 0;
+  } else if (clips.length === 0) {
+    activeStep = 1;
+  } else {
+    activeStep = 2;
+  }
 
   /* Handlers */
   const handlePresetToggle = (preset: ScenePreset) => {
@@ -377,17 +397,24 @@ export default function CharacterRoomClient({ character, initialShots, initialMo
         // Revert on error
         setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, similarity_score: shot.similarity_score } : s)));
         console.error('Puan kaydedilemedi:', data.error);
+      } else {
+        // Puan kaydedildikten sonra, eğer bu <9 bir puansa ve kullanıcının henüz hiç başarılı (>9) bir sahnesi yoksa
+        // Demek ki yüklediği referans fotoğraf işe yaramadı. Baştan referans istemeliyiz.
+        if (score < 9 && highScoreShots.length === 0) {
+          setIsRetraining(true);
+          alert('Bu referans fotoğrafla iyi sonuç alınamıyor gibi görünüyor. Lütfen farklı veya daha net bir fotoğraf yükleyip tekrar deneyin.');
+        }
       }
     } catch {
       setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, similarity_score: shot.similarity_score } : s)));
     }
-  }, []);
+  }, [highScoreShots.length, shots]);
 
   const handleOnboardingExtracted = async (files: File[]) => {
     setAnalyzingIdentity(true);
     setError(null);
     try {
-      // 1. Resimleri yükle
+      // 1. Resmi yükle
       const uploadedUrls: string[] = [];
       for (const file of files) {
         const formData = new FormData();
@@ -398,16 +425,15 @@ export default function CharacterRoomClient({ character, initialShots, initialMo
         uploadedUrls.push(data.url);
       }
 
-      // 2. Gemini ile analiz et ve profili oluştur
-      const analyzeRes = await fetch('/api/admin/characters/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ characterId: character.id, imageUrls: uploadedUrls }),
-      });
-      const analyzeData = await analyzeRes.json();
-      if (!analyzeRes.ok) throw new Error(analyzeData.error || 'Analiz edilemedi.');
+      if (uploadedUrls.length > 0) {
+        await fetch(`/api/admin/characters/${character.id}/profile`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reference_image_url: uploadedUrls[0] }),
+        });
+      }
 
-      // 3. Yüklenenleri canon olarak kaydet
+      // 2. Yükleneni canon olarak kaydet
       const newShots: CharacterShot[] = [];
       for (const url of uploadedUrls) {
         const shotRes = await fetch('/api/admin/characters/shots', {
@@ -418,11 +444,47 @@ export default function CharacterRoomClient({ character, initialShots, initialMo
         const shotData = await shotRes.json();
         if (shotRes.ok && shotData.shot) newShots.push(shotData.shot);
       }
-      
       setShots((prev) => [...newShots, ...prev]);
+      
+      // Onboarding tamamlandı, kullanıcı doğrudan Sahne Üret (Stüdyo) adımına geçer.
       setIsRetraining(false);
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kurulum sırasında hata oluştu.');
+    } finally {
+      setAnalyzingIdentity(false);
+    }
+  };
+
+  const handleOnboardingScore = async (score: number) => {
+    if (!onboardingTwin) return;
+    await rateSimilarity(onboardingTwin, score);
+    
+    if (score >= 9) {
+      setIsRetraining(false);
+      setOnboardingTwin(null);
+      // Son yüklenen kanon fotoğrafının da score'unu güncelle ki lora eğitimi vs. için işe yarasın.
+      const lastCanon = shots.find(s => s.is_canon);
+      if (lastCanon) rateSimilarity(lastCanon, score);
+    } else {
+      setOnboardingTwin(null); // Tekrar file upload ekranına döndürür
+    }
+  };
+
+  const clearReferenceImage = async () => {
+    if (!confirm('Referans görseli silmek istediğinize emin misiniz?')) return;
+    setAnalyzingIdentity(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/characters/${character.id}/profile`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference_image_url: null }),
+      });
+      if (!res.ok) throw new Error('Görsel silinemedi.');
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Silinemedi.');
     } finally {
       setAnalyzingIdentity(false);
     }
@@ -455,27 +517,6 @@ export default function CharacterRoomClient({ character, initialShots, initialMo
         <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-6 items-start">
           {/* Karakter kartı */}
           <div className="flex items-center gap-4">
-            {character.referenceFile ? (
-              <Image
-                src={character.referenceFile.startsWith('http') ? character.referenceFile : `/${character.referenceFile}`}
-                alt={character.name}
-                width={72}
-                height={72}
-                className="w-18 h-18 rounded-xl object-cover border border-slate-200 flex-shrink-0"
-              />
-            ) : canonShots[0] ? (
-              <Image
-                src={canonShots[0].image_url}
-                alt={character.name}
-                width={72}
-                height={72}
-                className="w-18 h-18 rounded-xl object-cover border border-slate-200 flex-shrink-0"
-              />
-            ) : (
-              <div className="w-18 h-18 rounded-xl border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center flex-shrink-0 text-slate-400 text-xs text-center p-2">
-                Fotoğraf<br/>Bekleniyor
-              </div>
-            )}
             <div>
               <h1 className="text-lg font-bold text-slate-900">{character.name}</h1>
               <p className="text-xs text-slate-500">{character.role}</p>
@@ -501,11 +542,10 @@ export default function CharacterRoomClient({ character, initialShots, initialMo
           <StepIndicator
             activeStep={activeStep}
             steps={[
-              { label: 'Twin Oluştur', icon: <span className="text-[11px]">1</span> },
-              { label: 'Sahne Üret', icon: <span className="text-[11px]">2</span> },
+              { label: 'Stüdyo', icon: <span className="text-[11px]">1</span> },
               { label: 'Ses & Klonla', icon: <Mic className="w-3.5 h-3.5" /> },
               { label: 'Video Üret', icon: <Zap className="w-3.5 h-3.5" /> },
-              { label: 'Post Production', icon: <span className="text-[11px]">5</span> },
+              { label: 'Post Production', icon: <span className="text-[11px]">4</span> },
             ]}
           />
         </div>
@@ -536,12 +576,59 @@ export default function CharacterRoomClient({ character, initialShots, initialMo
             </div>
           )}
           {!loraReady && (
-            <p className="text-[10px] text-slate-400 mt-1">
-              Galerideki karelere puan vererek LoRA eğitim verisini oluştur. ≥8 puan alan kareler eğitimde kullanılır.
-            </p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-[10px] text-slate-400">
+                Galerideki karelere puan vererek LoRA eğitim verisini oluştur. ≥8 puan alan kareler eğitimde kullanılır.
+              </p>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => canonInputRef.current?.click()}
+                  disabled={analyzingIdentity}
+                  className="text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {analyzingIdentity ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                  Cihazdan Yükle
+                </button>
+                <button 
+                  onClick={() => setShowInstagramImporter(true)}
+                  className="text-xs font-semibold text-pink-600 bg-pink-50 hover:bg-pink-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                >
+                  Instagram'dan Aktar
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>
+      
+      {/* Hidden input for Canon Photos */}
+      <input
+        ref={canonInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          const files = Array.from(e.target.files || []);
+          if (files.length > 0) handleOnboardingExtracted(files);
+        }}
+      />
+      
+      {/* Instagram Importer Modal */}
+      {showInstagramImporter && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl">
+            <InstagramImporter
+              characterId={character.id}
+              onCancel={() => setShowInstagramImporter(false)}
+              onImportComplete={(newShots) => {
+                setShots(prev => [...newShots, ...prev]);
+                setShowInstagramImporter(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* ─── ADIM 0: Onboarding ──────────────────────────────── */}
       {needsOnboarding && (
@@ -554,16 +641,19 @@ export default function CharacterRoomClient({ character, initialShots, initialMo
               İptal et
             </button>
           )}
-          <VideoExtractor onExtracted={handleOnboardingExtracted} isProcessing={analyzingIdentity} />
+
+          <div className="block">
+            <VideoExtractor onExtracted={handleOnboardingExtracted} isProcessing={analyzingIdentity} />
+          </div>
         </div>
       )}
 
-      {/* ─── ADIM 1: AI Twin Oluştur ──────────────────────────────── */}
+      {/* ─── ADIM 1: Stüdyo (Sahne Üret) ──────────────────────────────── */}
       {!needsOnboarding && (
         <StepSection
           step={1}
-          title="AI Twin Oluştur"
-          subtitle="Referans görsellerinden twin kareleri üret, puanla ve kanon olarak sabitle"
+          title="Stüdyo (Sahne Üret)"
+          subtitle="Kanon fotoğrafınızı kullanarak sahneler üretin ve puanlayın"
         >
         {/* Preset seçimi */}
         <div className="space-y-3">
@@ -839,72 +929,47 @@ export default function CharacterRoomClient({ character, initialShots, initialMo
       </StepSection>
       )}
 
-      {/* ─── ADIM 2: Sahne Üret ───────────────────────────────────── */}
+      {/* ─── ADIM 2: Ses Stüdyosu ────────────────────────── */}
       <StepSection
         step={2}
-        title="Sahne Üret — Twin'ini Yeni Ortamlarda Göster"
-        subtitle="Kanon twin'in farklı poz, kıyafet ve mekanlarla sahne görselleri"
-        locked={!twinDone}
-        lockedMsg="Önce Adım 1'de kanon kare sabitle"
+        title="Ses Stüdyosu"
+        subtitle="Referans sesinizi yükleyin ve AI Twin'inizin sesini test edin"
+        locked={!hasSuccessfulTwin}
+        lockedMsg="Önce en az 9 puanlık bir AI Twin üretin"
       >
-        <StagingSection
-          characterId={character.id}
-          canonShots={canonShots}
-          onShotAdded={(newShots) => setShots((prev) => [...newShots, ...prev])}
-        />
+        <VoiceStudio characterId={character.id} initialVoiceUrl={character.voiceUrl} />
       </StepSection>
 
-      {/* ─── ADIM 3: Ses Temizle & Klonla ────────────────────────── */}
+      {/* ─── ADIM 3: Podcast Room (performans aktarımı) ─────────── */}
       <StepSection
         step={3}
-        title="Ses Temizle & Klonla"
-        subtitle="Ses kalitesini artır, arka plan gürültüsünü temizle, sesini klonla"
-        locked={!twinDone}
-        lockedMsg="Önce Adım 1'i tamamla"
+        title="Podcast Room"
+        subtitle="Kanon twin'e kendi performansını (wan-motion) giydir"
+        locked={!hasSuccessfulTwin}
+        lockedMsg="Önce en az 9 puanlık bir AI Twin üretin"
       >
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-center space-y-2">
-          <Mic className="w-8 h-8 text-slate-300 mx-auto" />
-          <p className="text-sm font-medium text-slate-600">Ses Stüdyosu — Sprint 2</p>
-          <p className="text-xs text-slate-400">fal.ai MiniMax TTS entegrasyonu ile iki mod:</p>
-          <div className="flex gap-3 justify-center mt-2">
-            <div className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-600">
-              🎙️ <strong>Klon Kullan</strong><br />
-              <span className="text-slate-400">Ses yükle → temizle → klonla</span>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-600">
-              🔊 <strong>Temizle & Seslendir</strong><br />
-              <span className="text-slate-400">Ses yükle → temizle → standart ses</span>
-            </div>
-          </div>
-        </div>
-      </StepSection>
-
-      {/* ─── ADIM 4: Video Üret ───────────────────────────────────── */}
-      <StepSection
-        step={4}
-        title="Video Üret"
-        subtitle="Sahne görseli + ses ile konuşan video oluştur"
-        locked={!twinDone}
-        lockedMsg="Önce Adım 1'i tamamla"
-      >
-        <MotionSection
+        <PodcastRoom
           characterId={character.id}
           shots={shots}
-          motions={motions}
-          onMotionCreated={(newMotion: CharacterMotion) => setMotions((prev) => [newMotion, ...prev])}
-          onMotionDeleted={(motionId: string) => setMotions((prev) => prev.filter((m) => m.id !== motionId))}
+          clips={clips}
+          onClipCreated={(newClip: CharacterClip) => setClips((prev) => [newClip, ...prev])}
+          onClipDeleted={(clipId: string) => setClips((prev) => prev.filter((c) => c.id !== clipId))}
         />
       </StepSection>
 
-      {/* ─── ADIM 5: Post Production ──────────────────────────────── */}
+      {/* ─── ADIM 4: Post Production ───────────────────────────── */}
       <StepSection
-        step={5}
-        title="Post Production"
-        subtitle="Müzik, altyazı, cutaway, branding overlay ve export"
-        locked={motions.length === 0}
-        lockedMsg="Önce Adım 4'te video üret"
+        step={4}
+        title="Post Production & Metin Ekleme"
+        subtitle="Sahnelere şık metin katmanları, başlıklar ve logolar ekle"
+        locked={shots.length === 0}
+        lockedMsg="Önce galeride bir görsel oluştur"
       >
-        <StudioSection characterId={character.id} motions={motions} />
+        <StudioSection
+          characterId={character.id}
+          clips={clips}
+          onClipUploaded={(clip: CharacterClip) => setClips((prev) => [clip, ...prev])}
+        />
       </StepSection>
 
       {/* Overlay Editor */}

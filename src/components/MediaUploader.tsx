@@ -1,11 +1,82 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Loader2, Image as ImageIcon, FolderHeart, Play } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { compressImageIfNeeded } from '@/utils/imageCompression';
 import { isVideoUrl } from '@/utils/mediaType';
+import { useParams } from 'next/navigation';
+
+function GalleryModal({ characterId, onClose, onSelect }: { characterId: string, onClose: () => void, onSelect: (url: string) => void }) {
+  const [assets, setAssets] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/admin/characters/${characterId}/studio-asset`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) throw new Error(data.error);
+        setAssets(data.assets.filter((a: any) => a.kind === 'image' || a.kind === 'video'));
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [characterId]);
+
+  return (
+    <div className="fixed inset-0 z-[120] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-4 border-b border-slate-100">
+          <h3 className="text-lg font-bold text-slate-800">Stüdyo Koleksiyonu</h3>
+          <button type="button" onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-4 overflow-y-auto flex-1 bg-slate-50 min-h-[300px]">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-full text-slate-400">
+              <Loader2 className="w-6 h-6 animate-spin mb-2" />
+              <span className="text-sm">İçerikler yükleniyor...</span>
+            </div>
+          ) : error ? (
+            <p className="text-sm text-red-500 text-center py-8">{error}</p>
+          ) : assets.length === 0 ? (
+            <div className="text-center py-10">
+              <ImageIcon className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+              <p className="text-sm text-slate-500">Henüz hiç içerik üretilmemiş.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              {assets.map(asset => (
+                <button 
+                  key={asset.id} 
+                  type="button"
+                  onClick={() => {
+                    onSelect(asset.url);
+                    onClose();
+                  }}
+                  className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 hover:border-blue-500 hover:ring-2 hover:ring-blue-200 transition-all group bg-slate-100"
+                >
+                  {asset.kind === 'video' ? (
+                    <>
+                      <video src={asset.url} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                         <Play className="w-6 h-6 text-white drop-shadow-md opacity-75 group-hover:opacity-100" />
+                      </div>
+                    </>
+                  ) : (
+                    <img src={asset.url} alt="" className="w-full h-full object-cover" />
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface MediaUploaderProps {
   value: string;
@@ -18,10 +89,13 @@ export default function MediaUploader({ value, onChange, label, bucket = "media"
   const t = useTranslations('MediaUploader');
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
   const resolvedLabel = label ?? t('defaultLabel');
+  const params = useParams();
+  const characterId = params?.characterId as string | undefined;
 
   const handleUpload = async (file: File) => {
     try {
@@ -131,12 +205,11 @@ export default function MediaUploader({ value, onChange, label, bucket = "media"
       ) : (
         // Upload State
         <div 
-          onClick={() => !isUploading && fileInputRef.current?.click()}
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
           onDrop={onDrop}
           className={`
-            w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-colors
+            relative w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center transition-colors
             ${isDragging ? 'border-[var(--coral)] bg-[var(--coral-tint)]' : 'border-slate-300 hover:border-[var(--teal)] hover:bg-slate-50 bg-white'}
             ${isUploading ? 'opacity-75 cursor-not-allowed pointer-events-none' : ''}
           `}
@@ -147,7 +220,10 @@ export default function MediaUploader({ value, onChange, label, bucket = "media"
               <span className="text-sm font-medium">{t('uploadingLabel')}</span>
             </div>
           ) : (
-            <div className="flex flex-col items-center text-slate-500">
+            <div 
+              className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer"
+              onClick={() => fileInputRef.current?.click()}
+            >
               <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mb-2">
                 <Upload className="w-5 h-5 text-slate-400" />
               </div>
@@ -155,7 +231,30 @@ export default function MediaUploader({ value, onChange, label, bucket = "media"
               <span className="text-xs text-[var(--ink-soft)] mt-1">{t('maxSizeHint')}</span>
             </div>
           )}
+
+          {characterId && !isUploading && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsGalleryOpen(true);
+              }}
+              className="absolute bottom-2 right-2 flex items-center gap-1.5 text-xs font-medium text-[var(--teal)] bg-teal-50 px-2.5 py-1.5 rounded-md hover:bg-teal-100 z-10 shadow-sm border border-teal-100 transition-colors"
+            >
+              <FolderHeart className="w-3.5 h-3.5" />
+              Koleksiyon
+            </button>
+          )}
         </div>
+      )}
+
+      {isGalleryOpen && characterId && (
+        <GalleryModal 
+          characterId={characterId} 
+          onClose={() => setIsGalleryOpen(false)} 
+          onSelect={onChange} 
+        />
       )}
 
       {error && (

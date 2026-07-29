@@ -92,6 +92,8 @@ export interface CharacterDefinition {
   /** UI vurgusu ve metin katmanının varsayılan rengi. */
   accentColor: string;
   scenePresets: ScenePreset[];
+  /** Kullanıcının referans ses dosyası (varsa) */
+  voiceUrl?: string;
 }
 
 /* ------------------------------------------------------------------ */

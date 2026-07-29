@@ -14,9 +14,8 @@ export type StudioAssetKind = 'image' | 'video' | 'audio';
 
 /**
  * Yükleme sınırları — tür başına. `character_studio_assets.kind` check kısıtıyla eşleşir.
- * Video, v1'in zaman çizelgesi özelliklerinde (cutaway/overlay) kullanılmıyor — ikisi de
- * sadece görsel kabul ediyor — ama kütüphane ileride (ör. logo animasyonu) kullanılabilsin
- * diye genel amaçlı yükleme türü olarak duruyor.
+ * Video, cutaway'de kullanılmıyor (tam ekran görsel değişimi için görsel yeterli) ama
+ * overlay'de "ekrana monte edilen görüntü" (StudioVideoOverlay) kaynağı olarak kullanılıyor.
  */
 export const STUDIO_ASSET_LIMITS: Record<StudioAssetKind, { maxBytes: number; mimePrefix: string }> = {
   image: { maxBytes: 10 * 1024 * 1024, mimePrefix: 'image/' },
@@ -79,10 +78,58 @@ export type StudioCutaway = {
   fit: StudioFit;
 };
 
+/**
+ * "3 — 2 — 1 — yayın" geri sayımı. Noktalar CANVAS'A ÇİZİLİR (hazır bir görselin üstüne
+ * değil): her nokta kendi bipiyle aynı anda yanabilsin diye görüntü ile sesin tek bir zaman
+ * planından türemesi gerekiyor — bkz. `utils/countdown`.
+ *
+ * Sesi burada dosya olarak tutmuyoruz; osilatörle sentezleniyor. Klasik yayın sayacı bipi
+ * (1000 Hz) zaten saf bir sinüs — asset yüklemek/yönetmek, önizleme ile export'un aynı
+ * dosyayı beklemesi gibi bir yığın sorunu bedavaya getirirdi.
+ */
+export type StudioCountdown = {
+  /** Kaç nokta = kaç kısa bip (sondaki uzun "yayın" bipi buna dahil değil). */
+  steps: number;
+  /**
+   * `drain` = noktalar tek tek SÖNER (3 → 2 → 1 → yayın) — "geri sayım"ın birebir karşılığı.
+   * `fill` = noktalar tek tek YANAR (yükleniyor → başlıyoruz). İkisi de aynı bip ritmini
+   * kullanır, sadece hangi noktanın ne zaman değiştiği ters çevrilir.
+   */
+  direction: 'drain' | 'fill';
+  /** Yanmış noktanın rengi; sönük hâli aynı renkten düşük opaklıkla türetilir. */
+  color: string;
+  /** Intro'ya görsel seçilmediyse çizilen düz arka plan. */
+  background: string;
+  /** Bip sesi — kapatılırsa sadece görsel geri sayım kalır. */
+  sound: boolean;
+};
+
 export type StudioIntroOutro = {
-  assetUrl: string;
+  /** Geri sayım modunda null olabilir — o zaman `countdown.background` düz renk çizilir. */
+  assetUrl: string | null;
   duration: number; // In seconds
   fit: StudioFit;
+  /** null = düz görsel intro (eski davranış, kayıtlı projeler böyle açılır). */
+  countdown: StudioCountdown | null;
+};
+
+/**
+ * Kamera yakınlaştırma ("punch-in") — bu aralıkta TÜM kare (video + üstündeki overlay'ler)
+ * `x`/`y` merkez noktasına doğru `scale` oranında büyür, `transition` saniyede yakınlaşır/
+ * uzaklaşır, ortada sabit kalır. Ekrana monte edilen bir video overlay ile birlikte
+ * kullanıldığında ikisi birlikte büyür — kameranın ekrana yaklaştığı hissi budur.
+ */
+export type StudioZoom = {
+  id: string;
+  startTime: number;
+  endTime: number;
+  /** Yakınlaşma hedefinin merkezi, canvas yüzdesi (0-100). */
+  x: number;
+  y: number;
+  /** Büyütme çarpanı — 1 = zoom yok. */
+  scale: number;
+  /** Zoom-in/zoom-out geçiş süresi (saniye), başta ve sonda simetrik uygulanır. */
+  transition: number;
 };
 
 /** Ortak zaman/konum alanları — hem görsel hem metin overlay'i bunu taşır. */
@@ -103,6 +150,18 @@ export type StudioImageOverlay = StudioOverlayBase & {
   width: number;
 };
 
+/**
+ * Ekrana monte edilen video (ör. laptop ekranına oturan bir screen-recording) — image
+ * overlay ile aynı konumlama mantığı (x/y/width, eksene hizalı dikdörtgen), ama kaynağı
+ * video. Her zaman sessiz oynatılır: ana videonun sesiyle karışmasın diye ayrıca bir
+ * ses seviyesi/mute alanı YOK, `studioRenderer` bunu her zaman muted oynatıyor.
+ */
+export type StudioVideoOverlay = StudioOverlayBase & {
+  kind: 'video';
+  assetUrl: string;
+  width: number;
+};
+
 export type StudioTextOverlay = StudioOverlayBase & {
   kind: 'text';
   text: string;
@@ -113,12 +172,37 @@ export type StudioTextOverlay = StudioOverlayBase & {
   font: OverlayFont;
 };
 
-export type StudioOverlay = StudioImageOverlay | StudioTextOverlay;
+export type StudioOverlay = StudioImageOverlay | StudioTextOverlay | StudioVideoOverlay;
 
 export type StudioMusic = {
   assetUrl: string;
-  /** 0-1 arası kazanç; orijinal video sesi her zaman 1'de kalır, sadece müzik kısılır. */
+  /** 0-1 arası kazanç — orijinal video sesi ayrıca `StudioTimeline.videoVolume` ile ayarlanır. */
   volume: number;
+};
+
+/**
+ * Otomatik altyazının TEK bir kelimesi (fal-ai/whisper `chunk_level: "word"` çıktısından) —
+ * ekranda aynı anda tek kelime yanıp söner ("karaoke"/TikTok tarzı pop-on caption).
+ * `startTime`/`endTime` diğer zaman çizelgesi öğeleriyle AYNI koordinat sisteminde
+ * (0 = `trim.start`) — transkripsiyon sırasında whisper'ın mutlak zaman damgasından
+ * `trim.start` çıkarılarak hesaplanıyor (bkz. StudioEditor'daki transcribe akışı).
+ */
+export type StudioCaption = {
+  id: string;
+  startTime: number;
+  endTime: number;
+  text: string;
+};
+
+/** Tüm altyazı kelimelerinin paylaştığı ortak görünüm — her kelime için ayrı ayarlamak yerine tek stil. */
+export type StudioCaptionStyle = {
+  /** Canvas yüzdesi, metnin merkezi. */
+  x: number;
+  y: number;
+  /** Canvas yüksekliğinin yüzdesi. */
+  fontSize: number;
+  color: string;
+  font: OverlayFont;
 };
 
 export type StudioTimeline = {
@@ -127,16 +211,57 @@ export type StudioTimeline = {
   trim: { start: number; end: number };
   cutaways: StudioCutaway[];
   overlays: StudioOverlay[];
+  zooms: StudioZoom[];
+  captions: StudioCaption[];
+  captionStyle: StudioCaptionStyle;
   intro: StudioIntroOutro | null;
   outro: StudioIntroOutro | null;
   music: StudioMusic | null;
+  /** 0-1 arası kazanç — orijinal video/anlatım sesi (bkz. `enhancedAudioUrl`). */
+  videoVolume: number;
+  /** fal-ai/elevenlabs/audio-isolation çıktısı — varsa orijinal video sesi yerine BU çalınır/kaydedilir. */
+  enhancedAudioUrl: string | null;
   wordmark: boolean;
 };
 
 export const MAX_CUTAWAYS = 12;
 export const MAX_OVERLAYS = 12;
+export const MAX_ZOOMS = 8;
+// Cutaway/overlay'den çok daha yüksek: bir dakikalık konuşma kolayca 150+ kelime üretir,
+// bunlar tek tek elle eklenmiyor, whisper'dan toplu geliyor.
+export const MAX_CAPTIONS = 600;
 export const MAX_OVERLAY_TEXT_LENGTH = 200;
 export const MAX_PROJECT_NAME_LENGTH = 80;
+
+export const MIN_COUNTDOWN_STEPS = 2;
+export const MAX_COUNTDOWN_STEPS = 5;
+
+// Nokta rengi `LogoSVG`deki (page.tsx) üç noktayla BİREBİR aynı hex — geri sayım markanın
+// kendi işaretinin büyütülmüş hâli gibi okunsun diye. Zemin markanın kirli beyazı.
+export const DEFAULT_COUNTDOWN: StudioCountdown = {
+  steps: 3,
+  direction: 'drain',
+  color: '#14231F',
+  background: '#F2EFE6',
+  sound: true,
+};
+
+/**
+ * Geri sayım intro'sunun varsayılan süresi. Yayın sayacı ritmi süreyi (adım + 1)'e böldüğü
+ * için 2.5 sn ≈ 0.6 sn'lik vuruşlar demek — Reels için fazla uzatmadan sayaç hissini veriyor.
+ */
+export const DEFAULT_COUNTDOWN_DURATION = 2.5;
+
+// y: 82 -> Instagram/TikTok Reels'in alt %20'lik kendi arayüzü (kullanıcı adı, açıklama,
+// paylaş butonları) tam bu bölgeyi kaplıyor — StudioEditor'daki güvenli alan çizgisiyle
+// (bottom-[20%], yani Y:80) çakışırdı. 70, o çizginin belirgin şekilde üstünde kalıyor.
+export const DEFAULT_CAPTION_STYLE: StudioCaptionStyle = {
+  x: 50,
+  y: 70,
+  fontSize: 7,
+  color: '#FFFFFF',
+  font: 'bricolage',
+};
 
 export const DEFAULT_TIMELINE: StudioTimeline = {
   aspectRatio: '9:16',
@@ -144,9 +269,14 @@ export const DEFAULT_TIMELINE: StudioTimeline = {
   trim: { start: 0, end: 0 },
   cutaways: [],
   overlays: [],
+  zooms: [],
+  captions: [],
+  captionStyle: DEFAULT_CAPTION_STYLE,
   intro: null,
   outro: null,
   music: null,
+  videoVolume: 1,
+  enhancedAudioUrl: null,
   wordmark: true,
 };
 
@@ -187,16 +317,50 @@ function parseCutaway(value: unknown): StudioCutaway | null {
   };
 }
 
+function parseZoom(value: unknown): StudioZoom | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const v = value as Record<string, unknown>;
+  if (!isFiniteNumber(v.startTime) || !isFiniteNumber(v.endTime) || v.endTime <= v.startTime) return null;
+  return {
+    id: typeof v.id === 'string' ? v.id : crypto.randomUUID(),
+    startTime: Math.max(0, v.startTime),
+    endTime: v.endTime,
+    x: clamp(isFiniteNumber(v.x) ? v.x : 50, 0, 100),
+    y: clamp(isFiniteNumber(v.y) ? v.y : 50, 0, 100),
+    scale: clamp(isFiniteNumber(v.scale) ? v.scale : 1.6, 1, 4),
+    transition: clamp(isFiniteNumber(v.transition) ? v.transition : 0.4, 0, 3),
+  };
+}
+
+function parseCountdown(value: unknown): StudioCountdown | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const v = value as Record<string, unknown>;
+  return {
+    steps: Math.round(clamp(isFiniteNumber(v.steps) ? v.steps : DEFAULT_COUNTDOWN.steps, MIN_COUNTDOWN_STEPS, MAX_COUNTDOWN_STEPS)),
+    direction: v.direction === 'fill' ? 'fill' : 'drain',
+    color: typeof v.color === 'string' ? v.color : DEFAULT_COUNTDOWN.color,
+    background: typeof v.background === 'string' ? v.background : DEFAULT_COUNTDOWN.background,
+    sound: v.sound !== false,
+  };
+}
+
 function parseIntroOutro(value: unknown): StudioIntroOutro | null {
   if (typeof value !== 'object' || value === null) return null;
   const v = value as Record<string, unknown>;
-  if (!isHttpUrl(v.assetUrl)) return null;
   if (!isFiniteNumber(v.duration) || v.duration <= 0) return null;
+
+  const countdown = parseCountdown(v.countdown);
+  const assetUrl = isHttpUrl(v.assetUrl) ? v.assetUrl : null;
+  // Görselsiz intro yalnızca geri sayım modunda anlamlı — aksi hâlde ekranda çizilecek
+  // hiçbir şey kalmaz (siyah kare), o yüzden böyle bir kayıt tamamen reddediliyor.
+  if (!assetUrl && !countdown) return null;
+
   const fit: StudioFit = v.fit === 'contain' ? 'contain' : 'cover';
   return {
-    assetUrl: v.assetUrl,
+    assetUrl,
     duration: v.duration,
     fit,
+    countdown,
   };
 }
 
@@ -219,6 +383,16 @@ function parseOverlay(value: unknown): StudioOverlay | null {
     return {
       ...base,
       kind: 'image',
+      assetUrl: v.assetUrl,
+      width: clamp(isFiniteNumber(v.width) ? v.width : 30, 5, 100),
+    };
+  }
+
+  if (v.kind === 'video') {
+    if (!isHttpUrl(v.assetUrl)) return null;
+    return {
+      ...base,
+      kind: 'video',
       assetUrl: v.assetUrl,
       width: clamp(isFiniteNumber(v.width) ? v.width : 30, 5, 100),
     };
@@ -249,6 +423,32 @@ function parseMusic(value: unknown): StudioMusic | null {
   return { assetUrl: v.assetUrl, volume: clamp(isFiniteNumber(v.volume) ? v.volume : 0.5, 0, 1) };
 }
 
+function parseCaption(value: unknown): StudioCaption | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const v = value as Record<string, unknown>;
+  if (typeof v.text !== 'string' || !v.text.trim()) return null;
+  if (!isFiniteNumber(v.startTime) || !isFiniteNumber(v.endTime) || v.endTime <= v.startTime) return null;
+  return {
+    id: typeof v.id === 'string' ? v.id : crypto.randomUUID(),
+    text: v.text.slice(0, MAX_OVERLAY_TEXT_LENGTH),
+    startTime: Math.max(0, v.startTime),
+    endTime: v.endTime,
+  };
+}
+
+function parseCaptionStyle(value: unknown): StudioCaptionStyle {
+  if (typeof value !== 'object' || value === null) return DEFAULT_CAPTION_STYLE;
+  const v = value as Record<string, unknown>;
+  const font = OVERLAY_FONTS_SET.has(v.font as OverlayFont) ? (v.font as OverlayFont) : DEFAULT_CAPTION_STYLE.font;
+  return {
+    x: clamp(isFiniteNumber(v.x) ? v.x : DEFAULT_CAPTION_STYLE.x, 0, 100),
+    y: clamp(isFiniteNumber(v.y) ? v.y : DEFAULT_CAPTION_STYLE.y, 0, 100),
+    fontSize: clamp(isFiniteNumber(v.fontSize) ? v.fontSize : DEFAULT_CAPTION_STYLE.fontSize, 1, 20),
+    color: typeof v.color === 'string' ? v.color : DEFAULT_CAPTION_STYLE.color,
+    font,
+  };
+}
+
 /**
  * İstemciden gelen timeline'ı sunucuda doğrular — istemciye güvenilmiyor (plan kararı).
  * Geçersiz/eksik alanlar makul varsayılanlara düşer, tamamen anlamsız girdi `null` döner.
@@ -272,14 +472,27 @@ export function parseStudioTimeline(value: unknown): StudioTimeline | null {
     ? (v.overlays.map(parseOverlay).filter(Boolean) as StudioOverlay[]).slice(0, MAX_OVERLAYS)
     : [];
 
+  const zooms = Array.isArray(v.zooms)
+    ? (v.zooms.map(parseZoom).filter(Boolean) as StudioZoom[]).slice(0, MAX_ZOOMS)
+    : [];
+
+  const captions = Array.isArray(v.captions)
+    ? (v.captions.map(parseCaption).filter(Boolean) as StudioCaption[]).slice(0, MAX_CAPTIONS)
+    : [];
+
   return {
     aspectRatio: v.aspectRatio,
     trim: { start, end },
     cutaways,
     overlays,
+    zooms,
+    captions,
+    captionStyle: parseCaptionStyle(v.captionStyle),
     intro: parseIntroOutro(v.intro),
     outro: parseIntroOutro(v.outro),
     music: v.music ? parseMusic(v.music) : null,
+    videoVolume: clamp(isFiniteNumber(v.videoVolume) ? v.videoVolume : 1, 0, 1),
+    enhancedAudioUrl: isHttpUrl(v.enhancedAudioUrl) ? v.enhancedAudioUrl : null,
     wordmark: v.wordmark !== false,
   };
 }

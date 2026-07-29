@@ -19,11 +19,21 @@ const SUBLINE_GAP = 0.45;
  * bu yüzden canvas'a "Bricolage Grotesque" yazmak tutmaz. Gerçek adı CSS
  * değişkeninden okuyoruz — değişkenler `<html>` üzerinde tanımlı (layout.tsx).
  */
+// `getComputedStyle` zorla stil yeniden hesaplatıyor (forced reflow) — CSS değişkenleri
+// oturum boyunca DEĞİŞMEDİĞİ için sonucu önbelleklemek güvenli. Studio'nun `drawFrame`'i
+// bunu wordmark/altyazı/metin overlay'i için HER KAREDE çağırıyordu; gerçek zamanlı export
+// sırasında saniyede 30 kez gereksiz reflow tetiklemek, ölçülen kare donmalarının (bkz.
+// studioRenderer.ts export tick döngüsü) bilinen katkılarından biriydi.
+const fontFamilyCache = new Map<OverlayFont, string>();
+
 export function resolveFontFamily(font: OverlayFont): string {
+  const cached = fontFamilyCache.get(font);
+  if (cached) return cached;
   const variable =
     font === 'bricolage' ? '--font-bricolage' : font === 'mono' ? '--font-ibm-plex-mono' : '--font-inter';
-  const resolved = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
-  return resolved || 'sans-serif';
+  const resolved = getComputedStyle(document.documentElement).getPropertyValue(variable).trim() || 'sans-serif';
+  fontFamilyCache.set(font, resolved);
+  return resolved;
 }
 
 /**

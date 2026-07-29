@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Loader2, Video, Upload, Play, CheckCircle2, Trash2 } from 'lucide-react';
 import type { CharacterShot, CharacterMotion } from '@/config/characters';
 import {
@@ -35,21 +35,72 @@ type Props = {
   characterId: string;
   shots: CharacterShot[];
   motions: CharacterMotion[];
+  voiceUrl?: string | null;
   onMotionCreated: (motion: CharacterMotion) => void;
   onMotionDeleted: (motionId: string) => void;
 };
 
-export default function MotionSection({ characterId, shots, motions, onMotionCreated, onMotionDeleted }: Props) {
+export default function MotionSection({ characterId, shots, motions, voiceUrl, onMotionCreated, onMotionDeleted }: Props) {
+  const [tab, setTab] = useState<'text' | 'audio'>('text');
+  const [motionText, setMotionText] = useState('İçerik üretmek, mesajları yanıtlamak, satış yapmak... Tek başınıza hepsine yetişmek imkânsız. Bu yüzden talkinbio\'yu kurdum.');
   const [selectedShot, setSelectedShot] = useState<CharacterShot | null>(null);
   const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
+  const [cleanAudioUrl, setCleanAudioUrl] = useState<string | null>(null);
+  const [isEnhancingAudio, setIsEnhancingAudio] = useState(false);
   const [audioSeconds, setAudioSeconds] = useState<number | null>(null);
   const [modelId, setModelId] = useState(DEFAULT_MOTION_MODEL_ID);
   const [resolution, setResolution] = useState<MotionResolution>('1080p');
   const [prompt, setPrompt] = useState('');
   const [turboMode, setTurboMode] = useState(false);
-  const [generating, setGenerating] = useState(false);
+  const [generatingStep, setGeneratingStep] = useState<'idle' | 'voice' | 'motion' | 'enhancing'>('idle');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [savedAudioFileName, setSavedAudioFileName] = useState<string | null>(null);
+
+  // Sayfa yüklendiğinde (veya karakter değiştiğinde) draft'ı yükle
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(`motion_draft_${characterId}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.tab) setTab(parsed.tab);
+        if (parsed.motionText) setMotionText(parsed.motionText);
+        if (parsed.cleanAudioUrl) {
+          setCleanAudioUrl(parsed.cleanAudioUrl);
+          setAudioPreviewUrl(parsed.cleanAudioUrl);
+        }
+        if (parsed.audioSeconds) setAudioSeconds(parsed.audioSeconds);
+        if (parsed.prompt) setPrompt(parsed.prompt);
+        if (parsed.resolution) setResolution(parsed.resolution);
+        if (parsed.turboMode !== undefined) setTurboMode(parsed.turboMode);
+        if (parsed.modelId) setModelId(parsed.modelId);
+        if (parsed.savedAudioFileName) setSavedAudioFileName(parsed.savedAudioFileName);
+      }
+    } catch (e) {
+      // localStorage error ignore
+    }
+  }, [characterId]);
+
+  // Değişiklik olduğunda draft'ı kaydet
+  useEffect(() => {
+    try {
+      const draft = {
+        tab,
+        motionText,
+        cleanAudioUrl,
+        audioSeconds,
+        prompt,
+        resolution,
+        turboMode,
+        modelId,
+        savedAudioFileName: audioFile ? audioFile.name : savedAudioFileName,
+      };
+      localStorage.setItem(`motion_draft_${characterId}`, JSON.stringify(draft));
+    } catch (e) {
+      // localStorage error ignore
+    }
+  }, [tab, motionText, cleanAudioUrl, audioSeconds, prompt, resolution, turboMode, modelId, audioFile, characterId, savedAudioFileName]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -71,7 +122,38 @@ export default function MotionSection({ characterId, shots, motions, onMotionCre
     setAudioFile(file);
     setAudioSeconds(null);
     setError(null);
-    if (file) setAudioSeconds(await readMediaDuration(file));
+    setCleanAudioUrl(null);
+    setSavedAudioFileName(file ? file.name : null);
+
+    if (audioPreviewUrl && audioPreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(audioPreviewUrl);
+    }
+    setAudioPreviewUrl(null);
+    
+    if (file) {
+      setAudioSeconds(await readMediaDuration(file));
+      
+      setIsEnhancingAudio(true);
+      try {
+        const formData = new FormData();
+        formData.append('audio', file);
+        const res = await fetch(`/api/admin/characters/${characterId}/voice/enhance`, {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Ses temizlenemedi.');
+        
+        setCleanAudioUrl(data.audioUrl);
+        setAudioPreviewUrl(data.audioUrl);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Sesi temizlerken hata oluştu.');
+        // Hata olursa yine de ham sesi dinletebilmek için fallback:
+        setAudioPreviewUrl(URL.createObjectURL(file));
+      } finally {
+        setIsEnhancingAudio(false);
+      }
+    }
   };
 
   const handleDelete = async (motionId: string) => {
@@ -99,35 +181,81 @@ export default function MotionSection({ characterId, shots, motions, onMotionCre
       setError('Lütfen galeriden bir görsel seçin.');
       return;
     }
-    if (!audioFile) {
-      setError('Lütfen bir ses dosyası yükleyin.');
-      return;
-    }
-    if (audioRejected) {
-      setError(
-        badFormat
-          ? `Bu format desteklenmiyor. Desteklenenler: ${AUDIO_LABEL}.`
-          : tooBig
-            ? `${model.label} için ses dosyası en fazla ${model.maxAudioMb}MB olabilir.`
-            : tooShort
-              ? `${model.label} en az ${model.minAudioSeconds} saniyelik ses istiyor.`
-              : `Ses ${Math.round(audioSeconds!)} saniye — ${model.label} ${activeResolution} için üst sınır ${maxSeconds} saniye.`,
-      );
+    
+    if (tab === 'text' && !motionText.trim()) {
+      setError('Lütfen seslendirilecek metni girin.');
       return;
     }
 
-    setGenerating(true);
+    if (tab === 'audio') {
+      if (!audioFile && !cleanAudioUrl) {
+        setError('Lütfen bir ses dosyası yükleyin.');
+        return;
+      }
+      if (audioRejected && audioFile) {
+        setError(
+          badFormat
+            ? `Bu format desteklenmiyor. Desteklenenler: ${AUDIO_LABEL}.`
+            : tooBig
+              ? `${model.label} için ses dosyası en fazla ${model.maxAudioMb}MB olabilir.`
+              : tooShort
+                ? `${model.label} en az ${model.minAudioSeconds} saniyelik ses istiyor.`
+                : `Ses ${Math.round(audioSeconds!)} saniye — ${model.label} ${activeResolution} için üst sınır ${maxSeconds} saniye.`,
+        );
+        return;
+      }
+    }
+
     setError(null);
+    let finalAudioUrlForMotion = '';
+
     try {
+      if (tab === 'text') {
+        if (!voiceUrl) {
+          throw new Error('Metin kullanabilmek için önce Ses Stüdyosu adımında kendi sesinizi klonlamanız (referans ses yüklemeniz) gerekmektedir.');
+        }
+        setGeneratingStep('voice');
+        const voiceFormData = new FormData();
+        voiceFormData.append('text', motionText);
+        voiceFormData.append('voice_url', voiceUrl);
+        
+        const voiceRes = await fetch(`/api/admin/characters/${characterId}/voice`, {
+          method: 'POST',
+          body: voiceFormData
+        });
+        const voiceData = await voiceRes.json();
+        if (!voiceRes.ok) throw new Error(voiceData.error || 'Metinden ses üretilemedi.');
+        finalAudioUrlForMotion = voiceData.audioUrl;
+      }
+
+      if (tab === 'audio' && !cleanAudioUrl) {
+        setGeneratingStep('enhancing');
+      } else {
+        setGeneratingStep('motion');
+      }
+      
       const formData = new FormData();
-      formData.append('audio', audioFile);
+      if (tab === 'audio') {
+        if (cleanAudioUrl) {
+          formData.append('audioUrl', cleanAudioUrl);
+          formData.append('enhanceAudio', 'false'); // Zaten temizlendi
+        } else {
+          formData.append('audio', audioFile!);
+          formData.append('enhanceAudio', 'true');
+        }
+        if (audioSeconds !== null) formData.append('audioSeconds', String(audioSeconds));
+      } else {
+        formData.append('audioUrl', finalAudioUrlForMotion);
+        formData.append('enhanceAudio', 'false');
+      }
+
       formData.append('sourceImageUrl', selectedShot.image_url);
       formData.append('model', model.id);
       formData.append('resolution', activeResolution);
       formData.append('turboMode', String(turboMode));
       if (prompt.trim()) formData.append('prompt', prompt.trim());
-      if (audioSeconds !== null) formData.append('audioSeconds', String(audioSeconds));
 
+      setGeneratingStep('motion');
       const res = await fetch(`/api/admin/characters/${characterId}/motion`, {
         method: 'POST',
         body: formData,
@@ -137,13 +265,15 @@ export default function MotionSection({ characterId, shots, motions, onMotionCre
       if (!res.ok) throw new Error(data.error || 'Video üretilemedi.');
 
       onMotionCreated(data.motion);
-      setAudioFile(null);
-      setAudioSeconds(null);
+      // Başarılı olunca taslağı temizleyebiliriz ama kullanıcı tekrar kullanmak isteyebilir diye bırakmak da iyi bir seçenektir.
+      // Yine de dosya referansını ve preview'ı siliyoruz (opsiyonel)
+      // setAudioFile(null);
+      // setAudioSeconds(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Üretilemedi.');
     } finally {
-      setGenerating(false);
+      setGeneratingStep('idle');
     }
   };
 
@@ -161,11 +291,16 @@ export default function MotionSection({ characterId, shots, motions, onMotionCre
           <div>
             <h3 className="text-sm font-semibold text-slate-900 mb-1">1. Referans Görsel Seç</h3>
             <p className="text-xs text-slate-500 mb-3">Videoda konuşturmak istediğiniz kareyi (ister gerçek fotoğrafınız, ister ürettiğiniz AI Twin) seçin.</p>
-            {shots.length === 0 ? (
-              <p className="text-sm text-slate-500">Önce yukarıdan bir görsel üretmelisiniz.</p>
-            ) : (
+            {(() => {
+              const eligibleShots = shots.filter(shot => shot.similarity_score === null || shot.similarity_score >= 7);
+              
+              if (eligibleShots.length === 0) {
+                return <p className="text-sm text-slate-500">Önce yukarıdan uygun (7 puan ve üzeri) bir görsel üretmelisiniz.</p>;
+              }
+              
+              return (
               <div className="grid grid-cols-3 gap-2 max-h-[300px] overflow-y-auto pr-2 pb-2">
-                {shots.map((shot) => (
+                {eligibleShots.map((shot) => (
                   <button
                     key={shot.id}
                     onClick={() => setSelectedShot(shot)}
@@ -183,7 +318,8 @@ export default function MotionSection({ characterId, shots, motions, onMotionCre
                   </button>
                 ))}
               </div>
-            )}
+              );
+            })()}
           </div>
 
           {/* Model — ses sınırlarını ve maliyeti belirlediği için ses yüklemeden önce geliyor */}
@@ -212,48 +348,99 @@ export default function MotionSection({ characterId, shots, motions, onMotionCre
             </div>
           </div>
 
-          {/* Ses Yükleme */}
+          {/* Ses veya Metin Yükleme (Sekmeler) */}
           <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">
-              3. Ses Dosyası Yükle{' '}
-              <span className="font-normal text-slate-500">
-                ({model.minAudioSeconds > 0 ? `${model.minAudioSeconds}-${maxSeconds}s` : `maks ${maxSeconds}s`}, ≤
-                {model.maxAudioMb}MB)
-              </span>
+            <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center justify-between">
+              <span>3. Sesi Belirle</span>
             </h3>
-            <div className="flex flex-col gap-2">
-              <input
-                type="file"
-                ref={fileInputRef}
-                accept={MOTION_AUDIO_EXTENSIONS.map((e) => `.${e}`).join(',')}
-                onChange={(e) => handleAudioPicked(e.target.files?.[0] || null)}
-                className="hidden"
-                id="audio-upload"
-              />
-              <label
-                htmlFor="audio-upload"
-                className="flex items-center justify-center gap-2 w-full py-4 px-4 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-slate-50 hover:border-blue-400 transition-colors"
+            
+            <div className="flex bg-slate-100 p-1 rounded-lg mb-4">
+              <button
+                onClick={() => setTab('text')}
+                className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${tab === 'text' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                <Upload className="w-5 h-5 text-slate-400" />
-                <span className="text-sm font-medium text-slate-600">
-                  {audioFile ? audioFile.name : 'Ses dosyası seçin'}
-                </span>
-              </label>
-              {audioFile && (
-                <div
-                  className={`flex items-center gap-2 text-xs ${
-                    audioRejected ? 'text-red-600 font-medium' : 'text-slate-500'
-                  }`}
-                >
-                  <span>{(audioFile.size / 1024 / 1024).toFixed(2)} MB</span>
-                  {audioSeconds !== null && <span>· {audioSeconds.toFixed(1)} sn</span>}
-                  {badFormat && <span>· desteklenen: {AUDIO_LABEL}</span>}
-                  {tooBig && <span>· sınır {model.maxAudioMb}MB</span>}
-                  {tooLong && <span>· sınır {maxSeconds} sn</span>}
-                  {tooShort && <span>· en az {model.minAudioSeconds} sn</span>}
-                </div>
-              )}
+                Metin Yaz
+              </button>
+              <button
+                onClick={() => setTab('audio')}
+                className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${tab === 'audio' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Ses Yükle
+              </button>
             </div>
+
+            {tab === 'text' ? (
+              <div className="space-y-2">
+                <textarea
+                  value={motionText}
+                  onChange={(e) => setMotionText(e.target.value)}
+                  placeholder="Karakterinizin videoda ne söylemesini istiyorsunuz?"
+                  rows={4}
+                  className="w-full text-sm p-3 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+                {!voiceUrl && (
+                  <p className="text-xs text-amber-600 font-medium">Metinden video üretebilmek için önce Ses Stüdyosu adımında klonlama işlemini yapmalısınız.</p>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <div className="text-xs text-slate-500 mb-1 flex items-center justify-between">
+                  <span>
+                    ({model.minAudioSeconds > 0 ? `${model.minAudioSeconds}-${maxSeconds}s` : `maks ${maxSeconds}s`}, ≤{model.maxAudioMb}MB)
+                  </span>
+                  <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Otomatik pürüzsüzleştirme devrede
+                  </span>
+                </div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept={MOTION_AUDIO_EXTENSIONS.map((e) => `.${e}`).join(',')}
+                  onChange={(e) => handleAudioPicked(e.target.files?.[0] || null)}
+                  className="hidden"
+                  id="audio-upload"
+                />
+                <label
+                  htmlFor="audio-upload"
+                  className="flex items-center justify-center gap-2 w-full py-4 px-4 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-slate-50 hover:border-blue-400 transition-colors"
+                >
+                  <Upload className="w-5 h-5 text-slate-400" />
+                  <span className="text-sm font-medium text-slate-600">
+                    {audioFile ? audioFile.name : savedAudioFileName ? savedAudioFileName : 'Ses dosyası seçin (veya sürükleyin)'}
+                  </span>
+                </label>
+                {(audioFile || cleanAudioUrl) && (
+                  <div className="flex flex-col gap-3 mt-2">
+                    {isEnhancingAudio ? (
+                      <div className="flex items-center gap-2 text-sm text-blue-600 font-medium py-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Sesteki pürüzler ve gürültüler temizleniyor...</span>
+                      </div>
+                    ) : (audioPreviewUrl || cleanAudioUrl) ? (
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center px-1">
+                          <span className="text-xs font-medium text-emerald-600">Temizlenmiş Ses (Stüdyo Kalitesi)</span>
+                        </div>
+                        <audio controls src={audioPreviewUrl || cleanAudioUrl!} className="w-full h-10" />
+                      </div>
+                    ) : null}
+                    <div
+                      className={`flex items-center gap-2 text-xs ${
+                        (audioRejected && audioFile) ? 'text-red-600 font-medium' : 'text-slate-500'
+                      }`}
+                    >
+                      {audioFile && <span>{(audioFile.size / 1024 / 1024).toFixed(2)} MB</span>}
+                      {audioSeconds !== null && <span>· {audioSeconds.toFixed(1)} sn</span>}
+                      {badFormat && audioFile && <span>· desteklenen: {AUDIO_LABEL}</span>}
+                      {tooBig && audioFile && <span>· sınır {model.maxAudioMb}MB</span>}
+                      {tooLong && <span>· sınır {maxSeconds} sn</span>}
+                      {tooShort && <span>· en az {model.minAudioSeconds} sn</span>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Çözünürlük — sadece modelin `resolution` alanı varsa; Kling kabul etmiyor */}
@@ -315,11 +502,22 @@ export default function MotionSection({ characterId, shots, motions, onMotionCre
 
           <button
             onClick={handleGenerate}
-            disabled={generating || !selectedShot || !audioFile || audioRejected}
-            className="w-full flex justify-center items-center gap-2 bg-blue-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            disabled={generatingStep !== 'idle' || !selectedShot || (tab === 'audio' && (!audioFile && !cleanAudioUrl)) || (tab === 'audio' && audioFile && audioRejected) || (tab === 'text' && (!motionText.trim() || !voiceUrl))}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
-            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-            {generating ? 'Video Üretiliyor (2-4 dk)...' : 'Videoyu Üret'}
+            {generatingStep !== 'idle' ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                {generatingStep === 'voice' && 'Metinden Ses Üretiliyor...'}
+                {generatingStep === 'enhancing' && 'Ses Berraklaştırılıyor...'}
+                {generatingStep === 'motion' && 'Video Üretiliyor... (Uzun Sürebilir)'}
+              </>
+            ) : (
+              <>
+                <Play className="w-5 h-5 fill-current" />
+                Video Üret
+              </>
+            )}
           </button>
           {audioSeconds !== null && !audioRejected && (
             <p className="text-xs text-slate-500 -mt-3">

@@ -15,8 +15,20 @@
 // punto canvas'takiyle aynı formülü kullanmalı" sorununu (elle senkron tutma ihtiyacını)
 // kökünden ortadan kaldırıyor.
 
+import { countdownPlan, drawCountdownDots, scheduleCountdownBeeps } from './countdown';
 import { drawTextBlock, drawWordmark, loadImage, PADDING_RATIO, resolveFontFamily } from './imageOverlay';
-import type { StudioFit, StudioImageOverlay, StudioTextOverlay, StudioTimeline } from '@/config/studio';
+import type {
+  StudioCaption,
+  StudioCaptionStyle,
+  StudioFit,
+  StudioImageOverlay,
+  StudioIntroOutro,
+  StudioOverlay,
+  StudioTextOverlay,
+  StudioTimeline,
+  StudioVideoOverlay,
+  StudioZoom,
+} from '@/config/studio';
 
 type Media = HTMLImageElement | HTMLVideoElement;
 
@@ -74,6 +86,70 @@ function drawImageOverlayItem(
   ctx.restore();
 }
 
+/**
+ * Video overlay'in kaynağı canlı bir <video> elementi — henüz ilk kare decode olmadıysa
+ * (readyState < 2) veya boyutu bilinmiyorsa sessizce atlanır (drawImage o durumda ya
+ * hata verir ya siyah kare çizer, ikisi de eksik kareden daha kötü).
+ */
+function drawVideoOverlayItem(
+  ctx: CanvasRenderingContext2D,
+  el: HTMLVideoElement,
+  overlay: StudioVideoOverlay,
+  canvasWidth: number,
+  canvasHeight: number,
+) {
+  if (el.readyState < 2 || !el.videoWidth || !el.videoHeight) return;
+  const targetWidth = (overlay.width / 100) * canvasWidth;
+  const aspect = el.videoWidth / el.videoHeight;
+  const targetHeight = targetWidth / aspect;
+  const x = (overlay.x / 100) * canvasWidth;
+  const y = (overlay.y / 100) * canvasHeight;
+
+  ctx.save();
+  ctx.globalAlpha = overlay.opacity;
+  ctx.drawImage(el, x, y, targetWidth, targetHeight);
+  ctx.restore();
+}
+
+/**
+ * Video overlay'lerin oynatma başlarını timeline zamanına göre sürer. Ana video ve müzikle
+ * AYNI mantık: gerçek zamanlı export sırasında her kare seek etmek yerine elementi
+ * OYNATIP currentTime'ı doğal akışına bırakmak gerekiyor (MediaRecorder gerçek zamanlı
+ * yakaladığı için, sürekli seek hem yavaş hem karesi kaçmış görüntüye yol açar).
+ * Sadece durakl/scrub halinde (isPlaying=false) doğrudan seek ediyoruz.
+ *
+ * Not: aynı video assetUrl'i BİRDEN FAZLA overlay'de kullanılıp zaman aralıkları
+ * ÇAKIŞIYORSA tek <video> elementi paylaşılacağından oynatma karışır — v1'de bu nadir ve
+ * kabul edilebilir bir sınır (bkz. StudioEditor'daki videoOverlayEls, url ile anahtarlanıyor).
+ */
+export function syncVideoOverlays(
+  overlays: StudioOverlay[],
+  time: number,
+  isPlaying: boolean,
+  videoEls: Map<string, HTMLVideoElement>,
+): void {
+  for (const overlay of overlays) {
+    if (overlay.kind !== 'video') continue;
+    const el = videoEls.get(overlay.assetUrl);
+    if (!el) continue;
+    const active = time >= overlay.startTime && time < overlay.endTime;
+    if (!active) {
+      if (!el.paused) el.pause();
+      if (el.currentTime !== 0) el.currentTime = 0;
+      continue;
+    }
+    if (isPlaying) {
+      if (el.paused) {
+        el.currentTime = 0;
+        el.play().catch(() => {});
+      }
+    } else if (Number.isFinite(el.duration)) {
+      const target = Math.min(el.duration, Math.max(0, time - overlay.startTime));
+      if (Math.abs(el.currentTime - target) > 0.05) el.currentTime = target;
+    }
+  }
+}
+
 /** Metin overlay'i sabit genişlikte sarılır (canvas'ın %90'ı) — align'a göre kutu genişliği hesaplamak yerine basit ve öngörülebilir tutuldu. */
 const TEXT_OVERLAY_MAX_WIDTH_RATIO = 0.9;
 
@@ -100,6 +176,148 @@ function drawTextOverlayItem(
   ctx.restore();
 }
 
+/**
+ * Karaoke altyazının tek kelimesi — `drawTextOverlayItem`'dan bilerek AYRI: burada
+ * sarma/hizalama yok (tek kelime, tek satır, her zaman merkez), ama rastgele arka planlar
+ * üzerinde okunaklı kalsın diye koyu bir kontur (stroke) ekleniyor — StudioTextOverlay'in
+ * elle yerleştirilen serbest metniyle karışmasın diye stil formülü paylaşılmıyor.
+ */
+function paintCaption(
+  ctx: CanvasRenderingContext2D,
+  caption: StudioCaption,
+  style: StudioCaptionStyle,
+  canvasWidth: number,
+  canvasHeight: number,
+) {
+  const family = resolveFontFamily(style.font);
+  const sizePx = (style.fontSize / 100) * canvasHeight;
+  const x = (style.x / 100) * canvasWidth;
+  const y = (style.y / 100) * canvasHeight;
+
+  ctx.font = `800 ${sizePx}px ${family}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = sizePx * 0.18;
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
+  ctx.strokeText(caption.text, x, y);
+  ctx.fillStyle = style.color;
+  ctx.fillText(caption.text, x, y);
+}
+
+/**
+ * `ctx.strokeText` büyük `lineWidth` ile glyph başına path stroke ettiği için ucuz değil —
+ * wordmark'takiyle (bkz. `getWordmarkLayer`) AYNI gerekçe: bir kelime tipik olarak 300-600ms
+ * (9-18 kare) ekranda kalıyor, o pencere boyunca AYNI metni her karede yeniden çizmek yerine
+ * ilk karede önbelleğe alıp sonrasında `drawImage` ile kopyalıyoruz. Anahtar `caption.id`
+ * (metin değil): whisper'dan gelen iki farklı kelime aynı metne sahip olabilir ama ayrı
+ * zaman aralıklarıdır, id ile ayrışmaları önbelleği yanlış kelimede tutmayı engelliyor.
+ */
+let captionLayerCache: { key: string; canvas: HTMLCanvasElement } | null = null;
+
+function drawCaptionItem(
+  ctx: CanvasRenderingContext2D,
+  caption: StudioCaption,
+  style: StudioCaptionStyle,
+  canvasWidth: number,
+  canvasHeight: number,
+) {
+  const key = `${caption.id}|${canvasWidth}x${canvasHeight}|${style.x}|${style.y}|${style.fontSize}|${style.color}|${style.font}`;
+  if (captionLayerCache?.key !== key) {
+    const layer = document.createElement('canvas');
+    layer.width = canvasWidth;
+    layer.height = canvasHeight;
+    const layerCtx = layer.getContext('2d')!;
+    paintCaption(layerCtx, caption, style, canvasWidth, canvasHeight);
+    captionLayerCache = { key, canvas: layer };
+  }
+  ctx.drawImage(captionLayerCache.canvas, 0, 0);
+}
+
+function smoothstep(t: number): number {
+  const c = Math.min(1, Math.max(0, t));
+  return c * c * (3 - 2 * c);
+}
+
+type ZoomState = { scale: number; cx: number; cy: number };
+
+/**
+ * `zoom.transition` süresince 1 -> hedef scale'e (ve sonda geri) ease'lenir, aradaki bölüm
+ * sabit kalır. `transition` aralığın yarısından uzunsa (çok kısa zoom penceresi) her iki
+ * geçiş orantılı kısaltılır ki zoom hiç "hold" yapmadan direkt geri dönmesin.
+ */
+function computeZoomState(zoom: StudioZoom, time: number): ZoomState {
+  const duration = zoom.endTime - zoom.startTime;
+  const transition = Math.min(zoom.transition, duration / 2);
+  let t: number;
+  if (transition <= 0) {
+    t = 1;
+  } else if (time - zoom.startTime < transition) {
+    t = (time - zoom.startTime) / transition;
+  } else if (zoom.endTime - time < transition) {
+    t = (zoom.endTime - time) / transition;
+  } else {
+    t = 1;
+  }
+  const eased = smoothstep(t);
+  return {
+    scale: 1 + (zoom.scale - 1) * eased,
+    cx: 50 + (zoom.x - 50) * eased,
+    cy: 50 + (zoom.y - 50) * eased,
+  };
+}
+
+/** Verilen merkez noktası etrafında büyütür — sonraki tüm çizimler bu dönüşümden etkilenir, çağıran taraf ctx.save/restore ile sınırlamalı. */
+function applyZoomTransform(ctx: CanvasRenderingContext2D, state: ZoomState, width: number, height: number) {
+  if (state.scale <= 1.0001) return;
+  const cxPx = (state.cx / 100) * width;
+  const cyPx = (state.cy / 100) * height;
+  ctx.translate(cxPx, cyPx);
+  ctx.scale(state.scale, state.scale);
+  ctx.translate(-cxPx, -cyPx);
+}
+
+/**
+ * Intro/outro bölümünü çizer; `sectionTime` bölümün KENDİ başlangıcına göre saniye.
+ * Sırayla: arka plan (görsel varsa o, yoksa geri sayımın düz rengi) + geri sayım noktaları.
+ * Ekrana hiçbir şey konulamadıysa `false` döner — çağıran taraf o zaman videoya düşmeyi
+ * değil, siyah kareyi tercih ediyor (bkz. drawFrame).
+ */
+function drawIntroOutroSection(
+  ctx: CanvasRenderingContext2D,
+  section: StudioIntroOutro,
+  sectionTime: number,
+  width: number,
+  height: number,
+  assets: Map<string, HTMLImageElement>,
+): boolean {
+  let drawn = false;
+
+  const img = section.assetUrl ? assets.get(section.assetUrl) : undefined;
+  if (img) {
+    drawMediaFitted(ctx, img, width, height, section.fit);
+    drawn = true;
+  } else if (section.countdown) {
+    ctx.fillStyle = section.countdown.background;
+    ctx.fillRect(0, 0, width, height);
+    drawn = true;
+  }
+
+  if (section.countdown) {
+    drawCountdownDots(
+      ctx,
+      section.countdown,
+      countdownPlan(section.duration, section.countdown.steps),
+      sectionTime,
+      width,
+      height,
+    );
+    drawn = true;
+  }
+
+  return drawn;
+}
+
 export type DrawFrameParams = {
   ctx: CanvasRenderingContext2D;
   timeline: StudioTimeline;
@@ -108,6 +326,8 @@ export type DrawFrameParams = {
   video: HTMLVideoElement;
   /** Cutaway/overlay görselleri için önceden yüklenmiş <img> önbelleği (bkz. `preloadStudioImages`). */
   assets: Map<string, HTMLImageElement>;
+  /** Video-overlay'lerin canlı <video> elementleri, assetUrl ile anahtarlanmış (bkz. `syncVideoOverlays`). */
+  videoOverlays: Map<string, HTMLVideoElement>;
 };
 
 /**
@@ -115,7 +335,7 @@ export type DrawFrameParams = {
  * Görsel henüz önbellekte yoksa (yükleme bitmemiş) o katman sessizce atlanır; çökme yerine
  * eksik kare tercih edildi.
  */
-export function drawFrame({ ctx, timeline, time, video, assets }: DrawFrameParams): void {
+export function drawFrame({ ctx, timeline, time, video, assets, videoOverlays }: DrawFrameParams): void {
   const canvas = ctx.canvas;
   const width = canvas.width;
   const height = canvas.height;
@@ -128,21 +348,21 @@ export function drawFrame({ ctx, timeline, time, video, assets }: DrawFrameParam
   const isOutro = timeline.outro && time >= Math.max(0, totalVideoDuration - timeline.outro.duration);
 
   const activeCutaway = timeline.cutaways.find((c) => time >= c.startTime && time < c.endTime);
+  const activeZoom = timeline.zooms.find((z) => time >= z.startTime && time < z.endTime);
+
+  // Zoom, video/cutaway VE üstündeki overlay'leri birlikte büyütür (kameranın sahneye
+  // yaklaşması gibi) — bu yüzden ctx.save/restore bu ikisini de kapsıyor. Wordmark bilerek
+  // dışında: o kamera hareketinden etkilenmeyen sabit bir arayüz katmanı.
+  ctx.save();
+  if (activeZoom) applyZoomTransform(ctx, computeZoomState(activeZoom, time), width, height);
 
   let drawnMedia = false;
 
   if (isIntro && timeline.intro) {
-    const img = assets.get(timeline.intro.assetUrl);
-    if (img) {
-      drawMediaFitted(ctx, img, width, height, timeline.intro.fit);
-      drawnMedia = true;
-    }
+    drawnMedia = drawIntroOutroSection(ctx, timeline.intro, time, width, height, assets);
   } else if (isOutro && timeline.outro) {
-    const img = assets.get(timeline.outro.assetUrl);
-    if (img) {
-      drawMediaFitted(ctx, img, width, height, timeline.outro.fit);
-      drawnMedia = true;
-    }
+    const outroStart = Math.max(0, totalVideoDuration - timeline.outro.duration);
+    drawnMedia = drawIntroOutroSection(ctx, timeline.outro, time - outroStart, width, height, assets);
   } else if (activeCutaway) {
     const img = assets.get(activeCutaway.assetUrl);
     if (img) {
@@ -164,21 +384,58 @@ export function drawFrame({ ctx, timeline, time, video, assets }: DrawFrameParam
     if (overlay.kind === 'image') {
       const img = assets.get(overlay.assetUrl);
       if (img) drawImageOverlayItem(ctx, img, overlay, width, height);
+    } else if (overlay.kind === 'video') {
+      const el = videoOverlays.get(overlay.assetUrl);
+      if (el) drawVideoOverlayItem(ctx, el, overlay, width, height);
     } else {
       drawTextOverlayItem(ctx, overlay, width, height);
     }
   }
 
-  if (timeline.wordmark) {
-    const family = resolveFontFamily('inter'); // Bricolage'ın Kiril desteği yok — wordmark sabit inter.
-    const padding = Math.round(Math.min(width, height) * PADDING_RATIO);
-    // drawWordmark'ın son parametresi "metin nerede duruyor, wordmark ona çakışmasın diye
-    // KARŞI köşeye kaçsın" mantığıyla çalışıyor (composeOverlayPng'te headline pozisyonuna
-    // göre otomatik geçerli). Studio'da sabit bir headline yok, o yüzden 'top' veriyoruz ki
-    // formül wordmark'ı normal/beklenen köşeye (sağ-ALT) yerleştirsin — 'bottom' verirsem
-    // (ilk halde yanlışlıkla öyleydi) tam tersi olup sağ-ÜSTE kaçıyordu.
-    drawWordmark(ctx, canvas, family, padding, 'top');
+  ctx.restore();
+
+  // Altyazı bilerek zoom transformunun DIŞINDA: konuşmayı temsil eden bir UI katmanı,
+  // kamera yakınlaşmasıyla birlikte büyüyüp okunaksızlaşmamalı/kaymamalı.
+  const activeCaption = timeline.captions.find((c) => time >= c.startTime && time < c.endTime);
+  if (activeCaption) {
+    drawCaptionItem(ctx, activeCaption, timeline.captionStyle, width, height);
   }
+
+  if (timeline.wordmark) {
+    ctx.drawImage(getWordmarkLayer(width, height), 0, 0);
+  }
+}
+
+/**
+ * Wordmark her karede AYNI görünüyor (sabit metin/pozisyon) ama `drawWordmark` içindeki
+ * `ctx.shadowBlur` yazılım tabanlı bir bulanıklaştırma — Canvas 2D'nin bilinen en yavaş
+ * operasyonlarından biri. Gerçek zamanlı export'ta bunu saniyede 30 kez tekrar çizmek,
+ * ölçülen kare donmalarının (bkz. exportTimeline'daki tick döngüsü) başlıca sebeplerinden
+ * biriydi. Çözüm: bir kere şeffaf bir katmana çizip önbelleğe alıyoruz, sonraki her karede
+ * sadece ucuz bir `drawImage` (GPU destekli kopyalama) çalışıyor. Boyut değişirse (format
+ * değişimi) önbellek otomatik yenileniyor.
+ */
+let wordmarkLayerCache: { key: string; canvas: HTMLCanvasElement } | null = null;
+
+function getWordmarkLayer(width: number, height: number): HTMLCanvasElement {
+  const key = `${width}x${height}`;
+  if (wordmarkLayerCache?.key === key) return wordmarkLayerCache.canvas;
+
+  const layer = document.createElement('canvas');
+  layer.width = width;
+  layer.height = height;
+  const layerCtx = layer.getContext('2d')!;
+
+  const family = resolveFontFamily('inter'); // Bricolage'ın Kiril desteği yok — wordmark sabit inter.
+  const padding = Math.round(Math.min(width, height) * PADDING_RATIO);
+  // Son parametre "metin nerede duruyor, wordmark ona çakışmasın diye KARŞI köşeye kaçsın"
+  // mantığıyla çalışıyor (composeOverlayPng'te headline pozisyonuna göre otomatik geçerli).
+  // Studio'da sabit bir headline yok, o yüzden 'top' veriyoruz ki formül wordmark'ı normal/
+  // beklenen köşeye (sağ-ALT) yerleştirsin — 'bottom' verirsem tam tersi olup sağ-ÜSTE kaçıyordu.
+  drawWordmark(layerCtx, layer, family, padding, 'top');
+
+  wordmarkLayerCache = { key, canvas: layer };
+  return layer;
 }
 
 /** Cutaway/overlay görsellerini export ve önizlemeden ÖNCE yükler; başarısız olanlar sessizce atlanır (drawFrame zaten eksik önbelleği tolere ediyor). */
@@ -204,24 +461,75 @@ export async function preloadStudioImages(urls: string[]): Promise<Map<string, H
 /** Timeline'daki tüm cutaway/overlay görsel URL'lerini toplar — preloadStudioImages'a doğrudan verilebilir. */
 export function collectStudioImageUrls(timeline: StudioTimeline): string[] {
   const urls: string[] = [];
-  if (timeline.intro) urls.push(timeline.intro.assetUrl);
-  if (timeline.outro) urls.push(timeline.outro.assetUrl);
+  // Geri sayım intro'sunun görseli olmayabilir (düz renk arka plan) — bkz. StudioIntroOutro.
+  if (timeline.intro?.assetUrl) urls.push(timeline.intro.assetUrl);
+  if (timeline.outro?.assetUrl) urls.push(timeline.outro.assetUrl);
   for (const c of timeline.cutaways) urls.push(c.assetUrl);
   for (const o of timeline.overlays) if (o.kind === 'image') urls.push(o.assetUrl);
   return urls;
 }
 
+/** Timeline'daki video-overlay assetUrl'lerini toplar (dedup) — hidden <video> elementlerini render etmek için. */
+export function collectStudioVideoOverlayUrls(timeline: StudioTimeline): string[] {
+  const urls = timeline.overlays.filter((o) => o.kind === 'video').map((o) => o.assetUrl);
+  return Array.from(new Set(urls));
+}
+
 /**
  * MediaRecorder'ın kabul ettiği ilk (en tercih edilen) mimeType — MP4/H.264 önce denenir,
  * OS'ta donanım encoder yoksa WebM'e düşülür. Tarayıcı desteği yoksa boş string döner.
+ *
+ * SES KODEĞİ AÇIKÇA BELİRTİLİYOR (`mp4a.40.2` = AAC-LC): sadece `codecs=avc1` demek yalnızca
+ * VİDEO kodeğini sabitliyor, ses kodeğini tarayıcı seçiyor ve Chrome MP4 kabına OPUS koyuyor.
+ * MP4+Opus teknik olarak geçerli ama Instagram/TikTok ve çoğu oynatıcı desteklemiyor —
+ * yüklenen reel sessiz çıkıyor. AAC'li aday önce denenmeli.
+ *
+ * H.264 PROFİLİ DE AÇIKÇA BELİRTİLİYOR: `avc1.42E01E` = Constrained Baseline @ L3.0, eski
+ * telefonlar için tasarlanmış düşük profil — CABAC ve B-frame yok, bu yüzden AYNI bitrate'te
+ * High profile'dan gözle görülür ölçüde daha bozuk. Sıralama High (`6400..`) → Main
+ * (`4D40..`) → Baseline; ilki desteklenmezse otomatik düşülür. Level 4.0, 1080×1920@30'u
+ * (8160 makroblok) tam karşılıyor.
  */
 const CANDIDATE_EXPORT_MIME_TYPES = [
+  'video/mp4;codecs=avc1.640028,mp4a.40.2',
+  'video/mp4;codecs=avc1.4D4028,mp4a.40.2',
+  'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+  'video/mp4;codecs=avc1,mp4a.40.2',
   'video/mp4;codecs=avc1',
   'video/mp4',
   'video/webm;codecs=vp9,opus',
   'video/webm;codecs=vp8,opus',
   'video/webm',
 ];
+
+/**
+ * Kayıt kare hızı. Konuşan kafa videosunda 60 fps hiçbir şey kazandırmıyor; üstelik Instagram
+ * yüklemeyi zaten 30'a indirip yeniden sıkıştırdığı için 60 fps sadece kare başına düşen
+ * bitrate'i yarıya bölüp çift bozulmaya yol açıyor.
+ */
+const EXPORT_FPS = 30;
+
+/**
+ * Bitrate açıkça veriliyor — MediaRecorder'ın varsayılanı 1080×1920 için fena halde düşük
+ * (~1-2 Mbps) ve Instagram'ın kendi yeniden sıkıştırması bunun ÜSTÜNE bindiği için sonuç
+ * blok blok bir görüntü oluyor. 0.16 bit/piksel, 1080×1920@30'da ~10 Mbps'e denk geliyor
+ * (platformun kaynak için önerdiği aralık). Alt/üst sınırlar kare ve yatay formatlarda
+ * sırasıyla fazla düşük / gereksiz şişkin dosyayı engelliyor.
+ */
+const EXPORT_BITS_PER_PIXEL = 0.16;
+const MIN_VIDEO_BITRATE = 6_000_000;
+const MAX_VIDEO_BITRATE = 16_000_000;
+const EXPORT_AUDIO_BITRATE = 128_000;
+
+function exportVideoBitrate(canvas: HTMLCanvasElement): number {
+  const raw = canvas.width * canvas.height * EXPORT_FPS * EXPORT_BITS_PER_PIXEL;
+  return Math.round(Math.min(MAX_VIDEO_BITRATE, Math.max(MIN_VIDEO_BITRATE, raw)));
+}
+
+/** MP4 kabında AAC dışı (ör. Opus) ses varsa true — çağıran taraf kullanıcıyı uyarmalı. */
+export function exportHasIncompatibleAudio(mimeType: string): boolean {
+  return mimeType.startsWith('video/mp4') && !mimeType.includes('mp4a');
+}
 
 export function pickExportMimeType(): string {
   if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported) return '';
@@ -239,8 +547,17 @@ export type ExportParams = {
   /** Çağıran taraf, boyutunu `studioAspectPreset(timeline.aspectRatio)`den zaten ayarlamış olmalı. */
   canvas: HTMLCanvasElement;
   assets: Map<string, HTMLImageElement>;
+  /** Video-overlay'lerin canlı <video> elementleri, assetUrl ile anahtarlanmış. */
+  videoOverlays: Map<string, HTMLVideoElement>;
   /** `timeline.music` varsa, ona karşılık gelen önceden yüklenmiş <audio> elementi. */
   musicAudio?: HTMLAudioElement;
+  /** `timeline.enhancedAudioUrl` varsa, ona karşılık gelen <audio> elementi — orijinal video sesi YERİNE bu kaydedilir. */
+  enhancedAudio?: HTMLAudioElement;
+  /**
+   * Anlatım sesine uygulanacak gürlük normalizasyon çarpanı (lineer, `videoVolume`'un ÜSTÜNE
+   * çarpılır) — bkz. `utils/loudness`. Verilmezse 1, yani sese dokunulmaz.
+   */
+  loudnessGain?: number;
   onProgress?: (fraction: number) => void;
 };
 
@@ -257,7 +574,10 @@ export async function exportTimeline({
   video,
   canvas,
   assets,
+  videoOverlays,
   musicAudio,
+  enhancedAudio,
+  loudnessGain = 1,
   onProgress,
 }: ExportParams): Promise<ExportResult> {
   const ctx = canvas.getContext('2d');
@@ -273,33 +593,78 @@ export async function exportTimeline({
   const audioCtx = new AudioContextCtor();
   const dest = audioCtx.createMediaStreamDestination();
 
-  // Video sesi hem kayıt hedefine hem hoparlöre bağlanıyor — export sırasında sessiz
-  // kalması "çalışmıyor mu" izlenimi verir, izlenebilir olması güven veriyor.
-  const videoSource = audioCtx.createMediaElementSource(video);
-  videoSource.connect(dest);
-  videoSource.connect(audioCtx.destination);
+  // Tüm kaynaklar (anlatım + müzik) çıkıştan ÖNCE ortak bir limitleyiciden geçiyor:
+  // `loudnessGain` ile ~9 dB'lik bir yükseltme yapıldığında tepe değerler 0 dBFS'i aşar ve
+  // ham hâlde çirkin bir kırpma (clipping) duyulurdu. Sert diz + yüksek oran = pratikte
+  // limitleyici; sadece tepeleri bastırıp ortalama seviyeyi olduğu gibi bırakıyor.
+  const limiter = audioCtx.createDynamicsCompressor();
+  limiter.threshold.value = -2;
+  limiter.knee.value = 0;
+  limiter.ratio.value = 20;
+  limiter.attack.value = 0.003;
+  limiter.release.value = 0.25;
+  limiter.connect(dest);
+  limiter.connect(audioCtx.destination);
 
+  // `enhancedAudioUrl` varsa anlatım BUNDAN kaydedilir, orijinal videonun sesi hiç grafiğe
+  // bağlanmaz (StudioEditor zaten video.muted=true yapıp hoparlörde de duyulmasını engelliyor).
+  // İkisinde de `videoVolume` kazancı uygulanıyor — kullanıcı için "anlatımın sesi" tek kadran.
+  // `loudnessGain` onun üstüne çarpılıyor: kadran kullanıcının mikstajı, normalizasyon ise
+  // platform hedefine götüren teknik düzeltme (bkz. utils/loudness).
+  const useEnhancedAudio = Boolean(timeline.enhancedAudioUrl && enhancedAudio);
+  const narrationGain = audioCtx.createGain();
+  narrationGain.gain.value = timeline.videoVolume * loudnessGain;
+  narrationGain.connect(limiter);
+
+  // KRİTİK: `createMediaElementSource`, elementin kendi `volume` özelliğini grafiğe GİRMEDEN
+  // ÖNCE uyguluyor. Önizleme için StudioEditor `element.volume = videoVolume` yapıyor; burada
+  // gain'e de aynı değeri verdiğimiz için kazanç İKİ KEZ çarpılıyordu (0.5 → 0.25, yani ~12 dB
+  // fazladan kısılma) ve export edilen ses duyulmayacak kadar sessiz çıkıyordu.
+  // Export süresince elementleri 1'e sabitleyip tek yetkiliyi GainNode yapıyoruz; cleanup'ta
+  // önizleme davranışı bozulmasın diye geri yükleniyor.
+  const narrationEl = useEnhancedAudio && enhancedAudio ? enhancedAudio : video;
+  const previousNarrationElVolume = narrationEl.volume;
+  narrationEl.volume = 1;
+  audioCtx.createMediaElementSource(narrationEl).connect(narrationGain);
+
+  // Müzik de aynı çift-çarpma tuzağında: `togglePlay` önizleme için `musicAudio.volume`'u
+  // ayarlıyor, burada gain'e de aynı değer veriliyordu. Aynı çözüm — element 1'e sabitleniyor.
+  let previousMusicElVolume: number | null = null;
   if (timeline.music && musicAudio) {
+    previousMusicElVolume = musicAudio.volume;
+    musicAudio.volume = 1;
     const musicSource = audioCtx.createMediaElementSource(musicAudio);
     const musicGain = audioCtx.createGain();
     musicGain.gain.value = timeline.music.volume;
     musicSource.connect(musicGain);
-    musicGain.connect(dest);
-    musicGain.connect(audioCtx.destination);
+    musicGain.connect(limiter);
   }
 
-  const canvasStream = canvas.captureStream(30);
+  const canvasStream = canvas.captureStream(EXPORT_FPS);
   const audioTrack = dest.stream.getAudioTracks()[0];
   const combined = new MediaStream([...canvasStream.getVideoTracks(), ...(audioTrack ? [audioTrack] : [])]);
 
   const mimeType = pickExportMimeType();
+  const recorderOptions: MediaRecorderOptions = {
+    videoBitsPerSecond: exportVideoBitrate(canvas),
+    audioBitsPerSecond: EXPORT_AUDIO_BITRATE,
+  };
+  if (mimeType) recorderOptions.mimeType = mimeType;
 
   let recorder: MediaRecorder;
   try {
-    recorder = mimeType ? new MediaRecorder(combined, { mimeType }) : new MediaRecorder(combined);
+    recorder = new MediaRecorder(combined, recorderOptions);
   } catch {
-    await audioCtx.close().catch(() => {});
-    throw new Error('Bu tarayıcı video kaydını desteklemiyor.');
+    // `isTypeSupported` iyimser olabiliyor: profili/bitrate'i kabul ettiğini söyleyip
+    // donanım encoder'ı gerçekte kuramayan makineler var. Böyle bir durumda export'u
+    // tamamen düşürmek yerine tarayıcının kendi varsayılanlarına dönüyoruz — kalite
+    // hedefinden ödün verilir ama kullanıcı çıktısını yine de alır.
+    try {
+      recorder = new MediaRecorder(combined);
+    } catch {
+      await audioCtx.close().catch(() => {});
+      throw new Error('Bu tarayıcı video kaydını desteklemiyor.');
+    }
   }
 
   const chunks: Blob[] = [];
@@ -313,6 +678,12 @@ export async function exportTimeline({
     const cleanup = () => {
       video.pause();
       musicAudio?.pause();
+      if (useEnhancedAudio) enhancedAudio?.pause();
+      for (const el of videoOverlays.values()) el.pause();
+      // Export için 1'e sabitlenen element seviyeleri geri yükleniyor — yoksa export sonrası
+      // önizleme, kullanıcının ayarladığı seviyeyi yok sayıp tam ses çalardı.
+      narrationEl.volume = previousNarrationElVolume;
+      if (musicAudio && previousMusicElVolume !== null) musicAudio.volume = previousMusicElVolume;
       audioCtx.close().catch(() => {});
     };
 
@@ -328,12 +699,34 @@ export async function exportTimeline({
       resolve({ blob: new Blob(chunks, { type: usedType }), mimeType: usedType });
     };
 
+    // rAF ekran tazeleme hızında (60, hatta 120 Hz) çalışır; `captureStream(EXPORT_FPS)` ise
+    // saniyede yalnızca 30 kare alır. Aradaki fazladan çizimler kayda hiç girmeden ana
+    // thread'i meşgul edip gerçek zamanlı kaydın kare düşürmesine yol açıyordu — o yüzden
+    // çizim hedef kare aralığına kısılıyor. 2 ms tolerans, rAF sapması yüzünden hedefin
+    // kıl payı altında kalan kareyi atlayıp 30'dan 20 fps'e düşmeyi engelliyor.
+    const frameInterval = 1000 / EXPORT_FPS;
+    let lastDrawAt = Number.NEGATIVE_INFINITY;
+
     const tick = () => {
       if (stopped) return;
-      const time = video.currentTime - sourceStart;
-      drawFrame({ ctx, timeline, time, video, assets });
-      onProgress?.(Math.min(1, time / totalDuration));
+      const now = performance.now();
+      if (now - lastDrawAt >= frameInterval - 2) {
+        lastDrawAt = now;
+        const time = video.currentTime - sourceStart;
+        syncVideoOverlays(timeline.overlays, time, true, videoOverlays);
+        // Video ve iyileştirilmiş ses BAĞIMSIZ decode saatleriyle oynuyor, uzun klipte küçük
+        // bir kayma (drift) birikebilir — burada sertçe düzeltiyoruz (0.15sn eşiği, syncVideoOverlays'in
+        // 0.05sn'lik overlay eşiğinden daha gevşek: burada tek bir sürekli parça var, sık seek
+        // yerine nadir/büyük düzeltme daha az duyulur kesinti verir).
+        if (useEnhancedAudio && enhancedAudio && Math.abs(enhancedAudio.currentTime - video.currentTime) > 0.15) {
+          enhancedAudio.currentTime = video.currentTime;
+        }
+        drawFrame({ ctx, timeline, time, video, assets, videoOverlays });
+        onProgress?.(Math.min(1, time / totalDuration));
+      }
 
+      // Bitiş kontrolü çizimden BAĞIMSIZ, her rAF'ta: kayda son kareyi geçtikten sonra
+      // gereksiz yere devam etmesin.
       if (video.currentTime >= sourceEnd || video.ended) {
         stopped = true;
         recorder.stop();
@@ -352,9 +745,27 @@ export async function exportTimeline({
           // çünkü bu son çare bir durum (autoplay engeli gibi) ve video sesi zaten akıyor.
         });
       }
+      if (useEnhancedAudio && enhancedAudio) {
+        enhancedAudio.currentTime = video.currentTime;
+        enhancedAudio.play().catch(() => {});
+      }
       video
         .play()
-        .then(() => requestAnimationFrame(tick))
+        .then(() => {
+          // Bipler oynatma GERÇEKTEN başladıktan sonra zamanlanıyor: `audioCtx.currentTime`
+          // burada videonun 0. anına denk gelir, dolayısıyla plan'daki offsetler doğrudan
+          // kullanılabilir. `play()` çözülmeden zamanlansaydı, decode gecikmesi kadar erken
+          // çalıp noktalardan önce duyulurlardı.
+          if (timeline.intro?.countdown?.sound) {
+            scheduleCountdownBeeps(
+              audioCtx,
+              limiter,
+              countdownPlan(timeline.intro.duration, timeline.intro.countdown.steps),
+              audioCtx.currentTime,
+            );
+          }
+          requestAnimationFrame(tick);
+        })
         .catch((err) => {
           stopped = true;
           cleanup();

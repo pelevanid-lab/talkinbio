@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 import Image from 'next/image';
 import { Link } from '@/i18n/routing';
 import LandingHeroTabs from '@/components/LandingHeroTabs';
@@ -25,6 +26,9 @@ const LogoSVG = () => (
 export default async function HomePage({ params }: any) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'Landing' });
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const isLoggedIn = !!user;
 
   // Faz 1.6: landing'deki Saule önizlemesi gerçek demo işletmeye bağlanır (dogfooding).
   const demoBusinessId = process.env.TALKINBIO_BUSINESS_ID || null;
@@ -124,12 +128,20 @@ export default async function HomePage({ params }: any) {
             <Link href="/pricing" className="btn btn-ghost" style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}>
               {t('nav.pricing')}
             </Link>
-            <Link href="/login" className="btn btn-ghost" style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}>
-              {t('nav.login')}
-            </Link>
-            <Link href="/request-access" className="btn btn-primary nav-cta">
-              {t('nav.startFree')}
-            </Link>
+            {isLoggedIn ? (
+              <Link href="/dashboard" className="btn btn-primary nav-cta">
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="btn btn-ghost" style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}>
+                  {t('nav.login')}
+                </Link>
+                <Link href="/request-access" className="btn btn-primary nav-cta">
+                  {t('nav.startFree')}
+                </Link>
+              </>
+            )}
           </div>
           <button className="md:hidden p-2 text-[var(--ink)]">
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
@@ -350,14 +362,14 @@ export default async function HomePage({ params }: any) {
               <h2 className="text-3xl md:text-5xl font-bold text-[var(--ink)] tracking-tight" style={{ fontFamily: 'var(--font-bricolage)', letterSpacing: '-0.02em' }}>
                 {t('updates.title')}
               </h2>
-              <Link href="#" className="px-5 py-2 rounded-full border border-[var(--border)] text-[var(--ink)] font-semibold text-sm hover:bg-[var(--paper)] transition-colors hidden sm:block">
+              <Link href="/updates" className="px-5 py-2 rounded-full border border-[var(--border)] text-[var(--ink)] font-semibold text-sm hover:bg-[var(--paper)] transition-colors hidden sm:block">
                 {t('updates.allPosts')}
               </Link>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
               {/* Post 1 */}
-              <Link href="#" className="group block">
+              <Link href="/updates/talkinbio-v2-yayinda" className="group block">
                 <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden relative mb-5 bg-[var(--paper)]">
                   {/* Coral Gradient — Saule */}
                   <div className="absolute inset-0 bg-gradient-to-br from-[#FF6A5C] via-[#ff8478] to-[#FFEDE9] opacity-90 transition-transform duration-700 group-hover:scale-105"></div>
@@ -371,7 +383,7 @@ export default async function HomePage({ params }: any) {
               </Link>
 
               {/* Post 2 */}
-              <Link href="#" className="group block">
+              <Link href="/updates/saule-egitimi" className="group block">
                 <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden relative mb-5 bg-[var(--paper)]">
                   {/* Teal Gradient — Beiwe */}
                   <div className="absolute inset-0 bg-gradient-to-br from-[#50e3c2] via-[#3a967c] to-[#14231F] opacity-90 transition-transform duration-700 group-hover:scale-105"></div>
@@ -385,7 +397,7 @@ export default async function HomePage({ params }: any) {
               </Link>
 
               {/* Post 3 */}
-              <Link href="#" className="group block">
+              <Link href="/updates/gelismis-analitik" className="group block">
                 <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden relative mb-5 bg-[var(--paper)]">
                   {/* Ink Gradient — neutral */}
                   <div className="absolute inset-0 bg-gradient-to-br from-[#14231F] via-[#4B5A55] to-[#8A8880] opacity-90 transition-transform duration-700 group-hover:scale-105"></div>
@@ -400,7 +412,7 @@ export default async function HomePage({ params }: any) {
             </div>
 
             <div className="mt-8 text-center sm:hidden">
-               <Link href="#" className="px-5 py-2 rounded-full border border-[var(--border)] text-[var(--ink)] font-semibold text-sm inline-block">
+               <Link href="/updates" className="px-5 py-2 rounded-full border border-[var(--border)] text-[var(--ink)] font-semibold text-sm inline-block">
                 {t('updates.allPosts')}
               </Link>
             </div>

@@ -30,6 +30,15 @@ const POLL_TIMEOUT_MS = 240_000;
  */
 const MOTION_POLL_TIMEOUT_MS = 540_000;
 
+/**
+ * Performans aktarımı (video-to-video) ses-güdümlüden ÇOK daha yavaş — gerçek testte
+ * 10 sn'lik bir sürücü video ~10-15 dk sürdü (bkz. proje geçmişi, 2026-07-29 wan-motion
+ * testi). Yukarıdaki MOTION_POLL_TIMEOUT_MS yorumundaki DİKKAT aynen burada da geçerli:
+ * Vercel'de maxDuration=300 devreye girince bu değerin önemi kalmıyor, bu sadece local
+ * test için cömert bir üst sınır.
+ */
+const PERFORMANCE_POLL_TIMEOUT_MS = 1_200_000;
+
 export class FalError extends Error {
   readonly userMessage: string;
   constructor(userMessage: string, technical?: string) {
@@ -55,6 +64,7 @@ export type GenerateCharacterImageParams = {
   resolution: '1K' | '2K';
   numImages: number;
   seed?: number;
+  loraUrl?: string;
 };
 
 export type GenerateCharacterImageResult = {
@@ -171,10 +181,10 @@ async function submitAndPoll<T>(
 export async function generateCharacterImage(
   params: GenerateCharacterImageParams,
 ): Promise<GenerateCharacterImageResult> {
-  const { model, prompt, imageUrls, aspectRatio, resolution, numImages, seed } = params;
+  const { model, prompt, imageUrls, aspectRatio, resolution, numImages, seed, loraUrl } = params;
 
-  if (imageUrls.length === 0) {
-    throw new FalError('En az bir referans görsel gerekli.');
+  if (imageUrls.length === 0 && !loraUrl) {
+    throw new FalError('En az bir referans görsel veya aktif LoRA gerekli.');
   }
 
   const { result, requestId } = await submitAndPoll<{
@@ -185,12 +195,13 @@ export async function generateCharacterImage(
     model,
     {
       prompt,
-      image_urls: imageUrls,
+      ...(imageUrls.length > 0 ? { image_urls: imageUrls } : {}),
       num_images: numImages,
       aspect_ratio: aspectRatio,
       resolution,
       output_format: 'png',
       ...(typeof seed === 'number' ? { seed } : {}),
+      ...(loraUrl ? { loras: [{ path: loraUrl, scale: 1 }] } : {}),
     },
     {
       timeoutMs: POLL_TIMEOUT_MS,
@@ -219,6 +230,12 @@ export async function generateCharacterImage(
  * fal `image_urls` alanı base64 data-URI kabul ediyor.
  */
 export async function publicImageAsDataUri(fileName: string): Promise<string> {
+  // Eğer Supabase (veya başka bir uzak sunucu) URL'si ise, doğrudan URL'yi döndür.
+  // Fal AI herkese açık URL'leri doğrudan indirebilir.
+  if (fileName.startsWith('http://') || fileName.startsWith('https://')) {
+    return fileName;
+  }
+
   // Yol geçişini engelle — dosya adı config'ten geliyor ama savunmayı burada tut.
   const safeName = path.basename(fileName);
   const filePath = path.join(process.cwd(), 'public', safeName);
@@ -252,6 +269,166 @@ export type GenerateMotionResult = {
   requestId: string;
 };
 
+export type GenerateVoiceParams = {
+  prompt: string;
+  referenceAudioUrl: string;
+};
+
+export type GenerateVoiceResult = {
+  audioUrl: string;
+  requestId: string;
+};
+
+export async function generateCharacterVoice(params: GenerateVoiceParams): Promise<GenerateVoiceResult> {
+  const { prompt, referenceAudioUrl } = params;
+
+  // 1. Önce referans sesin metnini (transcription) çıkarıyoruz
+  // F5-TTS'in dili doğru anlaması ve halüsinasyon görmemesi için ref_text çok önemli.
+  const { result: whisperResult } = await submitAndPoll<{ text?: string }>(
+    'fal-ai/whisper',
+    {
+      audio_url: referenceAudioUrl,
+      task: 'transcribe',
+    },
+    {
+      timeoutMs: 60000,
+      timeoutMessage: 'fal.ai ses analizi (whisper) zaman aşımına uğradı.',
+      failMessage: 'fal.ai referans sesi analiz edemedi.',
+    }
+  );
+
+  const refText = whisperResult?.text || '';
+
+  // 2. F5-TTS ile yeni sesi üretiyoruz
+  const { result, requestId } = await submitAndPoll<any>(
+    'fal-ai/f5-tts',
+    {
+      gen_text: prompt.trim(),
+      ref_audio_url: referenceAudioUrl,
+      ref_text: refText,
+      model_type: 'F5-TTS',
+    },
+    {
+      timeoutMs: 180000,
+      timeoutMessage: 'fal.ai ses üretimi zaman aşımına uğradı.',
+      failMessage: 'fal.ai ses üretimi başarısız oldu.',
+    }
+  );
+
+  const audioObj = result?.audio_url || result?.audio || result?.audio_file;
+  const audioUrl = typeof audioObj === 'string' ? audioObj : audioObj?.url;
+
+  if (!audioUrl || typeof audioUrl !== 'string') {
+    throw new FalError('fal.ai ses döndürmedi.', `requestId=${requestId} ${JSON.stringify(result)}`);
+  }
+
+  return {
+    audioUrl,
+    requestId,
+  };
+}
+
+export type TranscribeWord = { text: string; start: number; end: number };
+
+export type TranscribeAudioWordsParams = {
+  audioUrl: string;
+};
+
+export type TranscribeAudioWordsResult = {
+  words: TranscribeWord[];
+  requestId: string;
+};
+
+/**
+ * Karaoke altyazı için kelime bazlı zaman damgası — `chunk_level: 'word'` whisper'ın
+ * segment yerine HER kelime için ayrı `timestamp: [start, end]` döndürmesini sağlıyor.
+ * `audio_url` mp4 kabul ediyor (fal dokümantasyonu) ama biz zaten motion'ın kendi
+ * `audio_url`'ini (ses-only, videoyu süren orijinal dosya) gönderiyoruz — hem daha ucuz
+ * hem zamanlaması videoyla bire bir örtüşüyor.
+ */
+export async function transcribeAudioWords(params: TranscribeAudioWordsParams): Promise<TranscribeAudioWordsResult> {
+  const { result, requestId } = await submitAndPoll<{
+    chunks?: { text?: string; timestamp?: [number, number] }[];
+  }>(
+    'fal-ai/whisper',
+    {
+      audio_url: params.audioUrl,
+      task: 'transcribe',
+      chunk_level: 'word',
+    },
+    {
+      timeoutMs: 120_000,
+      timeoutMessage: 'fal.ai altyazı çıkarımı (whisper) zaman aşımına uğradı.',
+      failMessage: 'fal.ai altyazı çıkarımı başarısız oldu.',
+    },
+  );
+
+  const words: TranscribeWord[] = [];
+  for (const chunk of result.chunks || []) {
+    const text = chunk.text?.trim();
+    const [start, end] = chunk.timestamp || [];
+    if (text && typeof start === 'number' && typeof end === 'number' && end > start) {
+      words.push({ text, start, end });
+    }
+  }
+
+  if (!words.length) {
+    throw new FalError('fal.ai altyazı üretmedi — ses boş ya da anlaşılmamış olabilir.', `requestId=${requestId}`);
+  }
+
+  return { words, requestId };
+}
+
+/**
+ * `audio_url` VEYA `video_url`'den biri yeterli. Ortak klip havuzundaki harici yüklemelerin
+ * ayrı bir `audio_url`'i olmuyor (sadece `video_url`), o klipler için ikinci yol gerekiyor.
+ */
+export type EnhanceAudioParams = { audioUrl: string; videoUrl?: never } | { audioUrl?: never; videoUrl: string };
+
+export type EnhanceAudioResult = {
+  audioUrl: string;
+  requestId: string;
+};
+
+export async function enhanceAudio(params: EnhanceAudioParams): Promise<EnhanceAudioResult> {
+  // deepfilternet3 gürültü temizliğinin yanında ucuz mikrofonların ince/cılız kalan sesini
+  // 48kHz'e upsample ederek de düzeltiyor (ElevenLabs audio-isolation sadece arka plan
+  // gürültüsü/müziği ayıklıyor, mikrofon kaynaklı kalite sorununa dokunmuyor). Ama SADECE
+  // `audio_url` kabul ediyor — video kabul etmiyor — o yüzden `video_url` durumunda (harici
+  // yüklenen klip'lerin ayrı ses dosyası olmadığı hal) audio-isolation'da kalıyoruz.
+  const { result, requestId } = params.audioUrl
+    ? await submitAndPoll<any>(
+        'fal-ai/deepfilternet3',
+        { audio_url: params.audioUrl },
+        {
+          timeoutMs: 120000,
+          timeoutMessage: 'fal.ai ses iyileştirme (DeepFilterNet3) işlemi zaman aşımına uğradı.',
+          failMessage: 'fal.ai ses iyileştirme (DeepFilterNet3) işlemi başarısız oldu.',
+        }
+      )
+    : await submitAndPoll<any>(
+        'fal-ai/elevenlabs/audio-isolation',
+        { video_url: params.videoUrl },
+        {
+          timeoutMs: 120000,
+          timeoutMessage: 'fal.ai ses temizleme (ElevenLabs) işlemi zaman aşımına uğradı.',
+          failMessage: 'fal.ai ses temizleme (ElevenLabs) işlemi başarısız oldu.',
+        }
+      );
+
+  const audioObj = result?.audio_file?.url || result?.audio?.url || result?.audio_url;
+  const audioUrl = typeof audioObj === 'string' ? audioObj : audioObj?.url;
+
+  if (!audioUrl || typeof audioUrl !== 'string') {
+    throw new FalError('fal.ai temizlenmiş ses döndürmedi.', `requestId=${requestId} ${JSON.stringify(result)}`);
+  }
+
+  return {
+    audioUrl,
+    requestId,
+  };
+}
+
 export async function generateCharacterMotion(params: GenerateMotionParams): Promise<GenerateMotionResult> {
   const { model, imageUrl, audioUrl, resolution, prompt, turboMode } = params;
 
@@ -284,6 +461,68 @@ export async function generateCharacterMotion(params: GenerateMotionParams): Pro
   return {
     videoUrl: result.video.url,
     durationSeconds: result.duration,
+    requestId,
+  };
+}
+
+export type GeneratePerformanceParams = {
+  /** fal queue endpoint kimliği — bkz. `config/clips.ts` PERFORMANCE_MODELS. */
+  modelId: string;
+  /** Kanon kare — karakterin kimliği buradan geliyor. */
+  imageUrl: string;
+  /** Sürücü video — kullanıcının gerçek performansı (kafa/el hareketi, mimik). */
+  videoUrl: string;
+  /**
+   * wan-motion'ın üretimi yönlendiren opsiyonel metin alanı (OmniHuman'daki "Yönlendirme"
+   * ile aynı fikir) — gerçek kullanıcı testinde mimikler abartılı çıktı, bunu bir prompt'la
+   * ("sakin, ölçülü mimikler") yumuşatmayı deniyoruz. fal ayrı bir "motion strength" parametresi
+   * sunmuyor, bu şu an elimizdeki tek doz kontrolü. DreamActor bu alanı desteklemiyor, o modelde
+   * sessizce yok sayılıyor.
+   */
+  prompt?: string;
+  /** Sürücü video ile karakterin vücut oranı farklıysa hareketi uyarlıyor. Sadece wan-motion'da var, fal varsayılanı true. */
+  adaptMotion?: boolean;
+};
+
+export type GeneratePerformanceResult = {
+  /** wan-motion çıktısı SESSİZ — anlatım sesi için sürücü videonun kendi ses parçası kullanılmalı. */
+  videoUrl: string;
+  requestId: string;
+};
+
+/**
+ * Ses-güdümlü avatar (OmniHuman/Kling) yerine performans aktarımı: ağız/mimik/jest
+ * kullanıcının GERÇEK performansından geliyor, sesin tahmininden değil. Gerçek testte
+ * (bkz. proje geçmişi) OmniHuman'ın "ağız abartılı" sorunu bu yolla kökten çözüldü.
+ */
+export async function generateCharacterPerformance(
+  params: GeneratePerformanceParams,
+): Promise<GeneratePerformanceResult> {
+  // DreamActor'ın prompt/adapt_motion alanları YOK (bkz. şeması: sadece image_url, video_url,
+  // trim_first_second) — bilinmeyen alan göndermek diğer modellerde 422'ye yol açtığı için
+  // (bkz. generateCharacterMotion'daki aynı gerekçe) model bazlı gövde kuruluyor.
+  const isDreamActor = params.modelId === 'fal-ai/bytedance/dreamactor/v2';
+  const input = isDreamActor
+    ? { image_url: params.imageUrl, video_url: params.videoUrl }
+    : {
+        image_url: params.imageUrl,
+        video_url: params.videoUrl,
+        ...(params.prompt?.trim() ? { prompt: params.prompt.trim() } : {}),
+        ...(params.adaptMotion === false ? { adapt_motion: false } : {}),
+      };
+
+  const { result, requestId } = await submitAndPoll<{ video?: { url?: string } }>(params.modelId, input, {
+    timeoutMs: PERFORMANCE_POLL_TIMEOUT_MS,
+    timeoutMessage: 'Performans aktarımı zaman aşımına uğradı (20 dk). Daha kısa bir sürücü video dene.',
+    failMessage: 'Performans aktarımı başarısız oldu.',
+  });
+
+  if (!result.video?.url) {
+    throw new FalError('fal.ai video döndürmedi.', `requestId=${requestId} ${JSON.stringify(result)}`);
+  }
+
+  return {
+    videoUrl: result.video.url,
     requestId,
   };
 }

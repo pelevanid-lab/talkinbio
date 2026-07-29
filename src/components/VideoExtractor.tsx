@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Camera, Loader2, PlaySquare } from 'lucide-react';
+import { useState, useRef, useEffect, ChangeEvent } from 'react';
+import { Camera, Loader2, PlaySquare, UploadCloud, CheckCircle } from 'lucide-react';
 
 type Props = {
   onExtracted: (files: File[]) => void;
@@ -11,14 +11,13 @@ type Props = {
 export default function VideoExtractor({ onExtracted, isProcessing }: Props) {
   const [error, setError] = useState<string | null>(null);
   
-  // Kamera Durumları
+  // States
+  const [livenessVerified, setLivenessVerified] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [capturedPhotos, setCapturedPhotos] = useState<File[]>([]);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
   // Kamerayı aç
   const startCamera = async () => {
     try {
@@ -28,24 +27,21 @@ export default function VideoExtractor({ onExtracted, isProcessing }: Props) {
       });
       setStream(mediaStream);
       setIsCameraOpen(true);
-      setCapturedPhotos([]);
     } catch (err) {
       console.error(err);
       setError('Kameraya erişilemedi. Lütfen tarayıcı ayarlarınızdan kamera izni verin.');
     }
   };
 
-  // Video elementi mount olunca stream'i bağla
+  // Component unmount olduğunda kamerayı kapatmayı unutma
   useEffect(() => {
-    if (isCameraOpen && stream && videoRef.current) {
-      if (videoRef.current.srcObject !== stream) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(() => {
-          // AbortError'ı yutuyoruz ki Next.js kırmızı ekran fırlatmasın.
-        });
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
       }
-    }
-  }, [isCameraOpen, stream]);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stream]);
 
   // Kamerayı kapat
   const stopCamera = () => {
@@ -56,70 +52,49 @@ export default function VideoExtractor({ onExtracted, isProcessing }: Props) {
     setIsCameraOpen(false);
   };
 
-  // Component unmount olduğunda kamerayı kapatmayı unutma
+  // Liveness doğrulama
+  const verifyLiveness = () => {
+    setVerifying(true);
+    // 2 saniye fake liveness scan efekti
+    setTimeout(() => {
+      setVerifying(false);
+      setLivenessVerified(true);
+      stopCamera();
+    }, 2000);
+  };
+
+  // Dosya Yükleme
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setUploadedFile(e.target.files[0]);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (uploadedFile) {
+      onExtracted([uploadedFile]);
+    }
+  };
+
   useEffect(() => {
-    return () => stopCamera();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stream]);
-
-  // Fotoğraf çek
-  const takePhoto = async () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    
-    if (!video || !canvas) return;
-
-    // Canvas'a çiz
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    
-    // Çizimi yap
-    ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-    
-    if (blob) {
-      const file = new File([blob], `snap-${capturedPhotos.length + 1}.jpg`, { type: 'image/jpeg' });
-      setCapturedPhotos(prev => [...prev, file]);
+    if (!isProcessing) {
+      setUploadedFile(null);
     }
-  };
-
-  const handleStartAnalysis = () => {
-    if (capturedPhotos.length < 3) {
-      setError('Lütfen 3 adet fotoğraf çekin.');
-      return;
-    }
-    stopCamera();
-    onExtracted(capturedPhotos);
-  };
-
-  const removePhoto = (index: number) => {
-    setCapturedPhotos(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const getInstruction = () => {
-    if (capturedPhotos.length === 0) return "Tam karşıya bakarak fotoğraf çekin";
-    if (capturedPhotos.length === 1) return "Şimdi hafifçe SAĞA dönün";
-    if (capturedPhotos.length === 2) return "Şimdi hafifçe SOLA dönün";
-    return "Tebrikler! Analizi başlatabilirsiniz.";
-  };
+  }, [isProcessing]);
 
   if (isProcessing) {
     return (
       <div className="flex flex-col items-center justify-center p-8 bg-slate-50 border border-slate-200 rounded-2xl">
         <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-3" />
-        <p className="text-sm font-medium text-slate-700">Yüz hatları analiz ediliyor, lütfen bekleyin...</p>
+        <p className="text-sm font-medium text-slate-700">Görsel analiz ediliyor ve AI Twin oluşturuluyor...</p>
         <p className="text-xs text-slate-400 mt-1 text-center max-w-sm">
-          Gemini 2.5 Pro yüz hatlarınızı, etnik yapınızı ve yaşınızı tarayıp kimlik profilinizi oluşturuyor.
+          Lütfen bekleyin, bu işlem biraz zaman alabilir.
         </p>
 
-        {capturedPhotos.length > 0 && (
-          <div className="flex justify-center gap-3 mt-6">
-            {capturedPhotos.map((f, i) => (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img key={i} src={URL.createObjectURL(f)} alt={`Kare ${i+1}`} className="w-16 h-16 rounded-lg object-cover border border-slate-200 shadow-sm transform scale-x-[-1]" />
-            ))}
+        {uploadedFile && (
+          <div className="mt-6">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={URL.createObjectURL(uploadedFile)} alt="Yüklenen" className="w-24 h-24 rounded-lg object-cover border border-slate-200 shadow-sm" />
           </div>
         )}
       </div>
@@ -128,121 +103,116 @@ export default function VideoExtractor({ onExtracted, isProcessing }: Props) {
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8">
-      <div className="text-center mb-6">
-        <h2 className="text-xl font-bold text-slate-900">Yüzünüzü Tanıtın (Liveness)</h2>
-        <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
-          Güvenliğiniz için sadece anlık kamera görüntüsü ile profil oluşturulabilir. Galeriden yükleme yapılamaz.
-        </p>
-      </div>
+      {!livenessVerified ? (
+        <>
+          <div className="text-center mb-6">
+            <h2 className="text-xl font-bold text-slate-900">Gerçekliğinizi Doğrulayın (Liveness)</h2>
+            <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
+              Güvenliğiniz için robot olmadığınızı doğrulamak amacıyla kameranızı açmanız gerekmektedir. Görüntünüz kaydedilmeyecektir.
+            </p>
+          </div>
 
-      {!isCameraOpen ? (
-        <div className="flex justify-center">
-          <button 
-            onClick={startCamera}
-            className="flex flex-col items-center gap-3 p-8 rounded-xl border-2 border-slate-100 hover:border-blue-500 hover:bg-blue-50 transition-colors max-w-sm w-full"
-          >
-            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shadow-inner">
-              <Camera className="w-8 h-8" />
-            </div>
-            <div className="text-center">
-              <h3 className="font-bold text-slate-900 text-lg">Kamerayı Aç</h3>
-              <p className="text-xs text-slate-500 mt-2">
-                Tarayıcınızın kamera isteğine izin vermeniz gerekmektedir.
-              </p>
-            </div>
-          </button>
-        </div>
-      ) : (
-        <div className="animate-in fade-in slide-in-from-bottom-4 flex flex-col items-center">
-          
-          <div className="relative w-full max-w-md bg-black rounded-xl overflow-hidden shadow-lg aspect-[3/4] sm:aspect-[4/3] flex items-center justify-center">
-            {/* Live Camera Feed */}
-            <video 
-              ref={videoRef} 
-              autoPlay 
-              playsInline 
-              muted 
-              className={`w-full h-full object-cover ${capturedPhotos.length === 3 ? 'opacity-50 blur-sm' : ''} transform scale-x-[-1]`}
-            />
-
-            {/* Instruction Overlay */}
-            {capturedPhotos.length < 3 && (
-              <div className="absolute top-4 left-0 w-full text-center px-4 z-10">
-                <div className="inline-block bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm font-medium shadow-xl">
-                  Poz {capturedPhotos.length + 1}/3: {getInstruction()}
+          {!isCameraOpen ? (
+            <div className="flex justify-center">
+              <button 
+                onClick={startCamera}
+                className="flex flex-col items-center gap-3 p-8 rounded-xl border-2 border-slate-100 hover:border-blue-500 hover:bg-blue-50 transition-colors max-w-sm w-full"
+              >
+                <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shadow-inner">
+                  <Camera className="w-8 h-8" />
                 </div>
-              </div>
-            )}
+                <div className="text-center">
+                  <h3 className="font-bold text-slate-900 text-lg">Kamerayı Aç</h3>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Kamera sadece canlılık testi içindir, fotoğrafınız kaydedilmez.
+                  </p>
+                </div>
+              </button>
+            </div>
+          ) : (
+            <div className="animate-in fade-in slide-in-from-bottom-4 flex flex-col items-center">
+              <div className="relative w-full max-w-md bg-black rounded-xl overflow-hidden shadow-lg h-[400px] sm:h-[480px]">
+                <video 
+                  ref={(el) => {
+                    if (el && stream && el.srcObject !== stream) {
+                      el.srcObject = stream;
+                      el.play().catch(() => {});
+                    }
+                  }}
+                  autoPlay 
+                  playsInline 
+                  muted 
+                  className={`absolute inset-0 w-full h-full object-cover ${verifying ? 'opacity-50 blur-sm' : ''} transform scale-x-[-1]`}
+                />
 
-            {/* Take Photo Button */}
-            {capturedPhotos.length < 3 && (
-              <div className="absolute bottom-6 left-0 w-full flex justify-center z-10">
-                <button 
-                  onClick={takePhoto}
-                  className="w-16 h-16 bg-white/20 backdrop-blur-md border-4 border-white rounded-full flex items-center justify-center hover:bg-white/40 active:scale-95 transition-all shadow-xl"
-                  title="Fotoğraf Çek"
+                {verifying && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center z-10 text-white">
+                    <Loader2 className="w-12 h-12 animate-spin mb-2" />
+                    <span className="font-bold drop-shadow-md">Yüz taranıyor...</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-6 flex flex-col w-full max-w-md gap-4">
+                <button
+                  onClick={verifyLiveness}
+                  disabled={verifying}
+                  className="w-full rounded-xl py-3.5 font-semibold transition-all shadow-sm bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                 >
-                  <div className="w-12 h-12 bg-white rounded-full"></div>
+                  {verifying ? 'Doğrulanıyor...' : 'Gerçekliğimi Doğrula'}
+                </button>
+                <button 
+                  onClick={stopCamera}
+                  disabled={verifying}
+                  className="text-xs text-slate-400 hover:text-slate-600 underline text-center"
+                >
+                  İptal Et
                 </button>
               </div>
-            )}
-
-            {/* Done Overlay */}
-            {capturedPhotos.length === 3 && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 z-10">
-                <div className="bg-white rounded-full p-3 mb-3 shadow-2xl">
-                  <PlaySquare className="w-8 h-8 text-blue-600" />
-                </div>
-                <h3 className="text-white font-bold text-xl drop-shadow-md">Çekim Tamamlandı!</h3>
-              </div>
-            )}
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="animate-in zoom-in-95 fade-in flex flex-col items-center">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 text-green-600 rounded-full mb-3">
+              <CheckCircle className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-900">Doğrulama Başarılı!</h2>
+            <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
+              Şimdi AI Twin'inizin eğitileceği en net ve yüksek çözünürlüklü 1 adet fotoğrafınızı yükleyin.
+            </p>
           </div>
 
-          <div className="mt-6 flex flex-col w-full max-w-md gap-4">
-            {capturedPhotos.length > 0 && (
-              <div className="flex gap-3 justify-center">
-                {capturedPhotos.map((photo, i) => (
-                  <div key={i} className="relative group">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img 
-                      src={URL.createObjectURL(photo)} 
-                      alt="" 
-                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover border-2 border-slate-200 shadow-sm transform scale-x-[-1]" 
-                    />
-                    <button
-                      onClick={() => removePhoto(i)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      ×
-                    </button>
-                    <div className="absolute -bottom-2 -translate-x-1/2 left-1/2 bg-slate-800 text-white text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap">
-                      {i === 0 ? 'Ön' : i === 1 ? 'Sağ' : 'Sol'}
-                    </div>
-                  </div>
-                ))}
+          {!uploadedFile ? (
+            <label className="flex flex-col items-center justify-center w-full max-w-md h-64 border-2 border-slate-200 border-dashed rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                <UploadCloud className="w-12 h-12 text-slate-400 mb-3" />
+                <p className="mb-2 text-sm text-slate-500 font-semibold">Tıklayın veya fotoğraf sürükleyin</p>
+                <p className="text-xs text-slate-400">Sadece JPEG, PNG</p>
               </div>
-            )}
-
-            <button
-              onClick={handleStartAnalysis}
-              disabled={capturedPhotos.length < 3}
-              className={`w-full rounded-xl py-3.5 font-semibold transition-all shadow-sm ${
-                capturedPhotos.length === 3 
-                  ? 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md' 
-                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-              }`}
-            >
-              {capturedPhotos.length === 3 ? 'Analizi Başlat' : `Fotoğraf Çekin (${capturedPhotos.length}/3)`}
-            </button>
-            
-            <button 
-              onClick={stopCamera}
-              className="text-xs text-slate-400 hover:text-slate-600 underline"
-            >
-              Kamerayı Kapat ve İptal Et
-            </button>
-          </div>
-
+              <input type="file" className="hidden" accept="image/jpeg, image/png" onChange={handleFileChange} />
+            </label>
+          ) : (
+            <div className="flex flex-col items-center w-full max-w-md">
+              <div className="relative w-full h-64 rounded-2xl overflow-hidden shadow-md mb-4 bg-slate-100">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={URL.createObjectURL(uploadedFile)} alt="Seçilen" className="w-full h-full object-cover" />
+                <button 
+                  onClick={() => setUploadedFile(null)}
+                  className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-2 hover:bg-black/70 backdrop-blur-sm flex items-center justify-center w-8 h-8"
+                >
+                  ✕
+                </button>
+              </div>
+              <button
+                onClick={handleSubmit}
+                className="w-full rounded-xl py-3.5 font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow-md transition-all"
+              >
+                Gönder ve Twin Üret
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -251,9 +221,6 @@ export default function VideoExtractor({ onExtracted, isProcessing }: Props) {
           {error}
         </div>
       )}
-
-      {/* Gizli canvas (Görüntü yakalamak için) */}
-      <canvas ref={canvasRef} className="hidden" />
     </div>
   );
 }

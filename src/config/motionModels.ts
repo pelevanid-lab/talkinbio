@@ -84,17 +84,6 @@ export const MOTION_MODELS: MotionModel[] = [
     maxAudioMb: 50,
   },
   {
-    id: 'fal-ai/kling-video/ai-avatar/v2/pro',
-    label: 'Kling Avatar v2 Pro',
-    hint: 'Güçlü dudak senkronu, OmniHuman’ın yaklaşık yarı fiyatı',
-    costPerSecondUsd: 0.115,
-    resolutions: { '1080p': 60 },
-    sendsResolution: false,
-    supportsTurbo: false,
-    minAudioSeconds: 2,
-    maxAudioMb: 5,
-  },
-  {
     id: 'fal-ai/kling-video/ai-avatar/v2/standard',
     label: 'Kling Avatar v2 Standard',
     hint: 'En ucuz — varyasyon denemek için, son çekim için değil',

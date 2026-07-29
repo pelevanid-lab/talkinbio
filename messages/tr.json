@@ -119,24 +119,24 @@
       "beiweTab": "Beiwe Creative",
       "saule": {
         "kuafor": {
-          "title": "Kuaför & Güzellik Merkezi",
-          "desc": "Saniyeler içinde randevu sistemi oluşturun ve portfolyo sayfanızla sosyal medyadan doğrudan müşteri kazanın."
+          "title": "Otomatik Randevu Sistemi",
+          "desc": "Kuaför & güzellik merkezinde saniyeler içinde randevu oluşturun, portfolyonuzla sosyal medyadan doğrudan müşteri kazanın."
         },
         "spa": {
-          "title": "Masaj Spa",
-          "desc": "Yoğunlukta çağrıları kaçırmayın; asistanınız sizin yerinize randevuları ayarlasın, fiyat versin."
+          "title": "Yoğun Saatlerde Otomatik Yanıt",
+          "desc": "Spa'nın en yoğun saatlerinde çağrıları kaçırmayın; asistanınız sizin yerinize randevuları ayarlasın, fiyat versin."
         },
         "antrenor": {
-          "title": "Kişisel Antrenör",
-          "desc": "Öğrencilerinize beslenme listelerini ve antrenman programlarını anında yollayan, sorularını yanıtlayan akıllı asistanınız."
+          "title": "Anında Program & Bilgi Paylaşımı",
+          "desc": "Kişisel antrenörler öğrencilerine beslenme listelerini ve antrenman programlarını anında yollayan, sorularını yanıtlayan akıllı asistan."
         },
         "diyet": {
-          "title": "Diyet & Sağlıklı Yaşam",
-          "desc": "Saule sizin için yüzlerce sağlıklı yaşam sorusunu önceki paylaşımlarınızdan ve sayfanızdan bilgi alarak anında yanıtlasın."
+          "title": "Geçmiş İçeriklerden Akıllı Yanıt",
+          "desc": "Diyet & sağlıklı yaşam sayfalarında yüzlerce soruyu önceki paylaşımlarınızdan ve sayfanızdan bilgi alarak anında yanıtlayın."
         },
         "tattoo": {
-          "title": "Dövme Stüdyosu",
-          "desc": "Müşterilerinizin sorularını yanıtlayan ve onlara uygun sanatçıyı önerip randevu oluşturan yapay zeka asistanınız."
+          "title": "Kişiye Özel Yönlendirme & Öneri",
+          "desc": "Dövme stüdyosu müşterilerinin sorularını yanıtlayan, onlara uygun sanatçıyı önerip randevu oluşturan yapay zeka asistanınız."
         }
       },
       "beiwe": {
