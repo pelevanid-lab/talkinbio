@@ -21,18 +21,18 @@
     },
     "steps": {
       "title": "The setup itself is your agent's training.",
-      "sub": "No separate \"train the AI\" step: while you chat with Beiwe, your setup agent, every answer becomes what Saule — the agent that talks to your visitors — knows.",
+      "sub": "No separate \"train the AI\" step: while you chat with Creative Agent, your setup agent, every answer becomes what Assistant Agent — the agent that talks to your visitors — knows.",
       "step1": {
         "title": "Answer a few questions",
-        "desc": "What do you sell, what are your prices, your hours — you tell Beiwe in a simple chat, no form filling."
+        "desc": "What do you sell, what are your prices, your hours — you tell Creative Agent in a simple chat, no form filling."
       },
       "step2": {
         "title": "Your page and your agent are born together",
-        "desc": "What you tell Beiwe turns into both a visible page and what Saule knows — one source, two outputs."
+        "desc": "What you tell Creative Agent turns into both a visible page and what Assistant Agent knows — one source, two outputs."
       },
       "step3": {
         "title": "Put your link in your bio, let it talk",
-        "desc": "A visitor asks a question, Saule answers, and notes down interested customers for you."
+        "desc": "A visitor asks a question, Assistant Agent answers, and notes down interested customers for you."
       },
       "agents": {
         "beiweRole": "Builds your page",
@@ -109,14 +109,14 @@
     "twoPlatforms": {
       "title": "Two AI platforms built on the same foundation",
       "sauleTitle": "Talks to your customers",
-      "sauleDesc": "Saule Assistant answers visitors' questions on your page, gives pricing, books appointments, and captures leads. A 24/7 digital employee.",
+      "sauleDesc": "Assistant Agent answers visitors' questions on your page, gives pricing, books appointments, and captures leads. A 24/7 digital employee.",
       "beiweTitle": "Manages your page",
-      "beiweDesc": "Beiwe Creative learns your business details in the background and transforms them into a professional web page. Content and design are fully automatic."
+      "beiweDesc": "Creative Agent learns your business details in the background and transforms them into a professional web page. Content and design are fully automatic."
     },
     "showcase": {
       "title": "Discover the power of AI<br />for your business",
-      "sauleTab": "Saule Assistant",
-      "beiweTab": "Beiwe Creative",
+      "sauleTab": "Assistant Agent",
+      "beiweTab": "Creative Agent",
       "saule": {
         "kuafor": {
           "title": "Automated Booking System",
@@ -132,7 +132,7 @@
         },
         "diyet": {
           "title": "Smart Answers From Your Past Content",
-          "desc": "On diet & wellness pages, let Saule instantly answer hundreds of questions by pulling knowledge from your past posts and page."
+          "desc": "On diet & wellness pages, let Assistant Agent instantly answer hundreds of questions by pulling knowledge from your past posts and page."
         },
         "tattoo": {
           "title": "Personalized Routing & Recommendations",
@@ -146,7 +146,7 @@
         },
         "portfolio": {
           "title": "Web Design in Seconds",
-          "desc": "No coding or templates. Just describe your business, and Beiwe creates a premium portfolio instantly."
+          "desc": "No coding or templates. Just describe your business, and Creative Agent creates a premium portfolio instantly."
         },
         "booking": {
           "title": "Central Management System",
@@ -167,7 +167,7 @@
         "meta": "Product · Jul 28, 2026"
       },
       "post2": {
-        "badge": "Saule Training",
+        "badge": "Assistant Agent Training",
         "title": "How to train your assistant in just 5 minutes? New guide is out.",
         "meta": "Guide · Jul 15, 2026"
       },
@@ -178,7 +178,7 @@
       }
     },
     "heroTexts": {
-      "subtitle": "The complete AI platform for your business. From <strong className=\"text-[var(--ink)] font-semibold\">Saule Assistant</strong> engaging your visitors 24/7, to <strong className=\"text-[var(--ink)] font-semibold\">Beiwe Creative</strong> building your content in seconds.",
+      "subtitle": "The complete AI platform for your business. From <strong className=\"text-[var(--ink)] font-semibold\">Assistant Agent</strong> engaging your visitors 24/7, to <strong className=\"text-[var(--ink)] font-semibold\">Creative Agent</strong> building your content in seconds.",
       "btnEarly": "Early access",
       "btnHow": "How it works?",
       "btnPricing": "Pricing"
@@ -189,11 +189,11 @@
       "beiweDesc": "Create content for your business. <br/>Turns your words into a professional website instantly."
     },
     "deepSaule": {
-      "title": "Saule Assistant",
+      "title": "Assistant Agent",
       "desc": "Configure and add an AI assistant to your site in seconds that knows your business, answers questions, and converts potential customers.",
       "btn": "Get Started",
       "f1Title": "24/7 Seamless Communication",
-      "f1Desc": "Your visitors can ask questions any time of the day, and Saule answers instantly and naturally by understanding your business.",
+      "f1Desc": "Your visitors can ask questions any time of the day, and Assistant Agent answers instantly and naturally by understanding your business.",
       "f2Title": "Lead Management & Analytics",
       "f2Desc": "The name, contact information, and specific request of every interested visitor are automatically collected and reported to you.",
       "f3Title": "Multi-language Support",
@@ -202,14 +202,14 @@
       "f4Desc": "No need to build complex dialog flows. Just describe your business, and your assistant will learn and start working in seconds."
     },
     "deepBeiwe": {
-      "title": "Beiwe Creative",
+      "title": "Creative Agent",
       "desc1": "The AI that builds your content and page in seconds.",
       "desc2": "Create professional websites, social media link pages, and rich content just by describing your business. Everything is ready in a single AI platform.",
       "btn": "Get Started",
       "f1Title": "Automated Design",
       "f1Desc": "Don't waste time choosing themes, templates, or layouts. Your web page is automatically designed according to your content and brand.",
       "f2Title": "Centralized Management",
-      "f2Desc": "Prices, hours, and services... A simple chat with Beiwe instantly updates the information on your website.",
+      "f2Desc": "Prices, hours, and services... A simple chat with Creative Agent instantly updates the information on your website.",
       "f3Title": "Ready for All Platforms",
       "f3Desc": "Instagram, WhatsApp, TikTok. The single link profile you create seamlessly adapts to all social media platforms.",
       "f4Title": "Rich Media Support",
@@ -334,11 +334,11 @@
     "leadsNavLabel": "Panel",
     "contentStudioTooltip": "Content Studio",
     "contentStudioLabel": "Content",
-    "suggestionsTooltip": "Tips from Beiwe",
-    "suggestionsPanelTitle": "Beiwe's Notes",
+    "suggestionsTooltip": "Tips from Creative Agent",
+    "suggestionsPanelTitle": "Creative Agent's Notes",
     "suggestionsEmpty": "🎉 Your page looks great right now! I have no more suggestions.",
     "suggestionsFromInsight": "From conversations",
-    "suggestionsFixCta": "✦ Fix it with Beiwe",
+    "suggestionsFixCta": "✦ Fix it with Creative Agent",
     "insightTopicMessage": "Your customers frequently asked about \"{topic}\" in the last 7 days ({count} times).",
     "insightDefaultMessage": "There's a new insight.",
     "insightDefaultTrigger": "I'd like to review an insight from my conversations.",
@@ -358,8 +358,8 @@
       "hoursLabel": "Hours",
       "faqLabel": "FAQ",
       "contactLabel": "Contact",
-      "continueBtn": "Continue with Beiwe",
-      "allComplete": "🎉 All essential sections are complete! You can ask Beiwe for extra ideas.",
+      "continueBtn": "Continue with Creative Agent",
+      "allComplete": "🎉 All essential sections are complete! You can ask Creative Agent for extra ideas.",
       "analyzingPlaceholder": "Analyze my page..."
     },
     "systemManualEditMessage": "[System: A manual edit was made in this session. A new chat was started.]",
@@ -532,7 +532,7 @@
     "placeholder": "Type a message...",
     "defaultPreview": "How can I help you?",
     "newChat": "New chat",
-    "signature": "You're chatting with Saule",
+    "signature": "",
     "formName": "Your name",
     "formContact": "Phone or email",
     "formMessage": "Your message (optional)",
@@ -547,7 +547,7 @@
     "intro": "Our payment infrastructure is being set up alongside the legal paperwork — for now, pick a plan and reach out, and our team will set it up with you directly.",
     "perMonth": "/mo",
     "credits": "{count} credits",
-    "capacityExample": "≈ {saule} Saule chats OR {beiwe} Beiwe updates",
+    "capacityExample": "≈ {saule} Assistant Agent chats OR {beiwe} Creative Agent updates",
     "idealFor_starter": "Ideal for businesses receiving 5-10 DMs daily",
     "idealFor_pro": "Ideal for businesses receiving 20-30 DMs daily",
     "idealFor_business": "Ideal for businesses receiving 50-60 DMs daily",
@@ -588,19 +588,19 @@
     },
     "q4": {
       "title": "What We Do",
-      "content": "talkinbio has two parts.\n\nSaule is the AI assistant that works 24/7 on your bio page. When a visitor asks a question, Saule listens, understands, and answers like someone who actually knows your business. It books appointments, logs interested visitors, and flags anything that needs follow-up. When you wake up, you're not looking at missed DMs — you're looking at a sorted, tagged lead list.\n\nBeiwe analyzes those conversations and turns them into weekly marketing suggestions. 'What question came up most this week? Which service got the most interest? What times did visitors show up?' Beiwe answers those questions, so your next content decision is based on data instead of a guess.\n\nSetup takes 10 minutes, no code required. And once the system is running, it keeps working whether you're at your desk or not."
+      "content": "talkinbio has two parts.\n\nSaule is the AI assistant that works 24/7 on your bio page. When a visitor asks a question, Assistant Agent listens, understands, and answers like someone who actually knows your business. It books appointments, logs interested visitors, and flags anything that needs follow-up. When you wake up, you're not looking at missed DMs — you're looking at a sorted, tagged lead list.\n\nBeiwe analyzes those conversations and turns them into weekly marketing suggestions. 'What question came up most this week? Which service got the most interest? What times did visitors show up?' Creative Agent answers those questions, so your next content decision is based on data instead of a guess.\n\nSetup takes 10 minutes, no code required. And once the system is running, it keeps working whether you're at your desk or not."
     },
     "q5": {
       "title": "What Makes Us Different",
-      "content": "Every Saule conversation carries a small signature underneath it: 'You're chatting with Saule — talkinbio.com.' Everyone who visits a seller's page sees it. And some of them think 'I want that on my own page too' and sign up. So the product grows itself — CAC stays organic without any paid marketing.\n\nThat produces a few advantages. First, a viral loop: every active assistant becomes a channel for acquiring new users.\n\nSecond, accumulated conversation data: the more Beiwe gets used, the more specialized it becomes. A new competitor can't copy that data advantage overnight — our early users are giving us a strategic head start in data richness.\n\nThird, a local-first architecture: we're already building the localization skeleton that adapts to markets with different languages and payment infrastructure (MENA, LatAm). That means our v2 expansion won't have to start from zero."
+      "content": "Every Assistant Agent conversation carries a small signature underneath it: 'You're chatting with Assistant Agent — talkinbio.com.' Everyone who visits a seller's page sees it. And some of them think 'I want that on my own page too' and sign up. So the product grows itself — CAC stays organic without any paid marketing.\n\nThat produces a few advantages. First, a viral loop: every active assistant becomes a channel for acquiring new users.\n\nSecond, accumulated conversation data: the more Creative Agent gets used, the more specialized it becomes. A new competitor can't copy that data advantage overnight — our early users are giving us a strategic head start in data richness.\n\nThird, a local-first architecture: we're already building the localization skeleton that adapts to markets with different languages and payment infrastructure (MENA, LatAm). That means our v2 expansion won't have to start from zero."
     },
     "q6": {
       "title": "Our Revenue Model",
-      "content": "Our revenue model is a credit-based subscription. Billing infrastructure ships as part of our roadmap's launch gate; for now, we collect payment manually from early pilots. We have three tiers.\n\nStarter ($9/month, 200 credits) is for the individual seller getting 3-5 DMs a day, setting up an assistant for the first time. Users at this tier are learning what Saule does and testing whether it's worth it.\n\nPro ($29/month, 700 credits) is for sellers getting 30+ DMs a week, with a steady customer base, who use Beiwe's analytics. This tier is our real revenue engine.\n\nBusiness ($79/month, 1,800 credits) is for sellers running multiple service lines, handling high DM volume, with automation needs that have outgrown the basics.\n\nPricing is dollar-fixed; we collect in lira at the current exchange rate. Annual billing comes with a 20% discount — savings for the customer, and a buffer against currency risk for us.\n\nIn numbers: effective ARPU is $15, LTV is $300 (assuming 5% churn), and we're targeting a CAC under $100 — our viral signature loop should keep that organic."
+      "content": "Our revenue model is a credit-based subscription. Billing infrastructure ships as part of our roadmap's launch gate; for now, we collect payment manually from early pilots. We have three tiers.\n\nStarter ($9/month, 200 credits) is for the individual seller getting 3-5 DMs a day, setting up an assistant for the first time. Users at this tier are learning what Assistant Agent does and testing whether it's worth it.\n\nPro ($29/month, 700 credits) is for sellers getting 30+ DMs a week, with a steady customer base, who use Creative Agent's analytics. This tier is our real revenue engine.\n\nBusiness ($79/month, 1,800 credits) is for sellers running multiple service lines, handling high DM volume, with automation needs that have outgrown the basics.\n\nPricing is dollar-fixed; we collect in lira at the current exchange rate. Annual billing comes with a 20% discount — savings for the customer, and a buffer against currency risk for us.\n\nIn numbers: effective ARPU is $15, LTV is $300 (assuming 5% churn), and we're targeting a CAC under $100 — our viral signature loop should keep that organic."
     },
     "q7": {
       "title": "Where We're Headed",
-      "content": "Right now we're in Stage 1: Problem/Solution Fit. The one metric we track (OMTM) is paying customers, and the counter currently reads 0/10. Our goal: finish 20 problem interviews, confirm the pain points that keep repeating, and get the first 10 pilots paying $9/month.\n\nStage 2 (550 customers, $100K ARR) is proof of Problem/Solution Fit — crossing that line also tells us whether the viral loop actually works. That's where investor conversations start.\n\nStage 3 is v2 Global: direct WhatsApp and Instagram DM integration, MENA and LatAm localization, new languages. In our base scenario that's roughly 4,500 customers and $810K ARR — Saule stops living only on the bio page and starts working across every channel. In a more optimistic scenario (6% global capture), that grows to roughly 9,000 customers and $1.6M ARR.\n\nEvery step needs proof from the one before it. Right now, we're focused on exactly one thing: the first 10 payments.\n\nLong-term, we don't see talkinbio as just a tool for individuals. Saule and Beiwe are turning into an agent infrastructure that runs across every channel a business communicates through. We're not naming that yet — the product will speak for itself."
+      "content": "Right now we're in Stage 1: Problem/Solution Fit. The one metric we track (OMTM) is paying customers, and the counter currently reads 0/10. Our goal: finish 20 problem interviews, confirm the pain points that keep repeating, and get the first 10 pilots paying $9/month.\n\nStage 2 (550 customers, $100K ARR) is proof of Problem/Solution Fit — crossing that line also tells us whether the viral loop actually works. That's where investor conversations start.\n\nStage 3 is v2 Global: direct WhatsApp and Instagram DM integration, MENA and LatAm localization, new languages. In our base scenario that's roughly 4,500 customers and $810K ARR — Assistant Agent stops living only on the bio page and starts working across every channel. In a more optimistic scenario (6% global capture), that grows to roughly 9,000 customers and $1.6M ARR.\n\nEvery step needs proof from the one before it. Right now, we're focused on exactly one thing: the first 10 payments.\n\nLong-term, we don't see talkinbio as just a tool for individuals. Assistant Agent and Creative Agent are turning into an agent infrastructure that runs across every channel a business communicates through. We're not naming that yet — the product will speak for itself."
     },
     "q8": {
       "title": "How We Work",
@@ -608,7 +608,7 @@
     },
     "q9": {
       "title": "What We're Asking For",
-      "content": "From our users: setup takes 10 minutes. Connect your bio link to talkinbio, and watch how many leads Saule collects over a month. If it doesn't create value, don't continue. If it does, now you know.\n\nFrom our investors: we're an early-stage, bootstrapped startup right now. The right time for an investment conversation is once we cross $100K ARR — but rather than make you wait until then, we wanted to introduce ourselves early. Our numbers are marked by evidence class: validated is validated, estimated is estimated, and the open questions stay open. We'll reach out when we're ready.\n\nFrom our team: come back to this page whenever you need a reminder of why building this matters. We believe what we're doing is right — proving it is the only thing left to do."
+      "content": "From our users: setup takes 10 minutes. Connect your bio link to talkinbio, and watch how many leads Assistant Agent collects over a month. If it doesn't create value, don't continue. If it does, now you know.\n\nFrom our investors: we're an early-stage, bootstrapped startup right now. The right time for an investment conversation is once we cross $100K ARR — but rather than make you wait until then, we wanted to introduce ourselves early. Our numbers are marked by evidence class: validated is validated, estimated is estimated, and the open questions stay open. We'll reach out when we're ready.\n\nFrom our team: come back to this page whenever you need a reminder of why building this matters. We believe what we're doing is right — proving it is the only thing left to do."
     }
   },
   "Legal": {
@@ -619,23 +619,23 @@
     "sections": [
       {
         "title": "1. Data Controller",
-        "body": "talkinbio is currently operated as a sole proprietorship while formal company incorporation is in progress; the registered data controller identity (company name, registration number) will be updated on this page once incorporation is complete. Personal data collected through the platform is processed in accordance with applicable data protection law, including the GDPR. Contact: info@talkinbio.com\n\nImportant distinction: business owners using the talkinbio platform (our customers) are the data controller for data they collect from their own visitors/end customers (e.g. conversations with Saule, lead information) — talkinbio acts as a data processor for that data. For the account holder's own data (name, email, account information), talkinbio is the data controller."
+        "body": "talkinbio is currently operated as a sole proprietorship while formal company incorporation is in progress; the registered data controller identity (company name, registration number) will be updated on this page once incorporation is complete. Personal data collected through the platform is processed in accordance with applicable data protection law, including the GDPR. Contact: info@talkinbio.com\n\nImportant distinction: business owners using the talkinbio platform (our customers) are the data controller for data they collect from their own visitors/end customers (e.g. conversations with Assistant Agent, lead information) — talkinbio acts as a data processor for that data. For the account holder's own data (name, email, account information), talkinbio is the data controller."
       },
       {
         "title": "2. Personal Data We Collect",
-        "body": "talkinbio provides an AI assistant (Saule) that chats 24/7 with visitors to your social media bio page. Two separate categories of data are processed:\n\nYour data as a business owner (account holder):\n• Identity data: Full name\n• Contact data: Email address\n• Account data: Business name, username, industry/category\n• Usage and metering data: Login timestamps, in-platform actions, AI usage volume (credit/token consumption)\n\nData belonging to visitors to your page (your end customers) — for this data, you are the data controller and talkinbio is the data processor:\n• Transcripts of conversations with Saule (including messages the visitor writes)\n• Lead information: name, contact details, preferred appointment time\n• A session cookie named visitor_session_id (used to match a visitor to their own conversation history)\n\nSaule is an AI assistant; when a visitor asks directly, it honestly discloses this. These conversations may be read by the business owner providing the service and are sent to an AI provider to generate responses (see Section 4)."
+        "body": "talkinbio provides an AI assistant (Assistant Agent) that chats 24/7 with visitors to your social media bio page. Two separate categories of data are processed:\n\nYour data as a business owner (account holder):\n• Identity data: Full name\n• Contact data: Email address\n• Account data: Business name, username, industry/category\n• Usage and metering data: Login timestamps, in-platform actions, AI usage volume (credit/token consumption)\n\nData belonging to visitors to your page (your end customers) — for this data, you are the data controller and talkinbio is the data processor:\n• Transcripts of conversations with Assistant Agent (including messages the visitor writes)\n• Lead information: name, contact details, preferred appointment time\n• A session cookie named visitor_session_id (used to match a visitor to their own conversation history)\n\nSaule is an AI assistant; when a visitor asks directly, it honestly discloses this. These conversations may be read by the business owner providing the service and are sent to an AI provider to generate responses (see Section 4)."
       },
       {
         "title": "3. Legal Basis for Processing",
-        "body": "We process your personal data under the following legal bases under GDPR Article 6:\n\n• Account creation and authentication → Performance of a contract (Art. 6(1)(b))\n• Providing platform services (page hosting, Saule/Beiwe assistants) → Performance of a contract (Art. 6(1)(b))\n• AI-assisted visitor communication (Saule answering questions, collecting appointments/leads) → Performance of a contract + legitimate interests (Art. 6(1)(b), 6(1)(f))\n• Security and audit logs → Legitimate interests (Art. 6(1)(f))\n• Product development, error analysis and usage metering (credit/token consumption) → Legitimate interests (Art. 6(1)(f))\n• Legal compliance (invoicing, accounting records) → Legal obligation (Art. 6(1)(c))\n• Marketing communications → Consent (Art. 6(1)(a)) — only where you have given explicit consent"
+        "body": "We process your personal data under the following legal bases under GDPR Article 6:\n\n• Account creation and authentication → Performance of a contract (Art. 6(1)(b))\n• Providing platform services (page hosting, Assistant Agent/Creative Agent assistants) → Performance of a contract (Art. 6(1)(b))\n• AI-assisted visitor communication (Assistant Agent answering questions, collecting appointments/leads) → Performance of a contract + legitimate interests (Art. 6(1)(b), 6(1)(f))\n• Security and audit logs → Legitimate interests (Art. 6(1)(f))\n• Product development, error analysis and usage metering (credit/token consumption) → Legitimate interests (Art. 6(1)(f))\n• Legal compliance (invoicing, accounting records) → Legal obligation (Art. 6(1)(c))\n• Marketing communications → Consent (Art. 6(1)(a)) — only where you have given explicit consent"
       },
       {
         "title": "4. Data Transfers",
-        "body": "To provide our service, your personal data is transferred to the following technical infrastructure providers (acting as data processors):\n\n• Supabase — database, authentication and file storage\n• Vercel — application hosting\n• Anthropic — the AI model provider powering Saule's and Beiwe's responses; conversation content is sent to Anthropic (based in the United States) for this purpose\n• Resend — sending system and notification emails\n\nSome of these providers are located outside the European Economic Area. Where data is transferred outside the EEA, we ensure appropriate safeguards are in place in accordance with GDPR Chapter V, including Standard Contractual Clauses where applicable. Data may also be transferred to competent public authorities where legally required."
+        "body": "To provide our service, your personal data is transferred to the following technical infrastructure providers (acting as data processors):\n\n• Supabase — database, authentication and file storage\n• Vercel — application hosting\n• Anthropic — the AI model provider powering Assistant Agent's and Creative Agent's responses; conversation content is sent to Anthropic (based in the United States) for this purpose\n• Resend — sending system and notification emails\n\nSome of these providers are located outside the European Economic Area. Where data is transferred outside the EEA, we ensure appropriate safeguards are in place in accordance with GDPR Chapter V, including Standard Contractual Clauses where applicable. Data may also be transferred to competent public authorities where legally required."
       },
       {
         "title": "5. Data Retention",
-        "body": "We retain your personal data as follows:\n\n• Account and platform data: for as long as your account is active; deleted or anonymized within 90 days of account closure.\n• Saule conversation transcripts and lead data: retained for as long as the related business account is active (accessible to the business owner); deleted within 90 days of account closure.\n• Invoicing and accounting records: retained for the period required by applicable tax law.\n• Security and audit logs: retained for up to 12 months.\n\nIf a visitor requests deletion of their conversation data, the request is directed to the relevant business owner (the data controller); talkinbio, as data processor, carries out the technical deletion."
+        "body": "We retain your personal data as follows:\n\n• Account and platform data: for as long as your account is active; deleted or anonymized within 90 days of account closure.\n• Assistant Agent conversation transcripts and lead data: retained for as long as the related business account is active (accessible to the business owner); deleted within 90 days of account closure.\n• Invoicing and accounting records: retained for the period required by applicable tax law.\n• Security and audit logs: retained for up to 12 months.\n\nIf a visitor requests deletion of their conversation data, the request is directed to the relevant business owner (the data controller); talkinbio, as data processor, carries out the technical deletion."
       },
       {
         "title": "6. Your Rights Under GDPR",
@@ -778,7 +778,7 @@
     "headerTitle": "Requests & Assistant",
     "tabRequests": "Requests",
     "tabConversations": "Conversations",
-    "tabSettings": "Saule Settings",
+    "tabSettings": "Assistant Agent Settings",
     "navContent": "Content",
     "navEditor": "Editor",
     "navViewProfile": "View My Profile",
@@ -786,7 +786,7 @@
     "backToActiveLeads": "Back to active requests",
     "backToActiveConversations": "Back to active conversations",
     "emptyLeadsTitle": "You haven't received any requests yet",
-    "emptyLeadsDescription": "Your visitors will show up here once they request a service by chatting with your assistant Saule.",
+    "emptyLeadsDescription": "Your visitors will show up here once they request a service by chatting with your assistant Assistant Agent.",
     "emptyArchivedLeadsTitle": "No archived requests",
     "emptyArchivedLeadsDescription": "Requests you archive will appear here.",
     "statusNew": "New",
@@ -819,30 +819,30 @@
     "toneEnergeticDesc": "Shows an excited and positive attitude.",
     "orderNowTitle": "Order Now Button Behavior",
     "orderNowDesc": "Choose what happens when a visitor clicks the \"Order Now\" button next to a price in Services.",
-    "orderNowSaule": "Open a chat with Saule",
+    "orderNowSaule": "Open a chat with Assistant Agent",
     "orderNowFillContactHint": "Fill in this channel in the editor's Contact section first.",
     "leadCaptureTitle": "Lead Capture",
     "leadCaptureDesc": "When on, it asks visitors for their contact info. When off, instead of asking, it directs visitors to your preferred contact channel (WhatsApp, Instagram, Telegram, etc.).",
     "preferredContactMethodLabel": "Preferred Contact Channel",
     "preferredContactMethodPlaceholder": "Choose a channel",
-    "preferredContactMethodHint": "While lead capture is off, Saule directs visitors to the channel you pick here instead of asking for their info.",
+    "preferredContactMethodHint": "While lead capture is off, Assistant Agent directs visitors to the channel you pick here instead of asking for their info.",
     "preferredContactMethodEmptyHint": "First add at least one contact channel (WhatsApp, Instagram, Telegram, or email) in the Contact section of the Editor.",
     "notificationEmailTitle": "Notification Email",
     "notificationEmailDesc": "Which email address should new customer requests go to? Leave blank to use the contact email on your profile.",
     "notificationEmailPlaceholder": "you@example.com",
     "appointmentTitle": "Appointment Flow",
-    "appointmentDesc": "When on, Saule asks the visitor's preferred day/time and adds it to the request — it doesn't book anything on a calendar automatically.",
+    "appointmentDesc": "When on, Assistant Agent asks the visitor's preferred day/time and adds it to the request — it doesn't book anything on a calendar automatically.",
     "appointmentInstructionsLabel": "Appointment Instructions",
     "appointmentInstructionsPlaceholder": "E.g.: Ask which day and time they'd like to come in.",
     "appointmentHint": "This feature currently creates a lead record in the \"Requests\" tab. Calendar integration is coming soon.",
     "greetingTitle": "Custom Greeting",
     "greetingDesc": "Set the first message yourself.",
-    "greetingHint": "Shown based on the language the visitor is viewing the page in; for any language you leave blank, Saule's default greeting is used.",
+    "greetingHint": "Shown based on the language the visitor is viewing the page in; for any language you leave blank, Assistant Agent's default greeting is used.",
     "footerTextBeforeEmail": "Talkinbio is a constantly evolving app. If you have feedback, requests, or complaints, you can reach us at ",
     "footerTextAfterEmail": ".",
     "conversations": {
       "emptyTitle": "No conversations yet",
-      "emptyDescription": "Transcripts will appear here once your visitors start chatting with Saule.",
+      "emptyDescription": "Transcripts will appear here once your visitors start chatting with Assistant Agent.",
       "noArchived": "No archived conversations.",
       "noActive": "No active conversations.",
       "testConversationLabel": "Test Conversation",
@@ -852,9 +852,9 @@
     },
     "knowledgeBase": {
       "title": "Knowledge Base",
-      "description": "Teach Saule things that aren't written on your page (cancellation policy, special rules, etc.).",
+      "description": "Teach Assistant Agent things that aren't written on your page (cancellation policy, special rules, etc.).",
       "addBtn": "Add Note",
-      "overBudgetWarning": "Your active notes have reached about {tokens} tokens — this increases the cost of every Saule message. Consider shortening them or deactivating rarely used notes.",
+      "overBudgetWarning": "Your active notes have reached about {tokens} tokens — this increases the cost of every Assistant Agent message. Consider shortening them or deactivating rarely used notes.",
       "titlePlaceholder": "Title (optional)",
       "contentPlaceholder": "E.g.: Appointment cancellations must be reported at least 24 hours in advance.",
       "cancelBtn": "Cancel",
@@ -905,8 +905,8 @@
     "usageEmpty": "No usage recorded yet.",
     "freeLabel": "Free",
     "agent": {
-      "saule": "Saule (Visitor Chat)",
-      "beiwe": "Beiwe (Setup Assistant)",
+      "saule": "Assistant Agent (Visitor Chat)",
+      "beiwe": "Creative Agent (Setup Assistant)",
       "analysis": "Automated Analysis"
     },
     "topUpTitle": "Extra Credits or Plan Upgrade",

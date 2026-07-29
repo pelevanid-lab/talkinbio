@@ -21,18 +21,18 @@
     },
     "steps": {
       "title": "Kurulumun kendisi, ajanının eğitimi.",
-      "sub": "Ayrı bir \"yapay zekayı besle\" adımı yok: kurulum ajanın Beiwe'yle sohbet ederken verdiğin her cevap, ziyaretçilerinle konuşan Saule'nin bilgi kaynağı oluyor.",
+      "sub": "Ayrı bir \"yapay zekayı besle\" adımı yok: kurulum ajanın Creative Agent ile sohbet ederken verdiğin her cevap, ziyaretçilerinle konuşan Assistant Agent'ın bilgi kaynağı oluyor.",
       "step1": {
         "title": "Birkaç soruya cevap ver",
-        "desc": "Ne satıyorsun, fiyatların ne, saatlerin ne — Beiwe'yle sade bir sohbet akışında anlatıyorsun, form doldurmuyorsun."
+        "desc": "Ne satıyorsun, fiyatların ne, saatlerin ne — Creative Agent ile sade bir sohbet akışında anlatıyorsun, form doldurmuyorsun."
       },
       "step2": {
         "title": "Sayfan ve temsilcin birlikte doğar",
-        "desc": "Beiwe'ye verdiğin bilgi hem görünür bir sayfaya hem de Saule'nin bildiklerine dönüşür — tek kaynak, iki çıktı."
+        "desc": "Creative Agent'a verdiğin bilgi hem görünür bir sayfaya hem de Assistant Agent'ın bildiklerine dönüşür — tek kaynak, iki çıktı."
       },
       "step3": {
         "title": "Linkini bio'na koy, konuşmaya bırak",
-        "desc": "Ziyaretçi soru sorar, Saule cevaplar, ilgilenen müşteriyi senin için not alır."
+        "desc": "Ziyaretçi soru sorar, Assistant Agent cevaplar, ilgilenen müşteriyi senin için not alır."
       },
       "agents": {
         "beiweRole": "Sayfanı kurar",
@@ -109,14 +109,14 @@
     "twoPlatforms": {
       "title": "Aynı temele dayalı iki yapay zeka platformu",
       "sauleTitle": "Müşterilerinizle Konuşur",
-      "sauleDesc": "Saule Assistant, sayfanıza gelen ziyaretçilerin sorularını yanıtlar, fiyat verir, randevu ayarlar ve iletişim bilgilerini alarak size potansiyel müşteriler (lead) yaratır. 7/24 uyanık bir dijital çalışandır.",
+      "sauleDesc": "Assistant Agent, sayfanıza gelen ziyaretçilerin sorularını yanıtlar, fiyat verir, randevu ayarlar ve iletişim bilgilerini alarak size potansiyel müşteriler (lead) yaratır. 7/24 uyanık bir dijital çalışandır.",
       "beiweTitle": "Sayfanızı Yönetir",
-      "beiweDesc": "Beiwe Creative, işletmenizle ilgili detayları arka planda sizden öğrenen ve bu bilgileri profesyonel bir web sayfasına dönüştüren yaratıcı bir ajandır. İçerik ve tasarım tamamen otomatiktir."
+      "beiweDesc": "Creative Agent, işletmenizle ilgili detayları arka planda sizden öğrenen ve bu bilgileri profesyonel bir web sayfasına dönüştüren yaratıcı bir ajandır. İçerik ve tasarım tamamen otomatiktir."
     },
     "showcase": {
       "title": "Yapay zekanın işletmelere<br />kattığı gücü keşfedin",
-      "sauleTab": "Saule Assistant",
-      "beiweTab": "Beiwe Creative",
+      "sauleTab": "Assistant Agent",
+      "beiweTab": "Creative Agent",
       "saule": {
         "kuafor": {
           "title": "Otomatik Randevu Sistemi",
@@ -146,7 +146,7 @@
         },
         "portfolio": {
           "title": "Saniyeler İçinde Web Tasarımı",
-          "desc": "Kod veya şablonlarla uğraşmayın. Sadece işletmenizi anlatın, Beiwe anında premium bir portfolyo oluştursun."
+          "desc": "Kod veya şablonlarla uğraşmayın. Sadece işletmenizi anlatın, Creative Agent anında premium bir portfolyo oluştursun."
         },
         "booking": {
           "title": "Merkezi Yönetim Sistemi",
@@ -167,7 +167,7 @@
         "meta": "Ürün · 28 Temmuz 2026"
       },
       "post2": {
-        "badge": "Saule Eğitimi",
+        "badge": "Assistant Agent Eğitimi",
         "title": "Asistanınızı sadece 5 dakikada nasıl eğitirsiniz? Yeni rehber yayında.",
         "meta": "Kılavuz · 15 Temmuz 2026"
       },
@@ -178,7 +178,7 @@
       }
     },
     "heroTexts": {
-      "subtitle": "İşletmeniz için eksiksiz yapay zeka platformu. Ziyaretçilerinizle 7/24 etkileşim kuran <strong className=\"text-[var(--ink)] font-semibold\">Saule Assistant</strong>'tan, içeriğinizi saniyeler içinde kuran <strong className=\"text-[var(--ink)] font-semibold\">Beiwe Creative</strong>'e kadar.",
+      "subtitle": "İşletmeniz için eksiksiz yapay zeka platformu. Ziyaretçilerinizle 7/24 etkileşim kuran <strong className=\"text-[var(--ink)] font-semibold\">Assistant Agent</strong>'tan, içeriğinizi saniyeler içinde kuran <strong className=\"text-[var(--ink)] font-semibold\">Creative Agent</strong>'e kadar.",
       "btnEarly": "Erken erişim",
       "btnHow": "Nasıl çalışır?",
       "btnPricing": "Fiyatlandırma"
@@ -189,11 +189,11 @@
       "beiweDesc": "İşletmeniz için içerik oluşturun. <br/>Kelimelerinizi anında profesyonel bir web sitesine dönüştürür."
     },
     "deepSaule": {
-      "title": "Saule Assistant",
+      "title": "Assistant Agent",
       "desc": "İşletmenizi tanıyan, soruları cevaplayan ve potansiyel müşterileri satışa yönlendiren yapay zeka asistanınızı saniyeler içinde yapılandırın ve sitenize ekleyin.",
       "btn": "Hemen Başla",
       "f1Title": "7/24 Kesintisiz İletişim",
-      "f1Desc": "Ziyaretçileriniz günün her saati soru sorabilir, Saule işletmenizi tanıyarak anında ve doğal dilde cevap verir.",
+      "f1Desc": "Ziyaretçileriniz günün her saati soru sorabilir, Assistant Agent işletmenizi tanıyarak anında ve doğal dilde cevap verir.",
       "f2Title": "Talep Yönetimi & Analitik",
       "f2Desc": "İlgilenen her ziyaretçinin adı, iletişim bilgisi ve özel talebi otomatik olarak toplanır ve size raporlanır.",
       "f3Title": "Çoklu Dil Desteği",
@@ -202,14 +202,14 @@
       "f4Desc": "Karmaşık diyalog akışları kurmanıza gerek yok. İşletmenizi anlatın, asistanınız saniyeler içinde öğrenip göreve başlasın."
     },
     "deepBeiwe": {
-      "title": "Beiwe Creative",
+      "title": "Creative Agent",
       "desc1": "İçeriğinizi ve sayfanızı saniyeler içinde kurgulayan yapay zeka.",
       "desc2": "Sadece işletmenizi anlatarak profesyonel web siteleri, sosyal medya bağlantı sayfaları ve zengin içerikler oluşturun. Tek bir AI platformunda her şey hazır.",
       "btn": "Hemen Başla",
       "f1Title": "Otomatik Tasarım",
       "f1Desc": "Tema, şablon veya düzen seçmekle vakit kaybetmeyin. Web sayfanız, içeriğinize ve markanıza göre otomatik olarak tasarlanır.",
       "f2Title": "Tek Merkezden Yönetim",
-      "f2Desc": "Fiyatlar, saatler ve hizmetler... Beiwe ile yaptığınız sade bir sohbet, anında web sitenize bilgi olarak yansır.",
+      "f2Desc": "Fiyatlar, saatler ve hizmetler... Creative Agent ile yaptığınız sade bir sohbet, anında web sitenize bilgi olarak yansır.",
       "f3Title": "Tüm Platformlara Hazır",
       "f3Desc": "Instagram, WhatsApp, TikTok. Oluşturduğunuz tek bağlantı profili tüm sosyal medya platformlarına kusursuz uyum sağlar.",
       "f4Title": "Zengin Medya Desteği",
@@ -334,11 +334,11 @@
     "leadsNavLabel": "Panel",
     "contentStudioTooltip": "İçerik Stüdyosu",
     "contentStudioLabel": "İçerik",
-    "suggestionsTooltip": "Beiwe'den İpuçları",
-    "suggestionsPanelTitle": "Beiwe'nin Notları",
+    "suggestionsTooltip": "Creative Agent'den İpuçları",
+    "suggestionsPanelTitle": "Creative Agent'ın Notları",
     "suggestionsEmpty": "🎉 Sayfanız şu an harika görünüyor! Başka bir tavsiyem yok.",
     "suggestionsFromInsight": "Konuşmalardan",
-    "suggestionsFixCta": "✦ Beiwe ile düzelt",
+    "suggestionsFixCta": "✦ Creative Agent ile düzelt",
     "insightTopicMessage": "Müşterileriniz son 7 günde sık sık \"{topic}\" hakkında soru sordu ({count} kez).",
     "insightDefaultMessage": "Yeni bir içgörü var.",
     "insightDefaultTrigger": "Konuşmalarımdan çıkan bir içgörüyü değerlendirmek istiyorum.",
@@ -358,8 +358,8 @@
       "hoursLabel": "Çalışma Saat.",
       "faqLabel": "S.S.S.",
       "contactLabel": "İletişim",
-      "continueBtn": "Beiwe ile devam et",
-      "allComplete": "🎉 Tüm temel bölümler tamamlandı! Beiwe'ye ekstra fikirler sorabilirsiniz.",
+      "continueBtn": "Creative Agent ile devam et",
+      "allComplete": "🎉 Tüm temel bölümler tamamlandı! Creative Agent'a ekstra fikirler sorabilirsiniz.",
       "analyzingPlaceholder": "Sayfamı analiz et..."
     },
     "systemManualEditMessage": "[Sistem: Bu oturumda manuel düzenleme yapıldı. Yeni sohbet başlatıldı.]",
@@ -532,7 +532,7 @@
     "placeholder": "Bir mesaj yazın...",
     "defaultPreview": "Size nasıl yardımcı olabilirim?",
     "newChat": "Yeni sohbet",
-    "signature": "Saule ile konuşuyorsunuz",
+    "signature": "",
     "formName": "Adınız",
     "formContact": "Telefon veya e-posta",
     "formMessage": "Mesajınız (opsiyonel)",
@@ -547,7 +547,7 @@
     "intro": "Ödeme altyapımız yasal süreçlerle birlikte kuruluyor — şimdilik bir plan seçip bize ulaşın, ekibimiz sizinle birlikte kurulumu yapsın.",
     "perMonth": "/ay",
     "credits": "{count} kredi",
-    "capacityExample": "≈ {saule} Saule sohbeti VEYA {beiwe} Beiwe güncellemesi",
+    "capacityExample": "≈ {saule} Assistant Agent sohbeti VEYA {beiwe} Creative Agent güncellemesi",
     "idealFor_starter": "Günde 5-10 DM alan işletmeler için ideal",
     "idealFor_pro": "Günde 20-30 DM alan işletmeler için ideal",
     "idealFor_business": "Günde 50-60 DM alan işletmeler için ideal",
@@ -588,19 +588,19 @@
     },
     "q4": {
       "title": "Ne Yapıyoruz",
-      "content": "talkinbio iki parçadan oluşuyor.\n\nSaule, bio sayfanızda 7/24 çalışan yapay zeka asistanınız. Bir ziyaretçi soru sorduğunda Saule dinliyor, anlıyor ve hizmetinizi gerçekten bilen biri gibi cevap veriyor. Randevu topluyor, ilgilenen ziyaretçiyi kaydediyor, takip gerektiren durumları işaretliyor. Sabah kalktığınızda karşınızda kaçırılmış DM'ler değil, sıralanmış ve etiketlenmiş bir lead listesi buluyorsunuz.\n\nBeiwe ise bu konuşmaları analiz edip size haftalık pazarlama önerileri sunan ajan. 'Bu hafta en çok hangi soru soruldu? Hangi hizmet daha çok ilgi gördü? Ziyaretçiler hangi saatlerde geldi?' — Beiwe bu soruları yanıtlıyor, bir sonraki içerik kararınızı tahmine değil veriye dayandırmanızı sağlıyor.\n\nKurulum 10 dakika sürüyor, kod yazmanıza gerek yok. Sistem bir kere çalışmaya başladıktan sonra, siz çalışmasanız da o çalışmaya devam ediyor."
+      "content": "talkinbio iki parçadan oluşuyor.\n\nSaule, bio sayfanızda 7/24 çalışan yapay zeka asistanınız. Bir ziyaretçi soru sorduğunda Assistant Agent dinliyor, anlıyor ve hizmetinizi gerçekten bilen biri gibi cevap veriyor. Randevu topluyor, ilgilenen ziyaretçiyi kaydediyor, takip gerektiren durumları işaretliyor. Sabah kalktığınızda karşınızda kaçırılmış DM'ler değil, sıralanmış ve etiketlenmiş bir lead listesi buluyorsunuz.\n\nBeiwe ise bu konuşmaları analiz edip size haftalık pazarlama önerileri sunan ajan. 'Bu hafta en çok hangi soru soruldu? Hangi hizmet daha çok ilgi gördü? Ziyaretçiler hangi saatlerde geldi?' — Creative Agent bu soruları yanıtlıyor, bir sonraki içerik kararınızı tahmine değil veriye dayandırmanızı sağlıyor.\n\nKurulum 10 dakika sürüyor, kod yazmanıza gerek yok. Sistem bir kere çalışmaya başladıktan sonra, siz çalışmasanız da o çalışmaya devam ediyor."
     },
     "q5": {
       "title": "Farkımız",
-      "content": "Her Saule konuşmasının altında küçük bir imza var: 'Saule ile konuşuyorsunuz — talkinbio.com.' Bunu satıcının sayfasını ziyaret eden herkes görüyor. Ve bazıları 'ben de kendi sayfamda bunu istiyorum' diyerek sisteme giriyor. Yani ürün kendi büyümesini kendisi sağlıyor — ücretli pazarlama yapmadan CAC organik kalabiliyor.\n\nBunun birkaç sonucu var. Birincisi viral döngü: her aktif asistan, yeni bir kullanıcı kazanma kanalına dönüşüyor.\n\nİkincisi konuşma verisi birikimi: Beiwe ne kadar çok kullanılırsa o kadar özelleşiyor. Yeni giren bir rakip bu veri avantajını bir günde kopyalayamaz; erken kullanıcılarımız bize stratejik bir veri zenginliği kazandırıyor.\n\nÜçüncüsü de lokal-ilk mimari: farklı dil ve ödeme altyapısına sahip pazarlara (MENA, LatAm) uyum sağlayacak lokalizasyon iskeletini şimdiden kuruyoruz. Yani v2 genişlemesi sıfırdan başlamak zorunda kalmayacak."
+      "content": "Her Assistant Agent konuşmasının altında küçük bir imza var: 'Assistant Agent ile konuşuyorsunuz — talkinbio.com.' Bunu satıcının sayfasını ziyaret eden herkes görüyor. Ve bazıları 'ben de kendi sayfamda bunu istiyorum' diyerek sisteme giriyor. Yani ürün kendi büyümesini kendisi sağlıyor — ücretli pazarlama yapmadan CAC organik kalabiliyor.\n\nBunun birkaç sonucu var. Birincisi viral döngü: her aktif asistan, yeni bir kullanıcı kazanma kanalına dönüşüyor.\n\nİkincisi konuşma verisi birikimi: Creative Agent ne kadar çok kullanılırsa o kadar özelleşiyor. Yeni giren bir rakip bu veri avantajını bir günde kopyalayamaz; erken kullanıcılarımız bize stratejik bir veri zenginliği kazandırıyor.\n\nÜçüncüsü de lokal-ilk mimari: farklı dil ve ödeme altyapısına sahip pazarlara (MENA, LatAm) uyum sağlayacak lokalizasyon iskeletini şimdiden kuruyoruz. Yani v2 genişlemesi sıfırdan başlamak zorunda kalmayacak."
     },
     "q6": {
       "title": "Gelir Modelimiz",
-      "content": "Gelir modelimiz kredi bazlı bir abonelik. Faturalandırma altyapısı yol haritamızda lansman kapısının bir parçası; şu an, ilk pilotlarda tahsilatı elle yapıyoruz. Üç paketimiz var.\n\nStarter ($9/ay, 200 kredi) günde 3-5 DM alan ve ilk kez bir asistan kuran bireysel satıcı için. Bu kademedeki kullanıcı Saule'nin ne olduğunu öğreniyor, sistemin değerini test ediyor.\n\nPro ($29/ay, 700 kredi) haftada 30'dan fazla DM alan, düzenli bir müşteri kitlesi olan ve Beiwe analizini kullanan satıcı için — asıl gelir motorumuz burası.\n\nBusiness ($79/ay, 1.800 kredi) ise birden fazla hizmet hattı yürüten, yüksek hacimli DM trafiği yöneten ve otomasyon ihtiyacı olgunlaşmış satıcılar için.\n\nFiyatlarımız dolar üzerinden sabit; TL tahsilatını güncel kurdan yapıyoruz. Yıllık ödemede %20 indirim sunuyoruz — hem müşteriye tasarruf, hem bize kur riskine karşı bir tampon.\n\nRakamlara dökersek: efektif ARPU $15, LTV $300 (%5 churn varsayımıyla), hedeflediğimiz CAC ise $100'ün altı — viral imza döngümüz bunu organik tutacak."
+      "content": "Gelir modelimiz kredi bazlı bir abonelik. Faturalandırma altyapısı yol haritamızda lansman kapısının bir parçası; şu an, ilk pilotlarda tahsilatı elle yapıyoruz. Üç paketimiz var.\n\nStarter ($9/ay, 200 kredi) günde 3-5 DM alan ve ilk kez bir asistan kuran bireysel satıcı için. Bu kademedeki kullanıcı Assistant Agent'ın ne olduğunu öğreniyor, sistemin değerini test ediyor.\n\nPro ($29/ay, 700 kredi) haftada 30'dan fazla DM alan, düzenli bir müşteri kitlesi olan ve Creative Agent analizini kullanan satıcı için — asıl gelir motorumuz burası.\n\nBusiness ($79/ay, 1.800 kredi) ise birden fazla hizmet hattı yürüten, yüksek hacimli DM trafiği yöneten ve otomasyon ihtiyacı olgunlaşmış satıcılar için.\n\nFiyatlarımız dolar üzerinden sabit; TL tahsilatını güncel kurdan yapıyoruz. Yıllık ödemede %20 indirim sunuyoruz — hem müşteriye tasarruf, hem bize kur riskine karşı bir tampon.\n\nRakamlara dökersek: efektif ARPU $15, LTV $300 (%5 churn varsayımıyla), hedeflediğimiz CAC ise $100'ün altı — viral imza döngümüz bunu organik tutacak."
     },
     "q7": {
       "title": "Nereye Gidiyoruz",
-      "content": "Şu an Aşama 1'deyiz: Problem/Çözüm Uyumu. Takip ettiğimiz tek metrik (OMTM) ödeme yapan müşteri sayısı, ve sayaç şu an 0/10. Hedefimiz: 20 problem görüşmesi tamamlamak, tekrar eden ağrı noktalarını doğrulamak ve ilk 10 pilotu $9/ay'dan ücretli başlatmak.\n\nAşama 2'de (550 müşteri, $100K ARR) bu eşiği geçmek bize Problem/Çözüm Uyumu'nun kanıtını verecek — viral döngünün gerçekten çalışıp çalışmadığını da orada göreceğiz. Yatırımcı konuşmaları buradan başlıyor.\n\nAşama 3, v2 Global: WhatsApp ve Instagram DM'e doğrudan entegrasyon, MENA ve LatAm lokalizasyonu, yeni diller. Baz senaryoda ~4.500 müşteri ve $810K ARR öngörüyoruz; Saule bu noktada artık sadece bio sayfasında değil, her kanalda çalışıyor olacak. Daha iyimser bir senaryoda (%6 global yakalama) rakam ~9.000 müşteriye, ~$1,6M ARR'ye çıkıyor.\n\nHer adım bir öncekinin kanıtını istiyor. Şu an odaklandığımız tek şey: ilk 10 ödeme.\n\nUzun vadede talkinbio'yu sadece bireyler için bir araç olarak görmüyoruz. Saule ve Beiwe, işletmelerin tüm iletişim kanallarında çalışan bir ajan altyapısına dönüşüyor — bu sürecin adını şimdiden koymuyoruz, ürün zamanla kendi adını koyacak."
+      "content": "Şu an Aşama 1'deyiz: Problem/Çözüm Uyumu. Takip ettiğimiz tek metrik (OMTM) ödeme yapan müşteri sayısı, ve sayaç şu an 0/10. Hedefimiz: 20 problem görüşmesi tamamlamak, tekrar eden ağrı noktalarını doğrulamak ve ilk 10 pilotu $9/ay'dan ücretli başlatmak.\n\nAşama 2'de (550 müşteri, $100K ARR) bu eşiği geçmek bize Problem/Çözüm Uyumu'nun kanıtını verecek — viral döngünün gerçekten çalışıp çalışmadığını da orada göreceğiz. Yatırımcı konuşmaları buradan başlıyor.\n\nAşama 3, v2 Global: WhatsApp ve Instagram DM'e doğrudan entegrasyon, MENA ve LatAm lokalizasyonu, yeni diller. Baz senaryoda ~4.500 müşteri ve $810K ARR öngörüyoruz; Assistant Agent bu noktada artık sadece bio sayfasında değil, her kanalda çalışıyor olacak. Daha iyimser bir senaryoda (%6 global yakalama) rakam ~9.000 müşteriye, ~$1,6M ARR'ye çıkıyor.\n\nHer adım bir öncekinin kanıtını istiyor. Şu an odaklandığımız tek şey: ilk 10 ödeme.\n\nUzun vadede talkinbio'yu sadece bireyler için bir araç olarak görmüyoruz. Assistant Agent ve Creative Agent, işletmelerin tüm iletişim kanallarında çalışan bir ajan altyapısına dönüşüyor — bu sürecin adını şimdiden koymuyoruz, ürün zamanla kendi adını koyacak."
     },
     "q8": {
       "title": "Nasıl Çalışıyoruz",
@@ -608,7 +608,7 @@
     },
     "q9": {
       "title": "Sizden Ne İstiyoruz",
-      "content": "Kullanıcılarımızdan: kurulum 10 dakika. Bio linkinizi talkinbio'ya bağlayın, bir ay boyunca Saule'nin kaç lead topladığını izleyin. Değer yaratmadıysa devam etmeyin. Yarattıysa, artık bunu biliyorsunuz.\n\nYatırımcılarımızdan: şu an erken evre, bootstrapped bir başlangıçtayız. Yatırım konuşması için doğru zaman $100K ARR'yi geçtiğimiz an; ama sizi o noktaya kadar bekletmek yerine, süreci şimdiden şeffaf tutmak istedik. Rakamlarımızı kanıt sınıfına göre işaretliyoruz — doğrulanmış olan doğrulanmış, tahmin olan tahmin. Hazır olduğumuzda size ulaşacağız.\n\nTakımımızdan: bu işi neden inşa ettiğimizi hatırlamak istediğinizde bu sayfaya dönün. Yaptığımız şeyin doğru olduğuna inanıyoruz; şimdi tek yapmamız gereken bunu kanıtlamak."
+      "content": "Kullanıcılarımızdan: kurulum 10 dakika. Bio linkinizi talkinbio'ya bağlayın, bir ay boyunca Assistant Agent'ın kaç lead topladığını izleyin. Değer yaratmadıysa devam etmeyin. Yarattıysa, artık bunu biliyorsunuz.\n\nYatırımcılarımızdan: şu an erken evre, bootstrapped bir başlangıçtayız. Yatırım konuşması için doğru zaman $100K ARR'yi geçtiğimiz an; ama sizi o noktaya kadar bekletmek yerine, süreci şimdiden şeffaf tutmak istedik. Rakamlarımızı kanıt sınıfına göre işaretliyoruz — doğrulanmış olan doğrulanmış, tahmin olan tahmin. Hazır olduğumuzda size ulaşacağız.\n\nTakımımızdan: bu işi neden inşa ettiğimizi hatırlamak istediğinizde bu sayfaya dönün. Yaptığımız şeyin doğru olduğuna inanıyoruz; şimdi tek yapmamız gereken bunu kanıtlamak."
     }
   },
   "Legal": {
@@ -619,23 +619,23 @@
     "sections": [
       {
         "title": "1. Veri Sorumlusu",
-        "body": "talkinbio, şirket kuruluşu tamamlanana kadar şahıs girişimi olarak yürütülmektedir; resmi veri sorumlusu kimliği (unvan, MERSİS/vergi numarası) kuruluş tamamlandığında bu sayfada güncellenecektir. Platform üzerinden toplanan kişisel veriler 6698 sayılı Kişisel Verilerin Korunması Kanunu'na (KVKK) uygun olarak işlenmektedir. İletişim: info@talkinbio.com\n\nÖnemli ayrım: talkinbio platformunu kullanan işletme sahipleri (müşterilerimiz), kendi ziyaretçilerinden/son müşterilerinden topladıkları veriler (ör. Saule ile yapılan konuşmalar, lead bilgileri) için KVKK anlamında veri sorumlusudur — talkinbio bu veriler için veri işleyen sıfatıyla hareket eder. Hesap sahibinin kendi verileri (ad, e-posta, hesap bilgileri) için ise veri sorumlusu talkinbio'dur."
+        "body": "talkinbio, şirket kuruluşu tamamlanana kadar şahıs girişimi olarak yürütülmektedir; resmi veri sorumlusu kimliği (unvan, MERSİS/vergi numarası) kuruluş tamamlandığında bu sayfada güncellenecektir. Platform üzerinden toplanan kişisel veriler 6698 sayılı Kişisel Verilerin Korunması Kanunu'na (KVKK) uygun olarak işlenmektedir. İletişim: info@talkinbio.com\n\nÖnemli ayrım: talkinbio platformunu kullanan işletme sahipleri (müşterilerimiz), kendi ziyaretçilerinden/son müşterilerinden topladıkları veriler (ör. Assistant Agent ile yapılan konuşmalar, lead bilgileri) için KVKK anlamında veri sorumlusudur — talkinbio bu veriler için veri işleyen sıfatıyla hareket eder. Hesap sahibinin kendi verileri (ad, e-posta, hesap bilgileri) için ise veri sorumlusu talkinbio'dur."
       },
       {
         "title": "2. İşlenen Kişisel Veriler",
-        "body": "talkinbio, sosyal medya bio sayfanızdaki ziyaretçilerle 7/24 sohbet eden bir yapay zeka asistanı (Saule) sunar. Platformu kullanımınız kapsamında iki ayrı veri grubu işlenir:\n\nİşletme sahibi (hesap sahibi) olarak sizin verileriniz:\n• Kimlik verileri: Ad, soyad\n• İletişim verileri: E-posta adresi\n• Hesap verileri: İşletme adı, kullanıcı adı (username), sektör/kategori\n• Kullanım ve ölçüm verileri: Giriş zamanları, platform içi eylemler, yapay zeka kullanım hacmi (kredi/token tüketimi)\n\nSayfanızı ziyaret eden kişilerin (son müşterilerinizin) verileri — bu veriler için siz veri sorumlususunuz, talkinbio veri işleyendir:\n• Saule ile yapılan konuşma transkriptleri (ziyaretçinin yazdığı mesajlar dahil)\n• Lead (potansiyel müşteri) bilgileri: ad, iletişim bilgisi, tercih edilen randevu zamanı\n• visitor_session_id adlı oturum çerezi (ziyaretçiyi kendi konuşma geçmişiyle eşlemek için)\n\nSaule bir yapay zeka asistanıdır; ziyaretçi doğrudan sorduğunda bu durum kendisine dürüstçe belirtilir. Bu konuşmalar hizmeti sağlayan işletme sahibi tarafından okunabilir ve yanıt üretme sürecinde bir yapay zeka sağlayıcısına iletilir (bkz. Madde 4)."
+        "body": "talkinbio, sosyal medya bio sayfanızdaki ziyaretçilerle 7/24 sohbet eden bir yapay zeka asistanı (Assistant Agent) sunar. Platformu kullanımınız kapsamında iki ayrı veri grubu işlenir:\n\nİşletme sahibi (hesap sahibi) olarak sizin verileriniz:\n• Kimlik verileri: Ad, soyad\n• İletişim verileri: E-posta adresi\n• Hesap verileri: İşletme adı, kullanıcı adı (username), sektör/kategori\n• Kullanım ve ölçüm verileri: Giriş zamanları, platform içi eylemler, yapay zeka kullanım hacmi (kredi/token tüketimi)\n\nSayfanızı ziyaret eden kişilerin (son müşterilerinizin) verileri — bu veriler için siz veri sorumlususunuz, talkinbio veri işleyendir:\n• Assistant Agent ile yapılan konuşma transkriptleri (ziyaretçinin yazdığı mesajlar dahil)\n• Lead (potansiyel müşteri) bilgileri: ad, iletişim bilgisi, tercih edilen randevu zamanı\n• visitor_session_id adlı oturum çerezi (ziyaretçiyi kendi konuşma geçmişiyle eşlemek için)\n\nSaule bir yapay zeka asistanıdır; ziyaretçi doğrudan sorduğunda bu durum kendisine dürüstçe belirtilir. Bu konuşmalar hizmeti sağlayan işletme sahibi tarafından okunabilir ve yanıt üretme sürecinde bir yapay zeka sağlayıcısına iletilir (bkz. Madde 4)."
       },
       {
         "title": "3. Kişisel Verilerin İşlenme Amaçları ve Hukuki Dayanakları",
-        "body": "Kişisel verileriniz aşağıdaki amaçlarla ve hukuki dayanaklarla işlenmektedir:\n\n• Hesap oluşturma ve kimlik doğrulama → Sözleşmenin ifası (KVKK m.5/2-c)\n• Platform hizmetlerinin sunulması (sayfa barındırma, Saule/Beiwe asistanları) → Sözleşmenin ifası (KVKK m.5/2-c)\n• Yapay zeka destekli ziyaretçi iletişimi (Saule'nin soruları yanıtlaması, randevu/lead toplaması) → Sözleşmenin ifası + meşru menfaat (KVKK m.5/2-c, m.5/2-f)\n• Güvenlik ve denetim kayıtları → Meşru menfaat (KVKK m.5/2-f)\n• Ürün geliştirme, hata analizi ve kullanım ölçümü (kredi/token tüketimi) → Meşru menfaat (KVKK m.5/2-f)\n• Yasal yükümlülüklerin yerine getirilmesi (fatura, muhasebe kayıtları) → Kanuni yükümlülük (KVKK m.5/2-ç)\n• Ticari elektronik ileti gönderimi → Açık rıza (KVKK m.5/1) — Yalnızca rızanız bulunması halinde"
+        "body": "Kişisel verileriniz aşağıdaki amaçlarla ve hukuki dayanaklarla işlenmektedir:\n\n• Hesap oluşturma ve kimlik doğrulama → Sözleşmenin ifası (KVKK m.5/2-c)\n• Platform hizmetlerinin sunulması (sayfa barındırma, Assistant Agent/Creative Agent asistanları) → Sözleşmenin ifası (KVKK m.5/2-c)\n• Yapay zeka destekli ziyaretçi iletişimi (Assistant Agent'ın soruları yanıtlaması, randevu/lead toplaması) → Sözleşmenin ifası + meşru menfaat (KVKK m.5/2-c, m.5/2-f)\n• Güvenlik ve denetim kayıtları → Meşru menfaat (KVKK m.5/2-f)\n• Ürün geliştirme, hata analizi ve kullanım ölçümü (kredi/token tüketimi) → Meşru menfaat (KVKK m.5/2-f)\n• Yasal yükümlülüklerin yerine getirilmesi (fatura, muhasebe kayıtları) → Kanuni yükümlülük (KVKK m.5/2-ç)\n• Ticari elektronik ileti gönderimi → Açık rıza (KVKK m.5/1) — Yalnızca rızanız bulunması halinde"
       },
       {
         "title": "4. Kişisel Verilerin Aktarımı",
-        "body": "Kişisel verileriniz, hizmeti sağlayabilmek amacıyla aşağıdaki teknik altyapı sağlayıcılarına (veri işleyen sıfatıyla) aktarılmaktadır:\n\n• Supabase — veritabanı, kimlik doğrulama ve dosya depolama\n• Vercel — uygulama barındırma (hosting)\n• Anthropic — Saule ve Beiwe'nin yanıt üretmesini sağlayan yapay zeka modeli sağlayıcısı; bu kapsamda konuşma içerikleri Anthropic'e (Amerika Birleşik Devletleri merkezli) iletilir\n• Resend — sistem ve bildirim e-postalarının gönderimi\n\nBu sağlayıcıların bir kısmı Avrupa Ekonomik Alanı veya Türkiye dışında yer almaktadır. Yurt dışına veri aktarımı söz konusu olduğunda KVKK'nın 9. maddesi kapsamındaki güvenceler (sağlayıcıların standart sözleşme hükümleri, güvenlik sertifikaları vb.) gözetilmektedir. Yasal zorunluluk halinde veriler yetkili kamu kurum ve kuruluşlarına da aktarılabilir."
+        "body": "Kişisel verileriniz, hizmeti sağlayabilmek amacıyla aşağıdaki teknik altyapı sağlayıcılarına (veri işleyen sıfatıyla) aktarılmaktadır:\n\n• Supabase — veritabanı, kimlik doğrulama ve dosya depolama\n• Vercel — uygulama barındırma (hosting)\n• Anthropic — Assistant Agent ve Creative Agent'ın yanıt üretmesini sağlayan yapay zeka modeli sağlayıcısı; bu kapsamda konuşma içerikleri Anthropic'e (Amerika Birleşik Devletleri merkezli) iletilir\n• Resend — sistem ve bildirim e-postalarının gönderimi\n\nBu sağlayıcıların bir kısmı Avrupa Ekonomik Alanı veya Türkiye dışında yer almaktadır. Yurt dışına veri aktarımı söz konusu olduğunda KVKK'nın 9. maddesi kapsamındaki güvenceler (sağlayıcıların standart sözleşme hükümleri, güvenlik sertifikaları vb.) gözetilmektedir. Yasal zorunluluk halinde veriler yetkili kamu kurum ve kuruluşlarına da aktarılabilir."
       },
       {
         "title": "5. Kişisel Verilerin Saklanma Süresi",
-        "body": "Kişisel verileriniz aşağıdaki sürelerle saklanmaktadır:\n\n• Hesap ve platform verileri: hesabınız aktif olduğu sürece; hesap kapatıldıktan sonra 90 gün içinde silinir veya anonimleştirilir.\n• Saule konuşma transkriptleri ve lead verileri: ilgili işletme hesabı aktif olduğu sürece saklanır (işletme sahibinin erişimine açık); hesap kapatıldıktan sonra 90 gün içinde silinir.\n• Fatura ve muhasebe kayıtları: Vergi Usul Kanunu gereği 5 yıl saklanır.\n• Güvenlik ve denetim logları: en fazla 12 ay saklanır.\n\nBir ziyaretçi kendisiyle ilgili konuşma kaydının silinmesini talep ederse, talep ilgili işletme sahibine (veri sorumlusuna) yönlendirilir; talkinbio veri işleyen sıfatıyla bu talebi teknik olarak yerine getirir."
+        "body": "Kişisel verileriniz aşağıdaki sürelerle saklanmaktadır:\n\n• Hesap ve platform verileri: hesabınız aktif olduğu sürece; hesap kapatıldıktan sonra 90 gün içinde silinir veya anonimleştirilir.\n• Assistant Agent konuşma transkriptleri ve lead verileri: ilgili işletme hesabı aktif olduğu sürece saklanır (işletme sahibinin erişimine açık); hesap kapatıldıktan sonra 90 gün içinde silinir.\n• Fatura ve muhasebe kayıtları: Vergi Usul Kanunu gereği 5 yıl saklanır.\n• Güvenlik ve denetim logları: en fazla 12 ay saklanır.\n\nBir ziyaretçi kendisiyle ilgili konuşma kaydının silinmesini talep ederse, talep ilgili işletme sahibine (veri sorumlusuna) yönlendirilir; talkinbio veri işleyen sıfatıyla bu talebi teknik olarak yerine getirir."
       },
       {
         "title": "6. KVKK Kapsamındaki Haklarınız",
@@ -778,7 +778,7 @@
     "headerTitle": "Talepler & Asistan",
     "tabRequests": "Talepler",
     "tabConversations": "Konuşmalar",
-    "tabSettings": "Saule Ayarları",
+    "tabSettings": "Assistant Agent Ayarları",
     "navContent": "İçerik",
     "navEditor": "Editör",
     "navViewProfile": "Profilimi Gör",
@@ -786,7 +786,7 @@
     "backToActiveLeads": "Aktif taleplere dön",
     "backToActiveConversations": "Aktif konuşmalara dön",
     "emptyLeadsTitle": "Henüz hiç talep almadınız",
-    "emptyLeadsDescription": "Ziyaretçileriniz asistanınız Saule ile konuşup bir hizmet talep ettiğinde burada görünecekler.",
+    "emptyLeadsDescription": "Ziyaretçileriniz asistanınız Assistant Agent ile konuşup bir hizmet talep ettiğinde burada görünecekler.",
     "emptyArchivedLeadsTitle": "Arşivlenmiş talep yok",
     "emptyArchivedLeadsDescription": "Arşivlediğiniz talepler burada görünecek.",
     "statusNew": "Yeni",
@@ -819,30 +819,30 @@
     "toneEnergeticDesc": "Heyecanlı ve pozitif bir yaklaşım sergiler.",
     "orderNowTitle": "Sipariş Butonu Davranışı",
     "orderNowDesc": "Hizmetler bölümünde fiyatların yanındaki \"Sipariş Ver\" butonuna tıklandığında ne olacağını seçin.",
-    "orderNowSaule": "Saule ile sohbet açılsın",
+    "orderNowSaule": "Assistant Agent ile sohbet açılsın",
     "orderNowFillContactHint": "Önce Editör'deki İletişim bölümünden bu kanalı doldurun.",
     "leadCaptureTitle": "Lead Yakalama",
     "leadCaptureDesc": "Açıkken ziyaretçilerden iletişim bilgisi ister. Kapalıyken bilgi istemek yerine ziyaretçiyi tercih ettiğiniz iletişim kanalına (WhatsApp, Instagram, Telegram vb.) yönlendirir.",
     "preferredContactMethodLabel": "Tercih Edilen İletişim Kanalı",
     "preferredContactMethodPlaceholder": "Bir kanal seçin",
-    "preferredContactMethodHint": "Lead yakalama kapalıyken Saule, ziyaretçiyi bilgi istemek yerine buradan seçtiğiniz kanala yönlendirir.",
+    "preferredContactMethodHint": "Lead yakalama kapalıyken Assistant Agent, ziyaretçiyi bilgi istemek yerine buradan seçtiğiniz kanala yönlendirir.",
     "preferredContactMethodEmptyHint": "Önce Editör'deki İletişim bölümünden en az bir iletişim kanalı (WhatsApp, Instagram, Telegram veya e-posta) ekleyin.",
     "notificationEmailTitle": "Bildirim E-postası",
     "notificationEmailDesc": "Yeni müşteri talepleri hangi e-posta adresine gelsin? Boş bırakırsanız profilinizdeki iletişim e-postası kullanılır.",
     "notificationEmailPlaceholder": "ornek@eposta.com",
     "appointmentTitle": "Randevu Akışı",
-    "appointmentDesc": "Açıkken Saule ziyaretçinin tercih ettiği gün/saati sorup gelen talebe ekler — takvime otomatik kayıt yapmaz.",
+    "appointmentDesc": "Açıkken Assistant Agent ziyaretçinin tercih ettiği gün/saati sorup gelen talebe ekler — takvime otomatik kayıt yapmaz.",
     "appointmentInstructionsLabel": "Randevu Talimatı",
     "appointmentInstructionsPlaceholder": "Örn: Hangi gün ve saatte gelmek istediklerini sor.",
     "appointmentHint": "Bu özellik şu an \"Talepler\" sekmesine lead kaydı oluşturur. Takvim entegrasyonu yakında eklenecektir.",
     "greetingTitle": "Özel Karşılama",
     "greetingDesc": "İlk mesajı siz belirleyin.",
-    "greetingHint": "Ziyaretçinin sayfayı görüntülediği dile göre gösterilir; boş bıraktığınız dilde Saule'nin varsayılan karşılaması kullanılır.",
+    "greetingHint": "Ziyaretçinin sayfayı görüntülediği dile göre gösterilir; boş bıraktığınız dilde Assistant Agent'ın varsayılan karşılaması kullanılır.",
     "footerTextBeforeEmail": "Talkinbio sürekli gelişen bir uygulama. Geri bildiriminiz, istekleriniz veya şikayetleriniz varsa bize ",
     "footerTextAfterEmail": " adresinden ulaşabilirsiniz.",
     "conversations": {
       "emptyTitle": "Henüz hiç konuşma yok",
-      "emptyDescription": "Ziyaretçileriniz Saule ile konuşmaya başladığında transkriptler burada görünecek.",
+      "emptyDescription": "Ziyaretçileriniz Assistant Agent ile konuşmaya başladığında transkriptler burada görünecek.",
       "noArchived": "Arşivlenmiş konuşma yok.",
       "noActive": "Aktif konuşma yok.",
       "testConversationLabel": "Test Konuşması",
@@ -852,9 +852,9 @@
     },
     "knowledgeBase": {
       "title": "Bilgi Tabanı",
-      "description": "Saule'ye sayfada yazmayan şeyleri öğretin (iptal politikası, özel kurallar vb.).",
+      "description": "Assistant Agent'a sayfada yazmayan şeyleri öğretin (iptal politikası, özel kurallar vb.).",
       "addBtn": "Not Ekle",
-      "overBudgetWarning": "Aktif notlarınız yaklaşık {tokens} token'a ulaştı — bu, her Saule mesajının maliyetini artırıyor. Kısaltmayı veya az kullanılan notları pasifleştirmeyi düşünün.",
+      "overBudgetWarning": "Aktif notlarınız yaklaşık {tokens} token'a ulaştı — bu, her Assistant Agent mesajının maliyetini artırıyor. Kısaltmayı veya az kullanılan notları pasifleştirmeyi düşünün.",
       "titlePlaceholder": "Başlık (opsiyonel)",
       "contentPlaceholder": "Örn: Randevu iptalleri en az 24 saat önceden bildirilmeli.",
       "cancelBtn": "Vazgeç",
@@ -905,8 +905,8 @@
     "usageEmpty": "Henüz bir kullanım kaydı yok.",
     "freeLabel": "Ücretsiz",
     "agent": {
-      "saule": "Saule (Ziyaretçi Sohbeti)",
-      "beiwe": "Beiwe (Kurulum Asistanı)",
+      "saule": "Assistant Agent (Ziyaretçi Sohbeti)",
+      "beiwe": "Creative Agent (Kurulum Asistanı)",
       "analysis": "Otomatik Analiz"
     },
     "topUpTitle": "Ek Kredi veya Plan Yükseltme",

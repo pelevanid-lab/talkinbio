@@ -21,6 +21,8 @@ async function requireAdminApi(): Promise<boolean> {
  *   - lora_status         : 'none'|'queued'|'training'|'ready'|'failed'
  *   - lora_started_at     : eğitim başlangıç zamanı
  *   - lora_completed_at   : eğitim bitiş zamanı
+ *   - voice_url           : referans ses kaydının URL'i
+ *   - voice_status        : 'none'|'ready' — 'ready' yalnız klon kulakla onaylandığında
  *
  * Profil satırı yoksa upsert ile oluşturulur.
  */
@@ -48,6 +50,8 @@ export async function PATCH(
     'lora_status',
     'lora_started_at',
     'lora_completed_at',
+    'voice_url',
+    'voice_status',
   ];
 
   const patch: Record<string, unknown> = { id: characterId };

@@ -272,19 +272,27 @@ export type GenerateMotionResult = {
 export type GenerateVoiceParams = {
   prompt: string;
   referenceAudioUrl: string;
+  /**
+   * Referans kaydın deşifresi. Verilirse whisper adımı tamamen atlanır.
+   *
+   * Referans bir kere yüklenip defalarca kullanılıyor; deşifreyi her üretimde yeniden
+   * hesaplamak aynı işi tekrar tekrar yaptırmak demekti (her "Seslendir" = iki kuyruk
+   * işi + iki bekleme). Çağıran taraf bunu `character_profiles.voice_ref_text`'ten
+   * geçirir; boşsa eski davranışa düşülür.
+   */
+  referenceText?: string;
 };
 
 export type GenerateVoiceResult = {
   audioUrl: string;
   requestId: string;
+  /** Whisper bu çağrıda çalıştıysa çıkan deşifre — çağıran taraf saklayabilsin diye. */
+  transcribedRefText?: string;
 };
 
-export async function generateCharacterVoice(params: GenerateVoiceParams): Promise<GenerateVoiceResult> {
-  const { prompt, referenceAudioUrl } = params;
-
-  // 1. Önce referans sesin metnini (transcription) çıkarıyoruz
-  // F5-TTS'in dili doğru anlaması ve halüsinasyon görmemesi için ref_text çok önemli.
-  const { result: whisperResult } = await submitAndPoll<{ text?: string }>(
+/** Referans sesin deşifresi — F5-TTS'in dili doğru anlaması için gerekli. */
+export async function transcribeReferenceAudio(referenceAudioUrl: string): Promise<string> {
+  const { result } = await submitAndPoll<{ text?: string }>(
     'fal-ai/whisper',
     {
       audio_url: referenceAudioUrl,
@@ -296,8 +304,15 @@ export async function generateCharacterVoice(params: GenerateVoiceParams): Promi
       failMessage: 'fal.ai referans sesi analiz edemedi.',
     }
   );
+  return result?.text || '';
+}
 
-  const refText = whisperResult?.text || '';
+export async function generateCharacterVoice(params: GenerateVoiceParams): Promise<GenerateVoiceResult> {
+  const { prompt, referenceAudioUrl, referenceText } = params;
+
+  // 1. Referans deşifresi — elde varsa whisper'a hiç gitmiyoruz.
+  const cached = referenceText?.trim();
+  const refText = cached || (await transcribeReferenceAudio(referenceAudioUrl));
 
   // 2. F5-TTS ile yeni sesi üretiyoruz
   const { result, requestId } = await submitAndPoll<any>(
@@ -325,7 +340,106 @@ export async function generateCharacterVoice(params: GenerateVoiceParams): Promi
   return {
     audioUrl,
     requestId,
+    // Deşifreyi bu çağrıda biz çıkardıysak geri veriyoruz ki çağıran saklayıp
+    // sonraki üretimlerde whisper'ı bir daha çalıştırmasın.
+    transcribedRefText: cached ? undefined : refText,
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* MiniMax ses klonlama — Beiwe Voice                                   */
+/* ------------------------------------------------------------------ */
+//
+// F5-TTS'ten (yukarısı) farkı: burada gerçek bir "klon" var. `voice-clone` referans
+// sesi bir kez işleyip kalıcı bir `custom_voice_id` döndürüyor; sonraki üretimler
+// ses dosyasını değil, bu kimliği kullanıyor. Süreç eğitim değil (model ağırlığı
+// çıkmıyor), ama F5-TTS'in aksine referansı her çağrıda yeniden kodlamıyor.
+//
+// 2026-07-29 testinde: F5-TTS Türkçe'de anlamsız hece çıkardı (dil desteği yetersiz),
+// MiniMax Türkçe'yi doğru okudu (`language_boost: 'Turkish'` ile) ama benzerlik
+// sınırlıydı. En iyi sonuç ham (temizlik kapalı) + uzun referanstan geldi — bu yüzden
+// burada `noise_reduction`/`need_volume_normalization` bilerek kapalı: fal'ın kendi
+// gürültü temizliği ses dokusunu (identity texture) siliyor gibi görünüyor.
+//
+// Kalıcılık riski: yeni bir `custom_voice_id` gerçek bir TTS çağrısında kullanılmazsa
+// 7 gün içinde fal/MiniMax tarafında siliniyor. Önizleme (clone sırasındaki `text`)
+// bunu saymıyor — o yüzden clone çağrısında `text: null` bırakıp önizlemeyi atlıyoruz;
+// kimliği mühürleyen ilk gerçek çağrı, doğrulama aşamasındaki ilk "Seslendir".
+
+export type MinimaxCloneParams = {
+  referenceAudioUrl: string;
+};
+
+export type MinimaxCloneResult = {
+  customVoiceId: string;
+  requestId: string;
+};
+
+export async function cloneMinimaxVoice(params: MinimaxCloneParams): Promise<MinimaxCloneResult> {
+  const { referenceAudioUrl } = params;
+
+  const { result, requestId } = await submitAndPoll<{ custom_voice_id?: string }>(
+    'fal-ai/minimax/voice-clone',
+    {
+      audio_url: referenceAudioUrl,
+      noise_reduction: false,
+      need_volume_normalization: false,
+      text: null,
+    },
+    {
+      timeoutMs: 120000,
+      timeoutMessage: 'fal.ai ses klonlama zaman aşımına uğradı.',
+      failMessage: 'fal.ai referans sesi klonlayamadı.',
+    },
+  );
+
+  if (!result?.custom_voice_id) {
+    throw new FalError('fal.ai klon kimliği döndürmedi.', `requestId=${requestId} ${JSON.stringify(result)}`);
+  }
+
+  return { customVoiceId: result.custom_voice_id, requestId };
+}
+
+export type MinimaxSpeakParams = {
+  text: string;
+  voiceId: string;
+  /** fal `language_boost` enum'unun bir üyesi — bkz. `src/config/beiweLab.ts`. */
+  languageBoost?: string;
+};
+
+export type MinimaxSpeakResult = {
+  audioUrl: string;
+  durationMs: number;
+  requestId: string;
+};
+
+export async function generateMinimaxSpeech(params: MinimaxSpeakParams): Promise<MinimaxSpeakResult> {
+  const { text, voiceId, languageBoost = 'Turkish' } = params;
+
+  const { result, requestId } = await submitAndPoll<{
+    audio?: { url?: string };
+    duration_ms?: number;
+  }>(
+    'fal-ai/minimax/speech-02-hd',
+    {
+      text,
+      voice_setting: { voice_id: voiceId, speed: 1, vol: 1, pitch: 0 },
+      language_boost: languageBoost,
+      output_format: 'url',
+    },
+    {
+      timeoutMs: 120000,
+      timeoutMessage: 'fal.ai ses üretimi zaman aşımına uğradı.',
+      failMessage: 'fal.ai ses üretemedi.',
+    },
+  );
+
+  const audioUrl = result?.audio?.url;
+  if (!audioUrl) {
+    throw new FalError('fal.ai ses döndürmedi.', `requestId=${requestId} ${JSON.stringify(result)}`);
+  }
+
+  return { audioUrl, durationMs: result.duration_ms ?? 0, requestId };
 }
 
 export type TranscribeWord = { text: string; start: number; end: number };
