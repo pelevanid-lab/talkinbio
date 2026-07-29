@@ -166,6 +166,26 @@ export const TWIN_VALIDATION_ANGLES: {
  */
 export const PODCAST_SCENE_LIKE_THRESHOLD = 8;
 
+/**
+ * Kadraj/Aksiyon şablonlarının podcast'e uygun alt kümesi.
+ *
+ * `character.scenePresets`'in TAMAMI değil — kaynak kare OmniHuman/wan-motion'a "bu
+ * kişi konuşacak" diye gidiyor, o yüzden kamera dışına bakan ya da elleri meşgul
+ * aksiyonlar (telefon, laptop ekranı, not alma) çıktıyla çelişiyor: üretilen videoda
+ * kişi konuşur görünecek, kaynak karede telefona bakıyor olamaz. "Üstten masa" yüzü
+ * zor okunur kılıyor; "Boy plan" (tam boy) burada gereksiz geniş — o çerçeve gelecekteki
+ * Beiwe Motion/Ads'te asıl önemli olacak (bkz. `BeiweLabTabs.tsx` yorumu).
+ *
+ * Ortam grubuna dokunulmadı: arka plan neresi olursa olsun kişi yine "konuşuyor"
+ * pozunda durabilir, environment aksiyonla çelişmiyor.
+ *
+ * DİKKAT: 'enes2-explaining-product' karaktere özel bir preset ID'si — çoklu kullanıcı
+ * desteği geldiğinde (her kullanıcı kendi "(2)"sini alınca) bu allowlist karaktere göre
+ * genelleştirilmeli, şimdilik tek profil (enes2) olduğu için sabit.
+ */
+export const PODCAST_KADRAJ_IDS = new Set(['close-portrait', 'mid-shot']);
+export const PODCAST_AKSIYON_IDS = new Set(['talking-to-camera', 'enes2-explaining-product', 'explaining-product']);
+
 export type PodcastVideoMode = 'video-to-video' | 'text-to-video' | 'voice-to-video';
 
 export const PODCAST_VIDEO_MODES: {

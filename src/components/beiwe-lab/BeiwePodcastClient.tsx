@@ -35,7 +35,13 @@ import {
   motionResolutions,
   type MotionResolution,
 } from '@/config/motionModels';
-import { PODCAST_SCENE_LIKE_THRESHOLD, PODCAST_VIDEO_MODES, type PodcastVideoMode } from '@/config/beiweLab';
+import {
+  PODCAST_AKSIYON_IDS,
+  PODCAST_KADRAJ_IDS,
+  PODCAST_SCENE_LIKE_THRESHOLD,
+  PODCAST_VIDEO_MODES,
+  type PodcastVideoMode,
+} from '@/config/beiweLab';
 import LabStage, { type StageState } from '@/components/beiwe-lab/LabStage';
 import SimilarityRating from '@/components/beiwe-lab/SimilarityRating';
 import PodcastRoom from '@/components/rooms/PodcastRoom';
@@ -463,6 +469,15 @@ export default function BeiwePodcastClient({
               <div className="flex flex-wrap gap-1.5">
                 {character.scenePresets
                   .filter((p) => p.group === group)
+                  // Kadraj/Aksiyon podcast'e göre kısıtlı — kaynak kare OmniHuman/
+                  // wan-motion'a "bu kişi konuşacak" diye gidiyor, kamera dışına bakan
+                  // ya da elleri meşgul aksiyonlar çıktıyla çelişir (bkz. beiweLab.ts).
+                  // Ortam kısıtlanmadı — arka plan aksiyonla çelişmiyor.
+                  .filter((p) => {
+                    if (group === 'Kadraj') return PODCAST_KADRAJ_IDS.has(p.id);
+                    if (group === 'Aksiyon') return PODCAST_AKSIYON_IDS.has(p.id);
+                    return true;
+                  })
                   .map((p) => (
                     <button
                       key={p.id}
