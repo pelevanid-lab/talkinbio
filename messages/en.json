@@ -17,7 +17,7 @@
       "note": "Limited early access · Live in 10 minutes"
     },
     "statement": {
-      "text": "Don't you think \"Link in bio\" is getting old? Don't trap your customers in mazes with the old web-form layout. Leave your business to talkinbio; let it ask, guide, and answer."
+      "text": "Don't worry about what to post, don't spend hours answering DMs, and don't waste time chasing appointments. You just focus on your real work; let talkinbio handle the rest of the digital burden."
     },
     "steps": {
       "title": "The setup itself is your agent's training.",
@@ -178,7 +178,7 @@
       }
     },
     "heroTexts": {
-      "subtitle": "The complete AI platform for your business. From <strong className=\"text-[var(--ink)] font-semibold\">Assistant Agent</strong> engaging your visitors 24/7, to <strong className=\"text-[var(--ink)] font-semibold\">Creative Agent</strong> building your content in seconds.",
+      "subtitle": "Your bio page is no longer just a link. It's your smart assistant that <strong className=\"text-[var(--ink)] font-semibold\">creates content</strong>, <strong className=\"text-[var(--ink)] font-semibold\">answers instantly</strong>, and <strong className=\"text-[var(--ink)] font-semibold\">closes sales</strong> for you.",
       "btnEarly": "Early access",
       "btnHow": "How it works?",
       "btnPricing": "Pricing"
@@ -588,7 +588,7 @@
     },
     "q4": {
       "title": "What We Do",
-      "content": "talkinbio has two parts.\n\nSaule is the AI assistant that works 24/7 on your bio page. When a visitor asks a question, Assistant Agent listens, understands, and answers like someone who actually knows your business. It books appointments, logs interested visitors, and flags anything that needs follow-up. When you wake up, you're not looking at missed DMs — you're looking at a sorted, tagged lead list.\n\nBeiwe analyzes those conversations and turns them into weekly marketing suggestions. 'What question came up most this week? Which service got the most interest? What times did visitors show up?' Creative Agent answers those questions, so your next content decision is based on data instead of a guess.\n\nSetup takes 10 minutes, no code required. And once the system is running, it keeps working whether you're at your desk or not."
+      "content": "talkinbio has two parts.\n\nAssistant Agent is the AI assistant that works 24/7 on your bio page. When a visitor asks a question, it listens, understands, and answers like someone who actually knows your business. It books appointments, logs interested visitors, and flags anything that needs follow-up. When you wake up, you're not looking at missed DMs — you're looking at a sorted, tagged lead list.\n\nCreative Agent analyzes those conversations and turns them into weekly marketing suggestions. 'What question came up most this week? Which service got the most interest? What times did visitors show up?' Creative Agent answers those questions, so your next content decision is based on data instead of a guess.\n\nSetup takes 10 minutes, no code required. And once the system is running, it keeps working whether you're at your desk or not."
     },
     "q5": {
       "title": "What Makes Us Different",
@@ -623,7 +623,7 @@
       },
       {
         "title": "2. Personal Data We Collect",
-        "body": "talkinbio provides an AI assistant (Assistant Agent) that chats 24/7 with visitors to your social media bio page. Two separate categories of data are processed:\n\nYour data as a business owner (account holder):\n• Identity data: Full name\n• Contact data: Email address\n• Account data: Business name, username, industry/category\n• Usage and metering data: Login timestamps, in-platform actions, AI usage volume (credit/token consumption)\n\nData belonging to visitors to your page (your end customers) — for this data, you are the data controller and talkinbio is the data processor:\n• Transcripts of conversations with Assistant Agent (including messages the visitor writes)\n• Lead information: name, contact details, preferred appointment time\n• A session cookie named visitor_session_id (used to match a visitor to their own conversation history)\n\nSaule is an AI assistant; when a visitor asks directly, it honestly discloses this. These conversations may be read by the business owner providing the service and are sent to an AI provider to generate responses (see Section 4)."
+        "body": "talkinbio provides an AI assistant (Assistant Agent) that chats 24/7 with visitors to your social media bio page. Two separate categories of data are processed:\n\nYour data as a business owner (account holder):\n• Identity data: Full name\n• Contact data: Email address\n• Account data: Business name, username, industry/category\n• Usage and metering data: Login timestamps, in-platform actions, AI usage volume (credit/token consumption)\n\nData belonging to visitors to your page (your end customers) — for this data, you are the data controller and talkinbio is the data processor:\n• Transcripts of conversations with Assistant Agent (including messages the visitor writes)\n• Lead information: name, contact details, preferred appointment time\n• A session cookie named visitor_session_id (used to match a visitor to their own conversation history)\n\nAssistant Agent is an AI assistant; when a visitor asks directly, it honestly discloses this. These conversations may be read by the business owner providing the service and are sent to an AI provider to generate responses (see Section 4)."
       },
       {
         "title": "3. Legal Basis for Processing",

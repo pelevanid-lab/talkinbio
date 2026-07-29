@@ -725,7 +725,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 onClick={() => setViewMode('chat')}
                 className={`flex-1 py-1.5 rounded-lg text-sm font-medium leading-tight transition-all ${viewMode === 'chat' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                <span className="block">Beiwe</span>
+                <span className="block">Creative Agent</span>
                 <span className="block text-[10px] font-normal opacity-60">{t('tabAgent')}</span>
               </button>
               <button 

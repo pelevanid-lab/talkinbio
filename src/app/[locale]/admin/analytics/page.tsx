@@ -150,7 +150,7 @@ export default async function AdminAnalyticsPage() {
             </div>
             <div className="p-6 text-center">
               <p className="text-2xl font-bold text-slate-900">{demoStats.requestCount}</p>
-              <p className="text-sm text-slate-500 mt-1">Saule Kaynaklı Erişim Talebi</p>
+              <p className="text-sm text-slate-500 mt-1">Assistant Agent Kaynaklı Erişim Talebi</p>
             </div>
             <div className="p-6 text-center">
               <p className="text-2xl font-bold text-slate-900">%{demoStats.conversionRate}</p>

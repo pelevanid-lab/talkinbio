@@ -236,7 +236,7 @@ export default function CharacterOverlayEditor({ shot, onClose, onSaved }: Props
                 onChange={(e) => updateText('subline', e.target.value)}
                 rows={2}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Saule 7/24 konuşuyor, lead topluyor."
+                placeholder="Bio linkin 7/24 cevap veriyor, lead topluyor."
               />
             </div>
 

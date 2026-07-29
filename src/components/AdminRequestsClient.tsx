@@ -81,7 +81,9 @@ export default function AdminRequestsClient({ initialPending, initialProcessed }
                   <p className="text-slate-500">{req.email}</p>
                   <div className="mt-2 flex gap-2 flex-wrap">
                     <span className={`px-2 py-1 text-xs rounded-md font-medium ${req.source === 'saule' ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-600'}`}>
-                      {req.source === 'saule' ? 'Saule' : 'Form'}
+                      {/* 'saule' DB'de kayıtlı kaynak değeri — karşılaştırma aynen kalmalı,
+                          yalnızca gösterilen etiket yeni adlandırmaya çevrildi. */}
+                      {req.source === 'saule' ? 'Assistant Agent' : 'Form'}
                     </span>
                     <span className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">Kategori: {req.category || 'Belirtilmedi'}</span>
                     <span className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-md">
@@ -130,7 +132,7 @@ export default function AdminRequestsClient({ initialPending, initialProcessed }
                 </div>
                 <div className="flex items-center gap-4">
                   {req.source === 'saule' && (
-                    <span className="px-2 py-1 bg-orange-50 text-orange-600 text-xs rounded-md font-medium">Saule</span>
+                    <span className="px-2 py-1 bg-orange-50 text-orange-600 text-xs rounded-md font-medium">Assistant Agent</span>
                   )}
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${req.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     {req.status === 'approved' ? 'Onaylandı' : 'Reddedildi'}

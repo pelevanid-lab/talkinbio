@@ -17,7 +17,7 @@
       "note": "Sınırlı erken erişim · 10 dakikada yayında"
     },
     "statement": {
-      "text": "Link in bio sizce de eskimedi mi? Web formundan kalma eski düzen ile müşterilerinizi labirentlere sokmayın. İşinizi talkinbio'ya bırakın, sorsun, yönlendirsin, cevap versin."
+      "text": "Ne çekeceğim diye düşünmeyin, saatlerce DM cevaplamayın veya randevu kovalayarak vakit kaybetmeyin. Siz sadece asıl işinize odaklanın; geriye kalan tüm dijital yükü talkinbio üstlensin."
     },
     "steps": {
       "title": "Kurulumun kendisi, ajanının eğitimi.",
@@ -178,7 +178,7 @@
       }
     },
     "heroTexts": {
-      "subtitle": "İşletmeniz için eksiksiz yapay zeka platformu. Ziyaretçilerinizle 7/24 etkileşim kuran <strong className=\"text-[var(--ink)] font-semibold\">Assistant Agent</strong>'tan, içeriğinizi saniyeler içinde kuran <strong className=\"text-[var(--ink)] font-semibold\">Creative Agent</strong>'e kadar.",
+      "subtitle": "Bio sayfanız artık sadece bir link değil. Sizin yerinize <strong className=\"text-[var(--ink)] font-semibold\">içerik üreten</strong>, müşterilerinize <strong className=\"text-[var(--ink)] font-semibold\">anında cevap veren</strong> ve <strong className=\"text-[var(--ink)] font-semibold\">satış kapatan</strong> akıllı yardımcınız.",
       "btnEarly": "Erken erişim",
       "btnHow": "Nasıl çalışır?",
       "btnPricing": "Fiyatlandırma"
@@ -588,7 +588,7 @@
     },
     "q4": {
       "title": "Ne Yapıyoruz",
-      "content": "talkinbio iki parçadan oluşuyor.\n\nSaule, bio sayfanızda 7/24 çalışan yapay zeka asistanınız. Bir ziyaretçi soru sorduğunda Assistant Agent dinliyor, anlıyor ve hizmetinizi gerçekten bilen biri gibi cevap veriyor. Randevu topluyor, ilgilenen ziyaretçiyi kaydediyor, takip gerektiren durumları işaretliyor. Sabah kalktığınızda karşınızda kaçırılmış DM'ler değil, sıralanmış ve etiketlenmiş bir lead listesi buluyorsunuz.\n\nBeiwe ise bu konuşmaları analiz edip size haftalık pazarlama önerileri sunan ajan. 'Bu hafta en çok hangi soru soruldu? Hangi hizmet daha çok ilgi gördü? Ziyaretçiler hangi saatlerde geldi?' — Creative Agent bu soruları yanıtlıyor, bir sonraki içerik kararınızı tahmine değil veriye dayandırmanızı sağlıyor.\n\nKurulum 10 dakika sürüyor, kod yazmanıza gerek yok. Sistem bir kere çalışmaya başladıktan sonra, siz çalışmasanız da o çalışmaya devam ediyor."
+      "content": "talkinbio iki parçadan oluşuyor.\n\nAssistant Agent, bio sayfanızda 7/24 çalışan yapay zeka asistanınız. Bir ziyaretçi soru sorduğunda dinliyor, anlıyor ve hizmetinizi gerçekten bilen biri gibi cevap veriyor. Randevu topluyor, ilgilenen ziyaretçiyi kaydediyor, takip gerektiren durumları işaretliyor. Sabah kalktığınızda karşınızda kaçırılmış DM'ler değil, sıralanmış ve etiketlenmiş bir lead listesi buluyorsunuz.\n\nCreative Agent ise bu konuşmaları analiz edip size haftalık pazarlama önerileri sunan ajan. 'Bu hafta en çok hangi soru soruldu? Hangi hizmet daha çok ilgi gördü? Ziyaretçiler hangi saatlerde geldi?' — Creative Agent bu soruları yanıtlıyor, bir sonraki içerik kararınızı tahmine değil veriye dayandırmanızı sağlıyor.\n\nKurulum 10 dakika sürüyor, kod yazmanıza gerek yok. Sistem bir kere çalışmaya başladıktan sonra, siz çalışmasanız da o çalışmaya devam ediyor."
     },
     "q5": {
       "title": "Farkımız",
@@ -623,7 +623,7 @@
       },
       {
         "title": "2. İşlenen Kişisel Veriler",
-        "body": "talkinbio, sosyal medya bio sayfanızdaki ziyaretçilerle 7/24 sohbet eden bir yapay zeka asistanı (Assistant Agent) sunar. Platformu kullanımınız kapsamında iki ayrı veri grubu işlenir:\n\nİşletme sahibi (hesap sahibi) olarak sizin verileriniz:\n• Kimlik verileri: Ad, soyad\n• İletişim verileri: E-posta adresi\n• Hesap verileri: İşletme adı, kullanıcı adı (username), sektör/kategori\n• Kullanım ve ölçüm verileri: Giriş zamanları, platform içi eylemler, yapay zeka kullanım hacmi (kredi/token tüketimi)\n\nSayfanızı ziyaret eden kişilerin (son müşterilerinizin) verileri — bu veriler için siz veri sorumlususunuz, talkinbio veri işleyendir:\n• Assistant Agent ile yapılan konuşma transkriptleri (ziyaretçinin yazdığı mesajlar dahil)\n• Lead (potansiyel müşteri) bilgileri: ad, iletişim bilgisi, tercih edilen randevu zamanı\n• visitor_session_id adlı oturum çerezi (ziyaretçiyi kendi konuşma geçmişiyle eşlemek için)\n\nSaule bir yapay zeka asistanıdır; ziyaretçi doğrudan sorduğunda bu durum kendisine dürüstçe belirtilir. Bu konuşmalar hizmeti sağlayan işletme sahibi tarafından okunabilir ve yanıt üretme sürecinde bir yapay zeka sağlayıcısına iletilir (bkz. Madde 4)."
+        "body": "talkinbio, sosyal medya bio sayfanızdaki ziyaretçilerle 7/24 sohbet eden bir yapay zeka asistanı (Assistant Agent) sunar. Platformu kullanımınız kapsamında iki ayrı veri grubu işlenir:\n\nİşletme sahibi (hesap sahibi) olarak sizin verileriniz:\n• Kimlik verileri: Ad, soyad\n• İletişim verileri: E-posta adresi\n• Hesap verileri: İşletme adı, kullanıcı adı (username), sektör/kategori\n• Kullanım ve ölçüm verileri: Giriş zamanları, platform içi eylemler, yapay zeka kullanım hacmi (kredi/token tüketimi)\n\nSayfanızı ziyaret eden kişilerin (son müşterilerinizin) verileri — bu veriler için siz veri sorumlususunuz, talkinbio veri işleyendir:\n• Assistant Agent ile yapılan konuşma transkriptleri (ziyaretçinin yazdığı mesajlar dahil)\n• Lead (potansiyel müşteri) bilgileri: ad, iletişim bilgisi, tercih edilen randevu zamanı\n• visitor_session_id adlı oturum çerezi (ziyaretçiyi kendi konuşma geçmişiyle eşlemek için)\n\nAssistant Agent bir yapay zeka asistanıdır; ziyaretçi doğrudan sorduğunda bu durum kendisine dürüstçe belirtilir. Bu konuşmalar hizmeti sağlayan işletme sahibi tarafından okunabilir ve yanıt üretme sürecinde bir yapay zeka sağlayıcısına iletilir (bkz. Madde 4)."
       },
       {
         "title": "3. Kişisel Verilerin İşlenme Amaçları ve Hukuki Dayanakları",

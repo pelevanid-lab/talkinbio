@@ -19,7 +19,7 @@ const tabs = [
   { label: 'Beiwe Voice', href: '/admin/beiwe-lab/voice', icon: Mic, ready: true },
   { label: 'Beiwe Podcast', href: '/admin/beiwe-lab/podcast', icon: Clapperboard, ready: true },
   { label: 'Beiwe Motion', href: '/admin/beiwe-lab/motion', icon: Film, ready: false },
-  { label: 'Beiwe Post', href: '/admin/beiwe-lab/post', icon: Type, ready: false },
+  { label: 'Beiwe Post', href: '/admin/beiwe-lab/post', icon: Type, ready: true },
 ];
 
 export default function BeiweLabTabs() {

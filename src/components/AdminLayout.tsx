@@ -44,6 +44,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         { label: 'Beiwe Twin', href: '/admin/beiwe-lab/twin' },
         { label: 'Beiwe Voice', href: '/admin/beiwe-lab/voice' },
         { label: 'Beiwe Podcast', href: '/admin/beiwe-lab/podcast' },
+        { label: 'Beiwe Post', href: '/admin/beiwe-lab/post' },
       ],
     },
   ];
