@@ -123,7 +123,7 @@ export const VOICE_TEST_SCRIPTS: {
  *
  * Bu sayfanın sorusu "bu yüz bana benziyor mu?", "bu sahne güzel mi?" değil. O yüzden
  * serbest sahne tarifi yok; kimliği farklı mesafe ve açılardan sınayan sabit bir set var.
- * İçerik/sahne üretimi Lab'ın ayrı bir sayfasına (Beiwe Studio) taşınacak.
+ * İçerik/sahne üretimi Lab'ın ayrı bir sayfasına (Beiwe Podcast) taşınacak.
  *
  * `presetId` değerleri `src/config/characters.ts`'teki `SHARED_SCENE_PRESETS` ile eşleşir.
  */
@@ -150,5 +150,51 @@ export const TWIN_VALIDATION_ANGLES: {
     label: 'Yarı profil',
     hint: 'Üç çeyrek açı. Modeller en çok burada kimlikten kayar.',
     presetId: 'talking-to-camera',
+  },
+];
+
+/* ------------------------------------------------------------------ */
+/* Podcast katmanı                                                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * "Beğenme" eşiği — Twin'in LORA_MIN_SCORE'uyla SAYICA aynı ama KASTEN ayrı bir
+ * sabit: burada anlam "bu sahneyi videoya döksün mü" (estetik tercih), Twin'de
+ * "bu kare kimliğe ne kadar benziyor" (sadakat). İkisi aynı `character_shots.
+ * similarity_score` kolonunu paylaşıyor (tek tablo, farklı bağlamda yeniden
+ * yorumlanıyor) — sayı bir gün ayrışırsa iki sabit birbirini sessizce sürüklemesin.
+ */
+export const PODCAST_SCENE_LIKE_THRESHOLD = 8;
+
+export type PodcastVideoMode = 'video-to-video' | 'text-to-video' | 'voice-to-video';
+
+export const PODCAST_VIDEO_MODES: {
+  id: PodcastVideoMode;
+  label: string;
+  hint: string;
+  /**
+   * Doldurulmuşsa UI'da görünür bir uyarı olarak gösterilir — DreamActor'ın
+   * "doğrulanmadı" etiketiyle aynı desen (bkz. `src/config/clips.ts`).
+   */
+  caveat?: string;
+}[] = [
+  {
+    id: 'video-to-video',
+    label: 'Video ile (Wan Motion)',
+    hint: 'Kendi çektiğin bir performans videosunun jest/mimiğini karaktere giydirir.',
+  },
+  {
+    id: 'text-to-video',
+    label: 'Metin ile (OmniHuman)',
+    hint: 'Yazdığın metni Beiwe Voice klonuyla seslendirip OmniHuman ile videoya çevirir.',
+    caveat:
+      'Bu yol daha önce (eski F5-TTS sesiyle) test edilmiş ve ağız hareketi abartılı bulunmuştu — bkz. src/config/clips.ts. MiniMax klonuyla yeniden deneniyor, sonucu kulakla/gözle değerlendir.',
+  },
+  {
+    id: 'voice-to-video',
+    label: 'Sesle (OmniHuman)',
+    hint: 'Yüklediğin bir ses kaydını doğrudan OmniHuman ile videoya çevirir.',
+    caveat:
+      'Bu yol daha önce (eski F5-TTS sesiyle) test edilmiş ve ağız hareketi abartılı bulunmuştu — bkz. src/config/clips.ts. Kendi ses kaydınla sonucu değerlendir.',
   },
 ];

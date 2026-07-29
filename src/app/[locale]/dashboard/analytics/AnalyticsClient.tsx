@@ -57,7 +57,7 @@ export default function AnalyticsClient({ business, viewsBySource, totalViews, t
             <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-4">
               <MessageCircle className="w-6 h-6" />
             </div>
-            <h2 className="text-[#8A8880] text-sm font-semibold font-mono tracking-wide uppercase mb-1">Saule ile Konuşma</h2>
+            <h2 className="text-[#8A8880] text-sm font-semibold font-mono tracking-wide uppercase mb-1">Assistant Agent ile Konuşma</h2>
             <p className="text-4xl font-[800] font-['Bricolage_Grotesque'] text-[#14231F]">{totalConversations}</p>
           </div>
         </div>

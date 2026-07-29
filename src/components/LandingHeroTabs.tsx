@@ -25,7 +25,7 @@ export default function LandingHeroTabs({
           <div className="flex-shrink-0">
             <SauleIcon size={32} />
           </div>
-          Saule Assistant
+          Assistant Agent
         </button>
         <button
           className={`hero-tab ${activeTab === 'beiwe' ? 'active' : ''}`}
@@ -34,7 +34,7 @@ export default function LandingHeroTabs({
           <div className="flex-shrink-0">
             <BeiweIcon size={32} />
           </div>
-          Beiwe Creative
+          Creative Agent
         </button>
       </div>
 

@@ -499,6 +499,8 @@ export interface CharacterMotion {
   audio_url: string;
   video_url: string;
   model: string;
+  /** Ses bu videoya nasıl geldi — galeri etiketlemesi için. Eski satırlarda null. */
+  input_mode: 'text' | 'voice' | null;
   created_at: string;
 }
 

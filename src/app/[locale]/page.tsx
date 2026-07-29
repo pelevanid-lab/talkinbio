@@ -211,7 +211,7 @@ export default async function HomePage({ params }: any) {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-[var(--ink)] mb-3 flex items-center gap-3" style={{ fontFamily: 'var(--font-bricolage)' }}>
-                    <div className="px-2 py-0.5 rounded-full bg-[var(--coral-tint)] text-[var(--coral)] text-xs font-bold tracking-wider" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>SAULE</div>
+                    <div className="px-2 py-0.5 rounded-full bg-[var(--coral-tint)] text-[var(--coral)] text-xs font-bold tracking-wider" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>ASSISTANT</div>
                     {t('twoPlatforms.sauleTitle')}
                   </h3>
                   <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">
@@ -227,7 +227,7 @@ export default async function HomePage({ params }: any) {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-[var(--ink)] mb-3 flex items-center gap-3" style={{ fontFamily: 'var(--font-bricolage)' }}>
-                    <div className="px-2 py-0.5 rounded-full bg-[var(--teal-tint)] text-[var(--teal-deep)] text-xs font-bold tracking-wider" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>BEIWE</div>
+                    <div className="px-2 py-0.5 rounded-full bg-[var(--teal-tint)] text-[var(--teal-deep)] text-xs font-bold tracking-wider" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>CREATIVE</div>
                     {t('twoPlatforms.beiweTitle')}
                   </h3>
                   <p className="text-[var(--ink-soft)] leading-relaxed text-[15px]">
@@ -250,7 +250,7 @@ export default async function HomePage({ params }: any) {
                     <div className="w-3 h-3 rounded-full bg-slate-200"></div>
                     <div className="w-3 h-3 rounded-full bg-slate-200"></div>
                     <div className="w-3 h-3 rounded-full bg-slate-200"></div>
-                    <div className="text-[10px] text-[var(--muted)] font-medium ml-2 uppercase tracking-widest">Saule Analytics</div>
+                    <div className="text-[10px] text-[var(--muted)] font-medium ml-2 uppercase tracking-widest">Assistant Analytics</div>
                   </div>
                   <div className="flex-1 p-8 flex items-center justify-center text-center">
                     <div>
@@ -265,7 +265,7 @@ export default async function HomePage({ params }: any) {
                     <div className="w-3 h-3 rounded-full bg-slate-200"></div>
                     <div className="w-3 h-3 rounded-full bg-slate-200"></div>
                     <div className="w-3 h-3 rounded-full bg-slate-200"></div>
-                    <div className="text-[10px] text-[var(--muted)] font-medium ml-2 uppercase tracking-widest">Beiwe Studio</div>
+                    <div className="text-[10px] text-[var(--muted)] font-medium ml-2 uppercase tracking-widest">Creative Studio</div>
                   </div>
                   <div className="flex-1 p-8 flex items-center justify-center text-center">
                     <div>

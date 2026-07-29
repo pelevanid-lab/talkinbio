@@ -306,7 +306,7 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                 S
               </div>
               <div>
-                <h2 className="text-xl font-[800] text-[#14231F] font-['Bricolage_Grotesque']">Saule</h2>
+                <h2 className="text-xl font-[800] text-[#14231F] font-['Bricolage_Grotesque']">Assistant Agent</h2>
                 <p className="text-sm text-[#4B5A55]">{t('sauleSubtitle')}</p>
               </div>
             </div>
@@ -452,9 +452,9 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                         they demonstrate what to type for that specific visitor-facing language field. */}
                     <p className="text-xs text-[#8A8880]">{t('greetingHint')}</p>
                     {([
-                      { locale: 'tr' as const, label: 'Türkçe', placeholder: 'Örn: Merhaba, ben Saule. Size nasıl yardımcı olabilirim?' },
-                      { locale: 'en' as const, label: 'English', placeholder: "e.g. Hi, I'm Saule. How can I help you?" },
-                      { locale: 'ru' as const, label: 'Русский', placeholder: 'Напр.: Привет, я Saule. Чем могу помочь?' },
+                      { locale: 'tr' as const, label: 'Türkçe', placeholder: 'Örn: Merhaba, ben Assistant Agent. Size nasıl yardımcı olabilirim?' },
+                      { locale: 'en' as const, label: 'English', placeholder: "e.g. Hi, I'm Assistant Agent. How can I help you?" },
+                      { locale: 'ru' as const, label: 'Русский', placeholder: 'Напр.: Привет, я Assistant Agent. Чем могу помочь?' },
                     ]).map(({ locale: greetingLocale, label, placeholder }) => (
                       <div key={greetingLocale}>
                         <label className="block text-xs font-semibold text-[#8A8880] mb-1 font-mono uppercase tracking-wider">{label}</label>

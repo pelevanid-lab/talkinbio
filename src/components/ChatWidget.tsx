@@ -209,7 +209,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
                     <SauleIcon size={34} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-[var(--ink)] font-bricolage">Saule</h3>
+                    <h3 className="font-semibold text-[var(--ink)] font-bricolage">Assistant Agent</h3>
                     <p className="text-xs text-[var(--teal)] font-medium flex items-center">
                       <span className="w-2 h-2 rounded-full bg-[var(--teal)] mr-1"></span> {t('online')}
                     </p>
@@ -368,7 +368,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
                 <SauleIcon size={40} className="w-full h-full" />
               </div>
               <div className="truncate">
-                <p className="text-xs text-[var(--teal)] font-medium mb-0.5">Saule</p>
+                <p className="text-xs text-[var(--teal)] font-medium mb-0.5">Assistant Agent</p>
                 <p className="text-sm text-[var(--ink)] truncate">
                   {(messages.length > 0 ? getMessageText(messages[messages.length - 1]) : '').substring(0, 40) || t('defaultPreview')}...
                 </p>

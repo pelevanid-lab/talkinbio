@@ -83,6 +83,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
 
     const prompt = (formData.get('prompt') as string | null)?.slice(0, 600) || undefined;
     const turboMode = formData.get('turboMode') === 'true';
+    // Opsiyonel — yalnızca Beiwe Podcast gönderiyor (galeri etiketlemesi için).
+    // Eski Karakter Odası (Motion) bunu hiç göndermiyor, satırları null kalır.
+    const inputModeRaw = formData.get('inputMode');
+    const inputMode = inputModeRaw === 'text' || inputModeRaw === 'voice' ? inputModeRaw : null;
 
     // Ses süresini tarayıcı ölçüyor ve buraya yazıyor; sunucuda decode etmek için
     // ek bağımlılık (ffprobe) gerekiyor ve kod dondurma döneminde onu eklemiyoruz.
@@ -171,6 +175,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
         audio_url: audioUrl,
         video_url: finalVideoUrl,
         model: model.id,
+        input_mode: inputMode,
       })
       .select()
       .single();

@@ -33,7 +33,7 @@ export const SauleIcon = ({ className = '', size = 32 }: AgentIconProps) => (
         `}
       </style>
     </defs>
-    <circle cx="54" cy="54" r="54" fill="#14231F"/>
+    
     <rect x="14" y="37" width="80" height="34" rx="17" fill="#FF6A5C" className="saule-pill"/>
     <circle cx="34" cy="54" r="4.5" fill="#14231F" className="saule-dot-1"/>
     <circle cx="54" cy="54" r="4.5" fill="#14231F" className="saule-dot-2"/>
@@ -69,7 +69,7 @@ export const BeiweIcon = ({ className = '', size = 32 }: AgentIconProps) => (
         `}
       </style>
     </defs>
-    <circle cx="54" cy="54" r="54" fill="#14231F"/>
+    
     <rect x="14" y="37" width="80" height="34" rx="17" fill="#50e3c2" className="beiwe-pill"/>
     <circle cx="34" cy="54" r="4.5" fill="#14231F" className="beiwe-dot-1"/>
     <circle cx="54" cy="54" r="4.5" fill="#14231F" className="beiwe-dot-2"/>
