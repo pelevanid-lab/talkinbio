@@ -69,6 +69,41 @@ export function findPerformanceModel(id: unknown): PerformanceModel | undefined 
 }
 
 /**
+ * Action Room'un video-to-video modeli — `PERFORMANCE_MODELS`'ten (Podcast) BİLEREK AYRI.
+ *
+ * DÜZELTME (kullanıcı geri bildirimi): wan-motion/DreamActor göz-kaş-mimik odaklı yakın
+ * plan performans aktarımı için ayarlı — Motion'ın ihtiyacı FARKLI: boydan/cinematic/
+ * fantastic sahnelerde tüm gövde koreografisini taşıyabilen modeller. Bu yüzden Motion
+ * artık PERFORMANCE_MODELS'i KULLANMIYOR, bu ayrı listeyi kullanıyor.
+ *
+ * DOĞRULANMADI — SCENE_VIDEO_MODELS'teki aynı disiplin: ilk gerçek denemeden sonra
+ * güncellenmeli (`generateCharacterPerformance`'ın gönderdiği alanlar da dahil).
+ */
+export type FullBodyMotionModel = {
+  id: string;
+  label: string;
+  hint: string;
+  costPerSecondUsd: number;
+  supportsPrompt: boolean;
+};
+
+export const FULL_BODY_MOTION_MODELS: FullBodyMotionModel[] = [
+  {
+    id: 'fal-ai/mimic-motion',
+    label: 'MimicMotion (deneysel)',
+    hint: 'Boydan poz/hareket aktarımı — yüz mimiğinden çok tüm gövde koreografisine odaklı. Henüz doğrulanmadı.',
+    costPerSecondUsd: 0.1,
+    supportsPrompt: false,
+  },
+];
+
+export const DEFAULT_FULL_BODY_MOTION_MODEL_ID = FULL_BODY_MOTION_MODELS[0].id;
+
+export function findFullBodyMotionModel(id: unknown): FullBodyMotionModel | undefined {
+  return typeof id === 'string' ? FULL_BODY_MOTION_MODELS.find((m) => m.id === id) : undefined;
+}
+
+/**
  * Referanssız senaryo-dan-video (Action Room'un "scenario" modu) — sürücü video yok,
  * yalnız kaynak görsel + metin. `PERFORMANCE_MODELS`'ten (video-to-video) BİLEREK ayrı:
  * bu aile image-to-video, farklı bir fal ürün kategorisi.

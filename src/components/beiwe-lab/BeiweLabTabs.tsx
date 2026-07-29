@@ -2,23 +2,24 @@
 
 import { usePathname } from 'next/navigation';
 import { Link } from '@/i18n/routing';
-import { Users, Sparkles, Mic, Clapperboard, Film, Type } from 'lucide-react';
+import { Users, Sparkles, Mic, Clapperboard, Film, Scissors, Type } from 'lucide-react';
 
 // ContinuousImprovementTabs ile aynı sekme deseni. Fark: Lab'ın katmanları sıralı bir
 // üretim hattı, o yüzden henüz yazılmamış olanlar da görünür ama tıklanamaz — hattın
 // nereye gittiği baştan okunsun.
 //
 // Beiwe Podcast ile Beiwe Motion farklı işler: Podcast beğenilen bir sahneyi konuşan
-// videoya çeviriyor (ses üstte, kimlik sabit — bkz. BeiwePodcastClient). Motion (adı
-// kesinleşmedi — Ads/Commercial da olabilir) sesle hiç ilişkilendirilmeyecek ya da
-// sonradan bindirilecek, boydan görüntünün öne çıktığı, gerekirse rastgele kişi/
-// anime/çizgi film karakterleriyle üretilen çekimler için.
+// videoya çeviriyor (ses üstte, kimlik sabit — bkz. BeiwePodcastClient). Motion
+// ("Action Room") sesle ilişkilendirilmiyor, boydan görüntü öne çıkıyor, kimlik zorunlu
+// değil (Twin ya da jenerik/rastgele karakter) — AI aktör/anime/çizgi film/cinematic/
+// fantastic/trend videoları için (bkz. BeiweMotionClient, config/motionStyles.ts).
 const tabs = [
   { label: 'Karakter Odası', href: '/admin/characters', icon: Users, ready: true },
   { label: 'Beiwe Twin', href: '/admin/beiwe-lab/twin', icon: Sparkles, ready: true },
   { label: 'Beiwe Voice', href: '/admin/beiwe-lab/voice', icon: Mic, ready: true },
   { label: 'Beiwe Podcast', href: '/admin/beiwe-lab/podcast', icon: Clapperboard, ready: true },
-  { label: 'Beiwe Motion', href: '/admin/beiwe-lab/motion', icon: Film, ready: false },
+  { label: 'Beiwe Motion', href: '/admin/beiwe-lab/motion', icon: Film, ready: true },
+  { label: 'Beiwe Studio', href: '/admin/beiwe-lab/studio', icon: Scissors, ready: true },
   { label: 'Beiwe Post', href: '/admin/beiwe-lab/post', icon: Type, ready: true },
 ];
 

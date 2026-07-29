@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { FalError, generateCharacterImage, generateCharacterPerformance, generateSceneVideo } from '@/utils/fal';
 import { CHARACTERS, buildNegativePrompt, isCharacterId } from '@/config/characters';
-import { PERFORMANCE_MODELS, SCENE_VIDEO_MODELS, findPerformanceModel, findSceneVideoModel } from '@/config/clips';
+import { FULL_BODY_MOTION_MODELS, SCENE_VIDEO_MODELS, findFullBodyMotionModel, findSceneVideoModel } from '@/config/clips';
 import { DEFAULT_MOTION_STYLE_ID, MOTION_STYLES, findMotionStyle, type MotionIdentityMode } from '@/config/motionStyles';
 
 export const maxDuration = 300;
@@ -46,8 +46,10 @@ async function downloadToMedia(url: string, characterId: string, ext: string, co
  * İki aşama: (1) stilize kaynak görsel — Twin kimliğini (galeri karesi) ya da jenerik bir
  * personayı seçilen stille (anime/çizgi film/cinematic/fantastic) yeniden üretir; (2) hareket —
  * `mode==='reference'` ise yüklenen bir örnek/trend videonun hareketini `generateCharacterPerformance`
- * (wan-motion) ile bu görsele giydirir, `mode==='scenario'` ise sürücü video olmadan yalnızca
- * senaryo metninden `generateSceneVideo` ile video üretir (DOĞRULANMADI — bkz. o fonksiyonun yorumu).
+ * ile bu görsele giydirir (Podcast'in yüz/mimik odaklı `PERFORMANCE_MODELS`'i DEĞİL,
+ * boydan/gövde hareketine uygun ayrı `FULL_BODY_MOTION_MODELS` — bkz. `config/clips.ts`),
+ * `mode==='scenario'` ise sürücü video olmadan yalnızca senaryo metninden `generateSceneVideo`
+ * ile video üretir (ikisi de DOĞRULANMADI — bkz. ilgili config kayıtlarının yorumu).
  *
  * Çıktı ortak klip havuzuna `room: 'action'` ile yazılır — bu oda DB şemasında zaten
  * öngörülmüştü (bkz. `00050_character_clips.sql`), yalnızca üretici tarafı eksikti.
@@ -146,7 +148,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
         return NextResponse.json({ error: 'Örnek video 150MB sınırını aşıyor.' }, { status: 400 });
       }
 
-      const performanceModel = findPerformanceModel(formData.get('performanceModelId')) || PERFORMANCE_MODELS[0];
+      const motionModel = findFullBodyMotionModel(formData.get('motionModelId')) || FULL_BODY_MOTION_MODELS[0];
       const ext = file.name.split('.').pop()?.toLowerCase() || 'mp4';
       drivingVideoUrl = await uploadBufferToMedia(
         `characters/${characterId}/action/driving/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`,
@@ -155,13 +157,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
       );
 
       const performance = await generateCharacterPerformance({
-        modelId: performanceModel.id,
+        modelId: motionModel.id,
         imageUrl: styledImageUrl,
         videoUrl: drivingVideoUrl,
-        prompt: scenario,
+        prompt: motionModel.supportsPrompt ? scenario : undefined,
       });
       finalVideoUrl = await downloadToMedia(performance.videoUrl, characterId, 'mp4', 'video/mp4');
-      usedModel = performanceModel.id;
+      usedModel = motionModel.id;
     } else {
       const sceneModel = findSceneVideoModel(formData.get('sceneVideoModelId')) || SCENE_VIDEO_MODELS[0];
       const scene = await generateSceneVideo({

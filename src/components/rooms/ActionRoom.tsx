@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Clapperboard, Loader2, Play, Trash2, Upload } from 'lucide-react';
 import type { CharacterShot } from '@/config/characters';
 import type { CharacterClip } from '@/config/clips';
-import { PERFORMANCE_MODELS, SCENE_VIDEO_MODELS, findPerformanceModel, findSceneVideoModel } from '@/config/clips';
+import { FULL_BODY_MOTION_MODELS, SCENE_VIDEO_MODELS, findFullBodyMotionModel, findSceneVideoModel } from '@/config/clips';
 import {
   DEFAULT_MOTION_STYLE_ID,
   MOTION_IDENTITY_MODES,
@@ -47,7 +47,7 @@ export default function ActionRoom({ characterId, shots, clips, onClipCreated, o
   const [mode, setMode] = useState<MotionMode>('reference');
   const [drivingFile, setDrivingFile] = useState<File | null>(null);
   const [drivingSeconds, setDrivingSeconds] = useState<number | null>(null);
-  const [performanceModelId, setPerformanceModelId] = useState(PERFORMANCE_MODELS[0].id);
+  const [motionModelId, setMotionModelId] = useState(FULL_BODY_MOTION_MODELS[0].id);
   const [sceneModelId, setSceneModelId] = useState(SCENE_VIDEO_MODELS[0].id);
   const [scenario, setScenario] = useState('');
 
@@ -57,7 +57,7 @@ export default function ActionRoom({ characterId, shots, clips, onClipCreated, o
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const actionClips = clips.filter((c) => c.room === 'action');
-  const performanceModel = findPerformanceModel(performanceModelId) ?? PERFORMANCE_MODELS[0];
+  const motionModel = findFullBodyMotionModel(motionModelId) ?? FULL_BODY_MOTION_MODELS[0];
   const sceneModel = findSceneVideoModel(sceneModelId) ?? SCENE_VIDEO_MODELS[0];
 
   const handleDrivingPicked = async (file: File | null) => {
@@ -107,7 +107,7 @@ export default function ActionRoom({ characterId, shots, clips, onClipCreated, o
 
       if (mode === 'reference' && drivingFile) {
         formData.append('drivingVideo', drivingFile);
-        formData.append('performanceModelId', performanceModel.id);
+        formData.append('motionModelId', motionModel.id);
       } else {
         formData.append('sceneVideoModelId', sceneModel.id);
       }
@@ -200,7 +200,7 @@ export default function ActionRoom({ characterId, shots, clips, onClipCreated, o
               (() => {
                 const eligibleShots = shots.filter((shot) => shot.similarity_score === null || shot.similarity_score >= 7);
                 if (eligibleShots.length === 0) {
-                  return <p className="text-sm text-slate-500">Önce Beiwe Twin'de uygun (7 puan ve üzeri) bir görsel üretmelisiniz.</p>;
+                  return <p className="text-sm text-slate-500">Önce Beiwe Twin&apos;de uygun (7 puan ve üzeri) bir görsel üretmelisiniz.</p>;
                 }
                 return (
                   <div className="grid grid-cols-3 gap-2 max-h-[220px] overflow-y-auto pr-2 pb-2">
@@ -285,17 +285,21 @@ export default function ActionRoom({ characterId, shots, clips, onClipCreated, o
                 )}
 
                 <div className="mt-3 space-y-1.5">
-                  {PERFORMANCE_MODELS.map((m) => (
+                  <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                    <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                    <span>Podcast&apos;in yüz/mimik modelleri (wan-motion/DreamActor) burada KULLANILMIYOR — boydan/tüm gövde hareketine uygun ayrı bir model ailesi, henüz doğrulanmadı.</span>
+                  </div>
+                  {FULL_BODY_MOTION_MODELS.map((m) => (
                     <button
                       key={m.id}
-                      onClick={() => setPerformanceModelId(m.id)}
+                      onClick={() => setMotionModelId(m.id)}
                       className={`w-full text-left rounded-xl border px-3 py-2 transition-colors ${
-                        performanceModel.id === m.id ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200' : 'border-slate-200 hover:border-slate-300'
+                        motionModel.id === m.id ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200' : 'border-slate-200 hover:border-slate-300'
                       }`}
                     >
                       <div className="flex items-baseline justify-between gap-2">
                         <span className="text-sm font-semibold text-slate-900">{m.label}</span>
-                        <span className="text-xs text-slate-500 whitespace-nowrap">${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn</span>
+                        <span className="text-xs text-slate-500 whitespace-nowrap">~${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn (tahmin)</span>
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">{m.hint}</p>
                     </button>
@@ -365,8 +369,8 @@ export default function ActionRoom({ characterId, shots, clips, onClipCreated, o
           </button>
           {mode === 'reference' && drivingSeconds !== null && (
             <p className="text-xs text-slate-500 -mt-3">
-              ~${(drivingSeconds * performanceModel.costPerSecondUsd).toFixed(2)} (tahmin, doğrulanmadı) · {performanceModel.label},{' '}
-              {drivingSeconds.toFixed(1)} sn × ${performanceModel.costPerSecondUsd}/sn
+              ~${(drivingSeconds * motionModel.costPerSecondUsd).toFixed(2)} (tahmin, doğrulanmadı) · {motionModel.label},{' '}
+              {drivingSeconds.toFixed(1)} sn × ${motionModel.costPerSecondUsd}/sn
             </p>
           )}
         </div>

@@ -12,7 +12,7 @@ import {
   type PostTemplate,
   type PostTemplateId,
 } from '@/config/post';
-import { canvasToPng, renderPost, type PostTexts } from '@/utils/postRenderer';
+import { ANIMATED_POST_DURATION_MS, canvasToPng, renderPost, type PostTexts } from '@/utils/postRenderer';
 import { downloadBlob, loadMedia, type LoadedMedia } from '@/utils/imageOverlay';
 
 // Bu sayfa bilerek LabStage (aşama akordiyonu) kullanmıyor: Twin/Voice/Podcast sıralı
@@ -44,12 +44,20 @@ export default function BeiwePostClient({ shots }: Props) {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mediaObj, setMediaObj] = useState<LoadedMedia | null>(null);
+  // Hareketli: başlık/alt satır kayarak beliriyor, görsel yavaşça yakınlaşıyor (Ken Burns),
+  // zeminde hafif bir ışık huzmesi geziyor — bkz. `postRenderer.ts`. Video/görsel/görselsiz
+  // her şablonda çalışır, süre kilitli (ANIMATED_POST_DURATION_MS).
+  const [animated, setAnimated] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Yerel dosyalar için oluşturulan object URL'i serbest bırakmak gerekiyor.
   const objectUrlRef = useRef<string | null>(null);
+  // "Hareketli" önizleme döngüsünün başlangıç zamanı — indirme sırasında bu döngü
+  // duraklatılır (capturingRef), aksi halde ikinci bir paint() kaynağı yarış durumu yaratır.
+  const animationStartRef = useRef<number>(0);
+  const capturingRef = useRef(false);
 
   const template = POST_TEMPLATES.find((t) => t.id === templateId) as PostTemplate;
   const format = POST_FORMATS.find((f) => f.id === formatId) as PostFormat;
@@ -59,7 +67,7 @@ export default function BeiwePostClient({ shots }: Props) {
   // setState'i buraya koymuyoruz: efekt gövdesinde senkron setState zincirleme
   // render tetikliyor (react-hooks/set-state-in-effect).
   const paint = useCallback(
-    async (targetLocale: OverlayLocale) => {
+    async (targetLocale: OverlayLocale, elapsedMs?: number) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
       await renderPost({
@@ -68,6 +76,7 @@ export default function BeiwePostClient({ shots }: Props) {
         format,
         texts: texts[targetLocale],
         mediaObj: needsImage ? mediaObj : null,
+        elapsedMs,
       });
     },
     [template, format, texts, mediaObj, needsImage],
@@ -102,11 +111,29 @@ export default function BeiwePostClient({ shots }: Props) {
   // Main animation / paint loop
   useEffect(() => {
     let cancelled = false;
-    
+
     if (isVideo && mediaObj) {
+      const video = mediaObj.element as HTMLVideoElement;
       const loop = async () => {
         if (cancelled) return;
-        try { await paint(locale); } catch (e) {}
+        if (!capturingRef.current) {
+          try { await paint(locale, animated ? video.currentTime * 1000 : undefined); } catch (e) {}
+        }
+        animationRef.current = requestAnimationFrame(loop);
+      };
+      animationRef.current = requestAnimationFrame(loop);
+    } else if (animated) {
+      // Medyasız/görselli ama sabit görsel: kendi zamanlayıcımızla önizlemeyi döngüye sokuyoruz
+      // (video elementi yok, currentTime'a bağlı olamayız). ANIMATED_POST_DURATION_MS dolunca
+      // yeniden başlar — yalnızca önizleme için, indirme kendi tek geçişini yapıyor (bkz. download).
+      animationStartRef.current = performance.now();
+      const loop = async () => {
+        if (cancelled) return;
+        if (!capturingRef.current) {
+          const elapsed = performance.now() - animationStartRef.current;
+          if (elapsed >= ANIMATED_POST_DURATION_MS) animationStartRef.current = performance.now();
+          try { await paint(locale, elapsed % ANIMATED_POST_DURATION_MS); } catch {}
+        }
         animationRef.current = requestAnimationFrame(loop);
       };
       animationRef.current = requestAnimationFrame(loop);
@@ -119,12 +146,12 @@ export default function BeiwePostClient({ shots }: Props) {
         }
       })();
     }
-    
+
     return () => {
       cancelled = true;
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [paint, locale, isVideo, mediaObj]);
+  }, [paint, locale, isVideo, mediaObj, animated]);
 
   // Bileşen kalkarken son object URL'i bırak.
   useEffect(() => {
@@ -217,12 +244,60 @@ export default function BeiwePostClient({ shots }: Props) {
             recorder.stop();
           }, duration * 1000);
         });
+      } else if (animated) {
+        // Medyasız/sabit-görsel hareketli export — video elementi yok, kendi zamanlayıcımızla
+        // tek geçiş çiziyoruz. Önizleme döngüsü (yukarıdaki useEffect) `capturingRef` sayesinde
+        // bu sırada duraklıyor — aksi halde iki ayrı paint() kaynağı canvas'ı yarışarak boyar.
+        capturingRef.current = true;
+        try {
+          const stream = canvas.captureStream(60);
+          let mimeType = 'video/webm';
+          if (MediaRecorder.isTypeSupported('video/mp4')) {
+            mimeType = 'video/mp4';
+          } else if (MediaRecorder.isTypeSupported('video/webm;codecs=h264')) {
+            mimeType = 'video/webm;codecs=h264';
+          }
+
+          const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
+          const chunks: Blob[] = [];
+          recorder.ondataavailable = (e) => chunks.push(e.data);
+
+          await new Promise<void>((resolve, reject) => {
+            const start = performance.now();
+            recorder.onstop = () => {
+              const blob = new Blob(chunks, { type: mimeType });
+              const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+              downloadBlob(blob, `talkinbio-${template.id}-${format.id}-${targetLocale}-hareketli.${ext}`);
+              resolve();
+            };
+            recorder.onerror = (e) => reject(e);
+            recorder.start();
+
+            const captureFrame = () => {
+              const elapsed = performance.now() - start;
+              if (elapsed >= ANIMATED_POST_DURATION_MS) {
+                paint(targetLocale, ANIMATED_POST_DURATION_MS).finally(() => recorder.stop());
+                return;
+              }
+              paint(targetLocale, elapsed).finally(() => requestAnimationFrame(captureFrame));
+            };
+            captureFrame();
+          });
+        } finally {
+          capturingRef.current = false;
+          animationStartRef.current = performance.now();
+        }
+        setDownloading(false);
+        if (targetLocale !== locale) await paint(locale).catch(() => {});
       } else {
         await paint(targetLocale);
         const blob = await canvasToPng(canvas);
         downloadBlob(blob, `talkinbio-${template.id}-${format.id}-${targetLocale}.png`);
+        setDownloading(false);
+        if (targetLocale !== locale) await paint(locale).catch(() => {});
       }
     } catch (err) {
+      capturingRef.current = false;
       setError(err instanceof Error ? err.message : 'İndirilemedi.');
       setDownloading(false);
       if (targetLocale !== locale) await paint(locale).catch(() => {});
@@ -318,6 +393,29 @@ export default function BeiwePostClient({ shots }: Props) {
                   </span>
                 </button>
               ))}
+            </div>
+          </section>
+
+          {/* Hareket */}
+          <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">Hareket</h2>
+                <p className="text-xs text-slate-500 mt-0.5 leading-snug max-w-md">
+                  Başlık/alt satır kayarak belirir, görsel yavaşça yakınlaşır, zeminde hafif bir ışık
+                  huzmesi gezer — ~4 saniyelik bir klibe dönüşür. Süre ve eğri şablon gibi kilitli.
+                </p>
+              </div>
+              <button
+                onClick={() => setAnimated((v) => !v)}
+                role="switch"
+                aria-checked={animated}
+                className={`relative shrink-0 w-11 h-6 rounded-full transition-colors ${animated ? 'bg-blue-600' : 'bg-slate-300'}`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${animated ? 'translate-x-5' : ''}`}
+                />
+              </button>
             </div>
           </section>
 
@@ -468,17 +566,22 @@ export default function BeiwePostClient({ shots }: Props) {
               className="flex items-center justify-center gap-2 bg-slate-900 text-white rounded-lg px-4 py-2.5 text-sm font-semibold hover:bg-slate-800 disabled:opacity-50"
             >
               {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              {isVideo ? 'Video indir' : 'PNG indir'} ({LOCALE_LABEL[locale]})
+              {isVideo || animated ? 'Video indir' : 'PNG indir'} ({LOCALE_LABEL[locale]})
             </button>
             {filledLocales.length > 1 && (
-              <button
-                onClick={downloadAll}
-                disabled={downloading}
-                className="flex items-center justify-center gap-2 border border-slate-300 text-slate-700 rounded-lg px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50"
-              >
-                <Download className="w-4 h-4" />
-                Dolu {filledLocales.length} dili birden indir
-              </button>
+              <>
+                <button
+                  onClick={downloadAll}
+                  disabled={downloading}
+                  className="flex items-center justify-center gap-2 border border-slate-300 text-slate-700 rounded-lg px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50"
+                >
+                  <Download className="w-4 h-4" />
+                  Dolu {filledLocales.length} dili birden indir
+                </button>
+                {(isVideo || animated) && (
+                  <p className="text-[11px] text-slate-400 -mt-1">Toplu indirme yalnız PNG kare üretir, video/hareketli değil.</p>
+                )}
+              </>
             )}
           </div>
         </div>

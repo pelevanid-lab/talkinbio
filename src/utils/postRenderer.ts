@@ -15,6 +15,36 @@ const PADDING_RATIO = 0.075;
 /** Çerçevelenmiş görselin köşe yarıçapı — kısa kenarın yüzdesi. */
 const IMAGE_RADIUS_RATIO = 0.022;
 
+/**
+ * "Hareketli" post'un toplam klip süresi. Kilitli — Post'un şablon disipliniyle aynı
+ * mantık: kullanıcı animasyonu AÇAR/KAPATIR, süresini/eğrisini değiştiremez.
+ */
+export const ANIMATED_POST_DURATION_MS = 4000;
+
+const HEADLINE_REVEAL_MS = 550;
+const SUBLINE_DELAY_MS = 150;
+const SUBLINE_REVEAL_MS = 550;
+const REVEAL_OFFSET_RATIO = 0.03;
+const KEN_BURNS_MAX_SCALE_DELTA = 0.05;
+
+function clamp01(t: number): number {
+  return Math.min(Math.max(t, 0), 1);
+}
+
+function easeOutCubic(t: number): number {
+  const c = clamp01(t);
+  return 1 - Math.pow(1 - c, 3);
+}
+
+type RevealTransform = { opacity: number; offsetY: number };
+
+/** `elapsedMs` yoksa (animasyon kapalı/PNG) tam görünür, ofsetsiz döner. */
+function revealTransform(elapsedMs: number | undefined, delayMs: number, durationMs: number, offsetPx: number): RevealTransform {
+  if (elapsedMs === undefined) return { opacity: 1, offsetY: 0 };
+  const p = easeOutCubic((elapsedMs - delayMs) / durationMs);
+  return { opacity: p, offsetY: (1 - p) * offsetPx };
+}
+
 export type PostTexts = { headline: string; subline: string };
 
 export type RenderPostParams = {
@@ -24,6 +54,11 @@ export type RenderPostParams = {
   texts: PostTexts;
   /** `imageMode: 'none'` şablonlarda yok sayılır. */
   mediaObj?: LoadedMedia | null;
+  /**
+   * Animasyon açıkken geçen süre (ms) — verilmezse (undefined) tam görünür/statik kare
+   * çizilir (PNG indirme ve "hareketli" kapalıyken önizleme bunu kullanır).
+   */
+  elapsedMs?: number;
 };
 
 /** roundRect her yerde yok; yoksa düz dikdörtgene düş. */
@@ -77,16 +112,21 @@ function paintBlock(
   y: number,
   family: string,
   align: CanvasTextAlign,
+  transform: RevealTransform = { opacity: 1, offsetY: 0 },
 ) {
+  if (transform.opacity <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = transform.opacity;
   ctx.font = `${block.weight} ${block.size}px ${family}`;
   ctx.fillStyle = block.color;
   ctx.textAlign = align;
   ctx.textBaseline = 'top';
-  let cursor = y;
+  let cursor = y + transform.offsetY;
   for (const line of block.lines) {
     ctx.fillText(line, x, cursor);
     cursor += block.size * LINE_HEIGHT;
   }
+  ctx.restore();
 }
 
 function paintWordmark(
@@ -114,7 +154,7 @@ function paintWordmark(
  * desteği sınırlı olduğu için Rusça metinde `inter`'a düşüyoruz (aynı gerekçe
  * `OVERLAY_FONTS` notunda da var).
  */
-export async function renderPost({ canvas, template, format, texts, mediaObj }: RenderPostParams): Promise<void> {
+export async function renderPost({ canvas, template, format, texts, mediaObj, elapsedMs }: RenderPostParams): Promise<void> {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas oluşturulamadı.');
 
@@ -131,10 +171,29 @@ export async function renderPost({ canvas, template, format, texts, mediaObj }: 
 
   const padding = Math.round(Math.min(width, height) * PADDING_RATIO);
   const maxTextWidth = width - padding * 2;
+  const revealOffsetPx = Math.min(width, height) * REVEAL_OFFSET_RATIO;
+  const headlineReveal = revealTransform(elapsedMs, 0, HEADLINE_REVEAL_MS, revealOffsetPx);
+  const sublineReveal = revealTransform(elapsedMs, SUBLINE_DELAY_MS, SUBLINE_REVEAL_MS, revealOffsetPx);
+  /** Ken Burns/shimmer için 0..1 döngü ilerlemesi — `elapsedMs` yoksa (statik) sabit 1. */
+  const loopProgress = elapsedMs === undefined ? 1 : clamp01(elapsedMs / ANIMATED_POST_DURATION_MS);
 
   // 1 — Zemin
   ctx.fillStyle = template.background;
   ctx.fillRect(0, 0, width, height);
+
+  // Hareketli iken hafif bir ışık huzmesi zeminde kayar — ElevenLabs'ın renkli
+  // gradient karolarına yakın bir his verir, görsel olmayan ('none') şablonlarda
+  // özellikle belirgin; görselli şablonlarda görsel üstüne bindiği için görünmez kalır.
+  if (elapsedMs !== undefined) {
+    const cx = width * (0.15 + 0.7 * loopProgress);
+    const cy = height * 0.35;
+    const radius = Math.max(width, height) * 0.6;
+    const shimmer = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    shimmer.addColorStop(0, 'rgba(255,255,255,0.10)');
+    shimmer.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = shimmer;
+    ctx.fillRect(0, 0, width, height);
+  }
 
   const headline = measureBlock(
     ctx,
@@ -165,12 +224,12 @@ export async function renderPost({ canvas, template, format, texts, mediaObj }: 
     // Başlık üstte, görsel altta kalan alanda çerçeveli.
     let cursorY = padding;
     if (headline) {
-      paintBlock(ctx, headline, padding, cursorY, family, 'left');
+      paintBlock(ctx, headline, padding, cursorY, family, 'left', headlineReveal);
       cursorY += headline.height;
     }
     if (subline) {
       cursorY += headline ? blockGap : 0;
-      paintBlock(ctx, subline, padding, cursorY, family, 'left');
+      paintBlock(ctx, subline, padding, cursorY, family, 'left', sublineReveal);
       cursorY += subline.height;
     }
 
@@ -182,10 +241,16 @@ export async function renderPost({ canvas, template, format, texts, mediaObj }: 
       if (boxHeight > 0 && mediaObj) {
         const fit = fitContain(mediaObj.width, mediaObj.height, boxWidth, boxHeight);
         const radius = Math.min(fit.w, fit.h) * IMAGE_RADIUS_RATIO;
+        // Ken Burns: çerçeve (klip) sabit kalır, içindeki görsel yavaşça büyür.
+        const kb = elapsedMs !== undefined ? 1 + KEN_BURNS_MAX_SCALE_DELTA * loopProgress : 1;
+        const dw = fit.w * kb;
+        const dh = fit.h * kb;
+        const dx = padding + fit.x - (dw - fit.w) / 2;
+        const dy = boxTop + fit.y - (dh - fit.h) / 2;
         ctx.save();
         roundedRectPath(ctx, padding + fit.x, boxTop + fit.y, fit.w, fit.h, radius);
         ctx.clip();
-        ctx.drawImage(mediaObj.element, padding + fit.x, boxTop + fit.y, fit.w, fit.h);
+        ctx.drawImage(mediaObj.element, dx, dy, dw, dh);
         ctx.restore();
       }
     }
@@ -197,7 +262,11 @@ export async function renderPost({ canvas, template, format, texts, mediaObj }: 
   if (template.imageMode === 'cover') {
     if (mediaObj) {
       const src = fitCoverSource(mediaObj.width, mediaObj.height, width, height);
-      ctx.drawImage(mediaObj.element, src.sx, src.sy, src.sw, src.sh, 0, 0, width, height);
+      // Ken Burns: tam kanar görsel canvas'a göre hafifçe büyür, merkezde kalır.
+      const kb = elapsedMs !== undefined ? 1 + KEN_BURNS_MAX_SCALE_DELTA * loopProgress : 1;
+      const dw = width * kb;
+      const dh = height * kb;
+      ctx.drawImage(mediaObj.element, src.sx, src.sy, src.sw, src.sh, -(dw - width) / 2, -(dh - height) / 2, dw, dh);
     }
 
     if (template.scrim === 'full') {
@@ -220,10 +289,10 @@ export async function renderPost({ canvas, template, format, texts, mediaObj }: 
 
     let cursorY = startY;
     if (headline) {
-      paintBlock(ctx, headline, x, cursorY, family, align);
+      paintBlock(ctx, headline, x, cursorY, family, align, headlineReveal);
       cursorY += headline.height + (subline ? blockGap : 0);
     }
-    if (subline) paintBlock(ctx, subline, x, cursorY, family, align);
+    if (subline) paintBlock(ctx, subline, x, cursorY, family, align, sublineReveal);
 
     paintWordmark(ctx, width, height, padding, family, template.wordmarkColor, centered ? 'center' : 'right');
     return;
@@ -232,10 +301,10 @@ export async function renderPost({ canvas, template, format, texts, mediaObj }: 
   // imageMode 'none' — görselsiz, metin dikey ortalı.
   let cursorY = (height - textHeight) / 2;
   if (headline) {
-    paintBlock(ctx, headline, padding, cursorY, family, 'left');
+    paintBlock(ctx, headline, padding, cursorY, family, 'left', headlineReveal);
     cursorY += headline.height + (subline ? blockGap : 0);
   }
-  if (subline) paintBlock(ctx, subline, padding, cursorY, family, 'left');
+  if (subline) paintBlock(ctx, subline, padding, cursorY, family, 'left', sublineReveal);
   paintWordmark(ctx, width, height, padding, family, template.wordmarkColor, 'left');
 }
 
