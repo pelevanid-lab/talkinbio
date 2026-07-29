@@ -202,10 +202,13 @@ export default function BeiwePodcastClient({
   );
   const effectiveAspect = aspectRatio || selectedPresets.find((p) => p.aspectRatio)?.aspectRatio || '4:5';
 
-  // Twin'in doğrulama kareleri de aynı tabloda yaşıyor (aynı /generate uç noktası) —
-  // burada da onları göstermek zararsız, ikisi de kişinin fotogerçekçi kareleri.
-  // Ayrı tutulan tek şey referans/kimlik yüklemeleri (model === 'user-upload').
-  const sceneShots = useMemo(() => shots.filter((s) => s.model !== 'user-upload'), [shots]);
+  // Hem AI-üretimi sahneler hem Twin'e yüklenen gerçek referans fotoğraflar burada —
+  // ikisi de videoya dönüştürülebilecek eşit derecede geçerli malzeme (bir gerçek
+  // fotoğraf, "gerçek bir ortamda çekilmiş sahne"den farksız). Yalnızca "Sahne Üret"
+  // GEÇMİŞİ (ne zaman ne ürettim listesi) referans yüklemelerini içermiyor — onlar
+  // burada üretilmedi, Twin'in "Yüzü Tanıt" aşamasında yüklendi.
+  const sceneShots = useMemo(() => shots, [shots]);
+  const uploadedShots = useMemo(() => shots.filter((s) => s.model === 'user-upload'), [shots]);
   const likedShots = useMemo(
     () => sceneShots.filter((s) => (s.similarity_score ?? 0) >= PODCAST_SCENE_LIKE_THRESHOLD),
     [sceneShots],
@@ -273,7 +276,13 @@ export default function BeiwePodcastClient({
   };
 
   const removeShot = async (shot: CharacterShot) => {
-    if (!confirm('Bu kare kalıcı olarak silinsin mi?')) return;
+    // Kanon referans fotoğraflar Beiwe Twin'in kimlik kaynağı — bunlar silinirse
+    // (özellikle hepsi silinirse) yeni sahne üretimi kimlik referansı bulamayıp
+    // reddediyor (bkz. /generate route'undaki "kanon fotoğraf bulunamadı" hatası).
+    const warning = shot.is_canon
+      ? 'Bu, Beiwe Twin\'in kimlik referanslarından biri — silmek yeni sahne/video üretimini etkileyebilir. '
+      : '';
+    if (!confirm(`${warning}Bu kare kalıcı olarak silinsin mi?`)) return;
     setBusyShotId(shot.id);
     try {
       const res = await fetch(`/api/admin/characters/shots/${shot.id}`, { method: 'DELETE' });
@@ -550,18 +559,27 @@ export default function BeiwePodcastClient({
         {sceneShots.length > 0 && (
           <div className="border-t border-slate-100 pt-5">
             <h3 className="text-sm font-semibold text-slate-800 mb-3">
-              Galeri <span className="text-slate-400 font-normal">({sceneShots.length} kare)</span>
+              Galeri{' '}
+              <span className="text-slate-400 font-normal">
+                ({sceneShots.length} kare — {uploadedShots.length} referans fotoğraf dahil)
+              </span>
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
               {sceneShots.map((shot) => {
                 const liked = (shot.similarity_score ?? 0) >= PODCAST_SCENE_LIKE_THRESHOLD;
+                const isUpload = shot.model === 'user-upload';
                 return (
                   <div
                     key={shot.id}
-                    className={`rounded-xl overflow-hidden border transition-all ${
+                    className={`relative rounded-xl overflow-hidden border transition-all ${
                       liked ? 'border-emerald-400 ring-1 ring-emerald-200' : 'border-slate-200'
                     }`}
                   >
+                    {isUpload && (
+                      <span className="absolute top-2 left-2 z-10 bg-slate-900/80 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                        REFERANS
+                      </span>
+                    )}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={shot.image_url} alt="" className="w-full block bg-slate-100" />
                     <div className="p-2.5 space-y-2">
