@@ -13,7 +13,7 @@ import {
   type PostTemplateId,
 } from '@/config/post';
 import { canvasToPng, renderPost, type PostTexts } from '@/utils/postRenderer';
-import { downloadBlob } from '@/utils/imageOverlay';
+import { downloadBlob, loadMedia, type LoadedMedia } from '@/utils/imageOverlay';
 
 // Bu sayfa bilerek LabStage (aşama akordiyonu) kullanmıyor: Twin/Voice/Podcast sıralı
 // birer üretim hattı, burası ise canlı önizlemeli bir EDİTÖR — kontrolü değiştirip
@@ -43,8 +43,10 @@ export default function BeiwePostClient({ shots }: Props) {
   const [showGallery, setShowGallery] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mediaObj, setMediaObj] = useState<LoadedMedia | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Yerel dosyalar için oluşturulan object URL'i serbest bırakmak gerekiyor.
   const objectUrlRef = useRef<string | null>(null);
@@ -65,27 +67,64 @@ export default function BeiwePostClient({ shots }: Props) {
         template,
         format,
         texts: texts[targetLocale],
-        imageUrl: needsImage ? imageUrl : null,
-        isVideo,
+        mediaObj: needsImage ? mediaObj : null,
       });
     },
-    [template, format, texts, imageUrl, needsImage, isVideo],
+    [template, format, texts, mediaObj, needsImage],
   );
 
+  // Load media whenever imageUrl changes
   useEffect(() => {
     let cancelled = false;
-    void (async () => {
-      try {
-        await paint(locale);
-      } catch (err) {
-        // await sonrası — efekt gövdesinde senkron değil.
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Önizleme çizilemedi.');
-      }
-    })();
+    if (!imageUrl) {
+      setMediaObj(null);
+      return;
+    }
+    loadMedia(imageUrl, isVideo)
+      .then((obj) => {
+        if (!cancelled) {
+          setMediaObj(obj);
+          if (isVideo) {
+            const video = obj.element as HTMLVideoElement;
+            video.loop = true;
+            video.play().catch(() => {}); // Autoplay might fail, ignore
+          }
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Görsel/video yüklenemedi.');
+      });
     return () => {
       cancelled = true;
     };
-  }, [paint, locale]);
+  }, [imageUrl, isVideo]);
+
+  // Main animation / paint loop
+  useEffect(() => {
+    let cancelled = false;
+    
+    if (isVideo && mediaObj) {
+      const loop = async () => {
+        if (cancelled) return;
+        try { await paint(locale); } catch (e) {}
+        animationRef.current = requestAnimationFrame(loop);
+      };
+      animationRef.current = requestAnimationFrame(loop);
+    } else {
+      void (async () => {
+        try {
+          await paint(locale);
+        } catch (err) {
+          if (!cancelled) setError(err instanceof Error ? err.message : 'Önizleme çizilemedi.');
+        }
+      })();
+    }
+    
+    return () => {
+      cancelled = true;
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, [paint, locale, isVideo, mediaObj]);
 
   // Bileşen kalkarken son object URL'i bırak.
   useEffect(() => {
@@ -134,14 +173,58 @@ export default function BeiwePostClient({ shots }: Props) {
     setDownloading(true);
     setError(null);
     try {
-      await paint(targetLocale);
-      const blob = await canvasToPng(canvas);
-      downloadBlob(blob, `talkinbio-${template.id}-${format.id}-${targetLocale}.png`);
+      if (isVideo && mediaObj) {
+        const video = mediaObj.element as HTMLVideoElement;
+        const duration = video.duration || 10;
+        
+        // Start playing from beginning
+        video.currentTime = 0;
+        await video.play().catch(() => {});
+        
+        // Record stream
+        const stream = canvas.captureStream(60); // 60 FPS
+        
+        // Use H264 WebM if possible for better quality/compatibility
+        let mimeType = 'video/webm';
+        if (MediaRecorder.isTypeSupported('video/mp4')) {
+          mimeType = 'video/mp4';
+        } else if (MediaRecorder.isTypeSupported('video/webm;codecs=h264')) {
+          mimeType = 'video/webm;codecs=h264';
+        }
+
+        const recorder = new MediaRecorder(stream, {
+          mimeType,
+          videoBitsPerSecond: 8000000, // 8 Mbps high quality
+        });
+        
+        const chunks: Blob[] = [];
+        recorder.ondataavailable = (e) => chunks.push(e.data);
+        
+        return new Promise<void>((resolve, reject) => {
+          recorder.onstop = () => {
+            const blob = new Blob(chunks, { type: mimeType });
+            const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+            downloadBlob(blob, `talkinbio-${template.id}-${format.id}-${targetLocale}.${ext}`);
+            setDownloading(false);
+            if (targetLocale !== locale) paint(locale).catch(() => {});
+            resolve();
+          };
+          recorder.onerror = (e) => reject(e);
+          recorder.start();
+          
+          // Stop when video ends
+          setTimeout(() => {
+            recorder.stop();
+          }, duration * 1000);
+        });
+      } else {
+        await paint(targetLocale);
+        const blob = await canvasToPng(canvas);
+        downloadBlob(blob, `talkinbio-${template.id}-${format.id}-${targetLocale}.png`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'İndirilemedi.');
-    } finally {
       setDownloading(false);
-      // Önizlemeyi ekranda seçili olan dile geri çiz.
       if (targetLocale !== locale) await paint(locale).catch(() => {});
     }
   };
@@ -385,7 +468,7 @@ export default function BeiwePostClient({ shots }: Props) {
               className="flex items-center justify-center gap-2 bg-slate-900 text-white rounded-lg px-4 py-2.5 text-sm font-semibold hover:bg-slate-800 disabled:opacity-50"
             >
               {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              PNG indir ({LOCALE_LABEL[locale]})
+              {isVideo ? 'Video indir' : 'PNG indir'} ({LOCALE_LABEL[locale]})
             </button>
             {filledLocales.length > 1 && (
               <button

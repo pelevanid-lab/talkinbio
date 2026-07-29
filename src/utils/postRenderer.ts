@@ -6,10 +6,7 @@
 // dikey gönderi formatına kırpılırsa arayüzün yarısı kesilir; o yüzden kırpmıyor,
 // çerçeveliyoruz.
 //
-// Ortak parçalar (satır sarma, karartma, font çözümleme) `imageOverlay.ts`'ten
-// yeniden kullanılıyor — kopyalanmadı.
-
-import { loadMedia, resolveFontFamily, wrapLines } from '@/utils/imageOverlay';
+import { type LoadedMedia, resolveFontFamily, wrapLines } from '@/utils/imageOverlay';
 import type { OverlayFont } from '@/config/characters';
 import { BRAND, type PostFormat, type PostTemplate } from '@/config/post';
 
@@ -26,8 +23,7 @@ export type RenderPostParams = {
   format: PostFormat;
   texts: PostTexts;
   /** `imageMode: 'none'` şablonlarda yok sayılır. */
-  imageUrl?: string | null;
-  isVideo?: boolean;
+  mediaObj?: LoadedMedia | null;
 };
 
 /** roundRect her yerde yok; yoksa düz dikdörtgene düş. */
@@ -118,7 +114,7 @@ function paintWordmark(
  * desteği sınırlı olduğu için Rusça metinde `inter`'a düşüyoruz (aynı gerekçe
  * `OVERLAY_FONTS` notunda da var).
  */
-export async function renderPost({ canvas, template, format, texts, imageUrl, isVideo }: RenderPostParams): Promise<void> {
+export async function renderPost({ canvas, template, format, texts, mediaObj }: RenderPostParams): Promise<void> {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas oluşturulamadı.');
 
@@ -162,7 +158,7 @@ export async function renderPost({ canvas, template, format, texts, imageUrl, is
   const textHeight =
     (headline?.height ?? 0) + (subline?.height ?? 0) + (headline && subline ? blockGap : 0);
 
-  const mediaObj = template.imageMode !== 'none' && imageUrl ? await loadMedia(imageUrl, isVideo) : null;
+  if (template.imageMode === 'none') mediaObj = null;
   const img = mediaObj?.element || null;
 
   if (template.imageMode === 'contain') {
