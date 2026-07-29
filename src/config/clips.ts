@@ -67,3 +67,35 @@ export const DEFAULT_PERFORMANCE_MODEL_ID = PERFORMANCE_MODELS[0].id;
 export function findPerformanceModel(id: unknown): PerformanceModel | undefined {
   return typeof id === 'string' ? PERFORMANCE_MODELS.find((m) => m.id === id) : undefined;
 }
+
+/**
+ * Referanssız senaryo-dan-video (Action Room'un "scenario" modu) — sürücü video yok,
+ * yalnız kaynak görsel + metin. `PERFORMANCE_MODELS`'ten (video-to-video) BİLEREK ayrı:
+ * bu aile image-to-video, farklı bir fal ürün kategorisi.
+ *
+ * DİKKAT — DOĞRULANMADI: wan-motion/OmniHuman gibi gerçek bir üretimle test edilmedi.
+ * `costPerSecondUsd` bir TAHMİN. İlk gerçek denemeden sonra bu kayıt (ve gerekiyorsa
+ * `generateSceneVideo`'nun gönderdiği alanlar) güncellenmeli — bkz. `motionModels.ts`'in
+ * "DENEYLE bulundu, dokümanla değil" ilkesi.
+ */
+export type SceneVideoModel = {
+  id: string;
+  label: string;
+  hint: string;
+  costPerSecondUsd: number;
+};
+
+export const SCENE_VIDEO_MODELS: SceneVideoModel[] = [
+  {
+    id: 'fal-ai/kling-video/v2/master/image-to-video',
+    label: 'Kling v2 Master (deneysel)',
+    hint: 'Sürücü video yok — yalnız görsel + senaryo metninden video üretir. Henüz doğrulanmadı.',
+    costPerSecondUsd: 0.28,
+  },
+];
+
+export const DEFAULT_SCENE_VIDEO_MODEL_ID = SCENE_VIDEO_MODELS[0].id;
+
+export function findSceneVideoModel(id: unknown): SceneVideoModel | undefined {
+  return typeof id === 'string' ? SCENE_VIDEO_MODELS.find((m) => m.id === id) : undefined;
+}

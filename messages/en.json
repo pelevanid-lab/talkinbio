@@ -784,6 +784,7 @@
     "navContent": "Content",
     "navEditor": "Editor",
     "navViewProfile": "View My Profile",
+    "logout": "Log Out",
     "viewArchived": "View archived ({count})",
     "backToActiveLeads": "Back to active requests",
     "backToActiveConversations": "Back to active conversations",

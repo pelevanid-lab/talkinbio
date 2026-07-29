@@ -579,6 +579,50 @@ export async function generateCharacterMotion(params: GenerateMotionParams): Pro
   };
 }
 
+export type GenerateSceneVideoParams = {
+  /** fal queue endpoint kimliği — bkz. `config/clips.ts` SCENE_VIDEO_MODELS. */
+  modelId: string;
+  /** Stilize kaynak görsel (Action Room'un "scenario" modunda sürücü video yerine tek girdi). */
+  imageUrl: string;
+  /** Sahneyi anlatan senaryo/detay metni. */
+  prompt: string;
+};
+
+export type GenerateSceneVideoResult = {
+  videoUrl: string;
+  requestId: string;
+};
+
+/**
+ * Sürücü videosuz, yalnız görsel + metinden video (Action Room'un "scenario" modu).
+ *
+ * DOĞRULANMADI — `generateCharacterPerformance`'ın aksine (wan-motion gerçek testle
+ * kanıtlandı) bu yol henüz gerçek bir üretimle denenmedi. Girdi alanları fal'ın Kling
+ * image-to-video şemasına göre TAHMİN edildi; ilk gerçek çağrıda 422 dönerse şema
+ * `config/clips.ts`'teki yorumla birlikte güncellenmeli (bkz. `generateCharacterMotion`
+ * ve `generateCharacterPerformance`'daki aynı "modele göre gövde kur" gerekçesi).
+ */
+export async function generateSceneVideo(params: GenerateSceneVideoParams): Promise<GenerateSceneVideoResult> {
+  const { result, requestId } = await submitAndPoll<{ video?: { url?: string } }>(
+    params.modelId,
+    { image_url: params.imageUrl, prompt: params.prompt },
+    {
+      timeoutMs: PERFORMANCE_POLL_TIMEOUT_MS,
+      timeoutMessage: 'Senaryodan video üretimi zaman aşımına uğradı (20 dk). Daha kısa bir senaryo dene.',
+      failMessage: 'Senaryodan video üretimi başarısız oldu.',
+    },
+  );
+
+  if (!result.video?.url) {
+    throw new FalError('fal.ai video döndürmedi.', `requestId=${requestId} ${JSON.stringify(result)}`);
+  }
+
+  return {
+    videoUrl: result.video.url,
+    requestId,
+  };
+}
+
 export type GeneratePerformanceParams = {
   /** fal queue endpoint kimliği — bkz. `config/clips.ts` PERFORMANCE_MODELS. */
   modelId: string;

@@ -784,6 +784,7 @@
     "navContent": "Контент",
     "navEditor": "Редактор",
     "navViewProfile": "Посмотреть мой профиль",
+    "logout": "Выйти",
     "viewArchived": "Показать архив ({count})",
     "backToActiveLeads": "Вернуться к активным заявкам",
     "backToActiveConversations": "Вернуться к активным диалогам",

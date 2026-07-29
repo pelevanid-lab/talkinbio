@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { formatDistanceToNow, type Locale } from 'date-fns';
 import { tr, enUS, ru } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
-import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Send, MessageCircle, Archive, ArchiveRestore, Trash2, StickyNote, Mail } from 'lucide-react';
+import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Send, MessageCircle, Archive, ArchiveRestore, Trash2, StickyNote, Mail, LogOut } from 'lucide-react';
 import ConversationsPanel from './ConversationsPanel';
 import KnowledgeBasePanel from './KnowledgeBasePanel';
 import CreditBadge from '@/components/CreditBadge';
@@ -116,6 +116,12 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
     }
   };
 
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = '/login';
+  };
+
   return (
     <div className="min-h-screen bg-[#F4F2ED]">
       {/* Header */}
@@ -157,6 +163,9 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
             <a href={`/${business.username}`} className="text-sm text-[#FF6A5C] font-medium bg-[#FFEDE9] px-4 py-2 rounded-full hover:bg-orange-100 transition whitespace-nowrap">
               {t('navViewProfile')}
             </a>
+            <button onClick={handleLogout} className="text-sm text-[#4B5A55] font-medium bg-[#F4F2ED] p-2 rounded-full hover:bg-red-50 hover:text-red-600 transition" title={t('logout')}>
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </header>
