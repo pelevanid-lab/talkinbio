@@ -244,6 +244,11 @@ export default function CharacterRoomClient({ character, initialShots, initialCl
   const [isRetraining, setIsRetraining] = useState(false);
   const [showInstagramImporter, setShowInstagramImporter] = useState(false);
 
+  // LoRA eğitimi — fal queue'ya submit edilir, sonucu 20-30 dk sonra GET ile sorulur.
+  const [loraSubmitting, setLoraSubmitting] = useState(false);
+  const [loraQueued, setLoraQueued] = useState<{ triggerWord: string; photosUsed: number } | null>(null);
+  const [loraError, setLoraError] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canonInputRef = useRef<HTMLInputElement>(null);
 
@@ -279,6 +284,31 @@ export default function CharacterRoomClient({ character, initialShots, initialCl
   }
 
   /* Handlers */
+  const startLoraTraining = async () => {
+    setLoraSubmitting(true);
+    setLoraError(null);
+    try {
+      // En benzer kareler başa: route ilk 30'u alıyor ve ilk 10'unu caption'da
+      // "high-quality" olarak işaretliyor, sıralama doğrudan eğitim kalitesine yansıyor.
+      const photoUrls = [...highScoreShots]
+        .sort((a, b) => (b.similarity_score ?? 0) - (a.similarity_score ?? 0))
+        .map((s) => s.image_url);
+
+      const res = await fetch(`/api/admin/characters/${character.id}/lora`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoUrls }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'LoRA eğitimi başlatılamadı.');
+      setLoraQueued({ triggerWord: data.triggerWord, photosUsed: data.photosUsed });
+    } catch (err) {
+      setLoraError(err instanceof Error ? err.message : 'LoRA eğitimi başlatılamadı.');
+    } finally {
+      setLoraSubmitting(false);
+    }
+  };
+
   const handlePresetToggle = (preset: ScenePreset) => {
     setPresetIds((prev) => {
       const otherGroupPresets = prev.filter(
@@ -569,10 +599,25 @@ export default function CharacterRoomClient({ character, initialShots, initialCl
           </div>
           {loraReady && (
             <div className="mt-2">
-              <button className="flex items-center gap-2 bg-purple-600 text-white rounded-lg px-4 py-2 text-xs font-semibold hover:bg-purple-700">
-                <Brain className="w-3.5 h-3.5" />
-                LoRA Eğitimini Başlat — Sprint 2&apos;de aktif
-              </button>
+              {loraQueued ? (
+                <div className="flex items-center gap-2 text-xs text-purple-700 bg-purple-50 rounded-lg px-3 py-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>
+                    Eğitim kuyruğa alındı — {loraQueued.photosUsed} kare, tetik kelimesi{' '}
+                    <strong>{loraQueued.triggerWord}</strong>. Sonuç 20-30 dk içinde hazır olur.
+                  </span>
+                </div>
+              ) : (
+                <button
+                  onClick={startLoraTraining}
+                  disabled={loraSubmitting}
+                  className="flex items-center gap-2 bg-purple-600 text-white rounded-lg px-4 py-2 text-xs font-semibold hover:bg-purple-700 disabled:opacity-50"
+                >
+                  {loraSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
+                  {loraSubmitting ? 'Arşiv hazırlanıyor…' : 'LoRA Eğitimini Başlat'}
+                </button>
+              )}
+              {loraError && <p className="mt-1.5 text-[10px] text-red-600">{loraError}</p>}
             </div>
           )}
           {!loraReady && (

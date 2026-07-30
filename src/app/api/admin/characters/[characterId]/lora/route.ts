@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { isCharacterId } from '@/config/characters';
+import { createZip } from '@/utils/zip';
 
 async function requireAdminApi(): Promise<boolean> {
   const cookieStore = await cookies();
@@ -23,10 +24,11 @@ interface TrainBody {
 /**
  * POST /api/admin/characters/[characterId]/lora
  * LoRA eğitimini başlatır.
- * 1. Fotoğrafları indir + ZIP'e paketle
- * 2. fal.storage'a yükle
- * 3. fal queue'ya eğitim isteği gönder (async, 20-30 dk)
- * 4. request_id ve lora_status='queued' olarak character_profiles'a yaz
+ * 1. Fotoğrafları indir
+ * 2. Görselleri + caption .txt dosyalarını ZIP'e paketle
+ * 3. ZIP'i Supabase `media` bucket'ına yükle, public URL'ini al
+ * 4. fal queue'ya eğitim isteği gönder (async, 20-30 dk)
+ * 5. request_id ve lora_status='queued' olarak character_profiles'a yaz
  */
 export async function POST(
   req: Request,
@@ -57,8 +59,7 @@ export async function POST(
 
   const trigger = (triggerWord ?? `${characterId}person`).replace(/[^a-z0-9]/gi, '');
 
-  // 1 — JSZip kullanmak yerine native fetch + FormData ile fal.storage'a yükle
-  // Önce tüm görselleri indir
+  // 1 — Eğitim görsellerini indir
   console.log(`[lora] ${photoUrls.length} fotoğraf indiriliyor...`);
 
   const imageBuffers: Array<{ name: string; data: Buffer; caption: string }> = [];
@@ -89,58 +90,43 @@ export async function POST(
     );
   }
 
-  // 2 — ZIP oluştur (native Node.js zlib ile — ek paket gerektirmez)
-  // fal.storage multipart/form-data ile dosyaları kabul ediyor
-  // Basit zip yerine her dosyayı ayrı upload etmek yerine
-  // fal'ın önerdiği yolu kullan: images_data_url olarak bir URL listesi değil,
-  // ZIP dosyası. JSZip yoksa Node 18+ native zip desteklemiyor.
-  // → Alternatif: Supabase'e yükle + public URL'i fal'a ver (ZIP yerine)
-  // fal aslında ZIP URL değil, doğrudan görsel listesi de kabul ediyor
-  // ama resmi parametre images_data_url (ZIP). 
-  // En pratik çözüm: fotoğrafları Supabase'e yükle, URL listesini
-  // fal'ın images_data_url yerine inline olarak destekleyen
-  // flux-lora-fast-training v2 parametresine ver.
+  // 2 — Eğitim arşivini kur.
+  // fal-ai/flux-lora-fast-training `images_data_url` alanında bir ZIP URL'i bekliyor:
+  // her görselin yanında aynı adı taşıyan bir .txt caption dosyası olur, o dosya yoksa
+  // model yalnız trigger_word ile eğitilir. ZIP'i `src/utils/zip.ts` kuruyor (yeni bir
+  // npm bağımlılığı eklemeden — bkz. oradaki gerekçe).
+  const zip = createZip(
+    imageBuffers.flatMap((img) => [
+      { name: img.name, data: img.data },
+      { name: img.name.replace(/\.jpg$/, '.txt'), data: Buffer.from(img.caption, 'utf8') },
+    ]),
+  );
 
-  // Supabase'e yükle ve public URL'leri topla
-  const uploadedUrls: string[] = [];
-  for (const img of imageBuffers) {
-    const objectPath = `characters/${characterId}/lora-dataset/${img.name}`;
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from('media')
-      .upload(objectPath, img.data, {
-        contentType: 'image/jpeg',
-        cacheControl: '31536000',
-        upsert: true,
-      });
-    if (uploadError) {
-      console.warn(`[lora] Supabase yükleme hatası: ${uploadError.message}`);
-      continue;
-    }
-    const { data: { publicUrl } } = supabaseAdmin.storage.from('media').getPublicUrl(objectPath);
-    uploadedUrls.push(publicUrl);
-  }
+  // 3 — Arşivi Supabase'e yükle; fal'ın indirebilmesi için public URL gerekiyor.
+  // Yol zaman damgalı: her eğitim kendi arşivini alır, böylece süren bir eğitimin
+  // veri seti bir sonraki denemeyle (ya da CDN önbelleğiyle) karışmaz.
+  const zipPath = `characters/${characterId}/lora-dataset/${Date.now()}.zip`;
+  const { error: zipUploadError } = await supabaseAdmin.storage
+    .from('media')
+    .upload(zipPath, zip, {
+      contentType: 'application/zip',
+      cacheControl: '31536000',
+      upsert: true,
+    });
 
-  if (uploadedUrls.length < 5) {
+  if (zipUploadError) {
+    console.error('[lora] ZIP yüklenemedi', zipUploadError.message);
     return NextResponse.json(
-      { error: 'Yeterli fotoğraf Supabase\'e yüklenemedi.' },
+      { error: 'Eğitim arşivi yüklenemedi.' },
       { status: 500 },
     );
   }
 
-  // Caption dosyaları için txt içeriklerini de oluştur
-  // fal flux-lora-fast-training images_data_url bir ZIP bekliyor.
-  // Zip oluşturmak için pako veya jszip gerekiyor.
-  // Şimdilik: ZIP URL olmadan, sadece trigger_word ile eğit.
-  // Captionsız eğitim de çalışır — trigger_word tüm görsellerine uygulanır.
+  const { data: { publicUrl: zipUrl } } = supabaseAdmin.storage.from('media').getPublicUrl(zipPath);
 
-  // 3 — fal queue'ya eğitim isteğini gönder
-  // ZIP yerine her fotoğrafı ayrı URL olarak göndermek mümkün değil (API ZIP zorunlu).
-  // Çözüm: Node.js'te ZIP oluşturmak için adm-zip veya archiver kullan.
-  // Şimdilik: ZIP URL olarak Supabase public klasörünü işaret et.
-  // En basit geçici çözüm: fal'ın images_data_url yerine 
-  // "flux/dev/lora" endpoint'ini kullan ki o URL listesini kabul ediyor.
+  console.log(`[lora] ZIP hazır: ${imageBuffers.length} fotoğraf, ${(zip.length / 1024 / 1024).toFixed(1)} MB → ${zipPath}`);
 
-  // Production çözümü: fal queue ile async submit
+  // 4 — fal queue'ya eğitim isteğini gönder (async, 20-30 dk)
   const submitRes = await fetch(
     `https://queue.fal.run/${LORA_TRAINING_MODEL}`,
     {
@@ -150,15 +136,10 @@ export async function POST(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        // fal-ai/flux-lora-fast-training için images_data_url bir ZIP URL bekliyor.
-        // Supabase'teki ilk yüklenen fotoğrafı geçici placeholder olarak kullan.
-        // TODO: jszip veya adm-zip eklenince gerçek ZIP oluşturulacak.
-        images_data_url: uploadedUrls[0], // ← geçici, ZIP gerekiyor
+        images_data_url: zipUrl,
         trigger_word: trigger,
         is_style: false,
         steps,
-        // Görseller ayrıca Supabase'de — metadata olarak kaydet
-        _uploaded_urls: uploadedUrls,
       }),
     },
   );
@@ -174,7 +155,7 @@ export async function POST(
 
   const { request_id } = await submitRes.json() as { request_id: string };
 
-  // 4 — Durumu DB'ye kaydet
+  // 5 — Durumu DB'ye kaydet
   await supabaseAdmin
     .from('character_profiles')
     .upsert({
@@ -185,12 +166,12 @@ export async function POST(
       lora_started_at: new Date().toISOString(),
     }, { onConflict: 'id' });
 
-  console.log(`[lora] Eğitim başlatıldı. request_id=${request_id}, trigger=${trigger}, photos=${uploadedUrls.length}`);
+  console.log(`[lora] Eğitim başlatıldı. request_id=${request_id}, trigger=${trigger}, photos=${imageBuffers.length}`);
 
   return NextResponse.json({
     requestId: request_id,
     triggerWord: trigger,
-    photosUsed: uploadedUrls.length,
+    photosUsed: imageBuffers.length,
     status: 'queued',
   });
 }
