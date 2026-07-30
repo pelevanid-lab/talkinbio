@@ -37,15 +37,19 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
   const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
   
-  // Instagram Connection State
   const [metaSuccess, setMetaSuccess] = useState<string | null>(null);
+  const [metaError, setMetaError] = useState<string | null>(null);
   
-  // URL parametresinden başarı durumunu kontrol et
-  if (typeof window !== 'undefined' && !metaSuccess) {
+  // URL parametresinden başarı/hata durumunu kontrol et
+  if (typeof window !== 'undefined' && !metaSuccess && !metaError) {
     const searchParams = new URLSearchParams(window.location.search);
     const success = searchParams.get('meta_success');
+    const error = searchParams.get('meta_error');
     if (success === 'connected') {
       setMetaSuccess(success);
+    }
+    if (error) {
+      setMetaError(error);
     }
   }
 
@@ -396,6 +400,18 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                     </div>
                   ) : (
                     <>
+                      {metaError === 'no_instagram_found' && (
+                        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                          <p className="font-bold mb-1">Bağlantı Kurulamadı</p>
+                          <p>Seçtiğiniz Facebook sayfasına bağlı bir <b>Profesyonel/İşletme Instagram Hesabı</b> bulunamadı. Lütfen Instagram ayarlarınızdan hesabınızın Profesyonel olduğundan ve doğru Facebook sayfasına bağlı olduğundan emin olup tekrar deneyin.</p>
+                        </div>
+                      )}
+                      {metaError && metaError !== 'no_instagram_found' && (
+                        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                          <p className="font-bold mb-1">Bağlantı Hatası</p>
+                          <p>Beklenmeyen bir hata oluştu: {metaError}. Lütfen tekrar deneyin.</p>
+                        </div>
+                      )}
                       <a href="/api/auth/meta/login" className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium text-sm rounded-lg hover:opacity-90 transition-opacity shadow-sm">
                         Instagram'ı Bağla
                       </a>
