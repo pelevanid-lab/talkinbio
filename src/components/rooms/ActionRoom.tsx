@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Clapperboard, Loader2, Play, Trash2, Upload } from 'lucide-react';
 import type { CharacterShot } from '@/config/characters';
@@ -14,10 +15,14 @@ import {
 
 type MotionMode = 'reference' | 'scenario';
 
+export type CastCharacterOption = { id: string; name: string; avatarUrl?: string };
+
 type Props = {
   characterId: string;
   shots: CharacterShot[];
   clips: CharacterClip[];
+  /** Yardımcı Oyuncular — "Yardımcı Oyuncu" kimlik modunda seçilebilecek karakterler. */
+  castCharacters: CastCharacterOption[];
   onClipCreated: (clip: CharacterClip) => void;
   onClipDeleted: (clipId: string) => void;
 };
@@ -38,11 +43,12 @@ function readMediaDuration(file: File): Promise<number | null> {
   });
 }
 
-export default function ActionRoom({ characterId, shots, clips, onClipCreated, onClipDeleted }: Props) {
+export default function ActionRoom({ characterId, shots, clips, castCharacters, onClipCreated, onClipDeleted }: Props) {
   const [styleId, setStyleId] = useState(DEFAULT_MOTION_STYLE_ID);
   const [identityMode, setIdentityMode] = useState<MotionIdentityMode>('twin');
   const [selectedShot, setSelectedShot] = useState<CharacterShot | null>(null);
   const [personaDescription, setPersonaDescription] = useState('');
+  const [castCharacterId, setCastCharacterId] = useState<string>(castCharacters[0]?.id ?? '');
 
   const [mode, setMode] = useState<MotionMode>('reference');
   const [drivingFile, setDrivingFile] = useState<File | null>(null);
@@ -69,12 +75,20 @@ export default function ActionRoom({ characterId, shots, clips, onClipCreated, o
 
   const canGenerate =
     scenario.trim().length > 0 &&
-    (identityMode === 'twin' ? !!selectedShot : personaDescription.trim().length > 0) &&
+    (identityMode === 'twin'
+      ? !!selectedShot
+      : identityMode === 'cast'
+        ? !!castCharacterId
+        : personaDescription.trim().length > 0) &&
     (mode === 'reference' ? !!drivingFile : true);
 
   const handleGenerate = async () => {
     if (identityMode === 'twin' && !selectedShot) {
       setError('Lütfen Twin galerisinden bir kare seçin.');
+      return;
+    }
+    if (identityMode === 'cast' && !castCharacterId) {
+      setError('Lütfen bir yardımcı oyuncu seçin.');
       return;
     }
     if (identityMode === 'generic' && !personaDescription.trim()) {
@@ -101,6 +115,8 @@ export default function ActionRoom({ characterId, shots, clips, onClipCreated, o
 
       if (identityMode === 'twin' && selectedShot) {
         formData.append('sourceShotUrl', selectedShot.image_url);
+      } else if (identityMode === 'cast') {
+        formData.append('castCharacterId', castCharacterId);
       } else {
         formData.append('personaDescription', personaDescription.trim());
       }
@@ -224,6 +240,37 @@ export default function ActionRoom({ characterId, shots, clips, onClipCreated, o
                   </div>
                 );
               })()
+            ) : identityMode === 'cast' ? (
+              castCharacters.length === 0 ? (
+                <p className="text-sm text-slate-500">
+                  Henüz yardımcı oyuncu yok — önce Yardımcı Oyuncular sekmesinden bir tane oluştur.
+                </p>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {castCharacters.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => setCastCharacterId(c.id)}
+                      className={`flex flex-col items-center gap-1.5 rounded-xl border p-2 transition-colors ${
+                        castCharacterId === c.id ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200' : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      {c.avatarUrl ? (
+                        <Image
+                          src={c.avatarUrl}
+                          alt=""
+                          width={48}
+                          height={48}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-slate-200 border border-slate-300" />
+                      )}
+                      <span className="text-xs font-medium text-slate-700 truncate w-full text-center">{c.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )
             ) : (
               <textarea
                 value={personaDescription}

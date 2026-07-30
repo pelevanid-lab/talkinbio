@@ -17,17 +17,22 @@
 
 import { countdownPlan, drawCountdownDots, scheduleCountdownBeeps } from './countdown';
 import { drawTextBlock, drawWordmark, loadImage, PADDING_RATIO, resolveFontFamily } from './imageOverlay';
-import type {
-  StudioCaption,
-  StudioCaptionStyle,
-  StudioFit,
-  StudioImageOverlay,
-  StudioIntroOutro,
-  StudioOverlay,
-  StudioTextOverlay,
-  StudioTimeline,
-  StudioVideoOverlay,
-  StudioZoom,
+import {
+  sequenceClipDuration,
+  sequenceDuration,
+  resolveSequencePosition,
+  type StudioCaption,
+  type StudioCaptionStyle,
+  type StudioColorGrade,
+  type StudioFit,
+  type StudioImageOverlay,
+  type StudioIntroOutro,
+  type StudioOverlay,
+  type StudioSequenceClip,
+  type StudioTextOverlay,
+  type StudioTimeline,
+  type StudioVideoOverlay,
+  type StudioZoom,
 } from '@/config/studio';
 
 type Media = HTMLImageElement | HTMLVideoElement;
@@ -67,6 +72,42 @@ function drawMediaFitted(
   ctx.drawImage(media as CanvasImageSource, dx, dy, drawWidth, drawHeight);
 }
 
+/**
+ * `overlay.height` verilmiş bir kutuya (aspect-kilitsiz) medyayı sığdırır — split-screen/PiP
+ * için: ör. `y:0, height:50, overlayFit:'cover'` üst yarıyı kaplayan bir dikdörtgen kutu.
+ * 'cover' taşan kısmı KIRPAR (canvas'ın aksine kutu keyfi bir yerde olabildiği için elle
+ * clip gerekiyor); 'contain' `drawMediaFitted` ile aynı merkezleme mantığı, sadece ofsetli.
+ */
+function drawMediaFittedBox(
+  ctx: CanvasRenderingContext2D,
+  media: Media,
+  x: number,
+  y: number,
+  boxWidth: number,
+  boxHeight: number,
+  fit: StudioFit,
+) {
+  const { width: mw, height: mh } = mediaNaturalSize(media);
+  if (!mw || !mh) return;
+
+  const scale = fit === 'cover' ? Math.max(boxWidth / mw, boxHeight / mh) : Math.min(boxWidth / mw, boxHeight / mh);
+  const drawWidth = mw * scale;
+  const drawHeight = mh * scale;
+  const dx = x + (boxWidth - drawWidth) / 2;
+  const dy = y + (boxHeight - drawHeight) / 2;
+
+  if (fit === 'cover') {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, boxWidth, boxHeight);
+    ctx.clip();
+    ctx.drawImage(media as CanvasImageSource, dx, dy, drawWidth, drawHeight);
+    ctx.restore();
+  } else {
+    ctx.drawImage(media as CanvasImageSource, dx, dy, drawWidth, drawHeight);
+  }
+}
+
 function drawImageOverlayItem(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
@@ -74,15 +115,22 @@ function drawImageOverlayItem(
   canvasWidth: number,
   canvasHeight: number,
 ) {
-  const targetWidth = (overlay.width / 100) * canvasWidth;
-  const aspect = (img.naturalWidth || img.width || 1) / (img.naturalHeight || img.height || 1);
-  const targetHeight = targetWidth / aspect;
   const x = (overlay.x / 100) * canvasWidth;
   const y = (overlay.y / 100) * canvasHeight;
 
   ctx.save();
   ctx.globalAlpha = overlay.opacity;
-  ctx.drawImage(img, x, y, targetWidth, targetHeight);
+  if (overlay.height !== undefined) {
+    const targetWidth = (overlay.width / 100) * canvasWidth;
+    const targetHeight = (overlay.height / 100) * canvasHeight;
+    drawMediaFittedBox(ctx, img, x, y, targetWidth, targetHeight, overlay.overlayFit ?? 'cover');
+  } else {
+    // Eski davranış — aspect-kilitli, height width'ten türetilir (geriye dönük uyumlu).
+    const targetWidth = (overlay.width / 100) * canvasWidth;
+    const aspect = (img.naturalWidth || img.width || 1) / (img.naturalHeight || img.height || 1);
+    const targetHeight = targetWidth / aspect;
+    ctx.drawImage(img, x, y, targetWidth, targetHeight);
+  }
   ctx.restore();
 }
 
@@ -99,15 +147,22 @@ function drawVideoOverlayItem(
   canvasHeight: number,
 ) {
   if (el.readyState < 2 || !el.videoWidth || !el.videoHeight) return;
-  const targetWidth = (overlay.width / 100) * canvasWidth;
-  const aspect = el.videoWidth / el.videoHeight;
-  const targetHeight = targetWidth / aspect;
   const x = (overlay.x / 100) * canvasWidth;
   const y = (overlay.y / 100) * canvasHeight;
 
   ctx.save();
   ctx.globalAlpha = overlay.opacity;
-  ctx.drawImage(el, x, y, targetWidth, targetHeight);
+  if (overlay.height !== undefined) {
+    const targetWidth = (overlay.width / 100) * canvasWidth;
+    const targetHeight = (overlay.height / 100) * canvasHeight;
+    drawMediaFittedBox(ctx, el, x, y, targetWidth, targetHeight, overlay.overlayFit ?? 'cover');
+  } else {
+    // Eski davranış — aspect-kilitli (geriye dönük uyumlu).
+    const targetWidth = (overlay.width / 100) * canvasWidth;
+    const aspect = el.videoWidth / el.videoHeight;
+    const targetHeight = targetWidth / aspect;
+    ctx.drawImage(el, x, y, targetWidth, targetHeight);
+  }
   ctx.restore();
 }
 
@@ -146,6 +201,48 @@ export function syncVideoOverlays(
     } else if (Number.isFinite(el.duration)) {
       const target = Math.min(el.duration, Math.max(0, time - overlay.startTime));
       if (Math.abs(el.currentTime - target) > 0.05) el.currentTime = target;
+    }
+  }
+}
+
+/**
+ * Sekans (film rulosu) video elemanlarının oynatma başlarını sürer — `syncVideoOverlays` ile
+ * AYNI desen (yukarısı), sadece "hangi eleman aktif" sorusu overlay zaman aralığı yerine
+ * `resolveSequencePosition` ile çözülüyor. `videoPool` clip.ID ile anahtarlanır (assetUrl
+ * DEĞİL) — aynı video iki kez farklı kırpmayla sekansta yer alabilir, her biri kendi
+ * elementini ister.
+ *
+ * Aktif OLMAYAN video elemanları duraklatılıp `sourceStart`'a döndürülür ki bir sonraki
+ * geldiklerinde baştan (doğru karede) başlasınlar — export'un state machine'i zaten kendi
+ * `currentTime`'ını sıfırdan kurduğu için burası SADECE önizleme akışını (rAF loop) ilgilendiriyor.
+ */
+export function syncSequenceVideos(
+  sequence: StudioSequenceClip[],
+  time: number,
+  isPlaying: boolean,
+  videoPool: Map<string, HTMLVideoElement>,
+): void {
+  const active = resolveSequencePosition(sequence, time);
+  for (const clip of sequence) {
+    if (clip.kind !== 'video') continue;
+    const el = videoPool.get(clip.id);
+    if (!el) continue;
+    const isActive = active?.clip.id === clip.id;
+
+    if (!isActive) {
+      if (!el.paused) el.pause();
+      if (el.currentTime !== clip.sourceStart) el.currentTime = clip.sourceStart;
+      continue;
+    }
+
+    const target = clip.sourceStart + active!.localTime;
+    if (isPlaying) {
+      if (el.paused) {
+        el.currentTime = target;
+        el.play().catch(() => {});
+      }
+    } else if (Math.abs(el.currentTime - target) > 0.05) {
+      el.currentTime = target;
     }
   }
 }
@@ -318,13 +415,104 @@ function drawIntroOutroSection(
   return drawn;
 }
 
+/**
+ * Sıcaklık (temperature) — `ctx.filter` düz brightness/contrast/saturate'i native destekliyor
+ * ama renkli bir kayma (soğuk/sıcak) için ayrıca ince bir renkli katman gerekiyor. 'overlay'
+ * composite modu koyu tonları çok ezmeden bir renk kayması verir — çarpımsal (multiply)
+ * modun aksine, siyahları tamamen boğmuyor.
+ */
+function drawTemperatureTint(ctx: CanvasRenderingContext2D, temperature: number, width: number, height: number) {
+  if (!temperature) return;
+  const alpha = Math.min(0.35, (Math.abs(temperature) / 100) * 0.35);
+  const color = temperature > 0 ? `rgba(255,150,60,${alpha})` : `rgba(60,140,255,${alpha})`;
+  ctx.save();
+  ctx.globalCompositeOperation = 'overlay';
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
+}
+
+/**
+ * Grain (film dokusu) — `wordmarkLayerCache` ile AYNI gerekçe: her karede tam çözünürlükte
+ * `ImageData` üretmek (1080×1920 ≈ 2M piksel) gerçek zamanlı export'ta kare düşürür. Sabit
+ * TEK bir gürültü katmanı ise donuk/sahte görünür (gerçek grain karede kareye TİTRER) — bu
+ * yüzden küçük bir HAVUZ (varsayılan 6 kare) önceden üretilip zamana göre döngüsel seçiliyor:
+ * hem ucuz (bir kerelik üretim) hem gözle "canlı" (flicker) hissi veriyor.
+ */
+const GRAIN_POOL_SIZE = 6;
+/** Saniyede kaç farklı grain karesi gösterileceği — video kare hızından BİLEREK bağımsız,
+ * sadece göze doğal bir titreşim hissi vermesi yeterli, 30fps'e kilitlenmesine gerek yok. */
+const GRAIN_FLICKER_HZ = 12;
+let grainPoolCache: { key: string; canvases: HTMLCanvasElement[] } | null = null;
+
+function getGrainFrame(width: number, height: number, time: number): HTMLCanvasElement {
+  const key = `${width}x${height}`;
+  if (grainPoolCache?.key !== key) {
+    const canvases: HTMLCanvasElement[] = [];
+    for (let f = 0; f < GRAIN_POOL_SIZE; f++) {
+      const layer = document.createElement('canvas');
+      layer.width = width;
+      layer.height = height;
+      const layerCtx = layer.getContext('2d')!;
+      const imageData = layerCtx.createImageData(width, height);
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        const v = Math.random() * 255;
+        imageData.data[i] = v;
+        imageData.data[i + 1] = v;
+        imageData.data[i + 2] = v;
+        imageData.data[i + 3] = 255;
+      }
+      layerCtx.putImageData(imageData, 0, 0);
+      canvases.push(layer);
+    }
+    grainPoolCache = { key, canvases };
+  }
+  const frameIndex = Math.floor(Math.max(0, time) * GRAIN_FLICKER_HZ) % GRAIN_POOL_SIZE;
+  return grainPoolCache.canvases[frameIndex];
+}
+
+function drawGrain(ctx: CanvasRenderingContext2D, grain: number, time: number, width: number, height: number) {
+  if (!grain) return;
+  ctx.save();
+  // Tam opaklıkta grain görüntüyü tamamen boğar — 0.5 tavanı "belirgin ama izlenebilir" sınırı.
+  ctx.globalAlpha = Math.min(1, grain) * 0.5;
+  ctx.globalCompositeOperation = 'overlay';
+  ctx.drawImage(getGrainFrame(width, height, time), 0, 0);
+  ctx.restore();
+}
+
+function drawVignette(ctx: CanvasRenderingContext2D, vignette: number, width: number, height: number) {
+  if (!vignette) return;
+  const inner = Math.min(width, height) * 0.3;
+  const outer = Math.max(width, height) * 0.75;
+  const gradient = ctx.createRadialGradient(width / 2, height / 2, inner, width / 2, height / 2, outer);
+  gradient.addColorStop(0, 'rgba(0,0,0,0)');
+  gradient.addColorStop(1, `rgba(0,0,0,${Math.min(1, vignette) * 0.7})`);
+  ctx.save();
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
+}
+
+/** brightness/contrast/saturate — native `ctx.filter`, temperature'ın aksine ek katman gerektirmiyor. */
+function colorGradeFilterString(grade: StudioColorGrade): string {
+  const brightness = Math.max(0, 1 + grade.brightness / 100);
+  const contrast = Math.max(0, 1 + grade.contrast / 100);
+  const saturate = Math.max(0, 1 + grade.saturation / 100);
+  return `brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
+}
+
 export type DrawFrameParams = {
   ctx: CanvasRenderingContext2D;
   timeline: StudioTimeline;
   /** Kırpılmış zaman çizelgesine göre saniye — 0 = timeline.trim.start. */
   time: number;
-  video: HTMLVideoElement;
-  /** Cutaway/overlay görselleri için önceden yüklenmiş <img> önbelleği (bkz. `preloadStudioImages`). */
+  /** Sekans video elemanlarının canlı <video> elementleri, `StudioSequenceClip.id` ile
+   * anahtarlanmış (bkz. `syncSequenceVideos`) — assetUrl DEĞİL, aynı video iki kez farklı
+   * kırpmayla sekansta yer alabilir. */
+  sequenceVideos: Map<string, HTMLVideoElement>;
+  /** Cutaway/overlay/sekans-görsel görselleri için önceden yüklenmiş <img> önbelleği (bkz.
+   * `preloadStudioImages`, `collectStudioImageUrls`). */
   assets: Map<string, HTMLImageElement>;
   /** Video-overlay'lerin canlı <video> elementleri, assetUrl ile anahtarlanmış (bkz. `syncVideoOverlays`). */
   videoOverlays: Map<string, HTMLVideoElement>;
@@ -335,7 +523,7 @@ export type DrawFrameParams = {
  * Görsel henüz önbellekte yoksa (yükleme bitmemiş) o katman sessizce atlanır; çökme yerine
  * eksik kare tercih edildi.
  */
-export function drawFrame({ ctx, timeline, time, video, assets, videoOverlays }: DrawFrameParams): void {
+export function drawFrame({ ctx, timeline, time, sequenceVideos, assets, videoOverlays }: DrawFrameParams): void {
   const canvas = ctx.canvas;
   const width = canvas.width;
   const height = canvas.height;
@@ -343,7 +531,16 @@ export function drawFrame({ ctx, timeline, time, video, assets, videoOverlays }:
   ctx.fillStyle = '#000000';
   ctx.fillRect(0, 0, width, height);
 
-  const totalVideoDuration = (timeline.trim.end || video.duration || 0) - timeline.trim.start;
+  // `sourceEnd===0` sentinel'ini ("tam süre") çözmek için sekanstaki her video elemanının
+  // GERÇEK süresini (varsa) topluyoruz — bkz. `sequenceClipDuration` yorumu.
+  const liveDurations = new Map<string, number>();
+  for (const clip of timeline.sequence) {
+    if (clip.kind !== 'video') continue;
+    const el = sequenceVideos.get(clip.id);
+    if (el && Number.isFinite(el.duration)) liveDurations.set(clip.id, el.duration);
+  }
+
+  const totalVideoDuration = sequenceDuration(timeline.sequence, liveDurations);
   const isIntro = timeline.intro && time >= timeline.intro.offset && time < timeline.intro.offset + timeline.intro.duration;
   const outroStart = timeline.outro ? totalVideoDuration + timeline.outro.offset - timeline.outro.duration : 0;
   const isOutro = timeline.outro && time >= outroStart && time < outroStart + timeline.outro.duration;
@@ -359,6 +556,14 @@ export function drawFrame({ ctx, timeline, time, video, assets, videoOverlays }:
 
   let drawnMedia = false;
 
+  // Renk/efekt (brightness/contrast/saturate) SADECE görüntü katmanına uygulanıyor — overlay
+  // metin/görselleri aşağıda `ctx.filter = 'none'` ile sıfırlanıp bundan bilerek muaf tutuluyor
+  // (bir başlığın "renk kaydırılmış" görünmesi istenmiyor, tipik video editörü davranışı).
+  const hasGrade = Boolean(
+    timeline.grade.brightness || timeline.grade.contrast || timeline.grade.saturation,
+  );
+  if (hasGrade) ctx.filter = colorGradeFilterString(timeline.grade);
+
   if (isIntro && timeline.intro) {
     drawnMedia = drawIntroOutroSection(ctx, timeline.intro, time - timeline.intro.offset, width, height, assets);
   } else if (isOutro && timeline.outro) {
@@ -370,14 +575,29 @@ export function drawFrame({ ctx, timeline, time, video, assets, videoOverlays }:
       drawnMedia = true;
     }
   }
-  
-  if (!drawnMedia) {
-    // Sadece siyah zemin kalmasın diye (cutaway/intro yüklenemediyse) video'ya dönmüyoruz 
-    // ama eğer aktif bir şey yoksa (normal akış) video çizilir.
-    if (!isIntro && !isOutro && !activeCutaway) {
-      drawMediaFitted(ctx, video, width, height, 'cover');
+
+  if (!drawnMedia && !isIntro && !isOutro && !activeCutaway) {
+    // Sekansın o anki elemanı — video ya da sabit görsel. Bkz. `resolveSequencePosition`.
+    const active = resolveSequencePosition(timeline.sequence, time, liveDurations);
+    if (active) {
+      if (active.clip.kind === 'video') {
+        const el = sequenceVideos.get(active.clip.id);
+        if (el) {
+          drawMediaFitted(ctx, el, width, height, active.clip.fit);
+          drawnMedia = true;
+        }
+      } else {
+        const img = assets.get(active.clip.assetUrl);
+        if (img) {
+          drawMediaFitted(ctx, img, width, height, active.clip.fit);
+          drawnMedia = true;
+        }
+      }
     }
   }
+
+  if (hasGrade) drawTemperatureTint(ctx, timeline.grade.temperature, width, height);
+  ctx.filter = 'none';
 
   for (const overlay of timeline.overlays) {
     if (time < overlay.startTime || time >= overlay.endTime) continue;
@@ -393,6 +613,11 @@ export function drawFrame({ ctx, timeline, time, video, assets, videoOverlays }:
   }
 
   ctx.restore();
+
+  // Grain/vignette bilerek zoom transformunun DIŞINDA: gerçek film dokusu sensöre/lense ait,
+  // sahneyle birlikte büyümez — ekran-uzayında sabit bir "lens" katmanı gibi davranmalı.
+  drawGrain(ctx, timeline.grade.grain, time, width, height);
+  drawVignette(ctx, timeline.grade.vignette, width, height);
 
   // Altyazı bilerek zoom transformunun DIŞINDA: konuşmayı temsil eden bir UI katmanı,
   // kamera yakınlaşmasıyla birlikte büyüyüp okunaksızlaşmamalı/kaymamalı.
@@ -458,7 +683,7 @@ export async function preloadStudioImages(urls: string[]): Promise<Map<string, H
   return map;
 }
 
-/** Timeline'daki tüm cutaway/overlay görsel URL'lerini toplar — preloadStudioImages'a doğrudan verilebilir. */
+/** Timeline'daki tüm cutaway/overlay/sekans-görsel URL'lerini toplar — preloadStudioImages'a doğrudan verilebilir. */
 export function collectStudioImageUrls(timeline: StudioTimeline): string[] {
   const urls: string[] = [];
   // Geri sayım intro'sunun görseli olmayabilir (düz renk arka plan) — bkz. StudioIntroOutro.
@@ -466,6 +691,7 @@ export function collectStudioImageUrls(timeline: StudioTimeline): string[] {
   if (timeline.outro?.assetUrl) urls.push(timeline.outro.assetUrl);
   for (const c of timeline.cutaways) urls.push(c.assetUrl);
   for (const o of timeline.overlays) if (o.kind === 'image') urls.push(o.assetUrl);
+  for (const s of timeline.sequence) if (s.kind === 'image') urls.push(s.assetUrl);
   return urls;
 }
 
@@ -473,6 +699,16 @@ export function collectStudioImageUrls(timeline: StudioTimeline): string[] {
 export function collectStudioVideoOverlayUrls(timeline: StudioTimeline): string[] {
   const urls = timeline.overlays.filter((o) => o.kind === 'video').map((o) => o.assetUrl);
   return Array.from(new Set(urls));
+}
+
+/**
+ * Sekanstaki video elemanlarını `{id, assetUrl}` çiftleri olarak toplar — `StudioEditor` bunu
+ * kullanıp her biri için gizli bir `<video>` elementi render eder (`videoOverlayEls` ile AYNI
+ * ref-map deseni, ama assetUrl yerine clip.ID ile anahtarlanır — bkz. `syncSequenceVideos`
+ * yorumu: aynı video iki kez farklı kırpmayla sekansta yer alabilir).
+ */
+export function collectSequenceVideoClips(timeline: StudioTimeline): { id: string; assetUrl: string }[] {
+  return timeline.sequence.filter((s) => s.kind === 'video').map((s) => ({ id: s.id, assetUrl: s.assetUrl }));
 }
 
 /**
@@ -542,8 +778,10 @@ export function exportFileExtension(mimeType: string): 'mp4' | 'webm' {
 
 export type ExportParams = {
   timeline: StudioTimeline;
-  /** Kaynak Motion videosu — metadata (video.duration) zaten yüklenmiş olmalı. */
-  video: HTMLVideoElement;
+  /** Sekans video elemanlarının canlı <video> elementleri, `StudioSequenceClip.id` ile
+   * anahtarlanmış — HEPSİNİN metadata'sı (`.duration`) zaten yüklenmiş olmalı, çağıran taraf
+   * (StudioEditor) export'u başlatmadan önce bunu garanti etmeli (bkz. Promise.all bekleme). */
+  sequenceVideos: Map<string, HTMLVideoElement>;
   /** Çağıran taraf, boyutunu `studioAspectPreset(timeline.aspectRatio)`den zaten ayarlamış olmalı. */
   canvas: HTMLCanvasElement;
   assets: Map<string, HTMLImageElement>;
@@ -551,7 +789,12 @@ export type ExportParams = {
   videoOverlays: Map<string, HTMLVideoElement>;
   /** `timeline.music` varsa, ona karşılık gelen önceden yüklenmiş <audio> elementi. */
   musicAudio?: HTMLAudioElement;
-  /** `timeline.enhancedAudioUrl` varsa, ona karşılık gelen <audio> elementi — orijinal video sesi YERİNE bu kaydedilir. */
+  /**
+   * `timeline.enhancedAudioUrl` varsa, ona karşılık gelen <audio> elementi — orijinal video
+   * sesi YERİNE bu kaydedilir. v1 SINIRI: yalnızca sekans TEK elemanlıysa (eski/legacy proje)
+   * uygulanır — birden fazla klipli gerçek bir sekansta "tek bir temizlenmiş ses" kavramı
+   * genellemiyor (her klip kendi sesiyle akar), bkz. aşağıdaki `useEnhancedAudio`.
+   */
   enhancedAudio?: HTMLAudioElement;
   /**
    * Anlatım sesine uygulanacak gürlük normalizasyon çarpanı (lineer, `videoVolume`'un ÜSTÜNE
@@ -564,14 +807,20 @@ export type ExportParams = {
 export type ExportResult = { blob: Blob; mimeType: string };
 
 /**
- * GERÇEK ZAMANLIDIR: video gerçekten oynatılıp o hızda kaydedilir (36 sn'lik klip ≈ 36
+ * GERÇEK ZAMANLIDIR: sekans gerçekten oynatılıp o hızda kaydedilir (36 sn'lik sekans ≈ 36
  * sn'de dışa aktarılır) — MediaRecorder'ın canvas+ses akışını yakalayabilmesinin tek yolu
- * bu. Sekme arka plana alınırsa tarayıcı rAF'ı kısabilir, dışa aktarma sırasında sekmeyi
- * ön planda tutmak önerilir (bu, arayüzde de kullanıcıya söylenmeli).
+ * bu (Faz B'de WebCodecs ile hızlandırılacak, bkz. proje planı). Sekme arka plana alınırsa
+ * tarayıcı rAF'ı kısabilir, dışa aktarma sırasında sekmeyi ön planda tutmak önerilir (bu,
+ * arayüzde de kullanıcıya söylenmeli).
+ *
+ * Eskiden TEK bir `video` elementi vardı (intro → ana video → outro, üç bölümlük özel bir
+ * state machine). Şimdi "ana video" N elemanlı bir SEKANS — aynı state machine'in döngü hâli:
+ * her eleman video ise kendi elementinin GERÇEK saatiyle (audio/video senkronu bunu gerektiriyor),
+ * görsel ise intro/outro'daki gibi bir SANAL saatle (rAF deltası) ilerletiliyor.
  */
 export async function exportTimeline({
   timeline,
-  video,
+  sequenceVideos,
   canvas,
   assets,
   videoOverlays,
@@ -583,10 +832,19 @@ export async function exportTimeline({
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas oluşturulamadı.');
 
-  const sourceStart = timeline.trim.start;
-  const sourceEnd = timeline.trim.end || video.duration;
-  const totalDuration = sourceEnd - sourceStart;
-  if (!(totalDuration > 0)) throw new Error('Geçersiz kırpma aralığı.');
+  if (timeline.sequence.length === 0) throw new Error('Sekans boş — en az bir klip ekle.');
+
+  // Tüm sekans video elemanlarının GERÇEK süresi zaten yüklü olmalı (çağıran taraf garanti
+  // ediyor) — `sourceEnd===0` sentinel'i burada kesin olarak çözülüyor.
+  const liveDurations = new Map<string, number>();
+  for (const clip of timeline.sequence) {
+    if (clip.kind !== 'video') continue;
+    const el = sequenceVideos.get(clip.id);
+    if (el && Number.isFinite(el.duration)) liveDurations.set(clip.id, el.duration);
+  }
+
+  const totalDuration = sequenceDuration(timeline.sequence, liveDurations);
+  if (!(totalDuration > 0)) throw new Error('Geçersiz sekans — toplam süre sıfır.');
 
   const masterStart = Math.min(0, timeline.intro?.offset ?? 0);
   const masterEnd = Math.max(totalDuration, totalDuration + (timeline.outro?.offset ?? 0));
@@ -610,12 +868,9 @@ export async function exportTimeline({
   limiter.connect(dest);
   limiter.connect(audioCtx.destination);
 
-  // `enhancedAudioUrl` varsa anlatım BUNDAN kaydedilir, orijinal videonun sesi hiç grafiğe
-  // bağlanmaz (StudioEditor zaten video.muted=true yapıp hoparlörde de duyulmasını engelliyor).
-  // İkisinde de `videoVolume` kazancı uygulanıyor — kullanıcı için "anlatımın sesi" tek kadran.
-  // `loudnessGain` onun üstüne çarpılıyor: kadran kullanıcının mikstajı, normalizasyon ise
-  // platform hedefine götüren teknik düzeltme (bkz. utils/loudness).
-  const useEnhancedAudio = Boolean(timeline.enhancedAudioUrl && enhancedAudio);
+  // `enhancedAudioUrl` — bkz. ExportParams.enhancedAudio yorumu: sadece tek elemanlı sekansta
+  // (eski/legacy proje) anlamlı. Gerçek çoklu-klip sekansında her klip kendi sesiyle akar.
+  const useEnhancedAudio = Boolean(timeline.enhancedAudioUrl && enhancedAudio && timeline.sequence.length <= 1);
   const narrationGain = audioCtx.createGain();
   narrationGain.gain.value = timeline.videoVolume * loudnessGain;
   narrationGain.connect(limiter);
@@ -626,17 +881,32 @@ export async function exportTimeline({
   // fazladan kısılma) ve export edilen ses duyulmayacak kadar sessiz çıkıyordu.
   // Export süresince elementleri 1'e sabitleyip tek yetkiliyi GainNode yapıyoruz; cleanup'ta
   // önizleme davranışı bozulmasın diye geri yükleniyor.
-  const narrationEl = useEnhancedAudio && enhancedAudio ? enhancedAudio : video;
-  const previousNarrationElVolume = narrationEl.volume;
-  narrationEl.volume = 1;
-  audioCtx.createMediaElementSource(narrationEl).connect(narrationGain);
+  const previousVolumes = new Map<HTMLMediaElement, number>();
+  const primeElementVolume = (el: HTMLMediaElement) => {
+    previousVolumes.set(el, el.volume);
+    el.volume = 1;
+  };
+
+  if (useEnhancedAudio && enhancedAudio) {
+    primeElementVolume(enhancedAudio);
+    audioCtx.createMediaElementSource(enhancedAudio).connect(narrationGain);
+  } else {
+    // Sekanstaki HER video elemanı için bir kaynak bağlanıyor — state machine garantisiyle
+    // aynı anda yalnızca biri oynadığı (bkz. syncSequenceVideos ile aynı disiplin, burada
+    // startSequenceItem/pause çiftiyle sağlanıyor) için sesler karışmaz.
+    for (const clip of timeline.sequence) {
+      if (clip.kind !== 'video') continue;
+      const el = sequenceVideos.get(clip.id);
+      if (!el) continue;
+      primeElementVolume(el);
+      audioCtx.createMediaElementSource(el).connect(narrationGain);
+    }
+  }
 
   // Müzik de aynı çift-çarpma tuzağında: `togglePlay` önizleme için `musicAudio.volume`'u
   // ayarlıyor, burada gain'e de aynı değer veriliyordu. Aynı çözüm — element 1'e sabitleniyor.
-  let previousMusicElVolume: number | null = null;
   if (timeline.music && musicAudio) {
-    previousMusicElVolume = musicAudio.volume;
-    musicAudio.volume = 1;
+    primeElementVolume(musicAudio);
     const musicSource = audioCtx.createMediaElementSource(musicAudio);
     const musicGain = audioCtx.createGain();
     musicGain.gain.value = timeline.music.volume;
@@ -680,14 +950,15 @@ export async function exportTimeline({
     let stopped = false;
 
     const cleanup = () => {
-      video.pause();
+      for (const clip of timeline.sequence) {
+        if (clip.kind === 'video') sequenceVideos.get(clip.id)?.pause();
+      }
       musicAudio?.pause();
       if (useEnhancedAudio) enhancedAudio?.pause();
       for (const el of videoOverlays.values()) el.pause();
       // Export için 1'e sabitlenen element seviyeleri geri yükleniyor — yoksa export sonrası
       // önizleme, kullanıcının ayarladığı seviyeyi yok sayıp tam ses çalardı.
-      narrationEl.volume = previousNarrationElVolume;
-      if (musicAudio && previousMusicElVolume !== null) musicAudio.volume = previousMusicElVolume;
+      for (const [el, previous] of previousVolumes) el.volume = previous;
       audioCtx.close().catch(() => {});
     };
 
@@ -703,45 +974,77 @@ export async function exportTimeline({
       resolve({ blob: new Blob(chunks, { type: usedType }), mimeType: usedType });
     };
 
-    // rAF ekran tazeleme hızında (60, hatta 120 Hz) çalışır; `captureStream(EXPORT_FPS)` ise
-    // saniyede yalnızca 30 kare alır. rAF ile elle kısmak, zamanlamada sapmalara ve "hızlanmış"
-    // bozuk videolara (dropped frames/VFR) yol açabiliyor.
-    // Çözüm: Tarayıcı destekliyorsa `requestVideoFrameCallback` kullanmak — bu doğrudan videonun
-    // kendi kare hızında (örn. 30fps) tetiklenir, hem gereksiz çizimi önler hem de tam senkron sağlar.
     const frameInterval = 1000 / EXPORT_FPS;
     let lastDrawAt = Number.NEGATIVE_INFINITY;
-    const isRVFC = 'requestVideoFrameCallback' in video;
 
+    let phase: 'preroll' | 'sequence' | 'postroll' = 'preroll';
+    let seqIndex = 0;
+    let seqItemStartMaster = 0;
     let virtualTime = masterStart;
     let lastVirtualTickAt = performance.now();
-    let videoIsPlaying = false;
-    let hasPlayedVideo = false;
+
+    const activeSeqClip = (): StudioSequenceClip | undefined =>
+      phase === 'sequence' ? timeline.sequence[seqIndex] : undefined;
+    const activeSeqVideoEl = (): HTMLVideoElement | null => {
+      const clip = activeSeqClip();
+      return clip?.kind === 'video' ? sequenceVideos.get(clip.id) ?? null : null;
+    };
+
+    // Bir sekans elemanına geçer — video ise kendi elementini sourceStart'a sarıp oynatmaya
+    // başlar (ve varsa enhancedAudio'yu ona senkronlar), görsel ise sanal saati bu elemanın
+    // başlangıç zamanına sıfırlar (intro/outro pre/post-roll ile AYNI mekanizma).
+    const startSequenceItem = (index: number, masterAt: number) => {
+      seqIndex = index;
+      seqItemStartMaster = masterAt;
+      const clip = timeline.sequence[index];
+      if (!clip) return;
+      if (clip.kind === 'video') {
+        const el = sequenceVideos.get(clip.id);
+        if (el) {
+          el.currentTime = clip.sourceStart;
+          el.play().catch(() => {});
+        }
+        if (useEnhancedAudio && enhancedAudio && el) {
+          enhancedAudio.currentTime = el.currentTime;
+          enhancedAudio.play().catch(() => {});
+        }
+      } else {
+        virtualTime = masterAt;
+        lastVirtualTickAt = performance.now();
+      }
+    };
 
     const tick = () => {
       if (stopped) return;
-      
+
       const now = performance.now();
-      let masterTime = virtualTime;
+      const activeEl = activeSeqVideoEl();
+      const usingVirtualClock = phase !== 'sequence' || !activeEl;
+      const isRVFCActive = Boolean(activeEl && 'requestVideoFrameCallback' in activeEl);
+
+      let masterTime: number;
       let shouldDraw = true;
 
-      if (!videoIsPlaying) {
-        // Pre-roll (Intro) veya Post-roll (Outro): saat rAF deltasıyla ilerler
+      if (usingVirtualClock) {
+        // Pre-roll (Intro), Post-roll (Outro) VEYA sekansın o anki elemanı bir sabit görsel:
+        // saat rAF deltasıyla ilerler.
         const delta = (now - lastVirtualTickAt) / 1000;
         virtualTime += delta;
         masterTime = virtualTime;
         lastVirtualTickAt = now;
-        
+
         if (now - lastDrawAt < frameInterval - 2) {
           shouldDraw = false;
         } else {
           lastDrawAt = now;
         }
       } else {
-        // Video oynarken saat tamamen videoya bağlıdır
-        masterTime = video.currentTime - sourceStart;
-        lastVirtualTickAt = now; // Post-roll geçişi için güncel tutulur
-        
-        if (!isRVFC) {
+        // Sekansın aktif elemanı video: saat tamamen o elementin kendi oynatımına bağlıdır.
+        const clip = activeSeqClip()!;
+        masterTime = seqItemStartMaster + (activeEl!.currentTime - clip.sourceStart);
+        lastVirtualTickAt = now; // Bir sonraki geçiş (görsel/post-roll) için güncel tutulur
+
+        if (!isRVFCActive) {
           if (now - lastDrawAt < frameInterval - 2) {
             shouldDraw = false;
           } else {
@@ -757,37 +1060,46 @@ export async function exportTimeline({
         }
       }
 
-      // Geçişleri kontrol et
-      if (!videoIsPlaying && !hasPlayedVideo && masterTime >= 0 && masterTime < totalDuration) {
-        // Pre-roll bitti, ana video başlıyor
-        videoIsPlaying = true;
-        hasPlayedVideo = true;
+      // Faz/eleman geçişlerini kontrol et
+      if (phase === 'preroll' && masterTime >= 0) {
+        phase = 'sequence';
         masterTime = 0;
-        virtualTime = 0;
-        video.currentTime = sourceStart;
-        video.play().catch(() => {});
-        if (useEnhancedAudio && enhancedAudio) {
-          enhancedAudio.currentTime = video.currentTime;
-          enhancedAudio.play().catch(() => {});
+        startSequenceItem(0, 0);
+      } else if (phase === 'sequence') {
+        const clip = timeline.sequence[seqIndex];
+        const clipDuration = clip ? sequenceClipDuration(clip, liveDurations) : 0;
+        const itemEndMaster = seqItemStartMaster + clipDuration;
+        const itemFinished = !clip
+          ? true
+          : clip.kind === 'video'
+            ? (() => {
+                const el = sequenceVideos.get(clip.id);
+                return el ? el.currentTime >= clip.sourceStart + clipDuration || el.ended : true;
+              })()
+            : masterTime >= itemEndMaster;
+
+        if (itemFinished) {
+          if (clip?.kind === 'video') sequenceVideos.get(clip.id)?.pause();
+          const nextIndex = seqIndex + 1;
+          if (nextIndex < timeline.sequence.length) {
+            startSequenceItem(nextIndex, itemEndMaster);
+            masterTime = itemEndMaster;
+          } else {
+            phase = 'postroll';
+            virtualTime = itemEndMaster;
+            masterTime = itemEndMaster;
+            lastVirtualTickAt = performance.now();
+          }
         }
-      } else if (videoIsPlaying && (video.currentTime >= sourceEnd || video.ended)) {
-        // Video bitti, post-roll (outro) başlıyor
-        videoIsPlaying = false;
-        video.pause();
-        if (useEnhancedAudio && enhancedAudio) {
-          enhancedAudio.pause();
-        }
-        virtualTime = totalDuration;
-        masterTime = totalDuration;
-        lastVirtualTickAt = performance.now();
       }
 
       if (shouldDraw) {
-        syncVideoOverlays(timeline.overlays, masterTime, videoIsPlaying, videoOverlays);
-        if (useEnhancedAudio && enhancedAudio && videoIsPlaying && Math.abs(enhancedAudio.currentTime - video.currentTime) > 0.15) {
-          enhancedAudio.currentTime = video.currentTime;
+        syncVideoOverlays(timeline.overlays, masterTime, phase === 'sequence', videoOverlays);
+        const currentEl = activeSeqVideoEl();
+        if (useEnhancedAudio && enhancedAudio && currentEl && Math.abs(enhancedAudio.currentTime - currentEl.currentTime) > 0.15) {
+          enhancedAudio.currentTime = currentEl.currentTime;
         }
-        drawFrame({ ctx, timeline, time: masterTime, video, assets, videoOverlays });
+        drawFrame({ ctx, timeline, time: masterTime, sequenceVideos, assets, videoOverlays });
         onProgress?.(Math.min(1, Math.max(0, (masterTime - masterStart) / totalMasterDuration)));
       }
 
@@ -796,16 +1108,16 @@ export async function exportTimeline({
         recorder.stop();
         return;
       }
-      
-      if (videoIsPlaying && isRVFC) {
-        (video as any).requestVideoFrameCallback(tick);
+
+      const nextEl = activeSeqVideoEl();
+      if (nextEl && 'requestVideoFrameCallback' in nextEl) {
+        (nextEl as any).requestVideoFrameCallback(tick);
       } else {
         requestAnimationFrame(tick);
       }
     };
 
-    video.onseeked = () => {
-      video.onseeked = null;
+    const beginRecording = () => {
       recorder.start();
       lastVirtualTickAt = performance.now();
 
@@ -814,8 +1126,7 @@ export async function exportTimeline({
         musicAudio.play().catch(() => {});
       }
       if (useEnhancedAudio && enhancedAudio) {
-        enhancedAudio.pause(); // Video oynatılana kadar bekleyecek
-        enhancedAudio.currentTime = video.currentTime;
+        enhancedAudio.pause(); // İlk video elemanı oynatılana kadar bekleyecek
       }
 
       // Geri sayım bipleri, tam olarak offset zamanında duyulmalı
@@ -828,9 +1139,22 @@ export async function exportTimeline({
           introStartAudioTime,
         );
       }
-      
+
       requestAnimationFrame(tick);
     };
-    video.currentTime = sourceStart;
+
+    // İlk sekans elemanı video ise, kaydı başlatmadan önce kaynağı sourceStart'a saracak
+    // (decode edilmiş geçerli bir kare hazır olsun diye) — görselse seek gerekmiyor, direkt başlar.
+    const firstClip = timeline.sequence[0];
+    const firstEl = firstClip?.kind === 'video' ? sequenceVideos.get(firstClip.id) ?? null : null;
+    if (firstEl) {
+      firstEl.onseeked = () => {
+        firstEl.onseeked = null;
+        beginRecording();
+      };
+      firstEl.currentTime = firstClip.sourceStart;
+    } else {
+      beginRecording();
+    }
   });
 }

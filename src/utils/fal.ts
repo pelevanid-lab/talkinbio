@@ -183,7 +183,11 @@ export async function generateCharacterImage(
 ): Promise<GenerateCharacterImageResult> {
   const { model, prompt, imageUrls, aspectRatio, resolution, numImages, seed, loraUrl } = params;
 
-  if (imageUrls.length === 0 && !loraUrl) {
+  // Yalnızca "/edit" modelleri (img2img) referans görsel şart koşar — düz nano-banana-pro
+  // gibi metinden-görsele modeller referanssız da çalışır (bkz. Action Room jenerik mod,
+  // `GENERIC_IMAGE_MODEL_FALLBACK`, ve Yardımcı Oyuncular'ın avatar bootstrap üretimi).
+  const requiresReference = model.endsWith('/edit');
+  if (requiresReference && imageUrls.length === 0 && !loraUrl) {
     throw new FalError('En az bir referans görsel veya aktif LoRA gerekli.');
   }
 

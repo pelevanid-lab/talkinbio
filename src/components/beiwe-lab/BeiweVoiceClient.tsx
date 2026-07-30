@@ -8,6 +8,7 @@ import {
   Loader2,
   Mic,
   Play,
+  Plus,
   RefreshCw,
   Sparkles,
   Upload,
@@ -34,6 +35,8 @@ type Take = {
 /** `character_profiles.minimax_voice_status` ile birebir. */
 type MinimaxStatus = 'none' | 'active' | 'expired' | 'failed';
 
+export type VoicePreset = { id: string; label: string; audioUrl: string };
+
 type Props = {
   characterId: string;
   characterName: string;
@@ -43,6 +46,12 @@ type Props = {
   initialMinimaxVoiceStatus: MinimaxStatus;
   /** Twin doğrulanmadan ses klonlamak sıralamayı bozar; bilgi notu için kullanılır. */
   twinVerified: boolean;
+  /**
+   * `undefined` — bu karakterin gerçek bir kişisi var (Twin), kendi kaydını yükler.
+   * Dizi (boş olsa da) — Yardımcı Oyuncular: gerçek kişisi yok, hazır referans
+   * kütüphanesinden seçer; galeri boşsa önce en az bir tane eklemesi gerekir.
+   */
+  voicePresets?: VoicePreset[];
 };
 
 export default function BeiweVoiceClient({
@@ -53,7 +62,13 @@ export default function BeiweVoiceClient({
   initialMinimaxVoiceId,
   initialMinimaxVoiceStatus,
   twinVerified,
+  voicePresets: initialVoicePresets,
 }: Props) {
+  const [voicePresets, setVoicePresets] = useState<VoicePreset[]>(initialVoicePresets ?? []);
+  const [presetLabel, setPresetLabel] = useState('');
+  const [uploadingPreset, setUploadingPreset] = useState(false);
+  const [selectingPresetId, setSelectingPresetId] = useState<string | null>(null);
+  const presetFileInputRef = useRef<HTMLInputElement>(null);
   const [voiceUrl, setVoiceUrl] = useState<string | null>(initialVoiceUrl);
   const [minimaxVoiceId, setMinimaxVoiceId] = useState<string | null>(initialMinimaxVoiceId);
   const [minimaxStatus, setMinimaxStatus] = useState<MinimaxStatus>(initialMinimaxVoiceStatus);
@@ -105,6 +120,56 @@ export default function BeiweVoiceClient({
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  /* ---------------- aşama 1b: hazır referans seç (Yardımcı Oyuncular) ---------------- */
+  const selectVoicePreset = async (preset: VoicePreset) => {
+    setSelectingPresetId(preset.id);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append('presetUrl', preset.audioUrl);
+      const res = await fetch(`/api/admin/characters/${characterId}/voice`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Referans seçilemedi.');
+      setVoiceUrl(data.voice_url);
+      setAudioHealth(null);
+      setMinimaxVoiceId(null);
+      setMinimaxStatus('none');
+      setApproved(false);
+      setTakes([]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Referans seçilemedi.');
+    } finally {
+      setSelectingPresetId(null);
+    }
+  };
+
+  const uploadNewPreset = async (file: File) => {
+    if (!presetLabel.trim()) {
+      setError('Hazır ses için önce bir etiket yaz (ör. "Sıcak kadın").');
+      return;
+    }
+    setUploadingPreset(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('label', presetLabel.trim());
+      const res = await fetch('/api/admin/beiwe-lab/voice-presets', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Hazır ses eklenemedi.');
+      setVoicePresets((prev) => [...prev, { id: data.preset.id, label: data.preset.label, audioUrl: data.preset.audio_url }]);
+      setPresetLabel('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Hazır ses eklenemedi.');
+    } finally {
+      setUploadingPreset(false);
+      if (presetFileInputRef.current) presetFileInputRef.current.value = '';
     }
   };
 
@@ -289,11 +354,85 @@ export default function BeiweVoiceClient({
         question="Bu klon kimin sesinden doğuyor?"
         state={stage1State}
       >
-        <p className="text-sm text-slate-600">
-          Tek kişinin konuştuğu bir kayıt yükle. 2026-07-29 karşılaştırmasında uzun ve
-          <strong> işlenmemiş</strong> (kırpılmamış, gürültü temizliği kapalı) referans en
-          iyi benzerliği verdi — kaydı kısaltmaya ya da temizlemeye çalışma, olduğu gibi yükle.
-        </p>
+        {initialVoicePresets !== undefined ? (
+          <p className="text-sm text-slate-600">
+            {characterName} sanal bir karakter — kendi sesi yok. Aşağıdaki hazır ses
+            kütüphanesinden beğendiğin bir kaydı seç, o bu karakterin referansı olsun.
+          </p>
+        ) : (
+          <p className="text-sm text-slate-600">
+            Tek kişinin konuştuğu bir kayıt yükle. 2026-07-29 karşılaştırmasında uzun ve
+            <strong> işlenmemiş</strong> (kırpılmamış, gürültü temizliği kapalı) referans en
+            iyi benzerliği verdi — kaydı kısaltmaya ya da temizlemeye çalışma, olduğu gibi yükle.
+          </p>
+        )}
+
+        {initialVoicePresets !== undefined && (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+            <p className="text-xs font-semibold text-slate-500">Hazır Referans Sesler</p>
+
+            {voicePresets.length === 0 ? (
+              <p className="text-xs text-slate-400">
+                Henüz hiç hazır ses eklenmedi. Aşağıdan ilkini ekle — bu kütüphane tüm
+                yardımcı oyuncular arasında paylaşılır.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {voicePresets.map((preset) => {
+                  const isCurrent = voiceUrl === preset.audioUrl;
+                  const busy = selectingPresetId === preset.id;
+                  return (
+                    <div
+                      key={preset.id}
+                      className={`rounded-lg border p-3 space-y-2 ${isCurrent ? 'border-emerald-300 bg-emerald-50/50' : 'border-slate-200 bg-white'}`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-medium text-slate-800">{preset.label}</span>
+                        {isCurrent && <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />}
+                      </div>
+                      <audio src={preset.audioUrl} controls className="h-8 w-full" />
+                      <button
+                        onClick={() => selectVoicePreset(preset)}
+                        disabled={busy || isCurrent}
+                        className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 text-white py-1.5 text-xs font-semibold hover:bg-slate-800 disabled:opacity-50"
+                      >
+                        {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                        {busy ? 'Seçiliyor…' : isCurrent ? 'Referans bu' : 'Bu sesi kullan'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="border-t border-slate-200 pt-3 flex flex-wrap items-center gap-2">
+              <input
+                value={presetLabel}
+                onChange={(e) => setPresetLabel(e.target.value)}
+                placeholder="Etiket (ör. Sıcak kadın)"
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs flex-1 min-w-[140px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={() => presetFileInputRef.current?.click()}
+                disabled={uploadingPreset}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+              >
+                {uploadingPreset ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                {uploadingPreset ? 'Ekleniyor…' : 'Kütüphaneye ses ekle'}
+              </button>
+              <input
+                ref={presetFileInputRef}
+                type="file"
+                accept="audio/mpeg,audio/mp3,audio/wav,audio/mp4,audio/x-m4a"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadNewPreset(file);
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         {voiceUrl && (
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
@@ -334,10 +473,20 @@ export default function BeiweVoiceClient({
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="flex items-center gap-2 bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-50 ${
+              initialVoicePresets !== undefined
+                ? 'border border-slate-300 text-slate-600 hover:bg-slate-50'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
           >
             {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-            {uploading ? 'Yükleniyor…' : voiceUrl ? 'Referansı değiştir' : 'Ses dosyası yükle'}
+            {uploading
+              ? 'Yükleniyor…'
+              : initialVoicePresets !== undefined
+                ? 'Ya da kendi ses dosyanı yükle'
+                : voiceUrl
+                  ? 'Referansı değiştir'
+                  : 'Ses dosyası yükle'}
           </button>
           {voiceUrl && (
             <span className="text-xs text-amber-600">

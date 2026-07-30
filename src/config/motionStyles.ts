@@ -60,16 +60,23 @@ export function findMotionStyle(id: unknown): MotionStyle | undefined {
 
 /**
  * Kimlik kaynağı — 'twin' Enes'in kendi kimliğini stilize eder (Twin galerisinden bir
- * kare referans alınır), 'generic' kimliksiz/rastgele bir persona üretir (yalnızca metin
- * tarifinden, referans görsel yok). Podcast'in aksine Motion'da Twin ZORUNLU değil.
+ * kare referans alınır), 'cast' Yardımcı Oyuncular'dan (Saule, Beiwe, admin panelinden
+ * eklenen sanal karakterler) birinin kanonik avatarını kullanır, 'generic' kimliksiz/
+ * rastgele bir persona üretir (yalnızca metin tarifinden, referans görsel yok).
+ * Podcast'in aksine Motion'da Twin ZORUNLU değil.
  */
-export type MotionIdentityMode = 'twin' | 'generic';
+export type MotionIdentityMode = 'twin' | 'cast' | 'generic';
 
 export const MOTION_IDENTITY_MODES: { id: MotionIdentityMode; label: string; hint: string }[] = [
   {
     id: 'twin',
     label: 'Twin kimliği',
     hint: 'Galeriden seçilen bir Twin karesi stilize edilir — kimlik büyük ölçüde korunur.',
+  },
+  {
+    id: 'cast',
+    label: 'Yardımcı Oyuncu',
+    hint: 'Saule, Beiwe ya da eklediğin sanal bir karakterin avatarı stilize edilir.',
   },
   {
     id: 'generic',

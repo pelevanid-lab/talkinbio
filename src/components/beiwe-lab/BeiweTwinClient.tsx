@@ -126,6 +126,8 @@ export default function BeiweTwinClient({
   const [generatingAngle, setGeneratingAngle] = useState<string | null>(null);
   const [busyShotId, setBusyShotId] = useState<string | null>(null);
   const [loraChecking, setLoraChecking] = useState(false);
+  const [loraSubmitting, setLoraSubmitting] = useState(false);
+  const [loraError, setLoraError] = useState<string | null>(null);
   const [showInstagram, setShowInstagram] = useState(false);
   const [showIdentityPrompt, setShowIdentityPrompt] = useState(false);
 
@@ -253,6 +255,35 @@ export default function BeiweTwinClient({
   };
 
   /* ---------------- aşama 3: LoRA ---------------- */
+  const startLoraTraining = async () => {
+    setLoraSubmitting(true);
+    setLoraError(null);
+    try {
+      // En benzer kareler başa: route ilk 30'u alıyor ve ilk 10'unu caption'da
+      // "high-quality" olarak işaretliyor, sıralama doğrudan eğitim kalitesine yansıyor.
+      const photoUrls = [...loraPool]
+        .sort((a, b) => (b.similarity_score ?? 0) - (a.similarity_score ?? 0))
+        .map((s) => s.image_url);
+
+      const res = await fetch(`/api/admin/characters/${characterId}/lora`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoUrls }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'LoRA eğitimi başlatılamadı.');
+      setProfile((prev) => ({
+        ...prev,
+        lora_status: 'queued',
+        lora_trigger_word: data.triggerWord ?? prev.lora_trigger_word,
+      }));
+    } catch (err) {
+      setLoraError(err instanceof Error ? err.message : 'LoRA eğitimi başlatılamadı.');
+    } finally {
+      setLoraSubmitting(false);
+    }
+  };
+
   const refreshLoraStatus = async () => {
     setLoraChecking(true);
     try {
@@ -541,14 +572,25 @@ export default function BeiweTwinClient({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            disabled
-            title="Eğitim API'si henüz tamamlanmadı"
-            className="flex items-center gap-2 bg-purple-600 text-white rounded-lg px-4 py-2 text-sm font-semibold opacity-40 cursor-not-allowed"
-          >
-            <Brain className="w-4 h-4" />
-            LoRA Eğitimini Başlat
-          </button>
+          {profile.lora_status === 'queued' || profile.lora_status === 'training' ? (
+            <div className="flex items-center gap-2 text-xs text-purple-700 bg-purple-50 rounded-lg px-3 py-2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+              <span>
+                {LORA_STATUS_LABELS[profile.lora_status]} — tetik kelimesi{' '}
+                <strong>{profile.lora_trigger_word}</strong>. Sonuç 20-30 dk içinde hazır olur.
+              </span>
+            </div>
+          ) : (
+            <button
+              onClick={startLoraTraining}
+              disabled={!loraReady || loraSubmitting}
+              title={!loraReady ? `Önce ${LORA_TRAINING_THRESHOLD} kareye ulaş` : undefined}
+              className="flex items-center gap-2 bg-purple-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {loraSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
+              {loraSubmitting ? 'Arşiv hazırlanıyor…' : 'LoRA Eğitimini Başlat'}
+            </button>
+          )}
           <button
             onClick={refreshLoraStatus}
             disabled={loraChecking}
@@ -561,26 +603,33 @@ export default function BeiweTwinClient({
             )}
             Durumu yenile
           </button>
-          {profile.lora_trigger_word && (
+          {profile.lora_trigger_word && profile.lora_status !== 'queued' && profile.lora_status !== 'training' && (
             <span className="text-xs text-slate-400 font-mono">
               trigger: {profile.lora_trigger_word}
             </span>
           )}
         </div>
 
-        {/* Ayna odası kuralı: çalışmayan bir düğmeyi çalışıyormuş gibi göstermiyoruz. */}
-        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          <span>
-            Eğitimi başlatma düğmesi bilerek kapalı.{' '}
-            <code className="font-mono">api/admin/characters/[characterId]/lora</code> route&apos;u
-            fal&apos;a ZIP yerine tek bir JPEG URL&apos;i gönderiyor (kodda <code>TODO</code> olarak
-            duruyor), yani istek fal tarafında düşer. Zip paketleme eklenene kadar bu aşama yalnızca
-            eğitim setini biriktirir. Set eşiği{' '}
-            {loraReady ? 'dolmuş durumda' : `${LORA_TRAINING_THRESHOLD - loraPool.length} kare uzakta`}
-            ; fal en az {LORA_MIN_PHOTOS} fotoğraf istiyor.
-          </span>
-        </div>
+        {loraError && (
+          <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <span>{loraError}</span>
+          </div>
+        )}
+
+        {profile.lora_status === 'failed' && (
+          <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <span>Önceki eğitim denemesi başarısız oldu (fal tarafında). Yeniden başlatabilirsin.</span>
+          </div>
+        )}
+
+        {!loraReady && (
+          <p className="text-xs text-slate-400">
+            Set eşiği {LORA_TRAINING_THRESHOLD - loraPool.length} kare uzakta; fal en az{' '}
+            {LORA_MIN_PHOTOS} fotoğraf istiyor.
+          </p>
+        )}
       </Stage>
 
       {/* Instagram içe aktarma */}

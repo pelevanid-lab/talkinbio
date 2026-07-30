@@ -161,20 +161,20 @@
       }
     },
     "updates": {
-      "title": "Latest Updates",
+      "title": "Blog",
       "allPosts": "All posts",
       "post1": {
-        "badge": "Talkinbio V2 is Live",
+        "badge": "Create content with talkinbio",
         "title": "A brand new infrastructure and advanced AI features with Talkinbio V2",
         "meta": "Product · Jul 28, 2026"
       },
       "post2": {
-        "badge": "Assistant Agent Training",
+        "badge": "Answer questions with talkinbio",
         "title": "How to train your assistant in just 5 minutes? New guide is out.",
         "meta": "Guide · Jul 15, 2026"
       },
       "post3": {
-        "badge": "Advanced Analytics",
+        "badge": "Make sales with talkinbio",
         "title": "Turn customer requests into data: Advanced analytics dashboard is now available.",
         "meta": "Feature · Jul 02, 2026"
       }

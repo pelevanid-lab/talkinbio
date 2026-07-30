@@ -214,9 +214,17 @@ type Props = {
   character: CharacterDefinition;
   initialShots: CharacterShot[];
   initialClips: CharacterClip[];
+  /**
+   * 'cast' — Yardımcı Oyuncular: sanal/kurgusal karakterler, gerçek bir yüze kilitlenmiyor.
+   * Yüz tanıma/kimlik doğrulama (Kanon, Puan, LoRA, "Yüzü Yeniden Tanıt") ve Ses/Video/Post
+   * Production adımları bu modda anlamsız — bunlar zaten ayrı Beiwe Lab sayfalarında var.
+   * Yalnızca Adım 1 (Stüdyo/Sahne Üret) gösterilir.
+   */
+  mode?: 'full' | 'cast';
 };
 
-export default function CharacterRoomClient({ character, initialShots, initialClips }: Props) {
+export default function CharacterRoomClient({ character, initialShots, initialClips, mode = 'full' }: Props) {
+  const isCast = mode === 'cast';
   const router = useRouter();
   const [shots, setShots] = useState<CharacterShot[]>(initialShots);
   const [clips, setClips] = useState<CharacterClip[]>(initialClips);
@@ -262,7 +270,7 @@ export default function CharacterRoomClient({ character, initialShots, initialCl
   const highScoreShots = useMemo(() => shots.filter((s) => (s.similarity_score ?? 0) >= 8), [shots]);
   const effectiveAspect = aspectRatio || selectedPresets.find((p) => p.aspectRatio)?.aspectRatio || '4:5';
 
-  const isPreset = character.id === 'saule' || character.id === 'beiwe';
+  const isPreset = isCast || character.id === 'saule' || character.id === 'beiwe';
   const hasCanonShot = isPreset || canonShots.length > 0;
   const hasStagedShots = shots.some((s) => !s.is_canon && s.created_at);
   const hasSuccessfulTwin = shots.some((s) => (s.similarity_score ?? 0) >= 9);
@@ -550,37 +558,42 @@ export default function CharacterRoomClient({ character, initialShots, initialCl
             <div>
               <h1 className="text-lg font-bold text-slate-900">{character.name}</h1>
               <p className="text-xs text-slate-500">{character.role}</p>
-              <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
-                <span className="flex items-center gap-1">
-                  <Lock className="w-3 h-3" /> Kimlik kilitli
-                </span>
-                <span>Kanon: <strong className="text-slate-800">{canonShots.length}/{MAX_CANON_SHOTS}</strong></span>
-                <span>Puan: <strong className="text-slate-800">{ratedShots.length}/{shots.length}</strong></span>
-                {!needsOnboarding && (
-                  <button 
-                    onClick={() => setIsRetraining(true)}
-                    className="ml-2 text-blue-600 hover:underline flex items-center gap-1"
-                  >
-                    Yüzü Yeniden Tanıt
-                  </button>
-                )}
-              </div>
+              {!isCast && (
+                <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
+                  <span className="flex items-center gap-1">
+                    <Lock className="w-3 h-3" /> Kimlik kilitli
+                  </span>
+                  <span>Kanon: <strong className="text-slate-800">{canonShots.length}/{MAX_CANON_SHOTS}</strong></span>
+                  <span>Puan: <strong className="text-slate-800">{ratedShots.length}/{shots.length}</strong></span>
+                  {!needsOnboarding && (
+                    <button
+                      onClick={() => setIsRetraining(true)}
+                      className="ml-2 text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      Yüzü Yeniden Tanıt
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Step indicator */}
-          <StepIndicator
-            activeStep={activeStep}
-            steps={[
-              { label: 'Stüdyo', icon: <span className="text-[11px]">1</span> },
-              { label: 'Ses & Klonla', icon: <Mic className="w-3.5 h-3.5" /> },
-              { label: 'Video Üret', icon: <Zap className="w-3.5 h-3.5" /> },
-              { label: 'Post Production', icon: <span className="text-[11px]">4</span> },
-            ]}
-          />
+          {!isCast && (
+            <StepIndicator
+              activeStep={activeStep}
+              steps={[
+                { label: 'Stüdyo', icon: <span className="text-[11px]">1</span> },
+                { label: 'Ses & Klonla', icon: <Mic className="w-3.5 h-3.5" /> },
+                { label: 'Video Üret', icon: <Zap className="w-3.5 h-3.5" /> },
+                { label: 'Post Production', icon: <span className="text-[11px]">4</span> },
+              ]}
+            />
+          )}
         </div>
 
         {/* LoRA progress */}
+        {!isCast && (
         <div className="mt-4 pt-4 border-t border-slate-100">
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
@@ -644,8 +657,9 @@ export default function CharacterRoomClient({ character, initialShots, initialCl
             </div>
           )}
         </div>
+        )}
       </div>
-      
+
       {/* Hidden input for Canon Photos */}
       <input
         ref={canonInputRef}
@@ -698,7 +712,7 @@ export default function CharacterRoomClient({ character, initialShots, initialCl
         <StepSection
           step={1}
           title="Stüdyo (Sahne Üret)"
-          subtitle="Kanon fotoğrafınızı kullanarak sahneler üretin ve puanlayın"
+          subtitle={isCast ? 'Tarifini kullanarak yeni sahneler üret' : 'Kanon fotoğrafınızı kullanarak sahneler üretin ve puanlayın'}
         >
         {/* Preset seçimi */}
         <div className="space-y-3">
@@ -867,7 +881,7 @@ export default function CharacterRoomClient({ character, initialShots, initialCl
             className="flex items-center gap-2 bg-blue-600 text-white rounded-lg px-5 py-2.5 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
           >
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {generating ? 'Üretiliyor…' : 'Twin Üret'}
+            {generating ? 'Üretiliyor…' : isCast ? 'Sahne Üret' : 'Twin Üret'}
           </button>
           <span className="text-xs text-slate-400">
             ~${(ESTIMATED_COST_PER_IMAGE_USD * numImages).toFixed(2)} · 1-2 dk
@@ -881,7 +895,7 @@ export default function CharacterRoomClient({ character, initialShots, initialCl
               <h3 className="text-sm font-semibold text-slate-800">
                 Galeri <span className="text-slate-400 font-normal">({shots.length} kare)</span>
               </h3>
-              <p className="text-xs text-slate-400">Puanla → kanon sabitle → Adım 2&apos;ye geç</p>
+              {!isCast && <p className="text-xs text-slate-400">Puanla → kanon sabitle → Adım 2&apos;ye geç</p>}
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
               {shots.map((shot) => (
@@ -892,23 +906,25 @@ export default function CharacterRoomClient({ character, initialShots, initialCl
                   <div className="relative bg-slate-100">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={shot.image_url} alt="" className="w-full block" />
-                    {shot.is_canon && (
+                    {!isCast && shot.is_canon && (
                       <span className="absolute top-2 left-2 bg-blue-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
                         KANON
                       </span>
                     )}
-                    {shot.similarity_score !== null && shot.similarity_score >= 9 && (
+                    {!isCast && shot.similarity_score !== null && shot.similarity_score >= 9 && (
                       <span className="absolute top-2 right-2 text-base" title="Çok yüksek benzerlik">✨</span>
                     )}
                   </div>
 
                   <div className="p-2.5 space-y-2">
                     {/* Puan widget */}
-                    <SimilarityRating
-                      shotId={shot.id}
-                      score={shot.similarity_score ?? null}
-                      onChange={(score) => rateSimilarity(shot, score)}
-                    />
+                    {!isCast && (
+                      <SimilarityRating
+                        shotId={shot.id}
+                        score={shot.similarity_score ?? null}
+                        onChange={(score) => rateSimilarity(shot, score)}
+                      />
+                    )}
 
                     {/* Eylemler */}
                     <div className="flex items-center gap-1">
@@ -929,20 +945,22 @@ export default function CharacterRoomClient({ character, initialShots, initialCl
                       >
                         <Download className="w-3.5 h-3.5" />
                       </a>
-                      <button
-                        onClick={() => toggleCanon(shot)}
-                        disabled={busyShotId === shot.id}
-                        className="p-1.5 rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50 disabled:opacity-50"
-                        title={shot.is_canon ? 'Kanon işaretini kaldır' : 'Kanon referans yap'}
-                      >
-                        {busyShotId === shot.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : shot.is_canon ? (
-                          <PinOff className="w-3.5 h-3.5" />
-                        ) : (
-                          <Pin className="w-3.5 h-3.5" />
-                        )}
-                      </button>
+                      {!isCast && (
+                        <button
+                          onClick={() => toggleCanon(shot)}
+                          disabled={busyShotId === shot.id}
+                          className="p-1.5 rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50 disabled:opacity-50"
+                          title={shot.is_canon ? 'Kanon işaretini kaldır' : 'Kanon referans yap'}
+                        >
+                          {busyShotId === shot.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : shot.is_canon ? (
+                            <PinOff className="w-3.5 h-3.5" />
+                          ) : (
+                            <Pin className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      )}
                       <button
                         onClick={() => removeShot(shot)}
                         disabled={busyShotId === shot.id}
@@ -974,6 +992,8 @@ export default function CharacterRoomClient({ character, initialShots, initialCl
       </StepSection>
       )}
 
+      {!isCast && (
+      <>
       {/* ─── ADIM 2: Ses Stüdyosu ────────────────────────── */}
       <StepSection
         step={2}
@@ -1016,6 +1036,8 @@ export default function CharacterRoomClient({ character, initialShots, initialCl
           onClipUploaded={(clip: CharacterClip) => setClips((prev) => [clip, ...prev])}
         />
       </StepSection>
+      </>
+      )}
 
       {/* Overlay Editor */}
       {overlayShot && (

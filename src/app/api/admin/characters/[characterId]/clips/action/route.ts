@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
-import { FalError, generateCharacterImage, generateCharacterPerformance, generateSceneVideo } from '@/utils/fal';
+import { FalError, generateCharacterImage, generateCharacterPerformance, generateSceneVideo, publicImageAsDataUri } from '@/utils/fal';
 import { CHARACTERS, buildNegativePrompt, isCharacterId } from '@/config/characters';
+import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { FULL_BODY_MOTION_MODELS, SCENE_VIDEO_MODELS, findFullBodyMotionModel, findSceneVideoModel } from '@/config/clips';
 import { DEFAULT_MOTION_STYLE_ID, MOTION_STYLES, findMotionStyle, type MotionIdentityMode } from '@/config/motionStyles';
 
@@ -71,17 +72,23 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
     const formData = await req.formData();
 
     const mode = formData.get('mode') === 'scenario' ? 'scenario' : 'reference';
-    const identityMode: MotionIdentityMode = formData.get('identityMode') === 'generic' ? 'generic' : 'twin';
+    const identityModeRaw = formData.get('identityMode');
+    const identityMode: MotionIdentityMode =
+      identityModeRaw === 'generic' ? 'generic' : identityModeRaw === 'cast' ? 'cast' : 'twin';
     const style = findMotionStyle(formData.get('styleId')) || MOTION_STYLES.find((s) => s.id === DEFAULT_MOTION_STYLE_ID)!;
     const scenario = (formData.get('scenario') as string | null)?.trim().slice(0, 800) || '';
     const sourceShotUrl = (formData.get('sourceShotUrl') as string | null) || undefined;
     const personaDescription = (formData.get('personaDescription') as string | null)?.trim().slice(0, 500) || '';
+    const castCharacterId = (formData.get('castCharacterId') as string | null) || undefined;
 
     if (!scenario) {
       return NextResponse.json({ error: 'Senaryo/detay metni gerekli.' }, { status: 400 });
     }
     if (identityMode === 'twin' && !sourceShotUrl) {
       return NextResponse.json({ error: 'Twin kimliği için galeriden bir kare seçilmedi.' }, { status: 400 });
+    }
+    if (identityMode === 'cast' && !castCharacterId) {
+      return NextResponse.json({ error: 'Bir yardımcı oyuncu seçilmedi.' }, { status: 400 });
     }
     if (identityMode === 'generic' && !personaDescription) {
       return NextResponse.json({ error: 'Jenerik karakter için bir persona tarifi gerekli.' }, { status: 400 });
@@ -104,8 +111,38 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
       }
     }
 
+    // 'cast' — Yardımcı Oyuncular'dan (Saule/Beiwe/sanal karakter) biri: kimlik metni ve
+    // kanonik avatarı `characterId` (Twin) değil, SEÇİLEN karakterden geliyor.
+    let castIdentityPrompt: string | undefined;
+    let castAvatarUrl: string | undefined;
+    if (identityMode === 'cast' && castCharacterId) {
+      if (!(await isKnownCharacterId(castCharacterId))) {
+        return NextResponse.json({ error: 'Seçilen yardımcı oyuncu bulunamadı.' }, { status: 400 });
+      }
+      const staticCast = isCharacterId(castCharacterId) ? CHARACTERS[castCharacterId] : undefined;
+      const { data: castProfile } = await supabaseAdmin
+        .from('character_profiles')
+        .select('identity_prompt, reference_image_url')
+        .eq('id', castCharacterId)
+        .maybeSingle();
+
+      castIdentityPrompt = castProfile?.identity_prompt || staticCast?.identityPrompt;
+      // Ham değer: Supabase satırı zaten tam https:// URL'i, statik config ise `public/`
+      // altında bir dosya adı — `publicImageAsDataUri` ikisini de ayırt edip doğru
+      // çözüyor (bkz. generate/route.ts'teki aynı kullanım).
+      const castAvatarRef = castProfile?.reference_image_url || staticCast?.referenceFile;
+
+      if (!castIdentityPrompt || !castAvatarRef) {
+        return NextResponse.json(
+          { error: 'Seçilen yardımcı oyuncunun kimliği ya da avatarı eksik.' },
+          { status: 400 },
+        );
+      }
+      castAvatarUrl = await publicImageAsDataUri(castAvatarRef);
+    }
+
     const stylePrompt = [
-      identityMode === 'twin' ? character.identityPrompt : personaDescription,
+      identityMode === 'twin' ? character.identityPrompt : identityMode === 'cast' ? castIdentityPrompt : personaDescription,
       style.prompt,
       buildNegativePrompt(),
     ]
@@ -113,14 +150,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
       .join('\n\n');
 
     const imageModel =
-      identityMode === 'twin'
-        ? process.env.CHARACTER_IMAGE_MODEL || 'fal-ai/nano-banana-pro/edit'
-        : GENERIC_IMAGE_MODEL_FALLBACK;
+      identityMode === 'generic'
+        ? GENERIC_IMAGE_MODEL_FALLBACK
+        : process.env.CHARACTER_IMAGE_MODEL || 'fal-ai/nano-banana-pro/edit';
+
+    const identityImageUrl = identityMode === 'twin' ? sourceShotUrl : identityMode === 'cast' ? castAvatarUrl : undefined;
 
     const imageResult = await generateCharacterImage({
       model: imageModel,
       prompt: stylePrompt,
-      imageUrls: identityMode === 'twin' && sourceShotUrl ? [sourceShotUrl] : [],
+      imageUrls: identityImageUrl ? [identityImageUrl] : [],
       aspectRatio: '4:5',
       resolution: '1K',
       numImages: 1,
@@ -186,7 +225,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
         video_url: finalVideoUrl,
         audio_url: drivingVideoUrl ?? null,
         source_image_url: styledImageUrl,
-        label: `${style.label} · ${identityMode === 'twin' ? 'twin' : 'jenerik'}`,
+        label: `${style.label} · ${identityMode === 'twin' ? 'twin' : identityMode === 'cast' ? 'yardımcı oyuncu' : 'jenerik'}`,
       })
       .select()
       .single();

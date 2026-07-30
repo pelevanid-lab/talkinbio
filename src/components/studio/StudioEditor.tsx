@@ -27,21 +27,29 @@ import {
   MAX_OVERLAY_TEXT_LENGTH,
   MAX_PROJECT_NAME_LENGTH,
   MAX_COUNTDOWN_STEPS,
+  MAX_SEQUENCE_CLIPS,
   MAX_ZOOMS,
   MIN_COUNTDOWN_STEPS,
   STUDIO_ASPECT_RATIOS,
+  DEFAULT_COLOR_GRADE,
   DEFAULT_COUNTDOWN,
   DEFAULT_COUNTDOWN_DURATION,
   DEFAULT_TIMELINE,
+  DEFAULT_TRANSITION,
+  sequenceClipDuration,
+  sequenceDuration,
+  resolveSequencePosition,
   studioAspectPreset,
   type StudioAsset,
   type StudioAssetKind,
   type StudioCaption,
+  type StudioColorGrade,
   type StudioCountdown,
   type StudioCutaway,
   type StudioFit,
   type StudioImageOverlay,
   type StudioProject,
+  type StudioSequenceClip,
   type StudioTextOverlay,
   type StudioTimeline,
   type StudioVideoOverlay,
@@ -52,6 +60,7 @@ import { countdownPlan, scheduleCountdownBeeps } from '@/utils/countdown';
 import { downloadBlob } from '@/utils/imageOverlay';
 import { PLATFORM_TARGET_LUFS, loudnessNormalizationGain, measureIntegratedLoudness } from '@/utils/loudness';
 import {
+  collectSequenceVideoClips,
   collectStudioImageUrls,
   collectStudioVideoOverlayUrls,
   drawFrame,
@@ -60,6 +69,7 @@ import {
   exportTimeline,
   pickExportMimeType,
   preloadStudioImages,
+  syncSequenceVideos,
   syncVideoOverlays,
 } from '@/utils/studioRenderer';
 
@@ -68,6 +78,8 @@ type Selection = { type: 'cutaway' | 'overlay' | 'zoom'; id: string } | null;
 type Props = {
   characterId: string;
   motion: CharacterClip;
+  /** Ortak klip havuzu — Sekans panelindeki "+ Klip (havuzdan)" seçicisi buradan besleniyor. */
+  clips: CharacterClip[];
   project: StudioProject | null;
   assets: StudioAsset[];
   onAssetUploaded: (asset: StudioAsset) => void;
@@ -81,6 +93,7 @@ const clampPct = (v: number) => Math.min(100, Math.max(0, v));
 export default function StudioEditor({
   characterId,
   motion,
+  clips,
   project,
   assets,
   onAssetUploaded,
@@ -88,16 +101,38 @@ export default function StudioEditor({
   onBack,
 }: Props) {
   // `project.timeline` DB'den ham (doğrulanmamış) geliyor — bu proje daha ÖNCEKİ bir şemayla
-  // (ör. zoom/altyazı/videoVolume alanları eklenmeden önce) kaydedilmiş olabilir. `parseStudioTimeline`
-  // eksik alanları makul varsayılanlara tamamlıyor, yoksa `timeline.captions.find(...)` gibi bir
-  // erişim eski bir projede undefined üzerinde patlar.
-  const [timeline, setTimeline] = useState<StudioTimeline>(
-    () => (project?.timeline && parseStudioTimeline(project.timeline)) || DEFAULT_TIMELINE,
-  );
+  // (ör. zoom/altyazı/videoVolume/sequence alanları eklenmeden önce) kaydedilmiş olabilir.
+  // `parseStudioTimeline` eksik alanları makul varsayılanlara tamamlıyor, yoksa
+  // `timeline.captions.find(...)` gibi bir erişim eski bir projede undefined üzerinde patlar.
+  // `sequence` yoksa (proje `sequence` eklenmeden ÖNCE kaydedilmiş) `fallback` ile eski
+  // `motion` prop'undan tek elemanlı bir sekans sentezleniyor (bkz. parseStudioTimeline yorumu).
+  // Proje hiç yoksa (yeni proje, StudioSection'ın picker'ından tek bir klip seçilerek açıldı)
+  // aynı tek-elemanlı sekans doğrudan kuruluyor.
+  const [timeline, setTimeline] = useState<StudioTimeline>(() => {
+    const fallback = { clipId: motion.id, videoUrl: motion.video_url };
+    if (project?.timeline) {
+      return parseStudioTimeline(project.timeline, fallback) || DEFAULT_TIMELINE;
+    }
+    return {
+      ...DEFAULT_TIMELINE,
+      sequence: [
+        {
+          id: crypto.randomUUID(),
+          kind: 'video',
+          assetUrl: motion.video_url,
+          clipId: motion.id,
+          sourceStart: 0,
+          sourceEnd: 0,
+          holdDuration: 0,
+          fit: 'cover',
+          transitionIn: DEFAULT_TRANSITION,
+        },
+      ],
+    };
+  });
   const [projectId, setProjectId] = useState<string | null>(project?.id ?? null);
   const [projectName, setProjectName] = useState(project?.name ?? 'Adsız proje');
 
-  const [videoDuration, setVideoDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [selected, setSelected] = useState<Selection>(null);
@@ -113,14 +148,36 @@ export default function StudioEditor({
   const [transcribing, setTranscribing] = useState(false);
   const [enhancingAudio, setEnhancingAudio] = useState(false);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
+  // Sekans video elemanlarının canlı <video> elementleri — `videoOverlayElsRef` ile AYNI
+  // desen (aşağısı), assetUrl DEĞİL clip.ID ile anahtarlanır (bkz. StudioSequenceClip yorumu:
+  // aynı video iki kez farklı kırpmayla sekansta yer alabilir). Süreleri (`.duration`) render'da
+  // (sourceDuration/masterEnd hesapları, TimelineStrip genişlikleri) lazım olduğu için AYRICA
+  // `sequenceDurations` state'inde tutuluyor — metadata yüklenince güncelleniyor.
+  const sequenceVideoElsRef = useRef<Map<string, HTMLVideoElement>>(new Map());
+  const [sequenceDurations, setSequenceDurations] = useState<Map<string, number>>(new Map());
+  const sequenceDurationsRef = useRef(sequenceDurations);
+  useEffect(() => {
+    sequenceDurationsRef.current = sequenceDurations;
+  }, [sequenceDurations]);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const musicAudioRef = useRef<HTMLAudioElement>(null);
   const enhancedAudioRef = useRef<HTMLAudioElement>(null);
   const rafRef = useRef<number | null>(null);
   const virtualTimeRef = useRef(0);
   const lastVirtualTickRef = useRef(0);
-  const hasPlayedVideoRef = useRef(false);
+  // Eskiden TEK bölüm vardı (preroll/video/postroll, `hasPlayedVideoRef` ile ayrışırdı) — şimdi
+  // "video" bölümü N elemanlı bir SEKANS, `phaseRef` + `seqIndexRef` bunun hangi elemanında
+  // olduğumuzu tutuyor (bkz. `exportTimeline`'daki AYNI state machine, studioRenderer.ts).
+  const phaseRef = useRef<'preroll' | 'sequence' | 'postroll'>('preroll');
+  const seqIndexRef = useRef(0);
+  const seqItemStartMasterRef = useRef(0);
+  // `playing` React state'inin ref aynası — rAF döngüsü/redraw gibi uzun ömürlü, render-dışı
+  // kodun güncel değeri stale closure olmadan okuyabilmesi için (timelineRef ile AYNI gerekçe).
+  const playingRef = useRef(false);
+  useEffect(() => {
+    playingRef.current = playing;
+  }, [playing]);
   // Export ilerleme çubuğu ve buton yüzdesi — BİLEREK React state DEĞİL. Önceki turda
   // setExportProgress'i 150ms'de bire kısmıştık ama her tetiklendiğinde YİNE koca editör
   // ağacını (canvas + 360px'lik tüm kontrol paneli) yeniden render ediyordu; ölçülen export
@@ -165,7 +222,7 @@ export default function StudioEditor({
   const videoOverlayUrls = collectStudioVideoOverlayUrls(timeline);
 
   const preset = studioAspectPreset(timeline.aspectRatio);
-  const sourceDuration = Math.max(0, (timeline.trim.end || videoDuration) - timeline.trim.start);
+  const sourceDuration = sequenceDuration(timeline.sequence, sequenceDurations);
   const masterStart = Math.min(0, timeline.intro?.offset ?? 0);
   const masterEnd = Math.max(sourceDuration, sourceDuration + (timeline.outro?.offset ?? 0));
 
@@ -214,16 +271,19 @@ export default function StudioEditor({
 
   const redraw = (time: number) => {
     const canvas = canvasRef.current;
-    const video = videoRef.current;
-    if (!canvas || !video) return;
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    syncVideoOverlays(timelineRef.current.overlays, time, !video.paused, videoOverlayElsRef.current);
+    // `playingRef` (React state aynası) — tekil bir elementin `.paused`'ına bakmak artık
+    // yeterli değil, aktif olmayan elemanlar zaten `syncSequenceVideos` tarafından duraklatılıyor.
+    const isPlaying = playingRef.current;
+    syncSequenceVideos(timelineRef.current.sequence, time, isPlaying, sequenceVideoElsRef.current);
+    syncVideoOverlays(timelineRef.current.overlays, time, isPlaying, videoOverlayElsRef.current);
     drawFrame({
       ctx,
       timeline: timelineRef.current,
       time,
-      video,
+      sequenceVideos: sequenceVideoElsRef.current,
       assets: imageCacheRef.current,
       videoOverlays: videoOverlayElsRef.current,
     });
@@ -251,16 +311,20 @@ export default function StudioEditor({
   // `enhancedAudioUrl` varsa anlatım ONDAN çalınır — orijinal video sesi hem hoparlörde
   // duyulmasın hem Web Audio grafiğine (export) karışmasın diye `muted` yapılıyor
   // (studioRenderer.exportTimeline de aynı bayrağa göre hangi kaynağı kaydedeceğine karar veriyor).
+  // v1 SINIRI: `enhancedAudioUrl` yalnızca tek elemanlı (legacy) sekansta anlamlı (bkz.
+  // exportTimeline'daki useEnhancedAudio yorumu) ama mute'u YİNE DE tüm sekans elemanlarına
+  // uyguluyoruz — çok elemanlı bir sekansta zaten enhancedAudioUrl kullanıcı tarafından
+  // ayarlanmamış olur (UI onu sadece tek-klip akışında sunuyor).
   useEffect(() => {
-    if (videoRef.current) videoRef.current.muted = !!timeline.enhancedAudioUrl;
-  }, [timeline.enhancedAudioUrl]);
+    for (const el of sequenceVideoElsRef.current.values()) el.muted = !!timeline.enhancedAudioUrl;
+  }, [timeline.enhancedAudioUrl, timeline.sequence]);
 
   // Anlatım ses seviyesi — aktif kaynak orijinal video mu yoksa iyileştirilmiş ses mi
   // olduğuna bakılmaksızın ikisine de uygulanıyor (sadece biri gerçekten duyulur/kaydedilir).
   useEffect(() => {
-    if (videoRef.current) videoRef.current.volume = timeline.videoVolume;
+    for (const el of sequenceVideoElsRef.current.values()) el.volume = timeline.videoVolume;
     if (enhancedAudioRef.current) enhancedAudioRef.current.volume = timeline.videoVolume;
-  }, [timeline.videoVolume]);
+  }, [timeline.videoVolume, timeline.sequence]);
 
   const stopLoop = () => {
     if (rafRef.current !== null) {
@@ -269,68 +333,113 @@ export default function StudioEditor({
     }
   };
 
+  /** Bir sekans elemanına geçer — video ise kendi elementini sourceStart'a sarıp oynatmaya
+   * başlar (ve varsa legacy enhancedAudio'yu ona senkronlar), görsel ise sanal saati bu
+   * elemanın başlangıç zamanına sıfırlar. `exportTimeline`'daki `startSequenceItem` ile
+   * AYNI mantık (bkz. studioRenderer.ts) — burası önizleme/rAF tarafı. */
+  const startSequenceItemPreview = (index: number, masterAt: number) => {
+    seqIndexRef.current = index;
+    seqItemStartMasterRef.current = masterAt;
+    const tl = timelineRef.current;
+    const clip = tl.sequence[index];
+    if (!clip) return;
+    if (clip.kind === 'video') {
+      const el = sequenceVideoElsRef.current.get(clip.id);
+      if (el) {
+        el.currentTime = clip.sourceStart;
+        el.play().catch(() => {});
+      }
+      if (tl.enhancedAudioUrl && enhancedAudioRef.current && tl.sequence.length <= 1 && el) {
+        enhancedAudioRef.current.currentTime = el.currentTime;
+        enhancedAudioRef.current.play().catch(() => {});
+      }
+    } else {
+      virtualTimeRef.current = masterAt;
+      lastVirtualTickRef.current = performance.now();
+    }
+  };
+
   const loop = () => {
-    const video = videoRef.current;
-    if (!video) {
+    const tl = timelineRef.current;
+    if (tl.sequence.length === 0) {
       rafRef.current = null;
       return;
     }
-    const tl = timelineRef.current;
-    const srcDuration = Math.max(0, (tl.trim.end || video.duration) - tl.trim.start);
-    const mStart = Math.min(0, tl.intro?.offset ?? 0);
+    const liveDurations = sequenceDurationsRef.current;
+    const srcDuration = sequenceDuration(tl.sequence, liveDurations);
     const mEnd = Math.max(srcDuration, srcDuration + (tl.outro?.offset ?? 0));
 
     const now = performance.now();
-    let masterTime = virtualTimeRef.current;
+    const activeClip = phaseRef.current === 'sequence' ? tl.sequence[seqIndexRef.current] : undefined;
+    const activeEl =
+      activeClip?.kind === 'video' ? sequenceVideoElsRef.current.get(activeClip.id) ?? null : null;
+    const usingVirtualClock = phaseRef.current !== 'sequence' || !activeEl;
 
-    if (masterTime < 0) {
-      // Pre-roll
+    let masterTime: number;
+
+    if (usingVirtualClock) {
+      // Pre-roll (Intro), Post-roll (Outro) VEYA sekansın o anki elemanı bir sabit görsel.
       const delta = (now - lastVirtualTickRef.current) / 1000;
-      masterTime += delta;
+      masterTime = virtualTimeRef.current + delta;
       virtualTimeRef.current = masterTime;
       lastVirtualTickRef.current = now;
-
-      if (masterTime >= 0) {
-        masterTime = 0;
-        virtualTimeRef.current = 0;
-        video.currentTime = tl.trim.start;
-        video.play().catch(() => {});
-        if (tl.enhancedAudioUrl && enhancedAudioRef.current) {
-          enhancedAudioRef.current.currentTime = video.currentTime;
-          enhancedAudioRef.current.play().catch(() => {});
-        }
-        hasPlayedVideoRef.current = true;
-      }
-    } else if (masterTime >= 0 && masterTime < srcDuration && hasPlayedVideoRef.current) {
-      // Video
-      masterTime = video.currentTime - tl.trim.start;
-      virtualTimeRef.current = masterTime;
-      lastVirtualTickRef.current = now;
-
-      if (video.currentTime >= tl.trim.start + srcDuration || video.ended) {
-        video.pause();
-        if (enhancedAudioRef.current) enhancedAudioRef.current.pause();
-        masterTime = srcDuration;
-        virtualTimeRef.current = srcDuration;
-        lastVirtualTickRef.current = now;
-      }
     } else {
-      // Post-roll
-      const delta = (now - lastVirtualTickRef.current) / 1000;
-      masterTime += delta;
+      // Sekansın aktif elemanı video: saat tamamen o elementin kendi oynatımına bağlıdır.
+      masterTime = seqItemStartMasterRef.current + (activeEl!.currentTime - (activeClip as StudioSequenceClip).sourceStart);
       virtualTimeRef.current = masterTime;
       lastVirtualTickRef.current = now;
     }
 
-    // İyileştirilmiş ses videoyla BAĞIMSIZ oynuyor (ayrı <audio> elementi) — uzun
-    // oynatmada birikebilecek kaymayı burada da düzeltiyoruz.
-    const enhancedEl = enhancedAudioRef.current;
-    if (tl.enhancedAudioUrl && enhancedEl && !video.paused && Math.abs(enhancedEl.currentTime - video.currentTime) > 0.15) {
-      enhancedEl.currentTime = video.currentTime;
+    // Faz/eleman geçişlerini kontrol et — `exportTimeline`'daki tick ile AYNI mantık.
+    if (phaseRef.current === 'preroll' && masterTime >= 0) {
+      phaseRef.current = 'sequence';
+      masterTime = 0;
+      startSequenceItemPreview(0, 0);
+    } else if (phaseRef.current === 'sequence') {
+      const clip = tl.sequence[seqIndexRef.current];
+      const clipDuration = clip ? sequenceClipDuration(clip, liveDurations) : 0;
+      const itemEndMaster = seqItemStartMasterRef.current + clipDuration;
+      const itemFinished = !clip
+        ? true
+        : clip.kind === 'video'
+          ? (() => {
+              const el = sequenceVideoElsRef.current.get(clip.id);
+              return el ? el.currentTime >= clip.sourceStart + clipDuration || el.ended : true;
+            })()
+          : masterTime >= itemEndMaster;
+
+      if (itemFinished) {
+        if (clip?.kind === 'video') sequenceVideoElsRef.current.get(clip.id)?.pause();
+        const nextIndex = seqIndexRef.current + 1;
+        if (nextIndex < tl.sequence.length) {
+          startSequenceItemPreview(nextIndex, itemEndMaster);
+          masterTime = itemEndMaster;
+        } else {
+          phaseRef.current = 'postroll';
+          virtualTimeRef.current = itemEndMaster;
+          masterTime = itemEndMaster;
+          lastVirtualTickRef.current = performance.now();
+        }
+      }
     }
-    
+
+    // İyileştirilmiş ses (legacy tek-klip) videoyla BAĞIMSIZ oynuyor (ayrı <audio> elementi) —
+    // uzun oynatmada birikebilecek kaymayı burada da düzeltiyoruz.
+    const enhancedEl = enhancedAudioRef.current;
+    const currentActiveEl = phaseRef.current === 'sequence' ? activeSeqVideoEl() : null;
+    if (
+      tl.enhancedAudioUrl &&
+      enhancedEl &&
+      tl.sequence.length <= 1 &&
+      currentActiveEl &&
+      !currentActiveEl.paused &&
+      Math.abs(enhancedEl.currentTime - currentActiveEl.currentTime) > 0.15
+    ) {
+      enhancedEl.currentTime = currentActiveEl.currentTime;
+    }
+
     if (masterTime >= mEnd) {
-      video.pause();
+      for (const clip of tl.sequence) if (clip.kind === 'video') sequenceVideoElsRef.current.get(clip.id)?.pause();
       musicAudioRef.current?.pause();
       enhancedAudioRef.current?.pause();
       setPlaying(false);
@@ -345,12 +454,18 @@ export default function StudioEditor({
     rafRef.current = requestAnimationFrame(loop);
   };
 
+  /** `phaseRef.current === 'sequence'` iken aktif elemanın <video> elementi, yoksa null —
+   * `loop`/senkron kodların tekrarını azaltan küçük bir yardımcı. */
+  const activeSeqVideoEl = (): HTMLVideoElement | null => {
+    const clip = timelineRef.current.sequence[seqIndexRef.current];
+    return clip?.kind === 'video' ? sequenceVideoElsRef.current.get(clip.id) ?? null : null;
+  };
+
   const togglePlay = async () => {
-    const video = videoRef.current;
-    if (!video) return;
+    if (timeline.sequence.length === 0) return;
 
     if (playing) {
-      video.pause();
+      for (const clip of timeline.sequence) if (clip.kind === 'video') sequenceVideoElsRef.current.get(clip.id)?.pause();
       musicAudioRef.current?.pause();
       enhancedAudioRef.current?.pause();
       cancelBeepsRef.current?.();
@@ -366,24 +481,42 @@ export default function StudioEditor({
     } else {
       virtualTimeRef.current = currentTime;
     }
-
     lastVirtualTickRef.current = performance.now();
-    hasPlayedVideoRef.current = virtualTimeRef.current >= 0 && virtualTimeRef.current < sourceDuration;
-    
+
+    // Hangi fazdan/sekans elemanından başlanacağını çöz.
+    if (virtualTimeRef.current < 0) {
+      phaseRef.current = 'preroll';
+    } else if (virtualTimeRef.current >= sourceDuration) {
+      phaseRef.current = 'postroll';
+    } else {
+      phaseRef.current = 'sequence';
+      const resolved = resolveSequencePosition(timeline.sequence, virtualTimeRef.current, sequenceDurations);
+      if (resolved) {
+        seqIndexRef.current = resolved.index;
+        seqItemStartMasterRef.current = virtualTimeRef.current - resolved.localTime;
+      }
+    }
+
     setPlaying(true);
-    
+
     if (musicAudioRef.current) {
       musicAudioRef.current.volume = timeline.music?.volume ?? 0.5;
       musicAudioRef.current.play().catch(() => {});
     }
 
-    if (hasPlayedVideoRef.current) {
-      video.currentTime = timeline.trim.start + virtualTimeRef.current;
-      if (timeline.enhancedAudioUrl && enhancedAudioRef.current) {
-        enhancedAudioRef.current.currentTime = video.currentTime;
-        enhancedAudioRef.current.play().catch(() => {});
+    if (phaseRef.current === 'sequence') {
+      const clip = timeline.sequence[seqIndexRef.current];
+      if (clip?.kind === 'video') {
+        const el = sequenceVideoElsRef.current.get(clip.id);
+        if (el) {
+          el.currentTime = clip.sourceStart + (virtualTimeRef.current - seqItemStartMasterRef.current);
+          if (timeline.enhancedAudioUrl && enhancedAudioRef.current && timeline.sequence.length <= 1) {
+            enhancedAudioRef.current.currentTime = el.currentTime;
+            await enhancedAudioRef.current.play().catch(() => {});
+          }
+          await el.play().catch(() => {});
+        }
       }
-      await video.play().catch(() => {});
     }
 
     // Geri sayım bipleri önizlemede de duyulmalı
@@ -409,10 +542,8 @@ export default function StudioEditor({
   };
 
   const seekTo = (masterTime: number) => {
-    const video = videoRef.current;
-    if (!video) return;
     if (playing) {
-      video.pause();
+      for (const clip of timeline.sequence) if (clip.kind === 'video') sequenceVideoElsRef.current.get(clip.id)?.pause();
       musicAudioRef.current?.pause();
       enhancedAudioRef.current?.pause();
       cancelBeepsRef.current?.();
@@ -420,38 +551,50 @@ export default function StudioEditor({
       setPlaying(false);
       stopLoop();
     }
-    
+
     virtualTimeRef.current = masterTime;
-    
+
     if (masterTime >= 0 && masterTime < sourceDuration) {
-      const target = timeline.trim.start + masterTime;
-      const onSeeked = () => {
-        video.removeEventListener('seeked', onSeeked);
-        if (enhancedAudioRef.current) enhancedAudioRef.current.currentTime = target;
-        redraw(masterTime);
-        setCurrentTime(masterTime);
-      };
-      video.addEventListener('seeked', onSeeked);
-      video.currentTime = target;
+      const resolved = resolveSequencePosition(timeline.sequence, masterTime, sequenceDurations);
+      if (resolved) {
+        phaseRef.current = 'sequence';
+        seqIndexRef.current = resolved.index;
+        seqItemStartMasterRef.current = masterTime - resolved.localTime;
+      }
+      if (resolved?.clip.kind === 'video') {
+        const el = sequenceVideoElsRef.current.get(resolved.clip.id);
+        if (el) {
+          const target = resolved.clip.sourceStart + resolved.localTime;
+          const onSeeked = () => {
+            el.removeEventListener('seeked', onSeeked);
+            if (enhancedAudioRef.current && timeline.sequence.length <= 1) enhancedAudioRef.current.currentTime = target;
+            redraw(masterTime);
+            setCurrentTime(masterTime);
+          };
+          el.addEventListener('seeked', onSeeked);
+          el.currentTime = target;
+          return;
+        }
+      }
+      redraw(masterTime);
+      setCurrentTime(masterTime);
     } else {
-      const target = masterTime < 0 ? timeline.trim.start : timeline.trim.start + sourceDuration;
-      if (enhancedAudioRef.current) enhancedAudioRef.current.currentTime = target;
-      video.currentTime = target;
+      // Preroll/postroll — sınırdaki klibi (varsa) kendi ucuna "park ederek" bir sonraki
+      // geçişte stale kare gösterilmesini engelliyoruz (eski tek-video davranışının aynısı).
+      phaseRef.current = masterTime < 0 ? 'preroll' : 'postroll';
+      const boundaryClip = masterTime < 0 ? timeline.sequence[0] : timeline.sequence[timeline.sequence.length - 1];
+      if (boundaryClip?.kind === 'video') {
+        const el = sequenceVideoElsRef.current.get(boundaryClip.id);
+        if (el) {
+          el.currentTime =
+            masterTime < 0
+              ? boundaryClip.sourceStart
+              : boundaryClip.sourceStart + sequenceClipDuration(boundaryClip, sequenceDurations);
+        }
+      }
       redraw(masterTime);
       setCurrentTime(masterTime);
     }
-  };
-
-  const handleLoadedMetadata = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    setVideoDuration(video.duration);
-    const onSeeked = () => {
-      video.removeEventListener('seeked', onSeeked);
-      redraw(0);
-    };
-    video.addEventListener('seeked', onSeeked);
-    video.currentTime = timeline.trim.start;
   };
 
   // --- Cutaway / Overlay / Zoom / Müzik düzenleme yardımcıları ---
@@ -482,6 +625,57 @@ export default function StudioEditor({
   const removeZoom = (id: string) => {
     updateTimeline({ zooms: timeline.zooms.filter((z) => z.id !== id) });
     if (selected?.type === 'zoom' && selected.id === id) setSelected(null);
+  };
+
+  // --- Sekans (film rulosu) düzenleme yardımcıları ---
+
+  /** Ortak klip havuzundan bir video sekansın SONUNA eklenir — süresi bilinmediği için
+   * (metadata henüz yüklenmedi) sourceEnd=0 sentinel'iyle başlar, ilk kare yüklenince
+   * `sequenceDurations` state'i gerçek değeri kaydeder (bkz. video eleman ref callback'i). */
+  const addSequenceVideoClip = (clip: CharacterClip) => {
+    if (timeline.sequence.length >= MAX_SEQUENCE_CLIPS) {
+      setError(`En fazla ${MAX_SEQUENCE_CLIPS} sekans elemanı eklenebilir.`);
+      return;
+    }
+    const item: StudioSequenceClip = {
+      id: crypto.randomUUID(),
+      kind: 'video',
+      assetUrl: clip.video_url,
+      clipId: clip.id,
+      sourceStart: 0,
+      sourceEnd: 0,
+      holdDuration: 0,
+      fit: 'cover',
+      transitionIn: DEFAULT_TRANSITION,
+    };
+    updateTimeline({ sequence: [...timeline.sequence, item] });
+  };
+
+  const addSequenceImageClip = (assetUrl: string) => {
+    if (timeline.sequence.length >= MAX_SEQUENCE_CLIPS) {
+      setError(`En fazla ${MAX_SEQUENCE_CLIPS} sekans elemanı eklenebilir.`);
+      return;
+    }
+    const item: StudioSequenceClip = {
+      id: crypto.randomUUID(),
+      kind: 'image',
+      assetUrl,
+      clipId: null,
+      sourceStart: 0,
+      sourceEnd: 0,
+      holdDuration: 3,
+      fit: 'cover',
+      transitionIn: DEFAULT_TRANSITION,
+    };
+    updateTimeline({ sequence: [...timeline.sequence, item] });
+  };
+
+  const updateSequenceClip = (id: string, patch: Partial<StudioSequenceClip>) =>
+    updateTimeline({ sequence: timeline.sequence.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
+
+  const removeSequenceClip = (id: string) => {
+    updateTimeline({ sequence: timeline.sequence.filter((c) => c.id !== id) });
+    sequenceVideoElsRef.current.delete(id);
   };
 
   // Whisper marka/uydurma kelimeleri (ör. "talkinbio") bilmediği en yakın gerçek kelimeye
@@ -696,10 +890,14 @@ export default function StudioEditor({
       const url = projectId
         ? `/api/admin/characters/${characterId}/studio/${projectId}`
         : `/api/admin/characters/${characterId}/studio`;
+      // `motionId` artık "biricik kaynak" değil, sadece sekansın İLK elemanı — galeri
+      // picker'ının hangi kartı göstereceğini bilmesi için (bkz. StudioSection.tsx). Sekans
+      // hiç video içermiyorsa (yalnızca görsellerden oluşan bir sekans) `motion.id`'ye düşülür.
+      const primaryClipId = timeline.sequence.find((c) => c.kind === 'video')?.clipId ?? motion.id;
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: projectName, motionId: motion.id, timeline }),
+        body: JSON.stringify({ name: projectName, motionId: primaryClipId, timeline }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Kaydedilemedi.');
@@ -726,18 +924,34 @@ export default function StudioEditor({
   })();
 
   const handleExport = async () => {
-    const video = videoRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas) return;
+    if (!canvas) return;
+    if (timeline.sequence.length === 0) {
+      setError('Sekans boş — en az bir klip ekle.');
+      return;
+    }
 
     if (playing) {
-      video.pause();
+      for (const clip of timeline.sequence) if (clip.kind === 'video') sequenceVideoElsRef.current.get(clip.id)?.pause();
       musicAudioRef.current?.pause();
       cancelBeepsRef.current?.();
       cancelBeepsRef.current = null;
       setPlaying(false);
       stopLoop();
     }
+
+    // Export öncesi TÜM sekans video elemanlarının metadata'sı (süresi) yüklü olmalı — aksi
+    // hâlde `sequenceDuration`/`resolveSequencePosition` (dolayısıyla exportTimeline'ın state
+    // machine'i) yanlış hesaplar. Zaten yüklenmiş olanlar (readyState >= HAVE_METADATA) anında geçer.
+    await Promise.all(
+      collectSequenceVideoClips(timeline).map(({ id }) => {
+        const el = sequenceVideoElsRef.current.get(id);
+        if (!el || el.readyState >= 1) return Promise.resolve();
+        return new Promise<void>((resolve) => {
+          el.addEventListener('loadedmetadata', () => resolve(), { once: true });
+        });
+      }),
+    );
 
     setExporting(true);
     if (progressFillRef.current) progressFillRef.current.style.width = '0%';
@@ -749,18 +963,30 @@ export default function StudioEditor({
       // beraberinde kaldırıyor. Aynı yükseltmeyi burada, temiz kaynak üzerinde yapıyoruz.
       // Müzik varsa hedef 1 LU aşağı çekiliyor: miks üstüne binen müzik yatağı toplam gürlüğü
       // zaten yukarı taşır, aksi hâlde hedefi aşıp limitleyiciyi sürekli çalıştırırdık.
-      const narrationUrl = timeline.enhancedAudioUrl || motion.video_url;
-      const trimEnd = timeline.trim.end || video.duration;
-      const cacheKey = `${narrationUrl}|${timeline.trim.start}|${trimEnd}`;
-      let measuredLufs = loudnessCacheRef.current.get(cacheKey) ?? null;
-      if (measuredLufs === null) {
-        measuredLufs = await measureIntegratedLoudness(narrationUrl, timeline.trim.start, trimEnd);
-        if (measuredLufs !== null) loudnessCacheRef.current.set(cacheKey, measuredLufs);
+      //
+      // v1 SINIRI: gürlük normalizasyonu yalnızca TEK elemanlı (legacy) sekansta ölçülüyor —
+      // çoklu klipte tek bir "anlatım kaynağı" yok, her klip kendi sesiyle akıyor (bkz.
+      // exportTimeline'daki useEnhancedAudio yorumu, AYNI v1 sınırı).
+      let loudnessGain = 1;
+      if (timeline.sequence.length <= 1) {
+        const onlyClip = timeline.sequence[0];
+        const onlyEl = onlyClip?.kind === 'video' ? sequenceVideoElsRef.current.get(onlyClip.id) : undefined;
+        const trimStart = onlyClip?.sourceStart ?? 0;
+        const trimEnd = onlyClip?.sourceEnd || onlyEl?.duration || 0;
+        const narrationUrl = timeline.enhancedAudioUrl || onlyClip?.assetUrl || motion.video_url;
+        if (trimEnd > trimStart) {
+          const cacheKey = `${narrationUrl}|${trimStart}|${trimEnd}`;
+          let measuredLufs = loudnessCacheRef.current.get(cacheKey) ?? null;
+          if (measuredLufs === null) {
+            measuredLufs = await measureIntegratedLoudness(narrationUrl, trimStart, trimEnd);
+            if (measuredLufs !== null) loudnessCacheRef.current.set(cacheKey, measuredLufs);
+          }
+          // Ölçülemediyse (kodek/CORS/sessiz kaynak) sese hiç dokunulmuyor — yanlış tahminle
+          // yükseltmektense olduğu gibi bırakmak güvenli.
+          const targetLufs = timeline.music ? PLATFORM_TARGET_LUFS - 1 : PLATFORM_TARGET_LUFS;
+          loudnessGain = measuredLufs === null ? 1 : loudnessNormalizationGain(measuredLufs, targetLufs);
+        }
       }
-      // Ölçülemediyse (kodek/CORS/sessiz kaynak) sese hiç dokunulmuyor — yanlış tahminle
-      // yükseltmektense olduğu gibi bırakmak güvenli.
-      const targetLufs = timeline.music ? PLATFORM_TARGET_LUFS - 1 : PLATFORM_TARGET_LUFS;
-      const loudnessGain = measuredLufs === null ? 1 : loudnessNormalizationGain(measuredLufs, targetLufs);
 
       setExportStage('recording');
 
@@ -773,7 +999,7 @@ export default function StudioEditor({
       // uğramıyoruz: DOM'a doğrudan yazıyoruz (bkz. progressFillRef/progressLabelRef).
       const result = await exportTimeline({
         timeline,
-        video,
+        sequenceVideos: sequenceVideoElsRef.current,
         canvas,
         assets: imageCache,
         videoOverlays: videoOverlayElsRef.current,
@@ -890,15 +1116,47 @@ export default function StudioEditor({
                   }
                 }}
               />
-              <video
-                ref={videoRef}
-                src={motion.video_url}
-                crossOrigin="anonymous"
-                playsInline
-                preload="auto"
-                className="absolute w-px h-px opacity-0 pointer-events-none"
-                onLoadedMetadata={handleLoadedMetadata}
-              />
+              {/* Sekans (film rulosu) video elemanları — `videoOverlayEls` ile AYNI ref-map
+                  deseni, assetUrl DEĞİL clip.ID ile anahtarlanır (bkz. `sequenceVideoElsRef`
+                  yorumu: aynı video iki kez farklı kırpmayla sekansta yer alabilir). */}
+              {collectSequenceVideoClips(timeline).map(({ id, assetUrl }) => (
+                <video
+                  key={id}
+                  ref={(el) => {
+                    if (el) sequenceVideoElsRef.current.set(id, el);
+                    else sequenceVideoElsRef.current.delete(id);
+                  }}
+                  src={assetUrl}
+                  crossOrigin="anonymous"
+                  playsInline
+                  preload="auto"
+                  className="absolute w-px h-px opacity-0 pointer-events-none"
+                  onLoadedMetadata={(e) => {
+                    const duration = e.currentTarget.duration;
+                    setSequenceDurations((prev) => {
+                      const next = new Map(prev);
+                      next.set(id, duration);
+                      return next;
+                    });
+                    // Sekansın ilk elemanıysa hemen sourceStart'a sar ki ilk kare (poster)
+                    // ham videonun 0. karesi değil, doğru kırpılmış kare olsun.
+                    const isFirst = timeline.sequence[0]?.id === id;
+                    if (isFirst && phaseRef.current === 'preroll') {
+                      const clip = timeline.sequence[0];
+                      const target = clip.kind === 'video' ? clip.sourceStart : 0;
+                      const el = e.currentTarget;
+                      const onSeeked = () => {
+                        el.removeEventListener('seeked', onSeeked);
+                        redraw(0);
+                      };
+                      el.addEventListener('seeked', onSeeked);
+                      el.currentTime = target;
+                    } else if (!playing) {
+                      redraw(currentTime);
+                    }
+                  }}
+                />
+              ))}
               {timeline.music && <audio ref={musicAudioRef} src={timeline.music.assetUrl} className="hidden" />}
               {timeline.enhancedAudioUrl && (
                 <audio
@@ -1026,18 +1284,105 @@ export default function StudioEditor({
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-2">Kırpma</h3>
-            <div className="flex items-center gap-3">
-              <NumberField
-                label="Başlangıç"
-                value={timeline.trim.start}
-                onChange={(v) => updateTimeline({ trim: { ...timeline.trim, start: Math.max(0, v) } })}
-              />
-              <NumberField
-                label="Bitiş"
-                value={timeline.trim.end || videoDuration}
-                onChange={(v) => updateTimeline({ trim: { ...timeline.trim, end: v } })}
-              />
+            <div className="flex items-baseline justify-between mb-1.5">
+              <h3 className="text-sm font-semibold text-slate-900">Sekans (film rulosu)</h3>
+              <span className="text-xs text-slate-400">
+                {timeline.sequence.length}/{MAX_SEQUENCE_CLIPS}
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mb-2">
+              Klipleri arka arkaya diz, aralarına sabit görsel ekle — sıra burada yukarıdan
+              aşağıya oynatılır.
+            </p>
+
+            <div className="space-y-2 mb-3">
+              {timeline.sequence.map((clip, index) => {
+                const duration = sequenceClipDuration(clip, sequenceDurations);
+                return (
+                  <div key={clip.id} className="rounded-lg border border-slate-200 p-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-slate-400 w-4 text-center shrink-0">{index + 1}</span>
+                      {clip.kind === 'video' ? (
+                        <video src={clip.assetUrl} muted className="w-10 h-10 rounded object-cover shrink-0" />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={clip.assetUrl} alt="" className="w-10 h-10 rounded object-cover shrink-0" />
+                      )}
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 shrink-0">
+                        {clip.kind === 'video' ? 'VİDEO' : 'GÖRSEL'}
+                      </span>
+                      <span className="text-xs text-slate-500 tabular-nums flex-1 text-right">{duration.toFixed(1)} sn</span>
+                      <button
+                        onClick={() => removeSequenceClip(clip.id)}
+                        disabled={timeline.sequence.length <= 1}
+                        className="p-1.5 text-slate-400 hover:text-red-600 disabled:opacity-30 disabled:hover:text-slate-400 shrink-0"
+                        title={timeline.sequence.length <= 1 ? 'Sekans en az bir eleman içermeli' : 'Kaldır'}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    {clip.kind === 'image' ? (
+                      <div className="flex items-center gap-3 mt-2">
+                        <NumberField
+                          label="Süre (sn)"
+                          value={clip.holdDuration}
+                          min={0.1}
+                          step={0.1}
+                          onChange={(v) => updateSequenceClip(clip.id, { holdDuration: Math.max(0.1, v) })}
+                          compact
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3 mt-2">
+                        <NumberField
+                          label="Başl."
+                          value={clip.sourceStart}
+                          min={0}
+                          step={0.1}
+                          onChange={(v) => updateSequenceClip(clip.id, { sourceStart: Math.max(0, v) })}
+                          compact
+                        />
+                        <NumberField
+                          label="Bit."
+                          value={clip.sourceEnd || sequenceDurations.get(clip.id) || 0}
+                          step={0.1}
+                          onChange={(v) => updateSequenceClip(clip.id, { sourceEnd: v })}
+                          compact
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <p className="text-[11px] text-slate-500 mb-1">+ Klip (havuzdan)</p>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {clips.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => addSequenceVideoClip(c)}
+                      disabled={timeline.sequence.length >= MAX_SEQUENCE_CLIPS}
+                      className="rounded border border-slate-200 overflow-hidden hover:border-blue-400 disabled:opacity-40"
+                      title={c.label || c.room}
+                    >
+                      <video src={c.video_url} muted className="w-full aspect-square object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] text-slate-500 mb-1">+ Görsel</p>
+                <AssetPicker
+                  kind="image"
+                  assets={assets}
+                  uploading={uploading}
+                  onUpload={(f) => uploadAsset(f, 'image').then((a) => a && addSequenceImageClip(a.url))}
+                  onPick={(a) => addSequenceImageClip(a.url)}
+                />
+              </div>
             </div>
           </div>
 
@@ -1444,24 +1789,48 @@ export default function StudioEditor({
                     <NumberField label="X%" value={o.x} min={0} step={1} onChange={(v) => updateOverlayCommon(o.id, { x: clampPct(v) })} compact />
                     <NumberField label="Y%" value={o.y} min={0} step={1} onChange={(v) => updateOverlayCommon(o.id, { y: clampPct(v) })} compact />
                     {o.kind === 'image' && (
-                      <NumberField
-                        label="Genişlik%"
-                        value={o.width}
-                        min={5}
-                        step={1}
-                        onChange={(v) => updateImageOverlay(o.id, { width: clampPct(v) })}
-                        compact
-                      />
+                      <>
+                        <NumberField
+                          label="Genişlik%"
+                          value={o.width}
+                          min={5}
+                          step={1}
+                          onChange={(v) => updateImageOverlay(o.id, { width: clampPct(v) })}
+                          compact
+                        />
+                        {o.height !== undefined && (
+                          <NumberField
+                            label="Yükseklik%"
+                            value={o.height}
+                            min={5}
+                            step={1}
+                            onChange={(v) => updateImageOverlay(o.id, { height: clampPct(v) })}
+                            compact
+                          />
+                        )}
+                      </>
                     )}
                     {o.kind === 'video' && (
-                      <NumberField
-                        label="Genişlik%"
-                        value={o.width}
-                        min={5}
-                        step={1}
-                        onChange={(v) => updateVideoOverlay(o.id, { width: clampPct(v) })}
-                        compact
-                      />
+                      <>
+                        <NumberField
+                          label="Genişlik%"
+                          value={o.width}
+                          min={5}
+                          step={1}
+                          onChange={(v) => updateVideoOverlay(o.id, { width: clampPct(v) })}
+                          compact
+                        />
+                        {o.height !== undefined && (
+                          <NumberField
+                            label="Yükseklik%"
+                            value={o.height}
+                            min={5}
+                            step={1}
+                            onChange={(v) => updateVideoOverlay(o.id, { height: clampPct(v) })}
+                            compact
+                          />
+                        )}
+                      </>
                     )}
                     {o.kind === 'text' && (
                       <NumberField
@@ -1474,6 +1843,38 @@ export default function StudioEditor({
                       />
                     )}
                   </div>
+
+                  {(o.kind === 'image' || o.kind === 'video') && (
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <button
+                        onClick={() =>
+                          o.kind === 'image'
+                            ? updateImageOverlay(o.id, o.height === undefined ? { height: 50, overlayFit: 'cover' } : { height: undefined })
+                            : updateVideoOverlay(o.id, o.height === undefined ? { height: 50, overlayFit: 'cover' } : { height: undefined })
+                        }
+                        className={`text-[11px] px-2 py-0.5 rounded-full border ${
+                          o.height !== undefined ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-300 text-slate-500'
+                        }`}
+                        title="Ekranı ikiye bölmek (split-screen/PiP) için aspect kilidini kaldırıp keyfi bir kutu tanımlar."
+                      >
+                        Split ekran
+                      </button>
+                      {o.height !== undefined &&
+                        (['cover', 'contain'] as StudioFit[]).map((fit) => (
+                          <button
+                            key={fit}
+                            onClick={() =>
+                              o.kind === 'image' ? updateImageOverlay(o.id, { overlayFit: fit }) : updateVideoOverlay(o.id, { overlayFit: fit })
+                            }
+                            className={`text-[11px] px-2 py-0.5 rounded-full border ${
+                              (o.overlayFit ?? 'cover') === fit ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-300 text-slate-500'
+                            }`}
+                          >
+                            {fit === 'cover' ? 'Kırp' : 'Sığdır'}
+                          </button>
+                        ))}
+                    </div>
+                  )}
 
                   {o.kind === 'text' && (
                     <div className="flex items-center gap-2 mt-1.5">
@@ -1506,6 +1907,57 @@ export default function StudioEditor({
                     </div>
                   )}
                 </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-baseline justify-between mb-1.5">
+              <h3 className="text-sm font-semibold text-slate-900">Renk &amp; Efekt</h3>
+              {(timeline.grade.brightness ||
+                timeline.grade.contrast ||
+                timeline.grade.saturation ||
+                timeline.grade.temperature ||
+                timeline.grade.grain ||
+                timeline.grade.vignette) && (
+                <button
+                  onClick={() => updateTimeline({ grade: DEFAULT_COLOR_GRADE })}
+                  className="text-xs text-slate-400 hover:text-slate-700"
+                >
+                  Sıfırla
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-slate-400 mb-2">
+              Tüm sekansa uygulanır — grain/vignette metin ve overlay&apos;lerin üstünde bir lens
+              katmanı gibi durur, renk düzeltmesi sadece görüntüye (sekans/cutaway) uygulanır.
+            </p>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+              {(
+                [
+                  ['brightness', 'Parlaklık', -100, 100],
+                  ['contrast', 'Kontrast', -100, 100],
+                  ['saturation', 'Doygunluk', -100, 100],
+                  ['temperature', 'Sıcaklık', -100, 100],
+                  ['grain', 'Film dokusu', 0, 1],
+                  ['vignette', 'Vinyet', 0, 1],
+                ] as [keyof StudioColorGrade, string, number, number][]
+              ).map(([key, label, min, max]) => (
+                <label key={key} className="text-xs text-slate-600 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span>{label}</span>
+                    <span className="text-slate-400 tabular-nums">{timeline.grade[key].toFixed(max <= 1 ? 2 : 0)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={min}
+                    max={max}
+                    step={max <= 1 ? 0.02 : 1}
+                    value={timeline.grade[key]}
+                    onChange={(e) => updateTimeline({ grade: { ...timeline.grade, [key]: Number(e.target.value) } })}
+                    className="w-full"
+                  />
+                </label>
               ))}
             </div>
           </div>

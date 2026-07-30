@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
-import { isCharacterId } from '@/config/characters';
+import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { generateCharacterVoice, transcribeReferenceAudio } from '@/utils/fal';
 
 export const maxDuration = 300;
@@ -13,14 +13,47 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
   }
 
   const { characterId } = await params;
-  if (!isCharacterId(characterId)) {
+  if (!(await isKnownCharacterId(characterId))) {
     return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
   }
 
   try {
     const formData = await req.formData();
-    
-    // 1. Mod: Dosya yükleme (Ses yükle)
+
+    // 1. Mod: Hazır referans seçimi (Yardımcı Oyuncular) — dosya yok, doğrudan
+    // zaten barındırılan bir preset URL'i referans yapılır (tekrar yüklemeye gerek yok).
+    const presetUrl = formData.get('presetUrl') as string | null;
+    if (presetUrl) {
+      let refText: string | null = null;
+      try {
+        refText = await transcribeReferenceAudio(presetUrl);
+      } catch (err) {
+        console.warn('[voice] hazır referans deşifresi çıkarılamadı, üretimde tekrar denenecek:', err);
+      }
+
+      const { error: profileError } = await supabaseAdmin
+        .from('character_profiles')
+        .upsert(
+          {
+            id: characterId,
+            voice_url: presetUrl,
+            voice_status: 'none',
+            voice_ref_text: refText,
+            minimax_voice_id: null,
+            minimax_voice_status: 'none',
+          },
+          { onConflict: 'id' },
+        );
+
+      if (profileError) {
+        console.error('[voice] profil güncellenemedi (preset)', profileError);
+        throw new Error(`Referans kaydedilemedi: ${profileError.message}`);
+      }
+
+      return NextResponse.json({ voice_url: presetUrl });
+    }
+
+    // 2. Mod: Dosya yükleme (Ses yükle)
     const file = formData.get('file') as File | null;
     if (file) {
       const bytes = Buffer.from(await file.arrayBuffer());
@@ -86,7 +119,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
       return NextResponse.json({ voice_url: publicUrl });
     }
 
-    // 2. Mod: Ses üretimi (Klonla / Test et)
+    // 3. Mod: Ses üretimi (Klonla / Test et)
     const text = formData.get('text') as string;
     const voiceUrl = formData.get('voice_url') as string;
     

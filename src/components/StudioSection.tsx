@@ -119,6 +119,7 @@ export default function StudioSection({ characterId, clips, onClipUploaded }: Pr
           key={activeClip.id}
           characterId={characterId}
           motion={activeClip}
+          clips={clips}
           project={activeProject}
           assets={assets}
           onAssetUploaded={handleAssetUploaded}

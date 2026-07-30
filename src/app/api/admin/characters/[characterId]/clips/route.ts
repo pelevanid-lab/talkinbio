@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
-import { isCharacterId } from '@/config/characters';
+import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { isClipRoom } from '@/config/clips';
 
 async function requireAdminApi(): Promise<boolean> {
@@ -15,7 +15,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ charact
   }
 
   const { characterId } = await params;
-  if (!isCharacterId(characterId)) {
+  if (!(await isKnownCharacterId(characterId))) {
     return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
   }
 
@@ -44,7 +44,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
   }
 
   const { characterId } = await params;
-  if (!isCharacterId(characterId)) {
+  if (!(await isKnownCharacterId(characterId))) {
     return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
   }
 

@@ -152,8 +152,17 @@ type StudioOverlayBase = {
 export type StudioImageOverlay = StudioOverlayBase & {
   kind: 'image';
   assetUrl: string;
-  /** Canvas genişliğinin yüzdesi; yükseklik görselin kendi oranından hesaplanır. */
+  /** Canvas genişliğinin yüzdesi; yükseklik verilmezse görselin kendi oranından hesaplanır. */
   width: number;
+  /**
+   * YENİ — verilirse overlay artık aspect-kilitli değil, keyfi bir dikdörtgen kutu olur
+   * (canvas yüksekliğinin yüzdesi). "Ekranı ikiye böl" (split-screen/PiP) ihtiyacı bunun
+   * üzerinden çözülüyor — ör. y:0, height:50, overlayFit:'cover' = üst yarıyı kaplayan kutu.
+   * Verilmezse davranış eskisiyle birebir aynı (geriye dönük uyumlu).
+   */
+  height?: number;
+  /** `height` verildiğinde görsel bu kutuya nasıl sığdırılır. Verilmezse 'cover'. */
+  overlayFit?: StudioFit;
 };
 
 /**
@@ -166,6 +175,9 @@ export type StudioVideoOverlay = StudioOverlayBase & {
   kind: 'video';
   assetUrl: string;
   width: number;
+  /** bkz. StudioImageOverlay.height — aynı split-screen/PiP mantığı. */
+  height?: number;
+  overlayFit?: StudioFit;
 };
 
 export type StudioTextOverlay = StudioOverlayBase & {
@@ -179,6 +191,106 @@ export type StudioTextOverlay = StudioOverlayBase & {
 };
 
 export type StudioOverlay = StudioImageOverlay | StudioTextOverlay | StudioVideoOverlay;
+
+/**
+ * Sekans (film rulosu) elemanları arası geçiş. v1: yalnızca 'cut' render'da işlevsel —
+ * 'crossfade'/'dip-to-black' tip olarak tanımlı, editörde seçilebilir ama `drawFrame`
+ * onları şimdilik 'cut' gibi ele alır (bkz. studioRenderer.ts). Tip önden genişletiliyor
+ * ki editör UI'ı ve kayıtlı projeler render mantığı yetişmeden önce kırılmasın.
+ */
+export type StudioTransition = { kind: 'cut' | 'crossfade' | 'dip-to-black'; duration: number };
+
+export const DEFAULT_TRANSITION: StudioTransition = { kind: 'cut', duration: 0 };
+
+/**
+ * Sekans (film rulosu) tek bir elemanı — `cutaways`'ten farkı: cutaway "ana video akarken
+ * bir aralıkta üstüne resim koy" demek, sequence ise "hangi kaynağın oynadığı" sorusunun
+ * KENDİSİ. İkisi birlikte çalışır: sequence "hangi klip şu an aktif" sorusuna cevap verir,
+ * cutaway hâlâ o cevabın üstüne binebilir (bkz. drawFrame'deki öncelik sırası).
+ */
+export type StudioSequenceClip = {
+  id: string;
+  kind: 'video' | 'image';
+  assetUrl: string;
+  /** character_clips.id, varsa — havuzdan silinse bile assetUrl bağımsız çalışır (anlık görüntü). */
+  clipId: string | null;
+  /** kind:'video' — kaynaktaki kırpma aralığı (saniye). kind:'image' için kullanılmaz (0/0).
+   *  `sourceEnd === 0` bir SENTİNEL: "kaynak videonun tamamı" — bugünkü `trim.end` ile AYNI
+   *  kural (bkz. DEFAULT_TIMELINE yorumu). Süresi henüz bilinmeyen (metadata yüklenmemiş)
+   *  bir klip eklendiğinde kullanılır; gerçek süre `liveDurations` ile çözülür (bkz.
+   *  `sequenceClipDuration`). */
+  sourceStart: number;
+  sourceEnd: number;
+  /** kind:'image' — ekranda kalma süresi (saniye). kind:'video' için kullanılmaz (0). */
+  holdDuration: number;
+  fit: StudioFit;
+  transitionIn: StudioTransition;
+};
+
+/**
+ * Bir sekans elemanının kendi süresi (saniye) — video için kırpma aralığı, görsel için hold
+ * süresi. `liveDurations` (clip.id -> saniye) `sourceEnd===0` sentinel'ini çözmek için —
+ * bu dosya DOM tiplerinden bağımsız kalmalı (sunucuda da import ediliyor, bkz. dosya başı
+ * yorumu), o yüzden `<video>` elementi değil düz bir Map alınıyor; `studioRenderer`/
+ * `StudioEditor` kendi video havuzundan (`el.duration`) bu Map'i her karede kurup geçiriyor.
+ */
+export function sequenceClipDuration(clip: StudioSequenceClip, liveDurations?: Map<string, number>): number {
+  if (clip.kind === 'image') return Math.max(0, clip.holdDuration);
+  const end = clip.sourceEnd || liveDurations?.get(clip.id) || 0;
+  return Math.max(0, end - clip.sourceStart);
+}
+
+/** Sekansın toplam süresi — v1: geçiş çakışması yok, elemanların süreleri toplanır. */
+export function sequenceDuration(sequence: StudioSequenceClip[], liveDurations?: Map<string, number>): number {
+  return sequence.reduce((sum, clip) => sum + sequenceClipDuration(clip, liveDurations), 0);
+}
+
+export type ResolvedSequencePosition = { clip: StudioSequenceClip; localTime: number; index: number };
+
+/** Sekans zamanındaki (0 = ilk elemanın başı) `time` anında hangi eleman aktif ve o elemanın
+ * kendi içindeki (localTime) karşılığı ne — `time` aralığın dışındaysa (sekans bitmiş/boş) null. */
+export function resolveSequencePosition(
+  sequence: StudioSequenceClip[],
+  time: number,
+  liveDurations?: Map<string, number>,
+): ResolvedSequencePosition | null {
+  let cursor = 0;
+  for (let index = 0; index < sequence.length; index++) {
+    const clip = sequence[index];
+    const duration = sequenceClipDuration(clip, liveDurations);
+    if (time >= cursor && time < cursor + duration) {
+      return { clip, localTime: time - cursor, index };
+    }
+    cursor += duration;
+  }
+  return null;
+}
+
+export const MAX_SEQUENCE_CLIPS = 30;
+
+/**
+ * Klip/görsel rengi ve dokusu — v1 kapsamı GLOBAL (tüm sekansa uygulanır), klip-başına
+ * grade v1.1. `ctx.filter` (brightness/contrast/saturate) native ve ucuz; grain/vignette
+ * `studioRenderer`'da wordmark ile aynı önbellekleme deseniyle (bkz. getWordmarkLayer)
+ * çiziliyor — her karede yeniden üretilmiyor.
+ */
+export type StudioColorGrade = {
+  brightness: number; // -100..100, 0 = değişiklik yok
+  contrast: number;   // -100..100
+  saturation: number; // -100..100
+  temperature: number; // -100 (soğuk) .. 100 (sıcak), 0 = değişiklik yok
+  grain: number;   // 0..1, 0 = kapalı
+  vignette: number; // 0..1, 0 = kapalı
+};
+
+export const DEFAULT_COLOR_GRADE: StudioColorGrade = {
+  brightness: 0,
+  contrast: 0,
+  saturation: 0,
+  temperature: 0,
+  grain: 0,
+  vignette: 0,
+};
 
 export type StudioMusic = {
   assetUrl: string;
@@ -213,8 +325,15 @@ export type StudioCaptionStyle = {
 
 export type StudioTimeline = {
   aspectRatio: StudioAspectRatio;
-  /** Ana videonun kaynak süresinden (saniye) kırpılan aralık. */
+  /** Ana videonun kaynak süresinden (saniye) kırpılan aralık. `sequence` doluysa bu alan
+   *  YOK SAYILIR — yalnızca `sequence` boşken (eski proje) geriye dönük anlamı korunuyor,
+   *  bkz. `parseStudioTimeline`'daki geriye dönük sentez. */
   trim: { start: number; end: number };
+  /**
+   * YENİ — film rulosu. Boşsa (eski proje ya da fallback verilmeden parse edilmişse)
+   * `trim`+harici video kaynağı eskisi gibi tek elemanlı bir sekans gibi davranır.
+   */
+  sequence: StudioSequenceClip[];
   cutaways: StudioCutaway[];
   overlays: StudioOverlay[];
   zooms: StudioZoom[];
@@ -228,6 +347,8 @@ export type StudioTimeline = {
   /** fal-ai/elevenlabs/audio-isolation çıktısı — varsa orijinal video sesi yerine BU çalınır/kaydedilir. */
   enhancedAudioUrl: string | null;
   wordmark: boolean;
+  /** YENİ — global renk/efekt katmanı. */
+  grade: StudioColorGrade;
 };
 
 export const MAX_CUTAWAYS = 12;
@@ -273,6 +394,7 @@ export const DEFAULT_TIMELINE: StudioTimeline = {
   aspectRatio: '9:16',
   // end=0: "kaynak videonun tamamı" için sentinel — gerçek süre yüklenince editör dolduruyor.
   trim: { start: 0, end: 0 },
+  sequence: [],
   cutaways: [],
   overlays: [],
   zooms: [],
@@ -284,6 +406,7 @@ export const DEFAULT_TIMELINE: StudioTimeline = {
   videoVolume: 1,
   enhancedAudioUrl: null,
   wordmark: true,
+  grade: DEFAULT_COLOR_GRADE,
 };
 
 const OVERLAY_FONTS_SET = new Set<OverlayFont>(['bricolage', 'inter', 'mono']);
@@ -386,6 +509,11 @@ function parseOverlay(value: unknown): StudioOverlay | null {
     opacity: clamp(isFiniteNumber(v.opacity) ? v.opacity : 1, 0, 1),
   };
 
+  // height/overlayFit opsiyonel: verilmezse eskisi gibi aspect-kilitli davranış korunur
+  // (bkz. StudioImageOverlay.height yorumu) — split-screen/PiP İÇİN yeni, geriye uyumlu alan.
+  const height = isFiniteNumber(v.height) ? clamp(v.height, 5, 100) : undefined;
+  const overlayFit: StudioFit | undefined = height !== undefined ? (v.overlayFit === 'contain' ? 'contain' : 'cover') : undefined;
+
   if (v.kind === 'image') {
     if (!isHttpUrl(v.assetUrl)) return null;
     return {
@@ -393,6 +521,7 @@ function parseOverlay(value: unknown): StudioOverlay | null {
       kind: 'image',
       assetUrl: v.assetUrl,
       width: clamp(isFiniteNumber(v.width) ? v.width : 30, 5, 100),
+      ...(height !== undefined ? { height, overlayFit } : {}),
     };
   }
 
@@ -403,6 +532,7 @@ function parseOverlay(value: unknown): StudioOverlay | null {
       kind: 'video',
       assetUrl: v.assetUrl,
       width: clamp(isFiniteNumber(v.width) ? v.width : 30, 5, 100),
+      ...(height !== undefined ? { height, overlayFit } : {}),
     };
   }
 
@@ -444,6 +574,70 @@ function parseCaption(value: unknown): StudioCaption | null {
   };
 }
 
+function parseTransition(value: unknown): StudioTransition {
+  if (typeof value !== 'object' || value === null) return DEFAULT_TRANSITION;
+  const v = value as Record<string, unknown>;
+  const kind: StudioTransition['kind'] =
+    v.kind === 'crossfade' || v.kind === 'dip-to-black' ? v.kind : 'cut';
+  return { kind, duration: clamp(isFiniteNumber(v.duration) ? v.duration : 0, 0, 5) };
+}
+
+function parseSequenceClip(value: unknown): StudioSequenceClip | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const v = value as Record<string, unknown>;
+  if (!isHttpUrl(v.assetUrl)) return null;
+
+  const id = typeof v.id === 'string' ? v.id : crypto.randomUUID();
+  const clipId = typeof v.clipId === 'string' ? v.clipId : null;
+  const fit: StudioFit = v.fit === 'contain' ? 'contain' : 'cover';
+  const transitionIn = parseTransition(v.transitionIn);
+
+  if (v.kind === 'image') {
+    return {
+      id,
+      kind: 'image',
+      assetUrl: v.assetUrl,
+      clipId,
+      sourceStart: 0,
+      sourceEnd: 0,
+      holdDuration: Math.max(0.1, isFiniteNumber(v.holdDuration) ? v.holdDuration : 3),
+      fit,
+      transitionIn,
+    };
+  }
+
+  // kind: 'video' (varsayılan) — sourceEnd===0 SENTİNEL ("tam süre", bkz. tip yorumu) hariç,
+  // sourceEnd <= sourceStart olan bir kayıt anlamsız, reddedilir.
+  const sourceStart = Math.max(0, isFiniteNumber(v.sourceStart) ? v.sourceStart : 0);
+  const sourceEnd = isFiniteNumber(v.sourceEnd) ? v.sourceEnd : 0;
+  if (sourceEnd !== 0 && sourceEnd <= sourceStart) return null;
+
+  return {
+    id,
+    kind: 'video',
+    assetUrl: v.assetUrl,
+    clipId,
+    sourceStart,
+    sourceEnd,
+    holdDuration: 0,
+    fit,
+    transitionIn,
+  };
+}
+
+function parseColorGrade(value: unknown): StudioColorGrade {
+  if (typeof value !== 'object' || value === null) return DEFAULT_COLOR_GRADE;
+  const v = value as Record<string, unknown>;
+  return {
+    brightness: clamp(isFiniteNumber(v.brightness) ? v.brightness : 0, -100, 100),
+    contrast: clamp(isFiniteNumber(v.contrast) ? v.contrast : 0, -100, 100),
+    saturation: clamp(isFiniteNumber(v.saturation) ? v.saturation : 0, -100, 100),
+    temperature: clamp(isFiniteNumber(v.temperature) ? v.temperature : 0, -100, 100),
+    grain: clamp(isFiniteNumber(v.grain) ? v.grain : 0, 0, 1),
+    vignette: clamp(isFiniteNumber(v.vignette) ? v.vignette : 0, 0, 1),
+  };
+}
+
 function parseCaptionStyle(value: unknown): StudioCaptionStyle {
   if (typeof value !== 'object' || value === null) return DEFAULT_CAPTION_STYLE;
   const v = value as Record<string, unknown>;
@@ -457,11 +651,21 @@ function parseCaptionStyle(value: unknown): StudioCaptionStyle {
   };
 }
 
+/** `parseStudioTimeline`'a eski (sequence'sız) bir proje için "tek elemanlı sekans nasıl
+ *  sentezlenir" bilgisini verir — `StudioEditor` bunu kendi `motion: CharacterClip` prop'undan kurar. */
+export type StudioTimelineFallback = { clipId: string; videoUrl: string };
+
 /**
  * İstemciden gelen timeline'ı sunucuda doğrular — istemciye güvenilmiyor (plan kararı).
  * Geçersiz/eksik alanlar makul varsayılanlara düşer, tamamen anlamsız girdi `null` döner.
+ *
+ * `fallback` — GERİYE DÖNÜK UYUMLULUK: `sequence` alanı yoksa (eski proje, `sequence`
+ * eklenmeden ÖNCE kaydedilmiş) ve `fallback` verildiyse, eski `trim` aralığı + harici video
+ * kaynağından tek elemanlı bir sekans sentezlenir — eski projeler sessizce bozulmaz.
+ * Sunucu tarafı (route.ts) `fallback` VERMEDEN çağırır (yalnızca doğrulama amaçlı, kaynak
+ * video burada bilinmiyor); `StudioEditor` kendi `motion` prop'undan fallback'i geçirir.
  */
-export function parseStudioTimeline(value: unknown): StudioTimeline | null {
+export function parseStudioTimeline(value: unknown, fallback?: StudioTimelineFallback): StudioTimeline | null {
   if (typeof value !== 'object' || value === null) return null;
   const v = value as Record<string, unknown>;
 
@@ -488,9 +692,30 @@ export function parseStudioTimeline(value: unknown): StudioTimeline | null {
     ? (v.captions.map(parseCaption).filter(Boolean) as StudioCaption[]).slice(0, MAX_CAPTIONS)
     : [];
 
+  let sequence = Array.isArray(v.sequence)
+    ? (v.sequence.map(parseSequenceClip).filter(Boolean) as StudioSequenceClip[]).slice(0, MAX_SEQUENCE_CLIPS)
+    : [];
+
+  if (sequence.length === 0 && fallback) {
+    sequence = [
+      {
+        id: crypto.randomUUID(),
+        kind: 'video',
+        assetUrl: fallback.videoUrl,
+        clipId: fallback.clipId,
+        sourceStart: start,
+        sourceEnd: end, // 0 sentinel korunuyor — drawFrame/exportTimeline'daki "0 = video.duration" mantığıyla aynı
+        holdDuration: 0,
+        fit: 'cover',
+        transitionIn: DEFAULT_TRANSITION,
+      },
+    ];
+  }
+
   return {
     aspectRatio: v.aspectRatio,
     trim: { start, end },
+    sequence,
     cutaways,
     overlays,
     zooms,
@@ -502,6 +727,7 @@ export function parseStudioTimeline(value: unknown): StudioTimeline | null {
     videoVolume: clamp(isFiniteNumber(v.videoVolume) ? v.videoVolume : 1, 0, 1),
     enhancedAudioUrl: isHttpUrl(v.enhancedAudioUrl) ? v.enhancedAudioUrl : null,
     wordmark: v.wordmark !== false,
+    grade: parseColorGrade(v.grade),
   };
 }
 

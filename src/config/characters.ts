@@ -18,6 +18,14 @@ export function isCharacterId(value: unknown): value is CharacterId {
   return typeof value === 'string' && (CHARACTER_IDS as string[]).includes(value);
 }
 
+/**
+ * Yardımcı Oyuncular'da admin panelinden eklenen sanal karakterlerin (bkz.
+ * `character_profiles.is_cast`) gardırop varsayılanı — bunların koddaki `CHARACTERS`
+ * kaydı yok, o yüzden Saule/Beiwe gibi özel bir palet tanımlanamıyor.
+ */
+export const DEFAULT_CAST_WARDROBE_PROMPT =
+  'Keep clothing simple, solid colours, no logos or patterns — adapt naturally to the scene.';
+
 /** fal `aspect_ratio` enum'unun bizim kullandığımız alt kümesi. */
 export type AspectRatio = '1:1' | '4:5' | '3:4' | '9:16' | '16:9';
 export const ASPECT_RATIOS: { value: AspectRatio; label: string }[] = [
@@ -170,7 +178,7 @@ export function referenceRoleInstruction(identityCount: number, sceneCount: numb
  * aksiyon ayrı gruplar; kullanıcı birini seçip Türkçe niyet alanıyla
  * özelleştirebilir ya da tamamen serbest metin yazabilir.
  */
-const SHARED_SCENE_PRESETS: ScenePreset[] = [
+export const SHARED_SCENE_PRESETS: ScenePreset[] = [
   // Kadraj
   {
     id: 'close-portrait',

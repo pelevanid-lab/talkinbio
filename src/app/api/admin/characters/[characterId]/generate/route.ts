@@ -7,16 +7,19 @@ import { FalError, generateCharacterImage, publicImageAsDataUri } from '@/utils/
 import {
   ASPECT_RATIOS,
   CHARACTERS,
+  DEFAULT_CAST_WARDROBE_PROMPT,
   DEFAULT_IMAGE_MODEL,
   MAX_CANON_SHOTS,
   MAX_IMAGES_PER_RUN,
   MAX_SCENE_REFS,
+  SHARED_SCENE_PRESETS,
   STYLE_PROMPT,
   buildNegativePrompt,
   isCharacterId,
   referenceRoleInstruction,
   textSpaceInstruction,
   type AspectRatio,
+  type CharacterDefinition,
   type Resolution,
   type TextSpace,
 } from '@/config/characters';
@@ -48,10 +51,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
   }
 
   const { characterId } = await params;
-  if (!isCharacterId(characterId)) {
-    return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
-  }
-  let character = { ...CHARACTERS[characterId] };
 
   const { data: profile } = await supabaseAdmin
     .from('character_profiles')
@@ -59,9 +58,29 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
     .eq('id', characterId)
     .single();
 
-  if (profile) {
-    if (profile.identity_prompt) character.identityPrompt = profile.identity_prompt;
-    if (profile.reference_image_url) character.referenceFile = profile.reference_image_url;
+  // Statik karakterler (`CHARACTERS`) VEYA Yardımcı Oyuncular'da admin panelinden
+  // eklenmiş sanal karakterler (`character_profiles.is_cast`) — bkz. api/admin/beiwe-lab/cast.
+  let character: CharacterDefinition;
+  if (isCharacterId(characterId)) {
+    character = { ...CHARACTERS[characterId] };
+    if (profile) {
+      if (profile.identity_prompt) character.identityPrompt = profile.identity_prompt;
+      if (profile.reference_image_url) character.referenceFile = profile.reference_image_url;
+    }
+  } else if (profile?.is_cast) {
+    character = {
+      id: characterId as CharacterDefinition['id'],
+      name: profile.name || characterId,
+      role: profile.role || 'Yardımcı oyuncu',
+      summary: '',
+      accentColor: '#334155',
+      identityPrompt: profile.identity_prompt || undefined,
+      referenceFile: profile.reference_image_url || undefined,
+      wardrobePrompt: DEFAULT_CAST_WARDROBE_PROMPT,
+      scenePresets: SHARED_SCENE_PRESETS,
+    };
+  } else {
+    return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
   }
 
   if (!character.identityPrompt) {

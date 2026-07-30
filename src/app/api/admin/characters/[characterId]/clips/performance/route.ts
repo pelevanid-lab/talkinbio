@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { FalError, generateCharacterPerformance } from '@/utils/fal';
-import { isCharacterId } from '@/config/characters';
+import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { findPerformanceModel, PERFORMANCE_MODELS } from '@/config/clips';
 
 export const maxDuration = 300;
@@ -24,7 +24,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
   }
 
   const { characterId } = await params;
-  if (!isCharacterId(characterId)) {
+  if (!(await isKnownCharacterId(characterId))) {
     return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
   }
 

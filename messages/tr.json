@@ -161,20 +161,20 @@
       }
     },
     "updates": {
-      "title": "Haberler & Gelişmeler",
+      "title": "Blog",
       "allPosts": "Tüm yazılar",
       "post1": {
-        "badge": "Talkinbio V2 Yayında",
+        "badge": "talkinbio ile içerik üretmek",
         "title": "Talkinbio V2 ile yepyeni bir altyapı ve gelişmiş yapay zeka özellikleri",
         "meta": "Ürün · 28 Temmuz 2026"
       },
       "post2": {
-        "badge": "Assistant Agent Eğitimi",
+        "badge": "talkinbio ile soruları cevaplamak",
         "title": "Asistanınızı sadece 5 dakikada nasıl eğitirsiniz? Yeni rehber yayında.",
         "meta": "Kılavuz · 15 Temmuz 2026"
       },
       "post3": {
-        "badge": "Gelişmiş Analitik",
+        "badge": "talkinbio ile satış yapmak",
         "title": "Müşteri taleplerini veriye dönüştürün: Gelişmiş analitik paneli artık kullanımda.",
         "meta": "Özellik · 02 Temmuz 2026"
       }

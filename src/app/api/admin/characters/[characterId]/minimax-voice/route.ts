@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
-import { isCharacterId } from '@/config/characters';
+import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { FalError, cloneMinimaxVoice, generateMinimaxSpeech } from '@/utils/fal';
 
 export const maxDuration = 300;
@@ -39,7 +39,7 @@ export async function POST(
   }
 
   const { characterId } = await params;
-  if (!isCharacterId(characterId)) {
+  if (!(await isKnownCharacterId(characterId))) {
     return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
   }
 
