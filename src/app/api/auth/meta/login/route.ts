@@ -14,15 +14,13 @@ export async function GET(request: Request) {
   const clientId = process.env.META_CLIENT_ID;
   const redirectUri = `${origin}/api/auth/meta/callback`;
   
-  // İhtiyacımız olan izinler (scopes)
-  const scope = 'instagram_business_basic,instagram_business_manage_messages,pages_show_list,pages_manage_metadata,pages_messaging';
+  // Facebook Login for Business için Configuration ID kullanıyoruz (Scope yerine)
+  const configId = process.env.META_CONFIG_ID || '1499782398499385';
 
   // State param'ını güvenliği sağlamak veya business id'yi taşımak için kullanabiliriz.
-  // Burada kullanıcının kendi session'ı ile backend'de business_id bulacağız, state'e gerek yok ama
-  // CSRF için rastgele bir string eklemek iyi olur. Şimdilik "talkinbio_auth" gönderelim.
   const state = 'talkinbio_auth';
 
-  const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${state}&response_type=code`;
+  const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&config_id=${configId}&state=${state}&response_type=code`;
 
   return NextResponse.redirect(authUrl);
 }
