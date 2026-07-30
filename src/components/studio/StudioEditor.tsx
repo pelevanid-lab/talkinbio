@@ -67,6 +67,7 @@ import {
   exportFileExtension,
   exportHasIncompatibleAudio,
   exportTimeline,
+  exportTimelineFast,
   pickExportMimeType,
   preloadStudioImages,
   syncSequenceVideos,
@@ -147,6 +148,14 @@ export default function StudioEditor({
   const [error, setError] = useState<string | null>(null);
   const [transcribing, setTranscribing] = useState(false);
   const [enhancingAudio, setEnhancingAudio] = useState(false);
+  // Son export'un hangi yolla (WebCodecs/gerçek-zamanlı) ve ne kadar sürede tamamlandığı —
+  // proje planındaki "gerçek kazancı sayıyla doğrula" maddesinin karşılığı, kurucu iki yolu
+  // gözle kıyaslayabilsin diye.
+  const [lastExportInfo, setLastExportInfo] = useState<{
+    method: 'webcodecs' | 'realtime';
+    elapsedSeconds: number;
+    contentSeconds: number;
+  } | null>(null);
 
   // Sekans video elemanlarının canlı <video> elementleri — `videoOverlayElsRef` ile AYNI
   // desen (aşağısı), assetUrl DEĞİL clip.ID ile anahtarlanır (bkz. StudioSequenceClip yorumu:
@@ -990,14 +999,7 @@ export default function StudioEditor({
 
       setExportStage('recording');
 
-      // Export gerçek zamanlı çalışıyor (bkz. exportTimeline) — onProgress her rAF karesinde
-      // (30-60/sn) çağrılıyor. Önceki turda bunu setState'e (150ms throttle ile) bağlamıştık;
-      // ÖLÇÜM gösterdi ki throttle'lı bile olsa her tetiklenişinde koca editör ağacını (canvas
-      // + 360px'lik tüm kontrol paneli) yeniden render ettiriyordu ve o reconciliation'ın
-      // kendisi 50-100ms sürüyordu — kayıt döngüsüyle TAM o periyotta (150-300ms'de bir)
-      // çakışıp exported videoda ölçülen kare donmalarına yol açtı. Bu sefer React'a hiç
-      // uğramıyoruz: DOM'a doğrudan yazıyoruz (bkz. progressFillRef/progressLabelRef).
-      const result = await exportTimeline({
+      const exportArgs = {
         timeline,
         sequenceVideos: sequenceVideoElsRef.current,
         canvas,
@@ -1006,12 +1008,33 @@ export default function StudioEditor({
         musicAudio: musicAudioRef.current || undefined,
         enhancedAudio: enhancedAudioRef.current || undefined,
         loudnessGain,
-        onProgress: (fraction) => {
+        onProgress: (fraction: number) => {
           const pct = Math.round(Math.min(1, fraction) * 100);
           if (progressFillRef.current) progressFillRef.current.style.width = `${pct}%`;
           if (progressLabelRef.current) progressLabelRef.current.textContent = `Dışa aktarılıyor… %${pct}`;
         },
-      });
+      };
+
+      // Faz B — önce WebCodecs (kare-kare seek + hızlı encode) denenir; tarayıcı desteklemiyorsa
+      // ya da beklenmeyen bir hatayla düşerse Faz A'nın gerçek-zamanlı MediaRecorder yoluna
+      // SESSİZCE geri dönülür (kullanıcı export'un başarısız olduğunu değil, hangi yolun
+      // kullanıldığını görür — bkz. lastExportInfo). Süre ölçümü proje planındaki doğrulama
+      // maddesi: "gerçek kazancı sayıyla doğrula".
+      const startedAt = performance.now();
+      let result: Awaited<ReturnType<typeof exportTimeline>>;
+      let usedMethod: 'webcodecs' | 'realtime';
+      try {
+        result = await exportTimelineFast(exportArgs);
+        usedMethod = 'webcodecs';
+      } catch (fastErr) {
+        console.warn('[studio] WebCodecs export başarısız, gerçek zamanlı yola düşülüyor:', fastErr);
+        if (progressFillRef.current) progressFillRef.current.style.width = '0%';
+        result = await exportTimeline(exportArgs);
+        usedMethod = 'realtime';
+      }
+      const elapsedSeconds = (performance.now() - startedAt) / 1000;
+      setLastExportInfo({ method: usedMethod, elapsedSeconds, contentSeconds: masterEnd - masterStart });
+
       const ext = exportFileExtension(result.mimeType);
       downloadBlob(result.blob, `${characterId}-${Date.now()}.${ext}`);
 
@@ -1256,9 +1279,16 @@ export default function StudioEditor({
               )}
             </button>
             <p className="text-xs text-slate-400 text-center">
-              Gerçek zamanlı kaydediliyor — {(masterEnd - masterStart).toFixed(0)} sn&apos;lik video ≈{' '}
-              {(masterEnd - masterStart).toFixed(0)} sn sürer. Sekmeyi ön planda tut.
+              Önce WebCodecs (hızlı) denenir, tarayıcı desteklemiyorsa gerçek zamanlıya
+              düşülür — {(masterEnd - masterStart).toFixed(0)} sn&apos;lik video gerçek zamanlıda
+              ≈ aynı sürede çıkar. Sekmeyi ön planda tut.
             </p>
+            {lastExportInfo && (
+              <p className="text-xs text-center font-medium text-emerald-700">
+                Son export: {lastExportInfo.method === 'webcodecs' ? 'WebCodecs' : 'Gerçek zamanlı'} —{' '}
+                {lastExportInfo.elapsedSeconds.toFixed(1)} sn sürdü ({lastExportInfo.contentSeconds.toFixed(0)} sn&apos;lik içerik için).
+              </p>
+            )}
           </div>
         </div>
 

@@ -3,20 +3,38 @@
 // Neden sunucuda değil burada: `git log`'da silinmiş bir `mp4-studio` denemesi var
 // (bkz. proje geçmişi) — Remotion ile sunucu tarafı render kuruyordu (her istekte webpack
 // bundle + headless Chromium + `public/`'e dosya yazma). Vercel'de dosya sistemi
-// salt-okunur olduğu için production'da hiç çalışamazdı. Bu dosya bilerek tamamen
-// tarayıcıda çalışır: Canvas 2D + MediaRecorder, yeni runtime bağımlılığı yok.
+// salt-okunur olduğu için production'da hiç çalışamazdı. Bu dosya bilerek tamamen tarayıcıda
+// çalışır: Canvas 2D + (iki export yolundan biri).
 //
 // Omurga fikir: video elementi baştan sona KESİNTİSİZ oynar — ses kaynağı ve ana saat
 // odur. Her karede video.currentTime'a bakılıp ne çizileceğine karar verilir (video karesi
-// mi, yoksa o ana denk gelen bir cutaway görseli mi). Export sırasında hiç seek
-// yapılmadığı için takılma/kare düşme riski yoktur.
+// mi, yoksa o ana denk gelen bir cutaway görseli mi).
 //
 // Önizleme ve export AYNI `drawFrame`'i çağırır — `CharacterOverlayEditor`'daki "önizlemedeki
 // punto canvas'takiyle aynı formülü kullanmalı" sorununu (elle senkron tutma ihtiyacını)
 // kökünden ortadan kaldırıyor.
+//
+// İKİ EXPORT YOLU VAR (Faz A / Faz B, proje planı):
+// 1. `exportTimeline` — GERÇEK ZAMANLI: Canvas `captureStream` + `MediaRecorder`. Yeni runtime
+//    bağımlılığı yok, her tarayıcıda çalışır, ama N saniyelik video ≈ N saniyede çıkar.
+// 2. `exportTimelineFast` — kare-kare `seek` + WebCodecs `VideoEncoder`/`AudioEncoder`
+//    (mediabunny paketiyle, `mp4-muxer`'ın halefi — bkz. proje planı, "yeni bağımlılık" kararı
+//    bilinçli bir istisna). Video kare kare seekleniyor (playback hızından bağımsız, potansiyel
+//    olarak gerçek zamandan hızlı); ses ise bir `OfflineAudioContext`'te AYNI ses grafiğiyle
+//    (limiter/gain/kaynaklar) render ediliyor — MediaStream gerçek zamanlı bir API olduğu için
+//    gerçek zamandan hızlı ses üretimi ancak offline render ile mümkün.
 
 import { countdownPlan, drawCountdownDots, scheduleCountdownBeeps } from './countdown';
 import { drawTextBlock, drawWordmark, loadImage, PADDING_RATIO, resolveFontFamily } from './imageOverlay';
+import {
+  AudioBufferSource,
+  BufferTarget,
+  CanvasSource,
+  getFirstEncodableAudioCodec,
+  getFirstEncodableVideoCodec,
+  Mp4OutputFormat,
+  Output,
+} from 'mediabunny';
 import {
   sequenceClipDuration,
   sequenceDuration,
@@ -1157,4 +1175,279 @@ export async function exportTimeline({
       beginRecording();
     }
   });
+}
+
+/* ------------------------------------------------------------------ */
+/* Faz B — WebCodecs export (kare-kare seek + hızlı encode)             */
+/* ------------------------------------------------------------------ */
+
+/** `el.currentTime`i hedefe sarar ve `seeked` olayını bekler — zaten hedefteyse (yeni video
+ * elemanı ilk kez sarılıyorsa ya da bir önceki karede aynı yere seeklenmişse) event hiç
+ * gelmeyebilir, o yüzden ufak bir tolerans içindeyse beklemeden döner. */
+async function seekVideoTo(el: HTMLVideoElement, time: number): Promise<void> {
+  if (Math.abs(el.currentTime - time) < 0.001) return;
+  return new Promise((resolve) => {
+    const onSeeked = () => {
+      el.removeEventListener('seeked', onSeeked);
+      resolve();
+    };
+    el.addEventListener('seeked', onSeeked);
+    el.currentTime = time;
+  });
+}
+
+/** Verilen mutlak `time`de sekansın aktif elemanını (video ise) doğru kareye sarar. */
+async function seekSequenceToTime(
+  sequence: StudioSequenceClip[],
+  time: number,
+  sequenceVideos: Map<string, HTMLVideoElement>,
+  liveDurations: Map<string, number>,
+): Promise<void> {
+  const active = resolveSequencePosition(sequence, time, liveDurations);
+  if (!active || active.clip.kind !== 'video') return;
+  const el = sequenceVideos.get(active.clip.id);
+  if (!el) return;
+  await seekVideoTo(el, active.clip.sourceStart + active.localTime);
+}
+
+/** Verilen mutlak `time`de aktif olan tüm video-overlay'leri kendi yerel zamanlarına sarar
+ * (paralel — birbirini beklemesine gerek yok). */
+async function seekOverlaysToTime(
+  overlays: StudioOverlay[],
+  time: number,
+  videoOverlays: Map<string, HTMLVideoElement>,
+): Promise<void> {
+  const seeks: Promise<void>[] = [];
+  for (const overlay of overlays) {
+    if (overlay.kind !== 'video') continue;
+    const el = videoOverlays.get(overlay.assetUrl);
+    if (!el) continue;
+    const active = time >= overlay.startTime && time < overlay.endTime;
+    seeks.push(seekVideoTo(el, active ? time - overlay.startTime : 0));
+  }
+  await Promise.all(seeks);
+}
+
+/**
+ * Sekansın (+ müzik + legacy enhancedAudio) tüm sesini `OfflineAudioContext`'te render eder —
+ * `exportTimeline`'daki Web Audio grafiğiyle (limiter/gain/kaynaklar) AYNI yapı, tek fark:
+ * kaynaklar CANLI `<video>`/`<audio>` elementlerini oynatmak yerine ÖNCEDEN İNDİRİLİP
+ * decode edilmiş `AudioBuffer`'lardan besleniyor. `MediaStreamAudioTrackSource` (mediabunny)
+ * gerçek zamanlı bir API'ye (MediaStream) dayandığı için gerçek zamandan hızlı ses üretimi
+ * yalnızca bu offline render yoluyla mümkün — `OfflineAudioContext.startRendering()` CPU
+ * hızında (playback hızından bağımsız) çalışır.
+ *
+ * Sonuç `null` ise (hiç ses kaynağı yoksa) çağıran taraf audio track'i tamamen atlar.
+ */
+async function renderSequenceAudioOffline(params: {
+  timeline: StudioTimeline;
+  sequenceVideos: Map<string, HTMLVideoElement>;
+  liveDurations: Map<string, number>;
+  musicAudio?: HTMLAudioElement;
+  enhancedAudio?: HTMLAudioElement;
+  loudnessGain: number;
+  masterStart: number;
+  masterEnd: number;
+}): Promise<AudioBuffer | null> {
+  const { timeline, sequenceVideos, liveDurations, musicAudio, enhancedAudio, loudnessGain, masterStart, masterEnd } = params;
+
+  const hasAnySource =
+    (timeline.enhancedAudioUrl && timeline.sequence.length <= 1) ||
+    timeline.sequence.some((c) => c.kind === 'video') ||
+    Boolean(timeline.music && musicAudio);
+  if (!hasAnySource) return null;
+
+  const SAMPLE_RATE = 48_000;
+  const totalMasterDuration = masterEnd - masterStart;
+  const offlineCtx = new OfflineAudioContext(2, Math.max(1, Math.ceil(totalMasterDuration * SAMPLE_RATE)), SAMPLE_RATE);
+
+  // AYNI limiter/gain yapısı — bkz. exportTimeline'daki gerekçe (loudnessGain clipping'i önler).
+  const limiter = offlineCtx.createDynamicsCompressor();
+  limiter.threshold.value = -2;
+  limiter.knee.value = 0;
+  limiter.ratio.value = 20;
+  limiter.attack.value = 0.003;
+  limiter.release.value = 0.25;
+  limiter.connect(offlineCtx.destination);
+
+  const narrationGain = offlineCtx.createGain();
+  narrationGain.gain.value = timeline.videoVolume * loudnessGain;
+  narrationGain.connect(limiter);
+
+  // Kaynak URL'leri birden fazla yerde tekrarlanabilir (ör. aynı klip sekansta iki kez) —
+  // her URL yalnızca bir kez indirilip decode ediliyor.
+  const decodedCache = new Map<string, AudioBuffer>();
+  const decode = async (url: string): Promise<AudioBuffer | null> => {
+    const cached = decodedCache.get(url);
+    if (cached) return cached;
+    try {
+      const res = await fetch(url);
+      const arrayBuffer = await res.arrayBuffer();
+      const buffer = await offlineCtx.decodeAudioData(arrayBuffer);
+      decodedCache.set(url, buffer);
+      return buffer;
+    } catch {
+      // Sessiz/bozuk/CORS engelli kaynak — o parça sessiz kalır, export tamamen düşmez
+      // (exportTimeline'daki "ölçülemediyse sese dokunma" toleransıyla AYNI ruh).
+      return null;
+    }
+  };
+
+  const useEnhancedAudio = Boolean(timeline.enhancedAudioUrl && enhancedAudio && timeline.sequence.length <= 1);
+
+  if (useEnhancedAudio && timeline.enhancedAudioUrl) {
+    const buffer = await decode(timeline.enhancedAudioUrl);
+    if (buffer) {
+      const src = offlineCtx.createBufferSource();
+      src.buffer = buffer;
+      src.connect(narrationGain);
+      src.start(Math.max(0, -masterStart));
+    }
+  } else {
+    // Sekanstaki HER video elemanı kendi sesiyle, kendi zaman diliminde çalar.
+    let cursor = 0; // sekans-göreli zaman (0 = ilk elemanın başı)
+    for (const clip of timeline.sequence) {
+      const duration = sequenceClipDuration(clip, liveDurations);
+      if (clip.kind === 'video' && duration > 0) {
+        const buffer = await decode(clip.assetUrl);
+        if (buffer) {
+          const src = offlineCtx.createBufferSource();
+          src.buffer = buffer;
+          src.connect(narrationGain);
+          src.start(Math.max(0, cursor - masterStart), clip.sourceStart, duration);
+        }
+      }
+      cursor += duration;
+    }
+  }
+
+  if (timeline.music && musicAudio) {
+    const buffer = await decode(timeline.music.assetUrl);
+    if (buffer) {
+      const musicGain = offlineCtx.createGain();
+      musicGain.gain.value = timeline.music.volume;
+      musicGain.connect(limiter);
+      const src = offlineCtx.createBufferSource();
+      src.buffer = buffer;
+      src.connect(musicGain);
+      src.start(Math.max(0, -masterStart));
+    }
+  }
+
+  // Geri sayım bipleri — `scheduleCountdownBeeps` `BaseAudioContext` alıyor, `OfflineAudioContext`
+  // da onun bir alt sınıfı, bu yüzden AYNI fonksiyon değişiklik gerekmeden burada da çalışıyor.
+  if (timeline.intro?.countdown?.sound) {
+    const introStartOfflineTime = timeline.intro.offset - masterStart;
+    scheduleCountdownBeeps(
+      offlineCtx,
+      limiter,
+      countdownPlan(timeline.intro.duration, timeline.intro.countdown.steps),
+      introStartOfflineTime,
+    );
+  }
+
+  return offlineCtx.startRendering();
+}
+
+export type FastExportParams = ExportParams;
+
+/**
+ * WebCodecs tabanlı hızlı export (Faz B) — `exportTimeline`in gerçek-zamanlı MediaRecorder
+ * yolunun yerini ALMIYOR, yanında bir seçenek. Video kare kare seeklenip çizilir ve
+ * `CanvasSource.add` ile encode edilir (playback hızından bağımsız); ses `renderSequenceAudioOffline`
+ * ile önceden render edilip tek seferde eklenir. Tarayıcı WebCodecs/gerekli kodekleri
+ * desteklemiyorsa net bir hata fırlatır — çağıran taraf `exportTimeline`e düşebilir.
+ */
+export async function exportTimelineFast({
+  timeline,
+  sequenceVideos,
+  canvas,
+  assets,
+  videoOverlays,
+  musicAudio,
+  enhancedAudio,
+  loudnessGain = 1,
+  onProgress,
+}: FastExportParams): Promise<ExportResult> {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas oluşturulamadı.');
+  if (timeline.sequence.length === 0) throw new Error('Sekans boş — en az bir klip ekle.');
+
+  const liveDurations = new Map<string, number>();
+  for (const clip of timeline.sequence) {
+    if (clip.kind !== 'video') continue;
+    const el = sequenceVideos.get(clip.id);
+    if (el && Number.isFinite(el.duration)) liveDurations.set(clip.id, el.duration);
+  }
+
+  const totalDuration = sequenceDuration(timeline.sequence, liveDurations);
+  if (!(totalDuration > 0)) throw new Error('Geçersiz sekans — toplam süre sıfır.');
+
+  const masterStart = Math.min(0, timeline.intro?.offset ?? 0);
+  const masterEnd = Math.max(totalDuration, totalDuration + (timeline.outro?.offset ?? 0));
+  const totalMasterDuration = masterEnd - masterStart;
+
+  const bitrate = exportVideoBitrate(canvas);
+  const videoCodec = await getFirstEncodableVideoCodec(['avc', 'vp9', 'av1'], {
+    width: canvas.width,
+    height: canvas.height,
+    bitrate,
+  });
+  if (!videoCodec) {
+    throw new Error('Bu tarayıcı WebCodecs ile video kodlamayı desteklemiyor — gerçek zamanlı export dene.');
+  }
+  const audioCodec = await getFirstEncodableAudioCodec(['aac', 'opus'], { bitrate: EXPORT_AUDIO_BITRATE });
+
+  const target = new BufferTarget();
+  const output = new Output({ format: new Mp4OutputFormat(), target });
+
+  const videoSource = new CanvasSource(canvas, { codec: videoCodec, bitrate });
+  output.addVideoTrack(videoSource);
+
+  const audioSource = audioCodec ? new AudioBufferSource({ codec: audioCodec, bitrate: EXPORT_AUDIO_BITRATE }) : null;
+  if (audioSource) output.addAudioTrack(audioSource);
+
+  await output.start();
+
+  try {
+    // Ses ÖNCE render edilir (video kare döngüsüyle paralel çalışmaz, ama offline render
+    // zaten gerçek zamandan çok hızlı — birkaç saniyelik bir dakika sesi için tipik olarak
+    // saniyeler sürer, video döngüsünü bekletmesi ihmal edilebilir).
+    if (audioSource) {
+      const audioBuffer = await renderSequenceAudioOffline({
+        timeline,
+        sequenceVideos,
+        liveDurations,
+        musicAudio,
+        enhancedAudio,
+        loudnessGain,
+        masterStart,
+        masterEnd,
+      });
+      if (audioBuffer) await audioSource.add(audioBuffer);
+      audioSource.close();
+    }
+
+    const frameDuration = 1 / EXPORT_FPS;
+    const totalFrames = Math.max(1, Math.ceil(totalMasterDuration * EXPORT_FPS));
+
+    for (let frame = 0; frame < totalFrames; frame++) {
+      const masterTime = masterStart + frame * frameDuration;
+      await seekSequenceToTime(timeline.sequence, masterTime, sequenceVideos, liveDurations);
+      await seekOverlaysToTime(timeline.overlays, masterTime, videoOverlays);
+      drawFrame({ ctx, timeline, time: masterTime, sequenceVideos, assets, videoOverlays });
+      await videoSource.add(masterTime - masterStart, frameDuration);
+      onProgress?.(Math.min(1, (frame + 1) / totalFrames));
+    }
+
+    videoSource.close();
+    await output.finalize();
+  } catch (err) {
+    await output.cancel().catch(() => {});
+    throw err;
+  }
+
+  if (!target.buffer) throw new Error('Export tamamlanamadı — çıktı boş döndü.');
+  const mimeType = await output.getMimeType();
+  return { blob: new Blob([target.buffer], { type: mimeType }), mimeType };
 }
