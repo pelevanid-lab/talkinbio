@@ -44,7 +44,7 @@ export default async function CharacterRoomPage({ params }: { params: Promise<{ 
 
   return (
     <AdminLayout>
-      <h1 className="text-3xl font-bold text-slate-900 mb-6">Karakter Odası</h1>
+      <h1 className="text-3xl font-bold text-slate-900 mb-6">Yardımcı Oyuncular</h1>
       <CharacterRoomTabs />
       <CharacterRoomClient
         character={character}

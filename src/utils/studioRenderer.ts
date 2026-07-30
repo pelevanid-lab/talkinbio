@@ -344,8 +344,9 @@ export function drawFrame({ ctx, timeline, time, video, assets, videoOverlays }:
   ctx.fillRect(0, 0, width, height);
 
   const totalVideoDuration = (timeline.trim.end || video.duration || 0) - timeline.trim.start;
-  const isIntro = timeline.intro && time < timeline.intro.duration;
-  const isOutro = timeline.outro && time >= Math.max(0, totalVideoDuration - timeline.outro.duration);
+  const isIntro = timeline.intro && time >= timeline.intro.offset && time < timeline.intro.offset + timeline.intro.duration;
+  const outroStart = timeline.outro ? totalVideoDuration + timeline.outro.offset - timeline.outro.duration : 0;
+  const isOutro = timeline.outro && time >= outroStart && time < outroStart + timeline.outro.duration;
 
   const activeCutaway = timeline.cutaways.find((c) => time >= c.startTime && time < c.endTime);
   const activeZoom = timeline.zooms.find((z) => time >= z.startTime && time < z.endTime);
@@ -359,9 +360,8 @@ export function drawFrame({ ctx, timeline, time, video, assets, videoOverlays }:
   let drawnMedia = false;
 
   if (isIntro && timeline.intro) {
-    drawnMedia = drawIntroOutroSection(ctx, timeline.intro, time, width, height, assets);
+    drawnMedia = drawIntroOutroSection(ctx, timeline.intro, time - timeline.intro.offset, width, height, assets);
   } else if (isOutro && timeline.outro) {
-    const outroStart = Math.max(0, totalVideoDuration - timeline.outro.duration);
     drawnMedia = drawIntroOutroSection(ctx, timeline.outro, time - outroStart, width, height, assets);
   } else if (activeCutaway) {
     const img = assets.get(activeCutaway.assetUrl);
@@ -588,6 +588,10 @@ export async function exportTimeline({
   const totalDuration = sourceEnd - sourceStart;
   if (!(totalDuration > 0)) throw new Error('Geçersiz kırpma aralığı.');
 
+  const masterStart = Math.min(0, timeline.intro?.offset ?? 0);
+  const masterEnd = Math.max(totalDuration, totalDuration + (timeline.outro?.offset ?? 0));
+  const totalMasterDuration = masterEnd - masterStart;
+
   const AudioContextCtor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AudioContextCtor) throw new Error('Bu tarayıcı Web Audio API desteklemiyor.');
   const audioCtx = new AudioContextCtor();
@@ -700,77 +704,132 @@ export async function exportTimeline({
     };
 
     // rAF ekran tazeleme hızında (60, hatta 120 Hz) çalışır; `captureStream(EXPORT_FPS)` ise
-    // saniyede yalnızca 30 kare alır. Aradaki fazladan çizimler kayda hiç girmeden ana
-    // thread'i meşgul edip gerçek zamanlı kaydın kare düşürmesine yol açıyordu — o yüzden
-    // çizim hedef kare aralığına kısılıyor. 2 ms tolerans, rAF sapması yüzünden hedefin
-    // kıl payı altında kalan kareyi atlayıp 30'dan 20 fps'e düşmeyi engelliyor.
+    // saniyede yalnızca 30 kare alır. rAF ile elle kısmak, zamanlamada sapmalara ve "hızlanmış"
+    // bozuk videolara (dropped frames/VFR) yol açabiliyor.
+    // Çözüm: Tarayıcı destekliyorsa `requestVideoFrameCallback` kullanmak — bu doğrudan videonun
+    // kendi kare hızında (örn. 30fps) tetiklenir, hem gereksiz çizimi önler hem de tam senkron sağlar.
     const frameInterval = 1000 / EXPORT_FPS;
     let lastDrawAt = Number.NEGATIVE_INFINITY;
+    const isRVFC = 'requestVideoFrameCallback' in video;
+
+    let virtualTime = masterStart;
+    let lastVirtualTickAt = performance.now();
+    let videoIsPlaying = false;
+    let hasPlayedVideo = false;
 
     const tick = () => {
       if (stopped) return;
+      
       const now = performance.now();
-      if (now - lastDrawAt >= frameInterval - 2) {
-        lastDrawAt = now;
-        const time = video.currentTime - sourceStart;
-        syncVideoOverlays(timeline.overlays, time, true, videoOverlays);
-        // Video ve iyileştirilmiş ses BAĞIMSIZ decode saatleriyle oynuyor, uzun klipte küçük
-        // bir kayma (drift) birikebilir — burada sertçe düzeltiyoruz (0.15sn eşiği, syncVideoOverlays'in
-        // 0.05sn'lik overlay eşiğinden daha gevşek: burada tek bir sürekli parça var, sık seek
-        // yerine nadir/büyük düzeltme daha az duyulur kesinti verir).
-        if (useEnhancedAudio && enhancedAudio && Math.abs(enhancedAudio.currentTime - video.currentTime) > 0.15) {
-          enhancedAudio.currentTime = video.currentTime;
+      let masterTime = virtualTime;
+      let shouldDraw = true;
+
+      if (!videoIsPlaying) {
+        // Pre-roll (Intro) veya Post-roll (Outro): saat rAF deltasıyla ilerler
+        const delta = (now - lastVirtualTickAt) / 1000;
+        virtualTime += delta;
+        masterTime = virtualTime;
+        lastVirtualTickAt = now;
+        
+        if (now - lastDrawAt < frameInterval - 2) {
+          shouldDraw = false;
+        } else {
+          lastDrawAt = now;
         }
-        drawFrame({ ctx, timeline, time, video, assets, videoOverlays });
-        onProgress?.(Math.min(1, time / totalDuration));
+      } else {
+        // Video oynarken saat tamamen videoya bağlıdır
+        masterTime = video.currentTime - sourceStart;
+        lastVirtualTickAt = now; // Post-roll geçişi için güncel tutulur
+        
+        if (!isRVFC) {
+          if (now - lastDrawAt < frameInterval - 2) {
+            shouldDraw = false;
+          } else {
+            if (lastDrawAt === Number.NEGATIVE_INFINITY) {
+              lastDrawAt = now;
+            } else {
+              lastDrawAt += frameInterval;
+              if (now - lastDrawAt > frameInterval) lastDrawAt = now;
+            }
+          }
+        } else {
+          lastDrawAt = now;
+        }
       }
 
-      // Bitiş kontrolü çizimden BAĞIMSIZ, her rAF'ta: kayda son kareyi geçtikten sonra
-      // gereksiz yere devam etmesin.
-      if (video.currentTime >= sourceEnd || video.ended) {
+      // Geçişleri kontrol et
+      if (!videoIsPlaying && !hasPlayedVideo && masterTime >= 0 && masterTime < totalDuration) {
+        // Pre-roll bitti, ana video başlıyor
+        videoIsPlaying = true;
+        hasPlayedVideo = true;
+        masterTime = 0;
+        virtualTime = 0;
+        video.currentTime = sourceStart;
+        video.play().catch(() => {});
+        if (useEnhancedAudio && enhancedAudio) {
+          enhancedAudio.currentTime = video.currentTime;
+          enhancedAudio.play().catch(() => {});
+        }
+      } else if (videoIsPlaying && (video.currentTime >= sourceEnd || video.ended)) {
+        // Video bitti, post-roll (outro) başlıyor
+        videoIsPlaying = false;
+        video.pause();
+        if (useEnhancedAudio && enhancedAudio) {
+          enhancedAudio.pause();
+        }
+        virtualTime = totalDuration;
+        masterTime = totalDuration;
+        lastVirtualTickAt = performance.now();
+      }
+
+      if (shouldDraw) {
+        syncVideoOverlays(timeline.overlays, masterTime, videoIsPlaying, videoOverlays);
+        if (useEnhancedAudio && enhancedAudio && videoIsPlaying && Math.abs(enhancedAudio.currentTime - video.currentTime) > 0.15) {
+          enhancedAudio.currentTime = video.currentTime;
+        }
+        drawFrame({ ctx, timeline, time: masterTime, video, assets, videoOverlays });
+        onProgress?.(Math.min(1, Math.max(0, (masterTime - masterStart) / totalMasterDuration)));
+      }
+
+      if (masterTime >= masterEnd) {
         stopped = true;
         recorder.stop();
         return;
       }
-      requestAnimationFrame(tick);
+      
+      if (videoIsPlaying && isRVFC) {
+        (video as any).requestVideoFrameCallback(tick);
+      } else {
+        requestAnimationFrame(tick);
+      }
     };
 
     video.onseeked = () => {
       video.onseeked = null;
       recorder.start();
+      lastVirtualTickAt = performance.now();
+
       if (musicAudio) {
         musicAudio.currentTime = 0;
-        musicAudio.play().catch(() => {
-          // Müzik çalmazsa export durmasın — sessiz devam eder, kullanıcıya ayrı uyarı gerekmez
-          // çünkü bu son çare bir durum (autoplay engeli gibi) ve video sesi zaten akıyor.
-        });
+        musicAudio.play().catch(() => {});
       }
       if (useEnhancedAudio && enhancedAudio) {
+        enhancedAudio.pause(); // Video oynatılana kadar bekleyecek
         enhancedAudio.currentTime = video.currentTime;
-        enhancedAudio.play().catch(() => {});
       }
-      video
-        .play()
-        .then(() => {
-          // Bipler oynatma GERÇEKTEN başladıktan sonra zamanlanıyor: `audioCtx.currentTime`
-          // burada videonun 0. anına denk gelir, dolayısıyla plan'daki offsetler doğrudan
-          // kullanılabilir. `play()` çözülmeden zamanlansaydı, decode gecikmesi kadar erken
-          // çalıp noktalardan önce duyulurlardı.
-          if (timeline.intro?.countdown?.sound) {
-            scheduleCountdownBeeps(
-              audioCtx,
-              limiter,
-              countdownPlan(timeline.intro.duration, timeline.intro.countdown.steps),
-              audioCtx.currentTime,
-            );
-          }
-          requestAnimationFrame(tick);
-        })
-        .catch((err) => {
-          stopped = true;
-          cleanup();
-          reject(err instanceof Error ? err : new Error('Video oynatılamadı.'));
-        });
+
+      // Geri sayım bipleri, tam olarak offset zamanında duyulmalı
+      if (timeline.intro?.countdown?.sound) {
+        const introStartAudioTime = audioCtx.currentTime + (timeline.intro.offset - masterStart);
+        scheduleCountdownBeeps(
+          audioCtx,
+          limiter,
+          countdownPlan(timeline.intro.duration, timeline.intro.countdown.steps),
+          introStartAudioTime,
+        );
+      }
+      
+      requestAnimationFrame(tick);
     };
     video.currentTime = sourceStart;
   });

@@ -108,6 +108,12 @@ export type StudioIntroOutro = {
   /** Geri sayım modunda null olabilir — o zaman `countdown.background` düz renk çizilir. */
   assetUrl: string | null;
   duration: number; // In seconds
+  /**
+   * Videonun başı (Intro) veya sonuna (Outro) göre zamanlama ofseti.
+   * Intro'da -2 ise videodan 2 saniye önce (pre-roll) başlar. 0 ise video ile aynı anda başlar.
+   * Outro'da +2 ise video bittikten 2 saniye sonraya (post-roll) uzar. 0 ise videoyla aynı anda biter.
+   */
+  offset: number;
   fit: StudioFit;
   /** null = düz görsel intro (eski davranış, kayıtlı projeler böyle açılır). */
   countdown: StudioCountdown | null;
@@ -356,9 +362,11 @@ function parseIntroOutro(value: unknown): StudioIntroOutro | null {
   if (!assetUrl && !countdown) return null;
 
   const fit: StudioFit = v.fit === 'contain' ? 'contain' : 'cover';
+  const offset = isFiniteNumber(v.offset) ? v.offset : 0;
   return {
     assetUrl,
     duration: v.duration,
+    offset,
     fit,
     countdown,
   };

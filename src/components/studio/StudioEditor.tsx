@@ -118,6 +118,9 @@ export default function StudioEditor({
   const musicAudioRef = useRef<HTMLAudioElement>(null);
   const enhancedAudioRef = useRef<HTMLAudioElement>(null);
   const rafRef = useRef<number | null>(null);
+  const virtualTimeRef = useRef(0);
+  const lastVirtualTickRef = useRef(0);
+  const hasPlayedVideoRef = useRef(false);
   // Export ilerleme çubuğu ve buton yüzdesi — BİLEREK React state DEĞİL. Önceki turda
   // setExportProgress'i 150ms'de bire kısmıştık ama her tetiklendiğinde YİNE koca editör
   // ağacını (canvas + 360px'lik tüm kontrol paneli) yeniden render ediyordu; ölçülen export
@@ -162,7 +165,9 @@ export default function StudioEditor({
   const videoOverlayUrls = collectStudioVideoOverlayUrls(timeline);
 
   const preset = studioAspectPreset(timeline.aspectRatio);
-  const effectiveDuration = Math.max(0, (timeline.trim.end || videoDuration) - timeline.trim.start);
+  const sourceDuration = Math.max(0, (timeline.trim.end || videoDuration) - timeline.trim.start);
+  const masterStart = Math.min(0, timeline.intro?.offset ?? 0);
+  const masterEnd = Math.max(sourceDuration, sourceDuration + (timeline.outro?.offset ?? 0));
 
   const updateTimeline = (patch: Partial<StudioTimeline>) => setTimeline((prev) => ({ ...prev, ...patch }));
 
@@ -266,29 +271,77 @@ export default function StudioEditor({
 
   const loop = () => {
     const video = videoRef.current;
-    if (!video || video.paused) {
+    if (!video) {
       rafRef.current = null;
       return;
     }
     const tl = timelineRef.current;
-    const sourceEnd = tl.trim.end || video.duration;
-    if (video.currentTime >= sourceEnd || video.ended) {
+    const srcDuration = Math.max(0, (tl.trim.end || video.duration) - tl.trim.start);
+    const mStart = Math.min(0, tl.intro?.offset ?? 0);
+    const mEnd = Math.max(srcDuration, srcDuration + (tl.outro?.offset ?? 0));
+
+    const now = performance.now();
+    let masterTime = virtualTimeRef.current;
+
+    if (masterTime < 0) {
+      // Pre-roll
+      const delta = (now - lastVirtualTickRef.current) / 1000;
+      masterTime += delta;
+      virtualTimeRef.current = masterTime;
+      lastVirtualTickRef.current = now;
+
+      if (masterTime >= 0) {
+        masterTime = 0;
+        virtualTimeRef.current = 0;
+        video.currentTime = tl.trim.start;
+        video.play().catch(() => {});
+        if (tl.enhancedAudioUrl && enhancedAudioRef.current) {
+          enhancedAudioRef.current.currentTime = video.currentTime;
+          enhancedAudioRef.current.play().catch(() => {});
+        }
+        hasPlayedVideoRef.current = true;
+      }
+    } else if (masterTime >= 0 && masterTime < srcDuration && hasPlayedVideoRef.current) {
+      // Video
+      masterTime = video.currentTime - tl.trim.start;
+      virtualTimeRef.current = masterTime;
+      lastVirtualTickRef.current = now;
+
+      if (video.currentTime >= tl.trim.start + srcDuration || video.ended) {
+        video.pause();
+        if (enhancedAudioRef.current) enhancedAudioRef.current.pause();
+        masterTime = srcDuration;
+        virtualTimeRef.current = srcDuration;
+        lastVirtualTickRef.current = now;
+      }
+    } else {
+      // Post-roll
+      const delta = (now - lastVirtualTickRef.current) / 1000;
+      masterTime += delta;
+      virtualTimeRef.current = masterTime;
+      lastVirtualTickRef.current = now;
+    }
+
+    // İyileştirilmiş ses videoyla BAĞIMSIZ oynuyor (ayrı <audio> elementi) — uzun
+    // oynatmada birikebilecek kaymayı burada da düzeltiyoruz.
+    const enhancedEl = enhancedAudioRef.current;
+    if (tl.enhancedAudioUrl && enhancedEl && !video.paused && Math.abs(enhancedEl.currentTime - video.currentTime) > 0.15) {
+      enhancedEl.currentTime = video.currentTime;
+    }
+    
+    if (masterTime >= mEnd) {
       video.pause();
       musicAudioRef.current?.pause();
       enhancedAudioRef.current?.pause();
       setPlaying(false);
       rafRef.current = null;
+      setCurrentTime(mEnd);
+      redraw(mEnd);
       return;
     }
-    // İyileştirilmiş ses videoyla BAĞIMSIZ oynuyor (ayrı <audio> elementi) — uzun
-    // oynatmada birikebilecek kaymayı burada da düzeltiyoruz (export'taki tick() ile aynı mantık).
-    const enhancedEl = enhancedAudioRef.current;
-    if (tl.enhancedAudioUrl && enhancedEl && Math.abs(enhancedEl.currentTime - video.currentTime) > 0.15) {
-      enhancedEl.currentTime = video.currentTime;
-    }
-    const t = video.currentTime - tl.trim.start;
-    redraw(t);
-    setCurrentTime(t);
+
+    redraw(masterTime);
+    setCurrentTime(masterTime);
     rafRef.current = requestAnimationFrame(loop);
   };
 
@@ -307,29 +360,37 @@ export default function StudioEditor({
       return;
     }
 
-    const sourceEnd = timeline.trim.end || video.duration;
-    if (video.currentTime < timeline.trim.start || video.currentTime >= sourceEnd) {
-      video.currentTime = timeline.trim.start;
+    if (currentTime >= masterEnd) {
+      setCurrentTime(masterStart);
+      virtualTimeRef.current = masterStart;
+    } else {
+      virtualTimeRef.current = currentTime;
     }
+
+    lastVirtualTickRef.current = performance.now();
+    hasPlayedVideoRef.current = virtualTimeRef.current >= 0 && virtualTimeRef.current < sourceDuration;
+    
     setPlaying(true);
+    
     if (musicAudioRef.current) {
       musicAudioRef.current.volume = timeline.music?.volume ?? 0.5;
       musicAudioRef.current.play().catch(() => {});
     }
-    if (timeline.enhancedAudioUrl && enhancedAudioRef.current) {
-      enhancedAudioRef.current.currentTime = video.currentTime;
-      enhancedAudioRef.current.play().catch(() => {});
-    }
-    await video.play();
 
-    // Geri sayım bipleri önizlemede de duyulmalı — yoksa kullanıcı ritmi ancak export'tan
-    // sonra duyar. Ses grafiği export'takiyle aynı `scheduleCountdownBeeps`'ten geliyor;
-    // buradaki tek fark, oynatma intro'nun ortasından başlatılabildiği için geçmiş biplerin
-    // atlanması (`fromTime`).
+    if (hasPlayedVideoRef.current) {
+      video.currentTime = timeline.trim.start + virtualTimeRef.current;
+      if (timeline.enhancedAudioUrl && enhancedAudioRef.current) {
+        enhancedAudioRef.current.currentTime = video.currentTime;
+        enhancedAudioRef.current.play().catch(() => {});
+      }
+      await video.play().catch(() => {});
+    }
+
+    // Geri sayım bipleri önizlemede de duyulmalı
     const countdown = timeline.intro?.countdown;
     if (countdown?.sound) {
-      const elapsed = video.currentTime - timeline.trim.start;
-      if (elapsed < timeline.intro!.duration) {
+      const elapsed = virtualTimeRef.current - timeline.intro!.offset;
+      if (elapsed >= 0 && elapsed < timeline.intro!.duration) {
         const audioCtx = ensurePreviewAudioContext();
         if (audioCtx) {
           await audioCtx.resume().catch(() => {});
@@ -338,7 +399,7 @@ export default function StudioEditor({
             audioCtx.destination,
             countdownPlan(timeline.intro!.duration, countdown.steps),
             audioCtx.currentTime,
-            Math.max(0, elapsed),
+            elapsed,
           );
         }
       }
@@ -347,29 +408,38 @@ export default function StudioEditor({
     rafRef.current = requestAnimationFrame(loop);
   };
 
-  const seekTo = (timelineTime: number) => {
+  const seekTo = (masterTime: number) => {
     const video = videoRef.current;
     if (!video) return;
     if (playing) {
       video.pause();
       musicAudioRef.current?.pause();
       enhancedAudioRef.current?.pause();
-      // Zamanlanmış bipler AudioContext saatinde ilerliyor; scrub ile görüntü kaydığında
-      // iptal edilmezlerse yanlış noktada duyulurlardı.
       cancelBeepsRef.current?.();
       cancelBeepsRef.current = null;
       setPlaying(false);
       stopLoop();
     }
-    const target = timeline.trim.start + timelineTime;
-    const onSeeked = () => {
-      video.removeEventListener('seeked', onSeeked);
+    
+    virtualTimeRef.current = masterTime;
+    
+    if (masterTime >= 0 && masterTime < sourceDuration) {
+      const target = timeline.trim.start + masterTime;
+      const onSeeked = () => {
+        video.removeEventListener('seeked', onSeeked);
+        if (enhancedAudioRef.current) enhancedAudioRef.current.currentTime = target;
+        redraw(masterTime);
+        setCurrentTime(masterTime);
+      };
+      video.addEventListener('seeked', onSeeked);
+      video.currentTime = target;
+    } else {
+      const target = masterTime < 0 ? timeline.trim.start : timeline.trim.start + sourceDuration;
       if (enhancedAudioRef.current) enhancedAudioRef.current.currentTime = target;
-      redraw(timelineTime);
-      setCurrentTime(timelineTime);
-    };
-    video.addEventListener('seeked', onSeeked);
-    video.currentTime = target;
+      video.currentTime = target;
+      redraw(masterTime);
+      setCurrentTime(masterTime);
+    }
   };
 
   const handleLoadedMetadata = () => {
@@ -392,7 +462,7 @@ export default function StudioEditor({
       return;
     }
     const start = currentTime;
-    const end = Math.min(effectiveDuration || start + 4, start + 4);
+    const end = Math.min(masterEnd || start + 4, start + 4);
     const item: StudioZoom = {
       id: crypto.randomUUID(),
       startTime: start,
@@ -425,7 +495,7 @@ export default function StudioEditor({
       return;
     }
     const start = currentTime;
-    const end = Math.min(effectiveDuration || start + 3, start + 3);
+    const end = Math.min(masterEnd || start + 3, start + 3);
     const item: StudioCutaway = { id: crypto.randomUUID(), assetUrl, startTime: start, endTime: end, fit: 'cover' };
     updateTimeline({ cutaways: [...timeline.cutaways, item] });
     setSelected({ type: 'cutaway', id: item.id });
@@ -445,7 +515,7 @@ export default function StudioEditor({
       return;
     }
     const start = currentTime;
-    const end = Math.min(effectiveDuration || start + 3, start + 3);
+    const end = Math.min(masterEnd || start + 3, start + 3);
     const item: StudioImageOverlay = {
       id: crypto.randomUUID(),
       kind: 'image',
@@ -467,7 +537,7 @@ export default function StudioEditor({
       return;
     }
     const start = currentTime;
-    const end = Math.min(effectiveDuration || start + 4, start + 4);
+    const end = Math.min(masterEnd || start + 4, start + 4);
     const item: StudioVideoOverlay = {
       id: crypto.randomUUID(),
       kind: 'video',
@@ -489,7 +559,7 @@ export default function StudioEditor({
       return;
     }
     const start = currentTime;
-    const end = Math.min(effectiveDuration || start + 3, start + 3);
+    const end = Math.min(masterEnd || start + 3, start + 3);
     const item: StudioTextOverlay = {
       id: crypto.randomUUID(),
       kind: 'text',
@@ -881,21 +951,23 @@ export default function StudioEditor({
             </button>
             <input
               type="range"
-              min={0}
-              max={Math.max(0.1, effectiveDuration)}
+              min={masterStart}
+              max={Math.max(masterStart + 0.1, masterEnd)}
               step={0.05}
-              value={Math.min(currentTime, effectiveDuration)}
+              value={Math.min(currentTime, masterEnd)}
               onChange={(e) => seekTo(Number(e.target.value))}
               className="flex-1"
             />
             <span className="text-xs text-slate-500 tabular-nums w-24 text-right shrink-0">
-              {currentTime.toFixed(1)}s / {effectiveDuration.toFixed(1)}s
+              {currentTime.toFixed(1)}s / {masterEnd.toFixed(1)}s
             </span>
           </div>
 
           <TimelineStrip
             timeline={timeline}
-            duration={effectiveDuration}
+            masterStart={masterStart}
+            masterEnd={masterEnd}
+            sourceDuration={sourceDuration}
             currentTime={currentTime}
             selected={selected}
             onSelect={setSelected}
@@ -926,8 +998,8 @@ export default function StudioEditor({
               )}
             </button>
             <p className="text-xs text-slate-400 text-center">
-              Gerçek zamanlı kaydediliyor — {effectiveDuration.toFixed(0)} sn&apos;lik video ≈{' '}
-              {effectiveDuration.toFixed(0)} sn sürer. Sekmeyi ön planda tut.
+              Gerçek zamanlı kaydediliyor — {(masterEnd - masterStart).toFixed(0)} sn&apos;lik video ≈{' '}
+              {(masterEnd - masterStart).toFixed(0)} sn sürer. Sekmeyi ön planda tut.
             </p>
           </div>
         </div>
@@ -1002,8 +1074,31 @@ export default function StudioEditor({
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                    <div>
-                      <NumberField label="Süre(sn)" value={timeline.intro.duration} onChange={(v) => updateTimeline({ intro: { ...timeline.intro!, duration: Math.max(0.1, v) } })} compact />
+                    <div className="flex flex-wrap gap-x-3 gap-y-1">
+                      <NumberField
+                        label="Başl."
+                        value={timeline.intro.offset}
+                        min={-2}
+                        step={0.1}
+                        onChange={(v) => {
+                          const newOffset = Math.max(-2, v);
+                          const oldEnd = timeline.intro!.offset + timeline.intro!.duration;
+                          const newDuration = Math.max(0.1, oldEnd - newOffset);
+                          updateTimeline({ intro: { ...timeline.intro!, offset: newOffset, duration: newDuration } });
+                        }}
+                        compact
+                      />
+                      <NumberField
+                        label="Bit."
+                        value={timeline.intro.offset + timeline.intro.duration}
+                        step={0.1}
+                        // Intro bitişinin bir üst limiti yok, ama mantıken çok uzamasın.
+                        onChange={(v) => {
+                          const newDuration = Math.max(0.1, v - timeline.intro!.offset);
+                          updateTimeline({ intro: { ...timeline.intro!, duration: newDuration } });
+                        }}
+                        compact
+                      />
                     </div>
                     {timeline.intro.assetUrl && (
                       <div className="flex gap-1">
@@ -1025,8 +1120,8 @@ export default function StudioEditor({
                       kind="image"
                       assets={assets}
                       uploading={uploading}
-                      onUpload={(f) => uploadAsset(f, 'image').then((a) => a && updateTimeline({ intro: { assetUrl: a.url, duration: 2, fit: 'cover', countdown: null } }))}
-                      onPick={(a) => updateTimeline({ intro: { assetUrl: a.url, duration: 2, fit: 'cover', countdown: null } })}
+                      onUpload={(f) => uploadAsset(f, 'image').then((a) => a && updateTimeline({ intro: { assetUrl: a.url, duration: 2, offset: 0, fit: 'cover', countdown: null } }))}
+                      onPick={(a) => updateTimeline({ intro: { assetUrl: a.url, duration: 2, offset: 0, fit: 'cover', countdown: null } })}
                     />
                     <button
                       onClick={() =>
@@ -1034,6 +1129,7 @@ export default function StudioEditor({
                           intro: {
                             assetUrl: null,
                             duration: DEFAULT_COUNTDOWN_DURATION,
+                            offset: 0,
                             fit: 'cover',
                             countdown: DEFAULT_COUNTDOWN,
                           },
@@ -1057,8 +1153,31 @@ export default function StudioEditor({
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                    <div>
-                      <NumberField label="Süre(sn)" value={timeline.outro.duration} onChange={(v) => updateTimeline({ outro: { ...timeline.outro!, duration: Math.max(0.1, v) } })} compact />
+                    <div className="flex flex-wrap gap-x-3 gap-y-1">
+                      <NumberField
+                        label="Başl."
+                        value={sourceDuration + timeline.outro.offset - timeline.outro.duration}
+                        step={0.1}
+                        onChange={(v) => {
+                          const oldEnd = sourceDuration + timeline.outro!.offset;
+                          const newDuration = Math.max(0.1, oldEnd - v);
+                          updateTimeline({ outro: { ...timeline.outro!, duration: newDuration } });
+                        }}
+                        compact
+                      />
+                      <NumberField
+                        label="Bit."
+                        value={sourceDuration + timeline.outro.offset}
+                        max={sourceDuration + 2}
+                        step={0.1}
+                        onChange={(v) => {
+                          const newOffset = Math.min(2, v - sourceDuration);
+                          const oldStart = sourceDuration + timeline.outro!.offset - timeline.outro!.duration;
+                          const newDuration = Math.max(0.1, (sourceDuration + newOffset) - oldStart);
+                          updateTimeline({ outro: { ...timeline.outro!, offset: newOffset, duration: newDuration } });
+                        }}
+                        compact
+                      />
                     </div>
                     <div className="flex gap-1">
                       {(['cover', 'contain'] as StudioFit[]).map((fit) => (
@@ -1077,8 +1196,8 @@ export default function StudioEditor({
                     kind="image"
                     assets={assets}
                     uploading={uploading}
-                    onUpload={(f) => uploadAsset(f, 'image').then((a) => a && updateTimeline({ outro: { assetUrl: a.url, duration: 2, fit: 'cover', countdown: null } }))}
-                    onPick={(a) => updateTimeline({ outro: { assetUrl: a.url, duration: 2, fit: 'cover', countdown: null } })}
+                    onUpload={(f) => uploadAsset(f, 'image').then((a) => a && updateTimeline({ outro: { assetUrl: a.url, duration: 2, offset: 0, fit: 'cover', countdown: null } }))}
+                    onPick={(a) => updateTimeline({ outro: { assetUrl: a.url, duration: 2, offset: 0, fit: 'cover', countdown: null } })}
                   />
                 )}
               </div>
@@ -1597,6 +1716,7 @@ function NumberField({
   onChange,
   step = 0.1,
   min = 0,
+  max,
   compact = false,
 }: {
   label: string;
@@ -1604,6 +1724,7 @@ function NumberField({
   onChange: (v: number) => void;
   step?: number;
   min?: number;
+  max?: number;
   compact?: boolean;
 }) {
   return (
@@ -1611,9 +1732,10 @@ function NumberField({
       {label}
       <input
         type="number"
-        value={Number.isFinite(value) ? value : 0}
+        value={Number.isFinite(value) ? Number(value.toFixed(2)) : 0}
         step={step}
         min={min}
+        max={max}
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-16 rounded border border-slate-300 px-1.5 py-1 text-xs"
       />
@@ -1701,33 +1823,47 @@ function AssetPicker({
 
 function TimelineStrip({
   timeline,
-  duration,
+  masterStart,
+  masterEnd,
+  sourceDuration,
   currentTime,
   selected,
   onSelect,
 }: {
   timeline: StudioTimeline;
-  duration: number;
+  masterStart: number;
+  masterEnd: number;
+  sourceDuration: number;
   currentTime: number;
   selected: Selection;
   onSelect: (s: Selection) => void;
 }) {
-  if (!(duration > 0)) return null;
-  const pct = (v: number) => `${Math.min(100, Math.max(0, (v / duration) * 100))}%`;
+  const total = masterEnd - masterStart;
+  if (!(total > 0)) return null;
+  
+  const pct = (t: number) => {
+    // Map absolute time t to a percentage of the total timeline length
+    return `${Math.min(100, Math.max(0, ((t - masterStart) / total) * 100))}%`;
+  };
 
   return (
     <div className="relative h-8 bg-slate-100 rounded-lg overflow-hidden">
+      {/* Video duration representation */}
+      <div 
+        className="absolute top-0 bottom-0 bg-blue-100/30" 
+        style={{ left: pct(0), width: `calc(${pct(sourceDuration)} - ${pct(0)})` }} 
+      />
       {timeline.intro && (
         <div 
           className="absolute top-0 bottom-0 bg-slate-800/10 border-r border-slate-300" 
-          style={{ left: 0, width: pct(timeline.intro.duration) }} 
+          style={{ left: pct(timeline.intro.offset), width: `calc(${pct(timeline.intro.offset + timeline.intro.duration)} - ${pct(timeline.intro.offset)})` }} 
           title="Intro" 
         />
       )}
       {timeline.outro && (
         <div 
           className="absolute top-0 bottom-0 bg-slate-800/10 border-l border-slate-300" 
-          style={{ left: pct(duration - timeline.outro.duration), width: pct(timeline.outro.duration) }} 
+          style={{ left: pct(sourceDuration + timeline.outro.offset - timeline.outro.duration), width: `calc(${pct(sourceDuration + timeline.outro.offset)} - ${pct(sourceDuration + timeline.outro.offset - timeline.outro.duration)})` }} 
           title="Outro" 
         />
       )}
