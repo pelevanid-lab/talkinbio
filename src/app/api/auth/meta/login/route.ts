@@ -15,11 +15,8 @@ export async function GET(request: Request) {
   const redirectUri = `${origin}/api/auth/meta/callback`;
   
   // İhtiyacımız olan izinler (scopes)
-  // instagram_basic: Kullanıcının profilini okumak
-  // instagram_manage_messages: Mesaj göndermek/almak
-  // pages_show_list: Bağlı sayfaları bulmak
-  // pages_manage_metadata: Webhook kurmak için gerekebilir
-  const scope = 'instagram_basic,instagram_manage_messages,pages_show_list,pages_manage_metadata';
+  // Yeni Meta App yapısında (Business Apps) 'instagram_business_basic' ve 'instagram_business_manage_messages' kullanılıyor.
+  const scope = 'instagram_business_basic,instagram_business_manage_messages,pages_show_list,pages_manage_metadata,pages_messaging';
 
   // State param'ını güvenliği sağlamak veya business id'yi taşımak için kullanabiliriz.
   // Burada kullanıcının kendi session'ı ile backend'de business_id bulacağız, state'e gerek yok ama
