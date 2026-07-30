@@ -323,6 +323,29 @@ export type StudioCaptionStyle = {
   font: OverlayFont;
 };
 
+/**
+ * Ana sekansın (+ üstüne binen cutaway/intro/outro) belli bir ZAMAN ARALIĞINDA ekranda
+ * kapladığı dikdörtgen — split-screen için `StudioImageOverlay.height` ile AYNI fikir, ama
+ * OVERLAY'e değil ANA VİDEOYA uygulanıyor. `cutaways`/`zooms` ile AYNI desen: bir dizi,
+ * her eleman kendi `startTime`/`endTime`'ına sahip — videonun sadece belirli bir bölümünü
+ * split-screen yapmak için (tamamını değil). Aralık dışında ana video eskisi gibi tam ekran
+ * kapla. Overlay'ler bu kutudan bağımsız, kendi x/y/width/height'lerine göre konumlanmaya
+ * devam eder — split-screen'in "üst" tarafı genelde bir overlay (ör. ekran kaydı), "alt"
+ * tarafı bu kutuya sıkıştırılmış ana video olur.
+ */
+export type StudioSequenceLayout = {
+  id: string;
+  startTime: number;
+  endTime: number;
+  x: number; // canvas genişliğinin yüzdesi
+  y: number; // canvas yüksekliğinin yüzdesi
+  width: number;
+  height: number;
+  fit: StudioFit;
+};
+
+export const MAX_SEQUENCE_LAYOUTS = 12;
+
 export type StudioTimeline = {
   aspectRatio: StudioAspectRatio;
   /** Ana videonun kaynak süresinden (saniye) kırpılan aralık. `sequence` doluysa bu alan
@@ -334,6 +357,9 @@ export type StudioTimeline = {
    * `trim`+harici video kaynağı eskisi gibi tek elemanlı bir sekans gibi davranır.
    */
   sequence: StudioSequenceClip[];
+  /** YENİ — split-screen: bu aralıklarda ana video (+ cutaway/intro/outro) kendi kutusuna
+   *  sığdırılır. `cutaways`/`zooms` ile AYNI desen — aralık dışında tam ekran. */
+  sequenceLayouts: StudioSequenceLayout[];
   cutaways: StudioCutaway[];
   overlays: StudioOverlay[];
   zooms: StudioZoom[];
@@ -395,6 +421,7 @@ export const DEFAULT_TIMELINE: StudioTimeline = {
   // end=0: "kaynak videonun tamamı" için sentinel — gerçek süre yüklenince editör dolduruyor.
   trim: { start: 0, end: 0 },
   sequence: [],
+  sequenceLayouts: [],
   cutaways: [],
   overlays: [],
   zooms: [],
@@ -638,6 +665,23 @@ function parseColorGrade(value: unknown): StudioColorGrade {
   };
 }
 
+function parseSequenceLayout(value: unknown): StudioSequenceLayout | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const v = value as Record<string, unknown>;
+  if (!isFiniteNumber(v.width) || !isFiniteNumber(v.height)) return null;
+  if (!isFiniteNumber(v.startTime) || !isFiniteNumber(v.endTime) || v.endTime <= v.startTime) return null;
+  return {
+    id: typeof v.id === 'string' ? v.id : crypto.randomUUID(),
+    startTime: Math.max(0, v.startTime),
+    endTime: v.endTime,
+    x: clamp(isFiniteNumber(v.x) ? v.x : 0, 0, 100),
+    y: clamp(isFiniteNumber(v.y) ? v.y : 0, 0, 100),
+    width: clamp(v.width, 5, 100),
+    height: clamp(v.height, 5, 100),
+    fit: v.fit === 'contain' ? 'contain' : 'cover',
+  };
+}
+
 function parseCaptionStyle(value: unknown): StudioCaptionStyle {
   if (typeof value !== 'object' || value === null) return DEFAULT_CAPTION_STYLE;
   const v = value as Record<string, unknown>;
@@ -688,6 +732,10 @@ export function parseStudioTimeline(value: unknown, fallback?: StudioTimelineFal
     ? (v.zooms.map(parseZoom).filter(Boolean) as StudioZoom[]).slice(0, MAX_ZOOMS)
     : [];
 
+  const sequenceLayouts = Array.isArray(v.sequenceLayouts)
+    ? (v.sequenceLayouts.map(parseSequenceLayout).filter(Boolean) as StudioSequenceLayout[]).slice(0, MAX_SEQUENCE_LAYOUTS)
+    : [];
+
   const captions = Array.isArray(v.captions)
     ? (v.captions.map(parseCaption).filter(Boolean) as StudioCaption[]).slice(0, MAX_CAPTIONS)
     : [];
@@ -716,6 +764,7 @@ export function parseStudioTimeline(value: unknown, fallback?: StudioTimelineFal
     aspectRatio: v.aspectRatio,
     trim: { start, end },
     sequence,
+    sequenceLayouts,
     cutaways,
     overlays,
     zooms,

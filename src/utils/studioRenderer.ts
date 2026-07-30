@@ -240,7 +240,19 @@ export function syncSequenceVideos(
   isPlaying: boolean,
   videoPool: Map<string, HTMLVideoElement>,
 ): void {
-  const active = resolveSequencePosition(sequence, time);
+  // `drawFrame`'deki AYNI çözüm: `sourceEnd===0` sentinel'ini ("tam süre") videoPool'daki
+  // GERÇEK elementlerin `.duration`'ından çözüyoruz. Bu OLMADAN `resolveSequencePosition`
+  // her klibin süresini 0 sanır, hiçbir klip "aktif" bulunamaz ve aşağıdaki döngü OYNAYAN
+  // videoyu bile her karede durdurur (gerçek bir hata — bkz. proje geçmişi, Studio'da video
+  // hiç oynamıyordu).
+  const liveDurations = new Map<string, number>();
+  for (const clip of sequence) {
+    if (clip.kind !== 'video') continue;
+    const el = videoPool.get(clip.id);
+    if (el && Number.isFinite(el.duration)) liveDurations.set(clip.id, el.duration);
+  }
+
+  const active = resolveSequencePosition(sequence, time, liveDurations);
   for (const clip of sequence) {
     if (clip.kind !== 'video') continue;
     const el = videoPool.get(clip.id);
@@ -583,32 +595,47 @@ export function drawFrame({ ctx, timeline, time, sequenceVideos, assets, videoOv
   if (hasGrade) ctx.filter = colorGradeFilterString(timeline.grade);
 
   if (isIntro && timeline.intro) {
+    // Intro/outro BİLEREK `sequenceLayout` kutusundan muaf — split-screen kompozisyonu genelde
+    // ana içerik başladıktan sonra anlamlı, tam ekran bir intronun küçültülmesi gerekmiyor.
     drawnMedia = drawIntroOutroSection(ctx, timeline.intro, time - timeline.intro.offset, width, height, assets);
   } else if (isOutro && timeline.outro) {
     drawnMedia = drawIntroOutroSection(ctx, timeline.outro, time - outroStart, width, height, assets);
-  } else if (activeCutaway) {
-    const img = assets.get(activeCutaway.assetUrl);
-    if (img) {
-      drawMediaFitted(ctx, img, width, height, activeCutaway.fit);
-      drawnMedia = true;
-    }
-  }
+  } else {
+    // Split-screen: bu ana zamanda aktif bir `sequenceLayouts` aralığı varsa ana video
+    // (+ cutaway) tam ekran yerine o kutuya sığdırılır — "üstte X, altta video" isteğinin
+    // karşılığı budur (bkz. StudioSequenceLayout yorumu, config/studio.ts). `cutaways`/`zooms`
+    // ile AYNI desen: aralık dışında (ya da hiç eklenmediyse) kutu tam canvas'a eşit, davranış
+    // eskisiyle birebir aynı.
+    const layout = timeline.sequenceLayouts.find((l) => time >= l.startTime && time < l.endTime);
+    const boxX = layout ? (layout.x / 100) * width : 0;
+    const boxY = layout ? (layout.y / 100) * height : 0;
+    const boxWidth = layout ? (layout.width / 100) * width : width;
+    const boxHeight = layout ? (layout.height / 100) * height : height;
 
-  if (!drawnMedia && !isIntro && !isOutro && !activeCutaway) {
-    // Sekansın o anki elemanı — video ya da sabit görsel. Bkz. `resolveSequencePosition`.
-    const active = resolveSequencePosition(timeline.sequence, time, liveDurations);
-    if (active) {
-      if (active.clip.kind === 'video') {
-        const el = sequenceVideos.get(active.clip.id);
-        if (el) {
-          drawMediaFitted(ctx, el, width, height, active.clip.fit);
-          drawnMedia = true;
-        }
-      } else {
-        const img = assets.get(active.clip.assetUrl);
-        if (img) {
-          drawMediaFitted(ctx, img, width, height, active.clip.fit);
-          drawnMedia = true;
+    if (activeCutaway) {
+      const img = assets.get(activeCutaway.assetUrl);
+      if (img) {
+        drawMediaFittedBox(ctx, img, boxX, boxY, boxWidth, boxHeight, activeCutaway.fit);
+        drawnMedia = true;
+      }
+    }
+
+    if (!drawnMedia) {
+      // Sekansın o anki elemanı — video ya da sabit görsel. Bkz. `resolveSequencePosition`.
+      const active = resolveSequencePosition(timeline.sequence, time, liveDurations);
+      if (active) {
+        if (active.clip.kind === 'video') {
+          const el = sequenceVideos.get(active.clip.id);
+          if (el) {
+            drawMediaFittedBox(ctx, el, boxX, boxY, boxWidth, boxHeight, active.clip.fit);
+            drawnMedia = true;
+          }
+        } else {
+          const img = assets.get(active.clip.assetUrl);
+          if (img) {
+            drawMediaFittedBox(ctx, img, boxX, boxY, boxWidth, boxHeight, active.clip.fit);
+            drawnMedia = true;
+          }
         }
       }
     }

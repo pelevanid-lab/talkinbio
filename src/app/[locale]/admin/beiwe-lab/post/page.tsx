@@ -34,7 +34,7 @@ export default async function BeiwePostPage() {
         </p>
       </div>
       <BeiweLabTabs />
-      <BeiwePostClient shots={(shots || []) as CharacterShot[]} />
+      <BeiwePostClient shots={(shots || []) as CharacterShot[]} characterId={TWIN_CHARACTER_ID} />
     </AdminLayout>
   );
 }

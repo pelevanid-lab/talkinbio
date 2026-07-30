@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Download, ImageIcon, Loader2, Upload, X } from 'lucide-react';
+import { AlertTriangle, Check, Download, ImageIcon, Loader2, Save, Upload, X } from 'lucide-react';
 import type { CharacterShot } from '@/config/characters';
 import type { OverlayLocale } from '@/config/characters';
 import { OVERLAY_LOCALES } from '@/config/characters';
@@ -30,9 +30,12 @@ const EMPTY_TEXTS: Record<OverlayLocale, PostTexts> = {
 
 type Props = {
   shots: CharacterShot[];
+  /** Kaydedilen gönderilerin yükleneceği karakter kapsamı — Beiwe Studio'nun asset
+   *  kütüphanesiyle (character_studio_assets) AYNI kapsam, bkz. saveToLibrary yorumu. */
+  characterId: string;
 };
 
-export default function BeiwePostClient({ shots }: Props) {
+export default function BeiwePostClient({ shots, characterId }: Props) {
   const [templateId, setTemplateId] = useState<PostTemplateId>('ekran');
   const [formatId, setFormatId] = useState(POST_FORMATS[0].id);
   const [locale, setLocale] = useState<OverlayLocale>('tr');
@@ -42,6 +45,8 @@ export default function BeiwePostClient({ shots }: Props) {
   const [uploadedName, setUploadedName] = useState<string | null>(null);
   const [showGallery, setShowGallery] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mediaObj, setMediaObj] = useState<LoadedMedia | null>(null);
   // Hareketli: başlık/alt satır kayarak beliriyor, görsel yavaşça yakınlaşıyor (Ken Burns),
@@ -194,24 +199,66 @@ export default function BeiwePostClient({ shots }: Props) {
     setTexts((prev) => ({ ...prev, [locale]: { ...prev[locale], [field]: value } }));
   };
 
-  const download = async (targetLocale: OverlayLocale) => {
+  /**
+   * Önizlemeyi son bir kez üretip tek bir çıktı bloğuna çevirir — `download` (cihaza indir)
+   * ve `saveToLibrary` (Beiwe Studio'nun asset kütüphanesine kaydet) AYNI üç dalı (video
+   * kaynaklı / hareketli-ama-görsel / sabit) paylaşıyor, sonucu ne yapacaklarında ayrışıyorlar.
+   */
+  const produceExportBlob = async (
+    targetLocale: OverlayLocale,
+  ): Promise<{ blob: Blob; ext: string; kind: 'image' | 'video' }> => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    setDownloading(true);
-    setError(null);
-    try {
-      if (isVideo && mediaObj) {
-        const video = mediaObj.element as HTMLVideoElement;
-        const duration = video.duration || 10;
-        
-        // Start playing from beginning
-        video.currentTime = 0;
-        await video.play().catch(() => {});
-        
-        // Record stream
-        const stream = canvas.captureStream(60); // 60 FPS
-        
-        // Use H264 WebM if possible for better quality/compatibility
+    if (!canvas) throw new Error('Canvas hazır değil.');
+
+    if (isVideo && mediaObj) {
+      const video = mediaObj.element as HTMLVideoElement;
+      const duration = video.duration || 10;
+
+      // Start playing from beginning
+      video.currentTime = 0;
+      await video.play().catch(() => {});
+
+      // Record stream
+      const stream = canvas.captureStream(60); // 60 FPS
+
+      // Use H264 WebM if possible for better quality/compatibility
+      let mimeType = 'video/webm';
+      if (MediaRecorder.isTypeSupported('video/mp4')) {
+        mimeType = 'video/mp4';
+      } else if (MediaRecorder.isTypeSupported('video/webm;codecs=h264')) {
+        mimeType = 'video/webm;codecs=h264';
+      }
+
+      const recorder = new MediaRecorder(stream, {
+        mimeType,
+        videoBitsPerSecond: 8000000, // 8 Mbps high quality
+      });
+
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+
+      return new Promise((resolve, reject) => {
+        recorder.onstop = () => {
+          const blob = new Blob(chunks, { type: mimeType });
+          resolve({ blob, ext: mimeType.includes('mp4') ? 'mp4' : 'webm', kind: 'video' });
+        };
+        recorder.onerror = (e) => reject(e);
+        recorder.start();
+
+        // Stop when video ends
+        setTimeout(() => {
+          recorder.stop();
+        }, duration * 1000);
+      });
+    }
+
+    if (animated) {
+      // Medyasız/sabit-görsel hareketli export — video elementi yok, kendi zamanlayıcımızla
+      // tek geçiş çiziyoruz. Önizleme döngüsü (yukarıdaki useEffect) `capturingRef` sayesinde
+      // bu sırada duraklıyor — aksi halde iki ayrı paint() kaynağı canvas'ı yarışarak boyar.
+      capturingRef.current = true;
+      try {
+        const stream = canvas.captureStream(60);
         let mimeType = 'video/webm';
         if (MediaRecorder.isTypeSupported('video/mp4')) {
           mimeType = 'video/mp4';
@@ -219,87 +266,83 @@ export default function BeiwePostClient({ shots }: Props) {
           mimeType = 'video/webm;codecs=h264';
         }
 
-        const recorder = new MediaRecorder(stream, {
-          mimeType,
-          videoBitsPerSecond: 8000000, // 8 Mbps high quality
-        });
-        
+        const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
         const chunks: Blob[] = [];
         recorder.ondataavailable = (e) => chunks.push(e.data);
-        
-        return new Promise<void>((resolve, reject) => {
+
+        return await new Promise<{ blob: Blob; ext: string; kind: 'video' }>((resolve, reject) => {
+          const start = performance.now();
           recorder.onstop = () => {
             const blob = new Blob(chunks, { type: mimeType });
-            const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-            downloadBlob(blob, `talkinbio-${template.id}-${format.id}-${targetLocale}.${ext}`);
-            setDownloading(false);
-            if (targetLocale !== locale) paint(locale).catch(() => {});
-            resolve();
+            resolve({ blob, ext: mimeType.includes('mp4') ? 'mp4' : 'webm', kind: 'video' });
           };
           recorder.onerror = (e) => reject(e);
           recorder.start();
-          
-          // Stop when video ends
-          setTimeout(() => {
-            recorder.stop();
-          }, duration * 1000);
+
+          const captureFrame = () => {
+            const elapsed = performance.now() - start;
+            if (elapsed >= ANIMATED_POST_DURATION_MS) {
+              paint(targetLocale, ANIMATED_POST_DURATION_MS).finally(() => recorder.stop());
+              return;
+            }
+            paint(targetLocale, elapsed).finally(() => requestAnimationFrame(captureFrame));
+          };
+          captureFrame();
         });
-      } else if (animated) {
-        // Medyasız/sabit-görsel hareketli export — video elementi yok, kendi zamanlayıcımızla
-        // tek geçiş çiziyoruz. Önizleme döngüsü (yukarıdaki useEffect) `capturingRef` sayesinde
-        // bu sırada duraklıyor — aksi halde iki ayrı paint() kaynağı canvas'ı yarışarak boyar.
-        capturingRef.current = true;
-        try {
-          const stream = canvas.captureStream(60);
-          let mimeType = 'video/webm';
-          if (MediaRecorder.isTypeSupported('video/mp4')) {
-            mimeType = 'video/mp4';
-          } else if (MediaRecorder.isTypeSupported('video/webm;codecs=h264')) {
-            mimeType = 'video/webm;codecs=h264';
-          }
-
-          const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
-          const chunks: Blob[] = [];
-          recorder.ondataavailable = (e) => chunks.push(e.data);
-
-          await new Promise<void>((resolve, reject) => {
-            const start = performance.now();
-            recorder.onstop = () => {
-              const blob = new Blob(chunks, { type: mimeType });
-              const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-              downloadBlob(blob, `talkinbio-${template.id}-${format.id}-${targetLocale}-hareketli.${ext}`);
-              resolve();
-            };
-            recorder.onerror = (e) => reject(e);
-            recorder.start();
-
-            const captureFrame = () => {
-              const elapsed = performance.now() - start;
-              if (elapsed >= ANIMATED_POST_DURATION_MS) {
-                paint(targetLocale, ANIMATED_POST_DURATION_MS).finally(() => recorder.stop());
-                return;
-              }
-              paint(targetLocale, elapsed).finally(() => requestAnimationFrame(captureFrame));
-            };
-            captureFrame();
-          });
-        } finally {
-          capturingRef.current = false;
-          animationStartRef.current = performance.now();
-        }
-        setDownloading(false);
-        if (targetLocale !== locale) await paint(locale).catch(() => {});
-      } else {
-        await paint(targetLocale);
-        const blob = await canvasToPng(canvas);
-        downloadBlob(blob, `talkinbio-${template.id}-${format.id}-${targetLocale}.png`);
-        setDownloading(false);
-        if (targetLocale !== locale) await paint(locale).catch(() => {});
+      } finally {
+        capturingRef.current = false;
+        animationStartRef.current = performance.now();
       }
+    }
+
+    await paint(targetLocale);
+    const blob = await canvasToPng(canvas);
+    return { blob, ext: 'png', kind: 'image' };
+  };
+
+  const download = async (targetLocale: OverlayLocale) => {
+    setDownloading(true);
+    setError(null);
+    try {
+      const { blob, ext } = await produceExportBlob(targetLocale);
+      const suffix = animated && !isVideo ? '-hareketli' : '';
+      downloadBlob(blob, `talkinbio-${template.id}-${format.id}-${targetLocale}${suffix}.${ext}`);
     } catch (err) {
-      capturingRef.current = false;
       setError(err instanceof Error ? err.message : 'İndirilemedi.');
+    } finally {
       setDownloading(false);
+      if (targetLocale !== locale) await paint(locale).catch(() => {});
+    }
+  };
+
+  /**
+   * Render edilen gönderiyi indirmek yerine (ya da onun yanında) Beiwe Studio'nun ortak asset
+   * kütüphanesine (`character_studio_assets`) yükler — Studio'daki AssetPicker (cutaway/
+   * overlay/sekans-görsel seçicileri) bu tabloyu ZATEN okuyor, bu yüzden Studio tarafında
+   * hiçbir yeni kod gerekmiyor: aynı `characterId` (TWIN_CHARACTER_ID) kapsamında kaydedilen
+   * bir gönderi Studio'yu açar açmaz oradaki seçicilerde belirir.
+   */
+  const saveToLibrary = async (targetLocale: OverlayLocale) => {
+    setSaving(true);
+    setError(null);
+    setSavedMessage(null);
+    try {
+      const { blob, ext, kind } = await produceExportBlob(targetLocale);
+      const fileName = `talkinbio-${template.id}-${format.id}-${targetLocale}.${ext}`;
+      const formData = new FormData();
+      formData.append('file', new File([blob], fileName, { type: blob.type }));
+      formData.append('kind', kind);
+      const res = await fetch(`/api/admin/characters/${characterId}/studio-asset`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Kaydedilemedi.');
+      setSavedMessage('Kaydedildi — Beiwe Studio’daki galeriden erişebilirsin.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Kaydedilemedi.');
+    } finally {
+      setSaving(false);
       if (targetLocale !== locale) await paint(locale).catch(() => {});
     }
   };
@@ -568,6 +611,20 @@ export default function BeiwePostClient({ shots }: Props) {
               {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               {isVideo || animated ? 'Video indir' : 'PNG indir'} ({LOCALE_LABEL[locale]})
             </button>
+            <button
+              onClick={() => saveToLibrary(locale)}
+              disabled={saving}
+              title="Beiwe Studio'nun ortak galerisine kaydeder — Studio'yu açtığında sekans/cutaway/overlay seçicilerinde belirir."
+              className="flex items-center justify-center gap-2 border border-blue-300 text-blue-700 bg-blue-50 rounded-lg px-4 py-2.5 text-sm font-semibold hover:bg-blue-100 disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Stüdyo kütüphanesine kaydet
+            </button>
+            {savedMessage && (
+              <p className="flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+                <Check className="w-3.5 h-3.5" /> {savedMessage}
+              </p>
+            )}
             {filledLocales.length > 1 && (
               <>
                 <button

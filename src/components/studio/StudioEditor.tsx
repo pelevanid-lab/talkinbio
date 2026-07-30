@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { Reorder } from 'framer-motion';
 import {
   ArrowLeft,
   Captions,
@@ -28,6 +29,7 @@ import {
   MAX_PROJECT_NAME_LENGTH,
   MAX_COUNTDOWN_STEPS,
   MAX_SEQUENCE_CLIPS,
+  MAX_SEQUENCE_LAYOUTS,
   MAX_ZOOMS,
   MIN_COUNTDOWN_STEPS,
   STUDIO_ASPECT_RATIOS,
@@ -50,6 +52,7 @@ import {
   type StudioImageOverlay,
   type StudioProject,
   type StudioSequenceClip,
+  type StudioSequenceLayout,
   type StudioTextOverlay,
   type StudioTimeline,
   type StudioVideoOverlay,
@@ -686,6 +689,36 @@ export default function StudioEditor({
     updateTimeline({ sequence: timeline.sequence.filter((c) => c.id !== id) });
     sequenceVideoElsRef.current.delete(id);
   };
+
+  /** Ana videoyu belirli bir aralıkta bir kutuya sığdıran split-screen segmenti ekler —
+   * `addCutaway`/`addZoom` ile AYNI desen (oynatma başlığından başlar, ~3 sn sürer).
+   * Varsayılan ALT yarı: overlay'in "Split ekran" açılışı ÜST yarıyı varsayılan aldığı için
+   * ikisi elle sayı girmeden hemen eşleşiyor (bkz. addSequenceLayoutForRange). */
+  const addSequenceLayout = (startTime: number, endTime: number, preset?: Partial<StudioSequenceLayout>) => {
+    if (timeline.sequenceLayouts.length >= MAX_SEQUENCE_LAYOUTS) {
+      setError(`En fazla ${MAX_SEQUENCE_LAYOUTS} split-screen aralığı eklenebilir.`);
+      return;
+    }
+    const item: StudioSequenceLayout = {
+      id: crypto.randomUUID(),
+      startTime,
+      endTime,
+      x: 0,
+      y: 50,
+      width: 100,
+      height: 50,
+      fit: 'cover',
+      ...preset,
+    };
+    updateTimeline({ sequenceLayouts: [...timeline.sequenceLayouts, item] });
+    return item;
+  };
+
+  const updateSequenceLayout = (id: string, patch: Partial<StudioSequenceLayout>) =>
+    updateTimeline({ sequenceLayouts: timeline.sequenceLayouts.map((l) => (l.id === id ? { ...l, ...patch } : l)) });
+
+  const removeSequenceLayout = (id: string) =>
+    updateTimeline({ sequenceLayouts: timeline.sequenceLayouts.filter((l) => l.id !== id) });
 
   // Whisper marka/uydurma kelimeleri (ör. "talkinbio") bilmediği en yakın gerçek kelimeye
   // ("Tolkien") yuvarlayabiliyor — metni elle düzeltebilmek gerekiyor.
@@ -1325,11 +1358,20 @@ export default function StudioEditor({
               aşağıya oynatılır.
             </p>
 
-            <div className="space-y-2 mb-3">
+            <Reorder.Group
+              axis="y"
+              values={timeline.sequence}
+              onReorder={(newSequence) => updateTimeline({ sequence: newSequence })}
+              className="space-y-2 mb-3"
+            >
               {timeline.sequence.map((clip, index) => {
                 const duration = sequenceClipDuration(clip, sequenceDurations);
                 return (
-                  <div key={clip.id} className="rounded-lg border border-slate-200 p-2">
+                  <Reorder.Item
+                    key={clip.id}
+                    value={clip}
+                    className="rounded-lg border border-slate-200 p-2 bg-white cursor-grab active:cursor-grabbing relative"
+                  >
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-mono text-slate-400 w-4 text-center shrink-0">{index + 1}</span>
                       {clip.kind === 'video' ? (
@@ -1381,10 +1423,10 @@ export default function StudioEditor({
                         />
                       </div>
                     )}
-                  </div>
+                  </Reorder.Item>
                 );
               })}
-            </div>
+            </Reorder.Group>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -1412,6 +1454,94 @@ export default function StudioEditor({
                   onUpload={(f) => uploadAsset(f, 'image').then((a) => a && addSequenceImageClip(a.url))}
                   onPick={(a) => addSequenceImageClip(a.url)}
                 />
+              </div>
+            </div>
+
+            <div className="mt-3 pt-3 border-t border-slate-100">
+              <div className="flex items-baseline justify-between mb-1.5">
+                <h4 className="text-xs font-semibold text-slate-700">Split ekran (ana video)</h4>
+                <span className="text-xs text-slate-400">
+                  {timeline.sequenceLayouts.length}/{MAX_SEQUENCE_LAYOUTS}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mb-2">
+                Videonun sadece bu aralıklarında ana video bir kutuya sığdırılır (varsayılan alt
+                yarı) — aralık dışında yine tam ekran. Diğer yarıyı doldurmak için bir görsel/
+                video overlay ekleyip kartında &quot;Split ekran&quot;ı aç; overlay&apos;in kendi
+                zaman aralığı için otomatik eşleşen bir üst-yarı segmenti burada da belirir.
+              </p>
+              <button
+                onClick={() => {
+                  const start = currentTime;
+                  const end = Math.min(masterEnd || start + 3, start + 3);
+                  addSequenceLayout(start, end);
+                }}
+                disabled={timeline.sequenceLayouts.length >= MAX_SEQUENCE_LAYOUTS}
+                className="text-xs font-medium rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-slate-500 hover:border-slate-400 disabled:opacity-50"
+              >
+                + Split ekran aralığı ekle
+              </button>
+              <div className="mt-2 space-y-2">
+                {timeline.sequenceLayouts.map((l) => (
+                  <div key={l.id} className="rounded-lg border border-slate-200 p-2 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 flex flex-wrap gap-x-3 gap-y-1">
+                        <NumberField label="Başl." value={l.startTime} onChange={(v) => updateSequenceLayout(l.id, { startTime: v })} compact />
+                        <NumberField label="Bit." value={l.endTime} onChange={(v) => updateSequenceLayout(l.id, { endTime: v })} compact />
+                      </div>
+                      <button onClick={() => removeSequenceLayout(l.id)} className="p-1.5 text-slate-400 hover:text-red-600 shrink-0">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => updateSequenceLayout(l.id, { x: 0, y: 0, width: 100, height: 50 })}
+                        className="text-[11px] px-2 py-1 rounded-full border border-slate-300 text-slate-500 hover:border-slate-900 hover:text-slate-900"
+                      >
+                        Üst yarı
+                      </button>
+                      <button
+                        onClick={() => updateSequenceLayout(l.id, { x: 0, y: 50, width: 100, height: 50 })}
+                        className="text-[11px] px-2 py-1 rounded-full border border-slate-300 text-slate-500 hover:border-slate-900 hover:text-slate-900"
+                      >
+                        Alt yarı
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1">
+                      <NumberField label="X%" value={l.x} min={0} step={1} onChange={(v) => updateSequenceLayout(l.id, { x: clampPct(v) })} compact />
+                      <NumberField label="Y%" value={l.y} min={0} step={1} onChange={(v) => updateSequenceLayout(l.id, { y: clampPct(v) })} compact />
+                      <NumberField
+                        label="Genişlik%"
+                        value={l.width}
+                        min={5}
+                        step={1}
+                        onChange={(v) => updateSequenceLayout(l.id, { width: clampPct(v) })}
+                        compact
+                      />
+                      <NumberField
+                        label="Yükseklik%"
+                        value={l.height}
+                        min={5}
+                        step={1}
+                        onChange={(v) => updateSequenceLayout(l.id, { height: clampPct(v) })}
+                        compact
+                      />
+                    </div>
+                    <div className="flex gap-1">
+                      {(['cover', 'contain'] as StudioFit[]).map((fit) => (
+                        <button
+                          key={fit}
+                          onClick={() => updateSequenceLayout(l.id, { fit })}
+                          className={`text-[11px] px-2 py-0.5 rounded-full border ${
+                            l.fit === fit ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-300 text-slate-500'
+                          }`}
+                        >
+                          {fit === 'cover' ? 'Kırp' : 'Sığdır'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -1877,11 +2007,26 @@ export default function StudioEditor({
                   {(o.kind === 'image' || o.kind === 'video') && (
                     <div className="flex items-center gap-1.5 mt-1.5">
                       <button
-                        onClick={() =>
-                          o.kind === 'image'
-                            ? updateImageOverlay(o.id, o.height === undefined ? { height: 50, overlayFit: 'cover' } : { height: undefined })
-                            : updateVideoOverlay(o.id, o.height === undefined ? { height: 50, overlayFit: 'cover' } : { height: undefined })
-                        }
+                        onClick={() => {
+                          // Açılınca konumu otomatik ÜST yarıya (x:0,y:0,width:100,height:50)
+                          // ayarlıyoruz VE ana videoyu da AYNI zaman aralığında (o.startTime..
+                          // o.endTime) otomatik ALT yarıya sığdıran bir sequenceLayout ekliyoruz
+                          // — kullanıcı iki ayrı yerde elle sayı girmeden split-screen kurulmuş
+                          // oluyor. Kapatınca overlay'in kendi kutusu kalkar ama otomatik eklenen
+                          // ana-video segmenti BİLEREK silinmiyor (Sekans panelinde çöp kutusuyla
+                          // elle kaldırılır) — hangi segmentin hangi overlay'e ait olduğunu
+                          // izleyen bir bağ tutmuyoruz, basit tutmak tercih edildi.
+                          if (o.height === undefined) {
+                            const patch = { x: 0, y: 0, width: 100, height: 50, overlayFit: 'cover' as StudioFit };
+                            if (o.kind === 'image') updateImageOverlay(o.id, patch);
+                            else updateVideoOverlay(o.id, patch);
+                            addSequenceLayout(o.startTime, o.endTime, { x: 0, y: 50, width: 100, height: 50, fit: 'cover' });
+                          } else if (o.kind === 'image') {
+                            updateImageOverlay(o.id, { height: undefined });
+                          } else {
+                            updateVideoOverlay(o.id, { height: undefined });
+                          }
+                        }}
                         className={`text-[11px] px-2 py-0.5 rounded-full border ${
                           o.height !== undefined ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-300 text-slate-500'
                         }`}
