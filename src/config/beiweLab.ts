@@ -16,6 +16,16 @@
  */
 export const TWIN_CHARACTER_ID = 'enes2' as const;
 
+/**
+ * "Yardımcı Oyuncular" (Beiwe Lab) sayfasının kapsadığı karakterler.
+ *
+ * Eski Karakter Odası (`admin/characters/*`) dört profil taşıyor (saule, beiwe, enes,
+ * enes2), ama Enes/Enes2 kurucunun kendi twin'i — Beiwe Twin sayfasında zaten ayrı ele
+ * alınıyor. Bu sayfa yalnızca ürünün iki asistan karakterini (ön büro Saule, arka oda
+ * Beiwe) kapsar — bkz. ROADMAP.md Faz S.4.
+ */
+export const CAST_CHARACTER_IDS = ['saule', 'beiwe'] as const;
+
 /** Bir karenin "twin doğrulandı" sayılması için gereken benzerlik puanı. */
 export const TWIN_VERIFIED_SCORE = 9;
 

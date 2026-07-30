@@ -1,21 +1,31 @@
 import { notFound } from 'next/navigation';
 import { requireAdmin } from '@/utils/adminAuth';
 import AdminLayout from '@/components/AdminLayout';
+import BeiweLabTabs from '@/components/beiwe-lab/BeiweLabTabs';
 import CharacterRoomTabs from '@/components/CharacterRoomTabs';
 import CharacterRoomClient from '@/components/CharacterRoomClient';
 import { supabaseAdmin } from '@/utils/supabase/admin';
-import { CHARACTERS, isCharacterId, type CharacterShot } from '@/config/characters';
+import { CHARACTERS, type CharacterShot } from '@/config/characters';
+import { CAST_CHARACTER_IDS } from '@/config/beiweLab';
 import type { CharacterClip } from '@/config/clips';
 
-export default async function CharacterRoomPage({ params }: { params: Promise<{ characterId: string }> }) {
+type CastCharacterId = (typeof CAST_CHARACTER_IDS)[number];
+
+function isCastCharacterId(value: unknown): value is CastCharacterId {
+  return typeof value === 'string' && (CAST_CHARACTER_IDS as readonly string[]).includes(value);
+}
+
+// Beiwe Lab / Yardımcı Oyuncular — eski Karakter Odası'nın (bkz. admin/characters)
+// Saule + Beiwe kısmının Lab'a taşınmış hali. Enes/Enes2 burada yok, onlar kurucunun
+// kendi twin'i — Beiwe Twin sayfasında ele alınıyor (bkz. CAST_CHARACTER_IDS).
+export default async function BeiweLabCastPage({ params }: { params: Promise<{ characterId: string }> }) {
   await requireAdmin();
 
   const { characterId } = await params;
-  if (!isCharacterId(characterId)) notFound();
+  if (!isCastCharacterId(characterId)) notFound();
 
   let character = { ...CHARACTERS[characterId] };
 
-  // Veritabanından dinamik veriyi (identity_prompt, vb.) çek
   const { data: profile } = await supabaseAdmin
     .from('character_profiles')
     .select('*')
@@ -44,8 +54,9 @@ export default async function CharacterRoomPage({ params }: { params: Promise<{ 
 
   return (
     <AdminLayout>
-      <h1 className="text-3xl font-bold text-slate-900 mb-6">Karakter Odası</h1>
-      <CharacterRoomTabs />
+      <h1 className="text-3xl font-bold text-slate-900 mb-6">Yardımcı Oyuncular</h1>
+      <BeiweLabTabs />
+      <CharacterRoomTabs ids={CAST_CHARACTER_IDS} basePath="/admin/beiwe-lab/cast" />
       <CharacterRoomClient
         character={character}
         initialShots={(shots || []) as CharacterShot[]}

@@ -41,7 +41,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       matchPrefixes: ['/admin/characters', '/admin/beiwe-lab'],
       children: [
         { label: 'Beiwe Twin', href: '/admin/beiwe-lab/twin' },
-        { label: 'Yardımcı Oyuncular', href: '/admin/characters' },
+        { label: 'Yardımcı Oyuncular', href: '/admin/beiwe-lab/cast' },
         { label: 'Beiwe Voice', href: '/admin/beiwe-lab/voice' },
         { label: 'Beiwe Podcast', href: '/admin/beiwe-lab/podcast' },
         { label: 'Beiwe Post', href: '/admin/beiwe-lab/post' },

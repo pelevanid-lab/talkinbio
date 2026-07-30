@@ -15,7 +15,7 @@ import { Users, Sparkles, Mic, Clapperboard, Film, Scissors, Type } from 'lucide
 // fantastic/trend videoları için (bkz. BeiweMotionClient, config/motionStyles.ts).
 const tabs = [
   { label: 'Beiwe Twin', href: '/admin/beiwe-lab/twin', icon: Sparkles, ready: true },
-  { label: 'Yardımcı Oyuncular', href: '/admin/characters', icon: Users, ready: true },
+  { label: 'Yardımcı Oyuncular', href: '/admin/beiwe-lab/cast', icon: Users, ready: true },
   { label: 'Beiwe Voice', href: '/admin/beiwe-lab/voice', icon: Mic, ready: true },
   { label: 'Beiwe Podcast', href: '/admin/beiwe-lab/podcast', icon: Clapperboard, ready: true },
   { label: 'Beiwe Motion', href: '/admin/beiwe-lab/motion', icon: Film, ready: true },

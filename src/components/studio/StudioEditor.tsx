@@ -868,7 +868,7 @@ export default function StudioEditor({
                 videoOverlayAspects={videoOverlayAspects}
                 onDropAsset={(url, kind, x, y) => {
                   const start = currentTime;
-                  const end = Math.min(effectiveDuration || start + (kind === 'video' ? 4 : 3), start + (kind === 'video' ? 4 : 3));
+                  const end = Math.min(masterEnd, start + (kind === 'video' ? 4 : 3));
                   if (kind === 'image' || kind === 'video') {
                     if (timeline.overlays.length >= MAX_OVERLAYS) {
                       setError(`En fazla ${MAX_OVERLAYS} overlay eklenebilir.`);
