@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
     if (shortTokenData.error) {
       console.error('Meta OAuth short token error:', shortTokenData.error);
-      return NextResponse.redirect(`${origin}/dashboard/editor?settings=assistant&meta_error=token_exchange_failed`);
+      return NextResponse.redirect(`${origin}/dashboard/leads?meta_error=token_exchange_failed`);
     }
 
     const shortToken = shortTokenData.access_token;
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
 
     if (longTokenData.error) {
       console.error('Meta OAuth long token error:', longTokenData.error);
-      return NextResponse.redirect(`${origin}/dashboard/editor?settings=assistant&meta_error=long_token_failed`);
+      return NextResponse.redirect(`${origin}/dashboard/leads?meta_error=long_token_failed`);
     }
 
     const longToken = longTokenData.access_token;
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
     }
 
     if (!igAccountId) {
-      return NextResponse.redirect(`${origin}/dashboard/editor?settings=assistant&meta_error=no_instagram_found`);
+      return NextResponse.redirect(`${origin}/dashboard/leads?meta_error=no_instagram_found`);
     }
 
     // 5. Supabase'e kaydet
@@ -97,7 +97,7 @@ export async function GET(request: Request) {
       .single();
 
     if (!business) {
-      return NextResponse.redirect(`${origin}/dashboard/editor?settings=assistant&meta_error=no_business`);
+      return NextResponse.redirect(`${origin}/dashboard/leads?meta_error=no_business`);
     }
 
     // Daha önce varsa güncelle (upsert mantığı)
@@ -114,14 +114,14 @@ export async function GET(request: Request) {
 
     if (upsertError) {
       console.error('Supabase upsert error:', upsertError);
-      return NextResponse.redirect(`${origin}/dashboard/editor?settings=assistant&meta_error=db_save_failed`);
+      return NextResponse.redirect(`${origin}/dashboard/leads?meta_error=db_save_failed`);
     }
 
     // Başarıyla bağlandı
-    return NextResponse.redirect(`${origin}/dashboard/editor?settings=assistant&meta_success=connected`);
+    return NextResponse.redirect(`${origin}/dashboard/leads?meta_success=connected`);
 
   } catch (err) {
     console.error('Meta auth generic error:', err);
-    return NextResponse.redirect(`${origin}/dashboard/editor?settings=assistant&meta_error=server_error`);
+    return NextResponse.redirect(`${origin}/dashboard/leads?meta_error=server_error`);
   }
 }

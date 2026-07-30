@@ -36,6 +36,18 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
   const [settings, setSettings] = useState(business.saule_settings || {});
   const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  
+  // Instagram Connection State
+  const [metaSuccess, setMetaSuccess] = useState<string | null>(null);
+  
+  // URL parametresinden başarı durumunu kontrol et
+  if (typeof window !== 'undefined' && !metaSuccess) {
+    const searchParams = new URLSearchParams(window.location.search);
+    const success = searchParams.get('meta_success');
+    if (success === 'connected') {
+      setMetaSuccess(success);
+    }
+  }
 
   // Order Now button behavior — always offers "open Saule", plus one option per contact method
   // that already has a value filled in the editor's İletişim section (disabled otherwise, so the
@@ -377,12 +389,21 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                   </div>
                 </div>
                 <div className="mt-3">
-                  <a href="/api/auth/meta/login" className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium text-sm rounded-lg hover:opacity-90 transition-opacity shadow-sm">
-                    Instagram'ı Bağla
-                  </a>
-                  <p className="text-xs text-[#8A8880] mt-2">
-                    Not: Yalnızca Profesyonel/İşletme hesapları desteklenmektedir.
-                  </p>
+                  {metaSuccess === 'connected' ? (
+                    <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-50 border border-green-200 text-green-700 font-medium text-sm rounded-lg shadow-sm">
+                      <CheckCircle2 className="w-5 h-5" />
+                      Başarıyla Bağlandı! Asistanınız mesajları yanıtlamaya hazır.
+                    </div>
+                  ) : (
+                    <>
+                      <a href="/api/auth/meta/login" className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium text-sm rounded-lg hover:opacity-90 transition-opacity shadow-sm">
+                        Instagram'ı Bağla
+                      </a>
+                      <p className="text-xs text-[#8A8880] mt-2">
+                        Not: Yalnızca Profesyonel/İşletme hesapları desteklenmektedir.
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
 
