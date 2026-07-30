@@ -57,11 +57,21 @@ export async function GET(request: Request) {
           pageId = page.id;
           igAccountId = igData.instagram_business_account.id;
           
+          // Page token'ı al (webhook aboneliği için gerekli)
+          const pageToken = page.access_token;
+          
           // IG kullanıcı adını al
           const igUserRes = await fetch(`https://graph.facebook.com/v19.0/${igAccountId}?fields=username&access_token=${longToken}`);
           const igUserData = await igUserRes.json();
           igUsername = igUserData.username;
           
+          // Uygulamayı bu sayfanın mesajlarını dinlemesi için (Webhook) abone et! (Kullanıcıları manuel ayarlardan kurtarır)
+          if (pageToken) {
+            await fetch(`https://graph.facebook.com/v19.0/${pageId}/subscribed_apps?subscribed_fields=messages&access_token=${pageToken}`, {
+              method: 'POST'
+            });
+          }
+
           break; // İlk bulduğumuz bağlı hesabı alıp çıkıyoruz
         }
       }
