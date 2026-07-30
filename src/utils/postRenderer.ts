@@ -6,9 +6,10 @@
 // dikey gönderi formatına kırpılırsa arayüzün yarısı kesilir; o yüzden kırpmıyor,
 // çerçeveliyoruz.
 //
-import { type LoadedMedia, resolveFontFamily, wrapLines } from '@/utils/imageOverlay';
-import type { OverlayFont } from '@/config/characters';
-import { BRAND, type PostFormat, type PostTemplate } from '@/config/post';
+import { type LoadedMedia, wrapLines } from '@/utils/imageOverlay';
+import { BRAND, type PostBackground, type PostFormat, type PostTemplate } from '@/config/post';
+import { resolveTemplateFontFamily } from '@/config/postFonts';
+import { drawGrain, drawVignette } from '@/utils/canvasEffects';
 
 const LINE_HEIGHT = 1.14;
 const PADDING_RATIO = 0.075;
@@ -60,6 +61,53 @@ export type RenderPostParams = {
    */
   elapsedMs?: number;
 };
+
+/**
+ * Zemin — düz renk/gradient/mesh (proje planı Faz 2). Mesh, dört köşeye yakın merkezli,
+ * renkten şeffafa giden radyal gradyanların normal alfa harmanlamayla üst üste binmesiyle
+ * elde ediliyor — CSS `radial-gradient` mesh taklidi, ekstra kütüphane gerekmiyor.
+ */
+function paintBackground(ctx: CanvasRenderingContext2D, background: PostBackground, width: number, height: number) {
+  if (background.kind === 'solid') {
+    ctx.fillStyle = background.color;
+    ctx.fillRect(0, 0, width, height);
+    return;
+  }
+
+  if (background.kind === 'gradient') {
+    const rad = (background.angle * Math.PI) / 180;
+    const dx = Math.cos(rad);
+    const dy = Math.sin(rad);
+    const len = Math.abs(dx) * width + Math.abs(dy) * height;
+    const cx = width / 2;
+    const cy = height / 2;
+    const gradient = ctx.createLinearGradient(cx - (dx * len) / 2, cy - (dy * len) / 2, cx + (dx * len) / 2, cy + (dy * len) / 2);
+    gradient.addColorStop(0, background.from);
+    gradient.addColorStop(1, background.to);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
+    return;
+  }
+
+  // mesh
+  const [c0, c1, c2, c3] = background.colors;
+  ctx.fillStyle = c0;
+  ctx.fillRect(0, 0, width, height);
+  const radius = Math.max(width, height) * 0.85;
+  const corners: [number, number, string][] = [
+    [width * 0.15, height * 0.15, c0],
+    [width * 0.85, height * 0.15, c1],
+    [width * 0.15, height * 0.85, c2],
+    [width * 0.85, height * 0.85, c3],
+  ];
+  for (const [cx, cy, color] of corners) {
+    const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    gradient.addColorStop(0, color);
+    gradient.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
+  }
+}
 
 /** roundRect her yerde yok; yoksa düz dikdörtgene düş. */
 function roundedRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
@@ -164,10 +212,10 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
 
   await document.fonts.ready;
 
-  // Kiril kontrolü: Bricolage'da Kiril glifleri eksik, sistem fontuna düşerse tipografi bozulur.
+  // Kiril kontrolü: kürasyonlu fontların çoğunda Kiril glifi yok, sistem fontuna düşerse
+  // tipografi bozulur — `resolveTemplateFontFamily` bilinen-iyi bir Kiril fontuna (Inter) düşer.
   const hasCyrillic = /[Ѐ-ӿ]/.test(`${texts.headline}${texts.subline}`);
-  const font: OverlayFont = hasCyrillic ? 'inter' : 'bricolage';
-  const family = resolveFontFamily(font);
+  const family = resolveTemplateFontFamily(template.fontId, hasCyrillic);
 
   const padding = Math.round(Math.min(width, height) * PADDING_RATIO);
   const maxTextWidth = width - padding * 2;
@@ -178,8 +226,10 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
   const loopProgress = elapsedMs === undefined ? 1 : clamp01(elapsedMs / ANIMATED_POST_DURATION_MS);
 
   // 1 — Zemin
-  ctx.fillStyle = template.background;
-  ctx.fillRect(0, 0, width, height);
+  paintBackground(ctx, template.background, width, height);
+  // Grain zamana göre döngüsel titrer (bkz. canvasEffects.ts) — statik/PNG export'ta
+  // (elapsedMs yok) 0. karede sabitlenir, dokusu yine görünür kalır.
+  const grainTime = elapsedMs === undefined ? 0 : elapsedMs / 1000;
 
   // Hareketli iken hafif bir ışık huzmesi zeminde kayar — ElevenLabs'ın renkli
   // gradient karolarına yakın bir his verir, görsel olmayan ('none') şablonlarda
@@ -255,7 +305,89 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
       }
     }
 
+    if (template.grain) drawGrain(ctx, template.grain, grainTime, width, height);
+    if (template.vignette) drawVignette(ctx, template.vignette, width, height);
     paintWordmark(ctx, width, height, padding, family, template.wordmarkColor, 'right');
+    return;
+  }
+
+  if (template.imageMode === 'card') {
+    // "Alıntı kartı" — kurucunun paylaştığı referans (ElevenLabs ElevenReader reels'i):
+    // gradient/mesh zemin üzerinde ortada yüzen, gölgeli, köşeleri yuvarlak beyaz bir kart —
+    // solda küçük bir küçük resim (varsa), sağında alıntı + altında isim/tarif. Dıştaki
+    // `headline`/`subline` (tam-ekran metin için ölçülmüştü) burada KULLANILMIYOR — kart çok
+    // daha dar bir alan olduğu için kendi ölçümünü yapıyor.
+    const cardWidth = width * 0.82;
+    const cardPadding = cardWidth * 0.055;
+    const thumbSize = img ? cardWidth * 0.16 : 0;
+    const textX = cardPadding + (img ? thumbSize + cardPadding * 0.8 : 0);
+    const textMaxWidth = cardWidth - textX - cardPadding;
+
+    const cardHeadline = measureBlock(
+      ctx,
+      texts.headline,
+      (height * template.headlineSizePct) / 100,
+      700,
+      template.headlineColor,
+      family,
+      textMaxWidth,
+    );
+    const cardSubline = measureBlock(
+      ctx,
+      texts.subline,
+      (height * template.sublineSizePct) / 100,
+      500,
+      template.sublineColor,
+      family,
+      textMaxWidth,
+    );
+    const cardBlockGap = ((height * template.sublineSizePct) / 100) * 0.5;
+    const textBlockHeight =
+      (cardHeadline?.height ?? 0) + (cardSubline?.height ?? 0) + (cardHeadline && cardSubline ? cardBlockGap : 0);
+    const cardHeight = Math.max(thumbSize + cardPadding * 2, textBlockHeight + cardPadding * 2);
+
+    const cardX = (width - cardWidth) / 2;
+    const cardY = (height - cardHeight) / 2;
+    const cardRadius = cardHeight * 0.14;
+
+    ctx.save();
+    ctx.globalAlpha = headlineReveal.opacity;
+    const cardOffsetY = headlineReveal.offsetY;
+
+    ctx.shadowColor = 'rgba(0,0,0,0.18)';
+    ctx.shadowBlur = cardHeight * 0.25;
+    ctx.shadowOffsetY = cardHeight * 0.06;
+    ctx.fillStyle = '#FFFFFF';
+    roundedRectPath(ctx, cardX, cardY + cardOffsetY, cardWidth, cardHeight, cardRadius);
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+
+    if (img && mediaObj) {
+      const thumbX = cardX + cardPadding;
+      const thumbY = cardY + cardOffsetY + (cardHeight - thumbSize) / 2;
+      const thumbRadius = thumbSize * 0.12;
+      const src = fitCoverSource(mediaObj.width, mediaObj.height, thumbSize, thumbSize);
+      ctx.save();
+      roundedRectPath(ctx, thumbX, thumbY, thumbSize, thumbSize, thumbRadius);
+      ctx.clip();
+      ctx.drawImage(mediaObj.element, src.sx, src.sy, src.sw, src.sh, thumbX, thumbY, thumbSize, thumbSize);
+      ctx.restore();
+    }
+
+    let textCursorY = cardY + cardOffsetY + (cardHeight - textBlockHeight) / 2;
+    const flat = { opacity: 1, offsetY: 0 };
+    if (cardHeadline) {
+      paintBlock(ctx, cardHeadline, textX, textCursorY, family, 'left', flat);
+      textCursorY += cardHeadline.height + (cardSubline ? cardBlockGap : 0);
+    }
+    if (cardSubline) paintBlock(ctx, cardSubline, textX, textCursorY, family, 'left', flat);
+    ctx.restore();
+
+    if (template.grain) drawGrain(ctx, template.grain, grainTime, width, height);
+    if (template.vignette) drawVignette(ctx, template.vignette, width, height);
+    paintWordmark(ctx, width, height, padding, family, template.wordmarkColor, 'center');
     return;
   }
 
@@ -294,6 +426,8 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
     }
     if (subline) paintBlock(ctx, subline, x, cursorY, family, align, sublineReveal);
 
+    if (template.grain) drawGrain(ctx, template.grain, grainTime, width, height);
+    if (template.vignette) drawVignette(ctx, template.vignette, width, height);
     paintWordmark(ctx, width, height, padding, family, template.wordmarkColor, centered ? 'center' : 'right');
     return;
   }
@@ -305,6 +439,8 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
     cursorY += headline.height + (subline ? blockGap : 0);
   }
   if (subline) paintBlock(ctx, subline, padding, cursorY, family, 'left', sublineReveal);
+  if (template.grain) drawGrain(ctx, template.grain, grainTime, width, height);
+  if (template.vignette) drawVignette(ctx, template.vignette, width, height);
   paintWordmark(ctx, width, height, padding, family, template.wordmarkColor, 'left');
 }
 

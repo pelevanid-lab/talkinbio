@@ -16,7 +16,7 @@ import { filterBlocksToLocale } from './localeFilter';
 export type RunSauleTurnParams = {
   supabaseAdmin: SupabaseClient;
   businessId: string;
-  channel: 'web';
+  channel: 'web' | 'instagram';
   conversationKey: string;
   userMessage: string;
   locale: string | null;

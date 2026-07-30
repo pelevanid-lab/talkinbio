@@ -547,6 +547,42 @@ export async function enhanceAudio(params: EnhanceAudioParams): Promise<EnhanceA
   };
 }
 
+/* ------------------------------------------------------------------ */
+/* Obje/arka plan kesme — Beiwe Post                                    */
+/* ------------------------------------------------------------------ */
+//
+// DOĞRULANMADI — proje disiplini "deneyle bulundu, dokümanla değil" (bkz. motionModels.ts,
+// clips.ts'teki aynı etiketleme). Model kimliği ve `result` alan adları (`image.url` vs
+// `image_url`) ilk gerçek çağrıda netleşecek; aşağıdaki çoklu-alan toleransı `enhanceAudio`
+// ile AYNI gerekçeyle var — fal'ın tam dönüş şeklini dokümantasyondan değil ilk çağrıdan
+// öğreniyoruz.
+
+export type RemoveBackgroundResult = {
+  url: string;
+  requestId: string;
+};
+
+export async function removeImageBackground(imageUrl: string): Promise<RemoveBackgroundResult> {
+  const { result, requestId } = await submitAndPoll<any>(
+    'fal-ai/imageutils/rembg',
+    { image_url: imageUrl },
+    {
+      timeoutMs: 60000,
+      timeoutMessage: 'fal.ai arka plan kaldırma işlemi zaman aşımına uğradı.',
+      failMessage: 'fal.ai arka planı kaldıramadı.',
+    },
+  );
+
+  const imageObj = result?.image?.url || result?.image_url || result?.image;
+  const url = typeof imageObj === 'string' ? imageObj : imageObj?.url;
+
+  if (!url || typeof url !== 'string') {
+    throw new FalError('fal.ai işlenmiş görsel döndürmedi.', `requestId=${requestId} ${JSON.stringify(result)}`);
+  }
+
+  return { url, requestId };
+}
+
 export async function generateCharacterMotion(params: GenerateMotionParams): Promise<GenerateMotionResult> {
   const { model, imageUrl, audioUrl, resolution, prompt, turboMode } = params;
 

@@ -38,7 +38,27 @@ export const POST_FORMATS: PostFormat[] = [
   { id: 'story', label: 'Story / Reel 9:16', width: 1080, height: 1920, hint: 'Tam ekran dikey' },
 ];
 
-export type PostTemplateId = 'ekran' | 'duyuru' | 'aci' | 'soz';
+export type PostTemplateId =
+  | 'ekran'
+  | 'duyuru'
+  | 'aci'
+  | 'soz'
+  | 'obje-vitrini'
+  | 'gradient-duyuru'
+  | 'buyuk-rakam'
+  | 'karanlik-sinematik'
+  | 'alinti-karti';
+
+/**
+ * Zemin — düz renkten (eski davranış) gradient/mesh'e genişletildi (proje planı Faz 2).
+ * `postRenderer.ts`'teki `paintBackground` bu üç türü çizer; grain/vignette (bkz.
+ * `utils/canvasEffects.ts`, Studio'nunkiyle AYNI fonksiyonlar) ayrıca `PostTemplate.grain`/
+ * `vignette` alanlarıyla İSTEĞE BAĞLI uygulanır.
+ */
+export type PostBackground =
+  | { kind: 'solid'; color: string }
+  | { kind: 'gradient'; from: string; to: string; angle: number } // derece, 0 = soldan sağa
+  | { kind: 'mesh'; colors: [string, string, string, string] }; // dört köşe, mesh-gradient hissi
 
 export type PostTemplate = {
   id: PostTemplateId;
@@ -51,9 +71,11 @@ export type PostTemplate = {
    *          dikey formata kırpılırsa arayüz kesilir — bu yüzden kırpmak değil çerçevelemek).
    * cover:   görsel tam kanar, kırpılır.
    * none:    görselsiz, düz zemin.
+   * card:    metin (+ küçük bir küçük resim) zeminin ÜSTÜNDE, ortada yüzen gölgeli beyaz bir
+   *          kartın içinde durur — "alıntı kartı", bkz. postRenderer.ts imageMode:'card' yorumu.
    */
-  imageMode: 'contain' | 'cover' | 'none';
-  background: string;
+  imageMode: 'contain' | 'cover' | 'none' | 'card';
+  background: PostBackground;
   headlineColor: string;
   sublineColor: string;
   /** Kanvas yüksekliğinin yüzdesi. */
@@ -62,11 +84,23 @@ export type PostTemplate = {
   wordmarkColor: string;
   /** Görselin üstüne karartma bindirilsin mi (yalnız `cover`). */
   scrim: 'none' | 'bottom' | 'full';
+  /** 0-1, verilmezse 0 — bkz. `utils/canvasEffects.ts`. */
+  grain?: number;
+  vignette?: number;
+  /**
+   * `config/postFonts.ts`'teki `CuratedPostFont.id`'ye referans — proje planı Faz 4: font
+   * özgürlüğü kullanıcı-başına değil ŞABLON-başına, her şablon kendi fontunu TAŞIR. Kiril
+   * metinde bu fontun Kiril desteği yoksa `postRenderer.ts` otomatik `CYRILLIC_FALLBACK_FONT_ID`'ye
+   * (Inter) düşer — site genelindeki bricolage→inter güvenlik ağıyla AYNI mantık.
+   */
+  fontId: string;
 };
 
 /**
- * Dört şablon, dört iş. Fazlası tutarlılığı bozar — bu katmanın amacı seçenek sunmak
- * değil, seçeneği KISITLAMAK.
+ * Her şablon bir iş için var. Sayı 4'ten 9'a çıktı (proje planı Faz 3) ama ilke aynı: bu
+ * katmanın amacı seçenek SUNMAK değil, seçeneği KISITLAMAK — kullanıcı hâlâ yalnızca metin/
+ * görsel/format/hangi şablon seçiyor, her şablonun tipografi/renk/konum/zemini kendi içinde
+ * kilitli. Çeşitlilik şablon SAYISINDA, her tekil şablonun ÖZGÜRLÜĞÜNDE değil.
  */
 export const POST_TEMPLATES: PostTemplate[] = [
   {
@@ -75,13 +109,14 @@ export const POST_TEMPLATES: PostTemplate[] = [
     pillar: 'Ekran kaydı · nasıl yapılır',
     hint: 'Ekran görüntüsü koyu zeminde çerçevelenir, başlık üstte. En güçlü içerik biçimi.',
     imageMode: 'contain',
-    background: BRAND.ink,
+    background: { kind: 'solid', color: BRAND.ink },
     headlineColor: BRAND.paper,
     sublineColor: BRAND.muted,
     headlineSizePct: 4.6,
     sublineSizePct: 2.3,
     wordmarkColor: BRAND.muted,
     scrim: 'none',
+    fontId: 'bricolage-grotesque',
   },
   {
     id: 'duyuru',
@@ -89,13 +124,14 @@ export const POST_TEMPLATES: PostTemplate[] = [
     pillar: 'Özellik duyurusu',
     hint: 'Görsel tam kanar, üstüne koyu perde ve ortada iri başlık.',
     imageMode: 'cover',
-    background: BRAND.ink,
+    background: { kind: 'solid', color: BRAND.ink },
     headlineColor: BRAND.paper,
     sublineColor: BRAND.paper,
     headlineSizePct: 8,
     sublineSizePct: 2.8,
     wordmarkColor: 'rgba(244,242,237,0.75)',
     scrim: 'full',
+    fontId: 'bricolage-grotesque',
   },
   {
     id: 'aci',
@@ -103,13 +139,14 @@ export const POST_TEMPLATES: PostTemplate[] = [
     pillar: 'Problem farkındalığı',
     hint: 'Görsel tam kanar, altta karartma, başlık sol altta. B-roll için tasarlandı.',
     imageMode: 'cover',
-    background: BRAND.ink,
+    background: { kind: 'solid', color: BRAND.ink },
     headlineColor: BRAND.paper,
     sublineColor: 'rgba(244,242,237,0.8)',
     headlineSizePct: 5.6,
     sublineSizePct: 2.5,
     wordmarkColor: 'rgba(244,242,237,0.7)',
     scrim: 'bottom',
+    fontId: 'bricolage-grotesque',
   },
   {
     id: 'soz',
@@ -117,13 +154,93 @@ export const POST_TEMPLATES: PostTemplate[] = [
     pillar: 'Görselsiz',
     hint: 'Görsel yok. Mercan zeminde iri metin — üretim maliyeti sıfır, ızgarada ritim kurar.',
     imageMode: 'none',
-    background: BRAND.coral,
+    background: { kind: 'solid', color: BRAND.coral },
     headlineColor: BRAND.ink,
     sublineColor: 'rgba(20,35,31,0.7)',
     headlineSizePct: 7,
     sublineSizePct: 2.6,
     wordmarkColor: 'rgba(20,35,31,0.55)',
     scrim: 'none',
+    fontId: 'bricolage-grotesque',
+  },
+  {
+    id: 'obje-vitrini',
+    label: 'Obje vitrini',
+    pillar: 'Ürün/obje · arka planı kaldırılmış',
+    hint: 'Sıcak mesh-gradient zemin + hafif grain, obje/kişi ortada yüzer. "Arka planı kaldır" ile üretilen görseller için tasarlandı.',
+    imageMode: 'contain',
+    background: { kind: 'mesh', colors: ['#FFD9A0', '#FF9E7A', '#C77DFF', '#7B5CFF'] },
+    headlineColor: BRAND.paper,
+    sublineColor: 'rgba(244,242,237,0.75)',
+    headlineSizePct: 5,
+    sublineSizePct: 2.4,
+    wordmarkColor: 'rgba(244,242,237,0.7)',
+    scrim: 'none',
+    grain: 0.35,
+    fontId: 'space-grotesk',
+  },
+  {
+    id: 'gradient-duyuru',
+    label: 'Gradient duyuru',
+    pillar: 'Özellik duyurusu',
+    hint: '\'X yayında\'nın gradient zeminli varyantı — daha canlı, daha az kurumsal.',
+    imageMode: 'cover',
+    background: { kind: 'gradient', from: '#2B6F5C', to: '#14231F', angle: 135 },
+    headlineColor: BRAND.paper,
+    sublineColor: BRAND.paper,
+    headlineSizePct: 8,
+    sublineSizePct: 2.8,
+    wordmarkColor: 'rgba(244,242,237,0.75)',
+    scrim: 'full',
+    fontId: 'archivo-black',
+  },
+  {
+    id: 'buyuk-rakam',
+    label: 'Büyük rakam',
+    pillar: 'Görselsiz · istatistik',
+    hint: '\'Söz\'den farkı: tek bir sayı/kısa ifade için AŞIRI büyük punto, altında ince bir açıklama.',
+    imageMode: 'none',
+    background: { kind: 'solid', color: BRAND.ink },
+    headlineColor: BRAND.paper,
+    sublineColor: 'rgba(244,242,237,0.6)',
+    headlineSizePct: 13,
+    sublineSizePct: 2.2,
+    wordmarkColor: 'rgba(244,242,237,0.5)',
+    scrim: 'none',
+    fontId: 'anton',
+  },
+  {
+    id: 'karanlik-sinematik',
+    label: 'Karanlık sinematik',
+    pillar: 'Motion çıktısı · sinematik kare',
+    hint: 'Koyu zemin + vinyet + grain — Beiwe Motion\'dan çıkan sinematik karelerle eşleşsin diye.',
+    imageMode: 'cover',
+    background: { kind: 'solid', color: '#0A0F0D' },
+    headlineColor: BRAND.paper,
+    sublineColor: 'rgba(244,242,237,0.75)',
+    headlineSizePct: 5.4,
+    sublineSizePct: 2.4,
+    wordmarkColor: 'rgba(244,242,237,0.6)',
+    scrim: 'bottom',
+    grain: 0.3,
+    vignette: 0.55,
+    fontId: 'playfair-display',
+  },
+  {
+    id: 'alinti-karti',
+    label: 'Alıntı kartı',
+    pillar: 'Alıntı/yorum · dizi hâlinde kullanılabilir',
+    hint: 'Ortada yüzen beyaz kart — küçük resim + alıntı + isim. Birkaç tanesini kaydedip Beiwe Studio\'nun Sekans panelinde art arda dizerek "kartlar birer birer beliriyor" etkisi kurulabilir.',
+    imageMode: 'card',
+    background: { kind: 'mesh', colors: ['#FFB199', '#F7716B', '#C86DD7', '#8E6FE3'] },
+    headlineColor: BRAND.ink,
+    sublineColor: BRAND.muted,
+    headlineSizePct: 3.2,
+    sublineSizePct: 2,
+    wordmarkColor: 'rgba(244,242,237,0.85)',
+    scrim: 'none',
+    grain: 0.25,
+    fontId: 'lora',
   },
 ];
 

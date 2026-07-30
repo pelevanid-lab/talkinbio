@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Check, Download, ImageIcon, Loader2, Save, Upload, X } from 'lucide-react';
+import { AlertTriangle, Check, Download, ImageIcon, Loader2, Save, Undo2, Upload, Wand2, X } from 'lucide-react';
 import type { CharacterShot } from '@/config/characters';
 import type { OverlayLocale } from '@/config/characters';
 import { OVERLAY_LOCALES } from '@/config/characters';
@@ -12,6 +12,7 @@ import {
   type PostTemplate,
   type PostTemplateId,
 } from '@/config/post';
+import { findCuratedPostFont, googleFontsHref } from '@/config/postFonts';
 import { ANIMATED_POST_DURATION_MS, canvasToPng, renderPost, type PostTexts } from '@/utils/postRenderer';
 import { downloadBlob, loadMedia, type LoadedMedia } from '@/utils/imageOverlay';
 
@@ -54,11 +55,20 @@ export default function BeiwePostClient({ shots, characterId }: Props) {
   // her şablonda çalışır, süre kilitli (ANIMATED_POST_DURATION_MS).
   const [animated, setAnimated] = useState(false);
 
+  const [removingBackground, setRemovingBackground] = useState(false);
+  // Arka planı kaldırılmış görselin ÖNCESİNİ tutar — "Orijinali geri getir" bunu geri yükler.
+  // `imageUrl` bg-kaldırma sonrası fal'ın URL'ine geçtiği için orijinali ayrıca saklamak gerekiyor.
+  const [previousImageUrl, setPreviousImageUrl] = useState<string | null>(null);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Yerel dosyalar için oluşturulan object URL'i serbest bırakmak gerekiyor.
   const objectUrlRef = useRef<string | null>(null);
+  // "Arka planı kaldır" fal'a erişilebilir bir https URL istiyor — object URL tarayıcıya
+  // özel olduğu için cihazdan yüklenen dosyanın KENDİSİ (multipart gönderim için) burada
+  // ayrıca tutuluyor; galeriden seçilen görsellerde zaten gerçek bir Supabase URL'i var.
+  const uploadedFileRef = useRef<File | null>(null);
   // "Hareketli" önizleme döngüsünün başlangıç zamanı — indirme sırasında bu döngü
   // duraklatılır (capturingRef), aksi halde ikinci bir paint() kaynağı yarış durumu yaratır.
   const animationStartRef = useRef<number>(0);
@@ -86,6 +96,37 @@ export default function BeiwePostClient({ shots, characterId }: Props) {
     },
     [template, format, texts, mediaObj, needsImage],
   );
+
+  // Şablonun kilitli fontu — sadece Post editöründe, runtime'da `<link>` enjekte edilir (bkz.
+  // config/postFonts.ts başlık yorumu: next/font DEĞİL, 30+ fontu build-time'da self-host
+  // etmek gereksiz bundle şişmesi olurdu). `data-post-font` ile aynı font iki kez eklenmiyor;
+  // henüz yüklenmemişse `load` olayında bir kez daha çizip fallback fontla kalan karenin
+  // önüne geçiyoruz.
+  useEffect(() => {
+    const font = findCuratedPostFont(template.fontId);
+    if (!font) return;
+
+    const existing = document.querySelector<HTMLLinkElement>(`link[data-post-font="${font.id}"]`);
+    if (existing) {
+      if (existing.dataset.loaded === 'true') {
+        paint(locale).catch(() => {});
+      } else {
+        existing.addEventListener('load', () => paint(locale).catch(() => {}), { once: true });
+      }
+      return;
+    }
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = googleFontsHref(font);
+    link.dataset.postFont = font.id;
+    link.onload = () => {
+      link.dataset.loaded = 'true';
+      paint(locale).catch(() => {});
+    };
+    document.head.appendChild(link);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [template.fontId]);
 
   // Load media whenever imageUrl changes
   useEffect(() => {
@@ -169,6 +210,8 @@ export default function BeiwePostClient({ shots, characterId }: Props) {
     if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
     const url = URL.createObjectURL(file);
     objectUrlRef.current = url;
+    uploadedFileRef.current = file;
+    setPreviousImageUrl(null);
     setImageUrl(url);
     setIsVideo(file.type.startsWith('video/'));
     setUploadedName(file.name);
@@ -179,10 +222,59 @@ export default function BeiwePostClient({ shots, characterId }: Props) {
       URL.revokeObjectURL(objectUrlRef.current);
       objectUrlRef.current = null;
     }
+    uploadedFileRef.current = null;
+    setPreviousImageUrl(null);
     setImageUrl(shot.image_url);
     setIsVideo(false);
     setUploadedName(null);
     setShowGallery(false);
+  };
+
+  /** Cihazdan yüklenen dosyayı (varsa) ya da galeriden seçilen gerçek URL'i fal'a gönderip
+   * arka planını kaldırır — sunucu tarafı `remove-background` route'u iki girdiyi de kabul
+   * ediyor (bkz. o route'un yorumu). */
+  const removeBackground = async () => {
+    if (!imageUrl) return;
+    setRemovingBackground(true);
+    setError(null);
+    try {
+      let res: Response;
+      if (uploadedFileRef.current) {
+        const formData = new FormData();
+        formData.append('file', uploadedFileRef.current);
+        res = await fetch(`/api/admin/characters/${characterId}/post/remove-background`, {
+          method: 'POST',
+          body: formData,
+        });
+      } else {
+        res = await fetch(`/api/admin/characters/${characterId}/post/remove-background`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageUrl }),
+        });
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Arka plan kaldırılamadı.');
+
+      setPreviousImageUrl(imageUrl);
+      // Sonuç fal'ın kendi barındırdığı gerçek bir URL — object URL değil, bu yüzden
+      // `uploadedFileRef`'i temizlemiyoruz ama artık ihtiyaç yok (yeni imageUrl zaten https).
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
+      setImageUrl(data.url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Arka plan kaldırılamadı.');
+    } finally {
+      setRemovingBackground(false);
+    }
+  };
+
+  const restoreOriginal = () => {
+    if (!previousImageUrl) return;
+    setImageUrl(previousImageUrl);
+    setPreviousImageUrl(null);
   };
 
   const clearImage = () => {
@@ -190,6 +282,8 @@ export default function BeiwePostClient({ shots, characterId }: Props) {
       URL.revokeObjectURL(objectUrlRef.current);
       objectUrlRef.current = null;
     }
+    uploadedFileRef.current = null;
+    setPreviousImageUrl(null);
     setImageUrl(null);
     setIsVideo(false);
     setUploadedName(null);
@@ -469,7 +563,9 @@ export default function BeiwePostClient({ shots, characterId }: Props) {
               <p className="text-xs text-slate-500 mb-3">
                 {template.imageMode === 'contain'
                   ? 'Ekran kaydı/görüntüsü çerçevelenir, kırpılmaz — arayüzün tamamı görünür kalır.'
-                  : 'Görsel tam kanar ve formata göre kırpılır.'}
+                  : template.imageMode === 'card'
+                    ? 'Kartın solunda küçük bir küçük resim olarak durur — opsiyonel, boş bırakılabilir.'
+                    : 'Görsel tam kanar ve formata göre kırpılır.'}
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 <button
@@ -487,6 +583,26 @@ export default function BeiwePostClient({ shots, characterId }: Props) {
                   <ImageIcon className="w-4 h-4" />
                   Galeriden seç ({shots.length})
                 </button>
+                {imageUrl && !isVideo && (
+                  <button
+                    onClick={removeBackground}
+                    disabled={removingBackground}
+                    title="fal.ai ile görseldeki arka planı kaldırır — obje/kişi zeminden ayrılır."
+                    className="flex items-center gap-2 text-sm font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg px-4 py-2 disabled:opacity-50"
+                  >
+                    {removingBackground ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                    Arka planı kaldır
+                  </button>
+                )}
+                {previousImageUrl && (
+                  <button
+                    onClick={restoreOriginal}
+                    className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800"
+                  >
+                    <Undo2 className="w-3.5 h-3.5" />
+                    Orijinali geri getir
+                  </button>
+                )}
                 {imageUrl && (
                   <button
                     onClick={clearImage}
@@ -595,7 +711,7 @@ export default function BeiwePostClient({ shots, characterId }: Props) {
             <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
               <canvas ref={canvasRef} className="w-full h-auto block" />
             </div>
-            {needsImage && !imageUrl && (
+            {needsImage && template.imageMode !== 'card' && !imageUrl && (
               <p className="text-xs text-amber-600 mt-2">
                 Bu şablon görsel istiyor — yükleyene kadar yalnız zemin ve metin görünür.
               </p>
