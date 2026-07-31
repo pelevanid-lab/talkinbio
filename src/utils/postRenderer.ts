@@ -48,6 +48,36 @@ function revealTransform(elapsedMs: number | undefined, delayMs: number, duratio
 
 export type PostTexts = { headline: string; subline: string };
 
+/**
+ * Kullanıcının şablonun kilitli yerleşimi ÜSTÜNE ekleyebildiği ince ayarlar — proje planı
+ * dışında, kurucunun somut isteği: "obje büyült/küçült", "objenin/yazının konumu sürükle-
+ * bırak", "renk skalası için ibre". Şablonun kendisi hâlâ kilitli (tipografi/renk/kompozisyon
+ * mantığı), bunlar sadece o mantığın merkez noktasını kaydırıyor — Studio'daki zoom/overlay
+ * ince ayarlarıyla AYNI felsefe (bkz. StudioZoom): kilit korunur, ince ayar eklenir.
+ */
+export type PostAdjustments = {
+  /** 0.5-2, görsel/obje boyut çarpanı — 1 = şablonun varsayılan hesapladığı boyut. */
+  imageScale: number;
+  /** Canvas genişliği/yüksekliğinin yüzdesi — görselin varsayılan konumuna eklenen ofset. */
+  imageOffsetX: number;
+  imageOffsetY: number;
+  /** Canvas genişliği/yüksekliğinin yüzdesi — metin bloğunun varsayılan konumuna eklenen ofset. */
+  textOffsetX: number;
+  textOffsetY: number;
+  /** Derece, -180..180 — YALNIZCA zemine (gradient/mesh) uygulanır, görseli/objeyi ETKİLEMEZ
+   *  (bir insan/ürün fotoğrafının rengini kaydırmak doğal görünmez, zemin farklı). */
+  hueShift: number;
+};
+
+export const DEFAULT_POST_ADJUSTMENTS: PostAdjustments = {
+  imageScale: 1,
+  imageOffsetX: 0,
+  imageOffsetY: 0,
+  textOffsetX: 0,
+  textOffsetY: 0,
+  hueShift: 0,
+};
+
 export type RenderPostParams = {
   canvas: HTMLCanvasElement;
   template: PostTemplate;
@@ -60,6 +90,8 @@ export type RenderPostParams = {
    * çizilir (PNG indirme ve "hareketli" kapalıyken önizleme bunu kullanır).
    */
   elapsedMs?: number;
+  /** Verilmezse `DEFAULT_POST_ADJUSTMENTS` (hiçbir ince ayar yok, eski davranış). */
+  adjustments?: Partial<PostAdjustments>;
 };
 
 /**
@@ -202,7 +234,7 @@ function paintWordmark(
  * desteği sınırlı olduğu için Rusça metinde `inter`'a düşüyoruz (aynı gerekçe
  * `OVERLAY_FONTS` notunda da var).
  */
-export async function renderPost({ canvas, template, format, texts, mediaObj, elapsedMs }: RenderPostParams): Promise<void> {
+export async function renderPost({ canvas, template, format, texts, mediaObj, elapsedMs, adjustments }: RenderPostParams): Promise<void> {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas oluşturulamadı.');
 
@@ -217,6 +249,12 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
   const hasCyrillic = /[Ѐ-ӿ]/.test(`${texts.headline}${texts.subline}`);
   const family = resolveTemplateFontFamily(template.fontId, hasCyrillic);
 
+  const adj: PostAdjustments = { ...DEFAULT_POST_ADJUSTMENTS, ...adjustments };
+  const textOffsetXpx = (adj.textOffsetX / 100) * width;
+  const textOffsetYpx = (adj.textOffsetY / 100) * height;
+  const imageOffsetXpx = (adj.imageOffsetX / 100) * width;
+  const imageOffsetYpx = (adj.imageOffsetY / 100) * height;
+
   const padding = Math.round(Math.min(width, height) * PADDING_RATIO);
   const maxTextWidth = width - padding * 2;
   const revealOffsetPx = Math.min(width, height) * REVEAL_OFFSET_RATIO;
@@ -225,8 +263,11 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
   /** Ken Burns/shimmer için 0..1 döngü ilerlemesi — `elapsedMs` yoksa (statik) sabit 1. */
   const loopProgress = elapsedMs === undefined ? 1 : clamp01(elapsedMs / ANIMATED_POST_DURATION_MS);
 
-  // 1 — Zemin
+  // 1 — Zemin. `hueShift` YALNIZCA burada uygulanıyor (bkz. PostAdjustments yorumu) —
+  // görseli/objeyi hue-rotate etmek doğal görünmez, sadece zemin rengini kaydırıyoruz.
+  if (adj.hueShift) ctx.filter = `hue-rotate(${adj.hueShift}deg)`;
   paintBackground(ctx, template.background, width, height);
+  ctx.filter = 'none';
   // Grain zamana göre döngüsel titrer (bkz. canvasEffects.ts) — statik/PNG export'ta
   // (elapsedMs yok) 0. karede sabitlenir, dokusu yine görünür kalır.
   const grainTime = elapsedMs === undefined ? 0 : elapsedMs / 1000;
@@ -274,12 +315,12 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
     // Başlık üstte, görsel altta kalan alanda çerçeveli.
     let cursorY = padding;
     if (headline) {
-      paintBlock(ctx, headline, padding, cursorY, family, 'left', headlineReveal);
+      paintBlock(ctx, headline, padding + textOffsetXpx, cursorY + textOffsetYpx, family, 'left', headlineReveal);
       cursorY += headline.height;
     }
     if (subline) {
       cursorY += headline ? blockGap : 0;
-      paintBlock(ctx, subline, padding, cursorY, family, 'left', sublineReveal);
+      paintBlock(ctx, subline, padding + textOffsetXpx, cursorY + textOffsetYpx, family, 'left', sublineReveal);
       cursorY += subline.height;
     }
 
@@ -291,12 +332,13 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
       if (boxHeight > 0 && mediaObj) {
         const fit = fitContain(mediaObj.width, mediaObj.height, boxWidth, boxHeight);
         const radius = Math.min(fit.w, fit.h) * IMAGE_RADIUS_RATIO;
-        // Ken Burns: çerçeve (klip) sabit kalır, içindeki görsel yavaşça büyür.
-        const kb = elapsedMs !== undefined ? 1 + KEN_BURNS_MAX_SCALE_DELTA * loopProgress : 1;
+        // Ken Burns (otomatik) İLE kullanıcının manuel `imageScale`'i (Görsel panelindeki
+        // "Boyut" kaydırıcısı) ÇARPILARAK birleşiyor — ikisi bağımsız, biri diğerini sıfırlamıyor.
+        const kb = (elapsedMs !== undefined ? 1 + KEN_BURNS_MAX_SCALE_DELTA * loopProgress : 1) * adj.imageScale;
         const dw = fit.w * kb;
         const dh = fit.h * kb;
-        const dx = padding + fit.x - (dw - fit.w) / 2;
-        const dy = boxTop + fit.y - (dh - fit.h) / 2;
+        const dx = padding + fit.x - (dw - fit.w) / 2 + imageOffsetXpx;
+        const dy = boxTop + fit.y - (dh - fit.h) / 2 + imageOffsetYpx;
         ctx.save();
         roundedRectPath(ctx, padding + fit.x, boxTop + fit.y, fit.w, fit.h, radius);
         ctx.clip();
@@ -379,8 +421,8 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
       ctx.restore();
     }
 
-    const textX = cardX + textOffsetX;
-    let textCursorY = cardY + cardOffsetY + (cardHeight - textBlockHeight) / 2;
+    const textX = cardX + textOffsetX + textOffsetXpx;
+    let textCursorY = cardY + cardOffsetY + (cardHeight - textBlockHeight) / 2 + textOffsetYpx;
     const flat = { opacity: 1, offsetY: 0 };
     if (cardHeadline) {
       paintBlock(ctx, cardHeadline, textX, textCursorY, family, 'left', flat);
@@ -398,11 +440,21 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
   if (template.imageMode === 'cover') {
     if (mediaObj) {
       const src = fitCoverSource(mediaObj.width, mediaObj.height, width, height);
-      // Ken Burns: tam kanar görsel canvas'a göre hafifçe büyür, merkezde kalır.
-      const kb = elapsedMs !== undefined ? 1 + KEN_BURNS_MAX_SCALE_DELTA * loopProgress : 1;
+      // Ken Burns (otomatik) + kullanıcının manuel `imageScale`'i — bkz. contain moddaki AYNI gerekçe.
+      const kb = (elapsedMs !== undefined ? 1 + KEN_BURNS_MAX_SCALE_DELTA * loopProgress : 1) * adj.imageScale;
       const dw = width * kb;
       const dh = height * kb;
-      ctx.drawImage(mediaObj.element, src.sx, src.sy, src.sw, src.sh, -(dw - width) / 2, -(dh - height) / 2, dw, dh);
+      ctx.drawImage(
+        mediaObj.element,
+        src.sx,
+        src.sy,
+        src.sw,
+        src.sh,
+        -(dw - width) / 2 + imageOffsetXpx,
+        -(dh - height) / 2 + imageOffsetYpx,
+        dw,
+        dh,
+      );
     }
 
     if (template.scrim === 'full') {
@@ -423,12 +475,12 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
     const x = centered ? width / 2 : padding;
     const align: CanvasTextAlign = centered ? 'center' : 'left';
 
-    let cursorY = startY;
+    let cursorY = startY + textOffsetYpx;
     if (headline) {
-      paintBlock(ctx, headline, x, cursorY, family, align, headlineReveal);
+      paintBlock(ctx, headline, x + textOffsetXpx, cursorY, family, align, headlineReveal);
       cursorY += headline.height + (subline ? blockGap : 0);
     }
-    if (subline) paintBlock(ctx, subline, x, cursorY, family, align, sublineReveal);
+    if (subline) paintBlock(ctx, subline, x + textOffsetXpx, cursorY, family, align, sublineReveal);
 
     if (template.grain) drawGrain(ctx, template.grain, grainTime, width, height);
     if (template.vignette) drawVignette(ctx, template.vignette, width, height);
@@ -437,12 +489,12 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
   }
 
   // imageMode 'none' — görselsiz, metin dikey ortalı.
-  let cursorY = (height - textHeight) / 2;
+  let cursorY = (height - textHeight) / 2 + textOffsetYpx;
   if (headline) {
-    paintBlock(ctx, headline, padding, cursorY, family, 'left', headlineReveal);
+    paintBlock(ctx, headline, padding + textOffsetXpx, cursorY, family, 'left', headlineReveal);
     cursorY += headline.height + (subline ? blockGap : 0);
   }
-  if (subline) paintBlock(ctx, subline, padding, cursorY, family, 'left', sublineReveal);
+  if (subline) paintBlock(ctx, subline, padding + textOffsetXpx, cursorY, family, 'left', sublineReveal);
   if (template.grain) drawGrain(ctx, template.grain, grainTime, width, height);
   if (template.vignette) drawVignette(ctx, template.vignette, width, height);
   paintWordmark(ctx, width, height, padding, family, template.wordmarkColor, 'left');

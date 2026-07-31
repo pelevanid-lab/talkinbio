@@ -59,6 +59,14 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
   const [isVideo, setIsVideo] = useState(false);
   const [uploadedName, setUploadedName] = useState<string | null>(null);
   const [showGallery, setShowGallery] = useState(false);
+  // İnce ayarlar — şablonun kilidini bozmadan kullanıcının "obje büyült/küçült",
+  // "objenin/yazının konumu", "renk tonu" isteği (bkz. renderPost'taki PostAdjustments
+  // yorumu). Şablon değişince sıfırlanır (aşağıdaki useEffect) — her şablon kendi
+  // varsayılan yerleşimiyle başlasın diye.
+  const [imageScale, setImageScale] = useState(1);
+  const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 });
+  const [textOffset, setTextOffset] = useState({ x: 0, y: 0 });
+  const [hueShift, setHueShift] = useState(0);
   const [downloading, setDownloading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
@@ -75,6 +83,10 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
   const [previousImageUrl, setPreviousImageUrl] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Sürükle-bırak tutamaçları canvas'ın CSS boyutuna göre yüzde hesaplıyor — canvas
+  // `w-full h-auto` (duyarlı) olduğu için gerçek piksel boyutu ancak bu wrapper'ın
+  // `getBoundingClientRect()`'iyle bilinebilir (bkz. startDrag).
+  const previewWrapRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Yerel dosyalar için oluşturulan object URL'i serbest bırakmak gerekiyor.
@@ -106,10 +118,57 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
         texts: texts[targetLocale],
         mediaObj: needsImage ? mediaObj : null,
         elapsedMs,
+        adjustments: {
+          imageScale,
+          imageOffsetX: imageOffset.x,
+          imageOffsetY: imageOffset.y,
+          textOffsetX: textOffset.x,
+          textOffsetY: textOffset.y,
+          hueShift,
+        },
       });
     },
-    [template, format, texts, mediaObj, needsImage],
+    [template, format, texts, mediaObj, needsImage, imageScale, imageOffset, textOffset, hueShift],
   );
+
+  // Şablon değişince ince ayarlar sıfırlanır — her şablon kendi kilitli varsayılan
+  // yerleşimiyle başlasın, önceki şablonda sürüklenen konum yeni şablona sızmasın.
+  useEffect(() => {
+    setImageScale(1);
+    setImageOffset({ x: 0, y: 0 });
+    setTextOffset({ x: 0, y: 0 });
+    setHueShift(0);
+  }, [templateId]);
+
+  /**
+   * Önizlemedeki "Obje" ya da "Yazı" tutamacını sürüklemeye başlar — fare/parmak hareketini
+   * canvas'ın CSS boyutuna göre yüzdeye çevirip ilgili ofset state'ini günceller. Tutamaç
+   * gerçek görselin/metnin TAM üstünde durmuyor (şablona göre yeri değişir, hesaplaması
+   * `postRenderer.ts`'in kendi yerleşim mantığını JS'te tekrarlamayı gerektirirdi) — sabit
+   * bir konumdan başlayıp GÖRECELİ hareketi aktarıyor, bu da "sürükle" hissi için yeterli.
+   */
+  const startDrag = (kind: 'image' | 'text') => (e: React.PointerEvent) => {
+    e.preventDefault();
+    const wrap = previewWrapRef.current;
+    if (!wrap) return;
+    const rect = wrap.getBoundingClientRect();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startOffset = kind === 'image' ? imageOffset : textOffset;
+    const setOffset = kind === 'image' ? setImageOffset : setTextOffset;
+
+    const onMove = (moveEvent: PointerEvent) => {
+      const dxPct = ((moveEvent.clientX - startX) / rect.width) * 100;
+      const dyPct = ((moveEvent.clientY - startY) / rect.height) * 100;
+      setOffset({ x: startOffset.x + dxPct, y: startOffset.y + dyPct });
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  };
 
   // Şablonun kilitli fontu — sadece Post editöründe, runtime'da `<link>` enjekte edilir (bkz.
   // config/postFonts.ts başlık yorumu: next/font DEĞİL, 30+ fontu build-time'da self-host
@@ -797,14 +856,89 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
               <h2 className="text-sm font-semibold text-slate-900">Önizleme</h2>
               {downloading && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
             </div>
-            <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
+            <div ref={previewWrapRef} className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
               <canvas ref={canvasRef} className="w-full h-auto block" />
+              {needsImage && mediaObj && !isVideo && (
+                <button
+                  onPointerDown={startDrag('image')}
+                  title="Sürükleyerek objenin/görselin konumunu değiştir"
+                  className="absolute w-8 h-8 -ml-4 -mt-4 rounded-full bg-purple-600/90 text-white text-[10px] font-bold flex items-center justify-center cursor-grab active:cursor-grabbing shadow-lg border-2 border-white touch-none"
+                  style={{ left: `calc(50% + ${imageOffset.x}%)`, top: `calc(60% + ${imageOffset.y}%)` }}
+                >
+                  Obje
+                </button>
+              )}
+              {(texts[locale].headline.trim() || texts[locale].subline.trim()) && (
+                <button
+                  onPointerDown={startDrag('text')}
+                  title="Sürükleyerek yazının konumunu değiştir"
+                  className="absolute w-8 h-8 -ml-4 -mt-4 rounded-full bg-slate-900/90 text-white text-[10px] font-bold flex items-center justify-center cursor-grab active:cursor-grabbing shadow-lg border-2 border-white touch-none"
+                  style={{ left: `calc(50% + ${textOffset.x}%)`, top: `calc(20% + ${textOffset.y}%)` }}
+                >
+                  Yazı
+                </button>
+              )}
             </div>
             {needsImage && template.imageMode !== 'card' && !imageUrl && (
               <p className="text-xs text-amber-600 mt-2">
                 Bu şablon görsel istiyor — yükleyene kadar yalnız zemin ve metin görünür.
               </p>
             )}
+
+            <div className="mt-3 pt-3 border-t border-slate-100 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold text-slate-700">İnce ayar</h3>
+                  {(imageScale !== 1 || imageOffset.x !== 0 || imageOffset.y !== 0 || textOffset.x !== 0 || textOffset.y !== 0 || hueShift !== 0) && (
+                    <button
+                      onClick={() => {
+                        setImageScale(1);
+                        setImageOffset({ x: 0, y: 0 });
+                        setTextOffset({ x: 0, y: 0 });
+                        setHueShift(0);
+                      }}
+                      className="text-[11px] text-slate-400 hover:text-slate-700"
+                    >
+                      Sıfırla
+                    </button>
+                  )}
+                </div>
+                {needsImage && mediaObj && !isVideo && (
+                  <label className="block text-xs text-slate-600">
+                    <div className="flex items-center justify-between mb-1">
+                      <span>Obje boyutu</span>
+                      <span className="text-slate-400 tabular-nums">%{Math.round(imageScale * 100)}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.5}
+                      max={2}
+                      step={0.02}
+                      value={imageScale}
+                      onChange={(e) => setImageScale(Number(e.target.value))}
+                      className="w-full"
+                    />
+                  </label>
+                )}
+                <label className="block text-xs text-slate-600">
+                  <div className="flex items-center justify-between mb-1">
+                    <span>Renk tonu</span>
+                    <span className="text-slate-400 tabular-nums">{hueShift > 0 ? `+${hueShift}` : hueShift}°</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={-180}
+                    max={180}
+                    step={1}
+                    value={hueShift}
+                    onChange={(e) => setHueShift(Number(e.target.value))}
+                    className="w-full accent-purple-600"
+                  />
+                </label>
+                <p className="text-[11px] text-slate-400">
+                  Önizlemedeki <strong>Obje</strong>/<strong>Yazı</strong> tutamaçlarını sürükleyerek
+                  konumlarını değiştirebilirsin.
+                </p>
+              </div>
           </div>
 
           <div className="flex flex-col gap-2">

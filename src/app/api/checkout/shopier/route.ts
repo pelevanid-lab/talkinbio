@@ -100,6 +100,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: payment.paymentUrl, fastPayHtml: payment.fastPayHtml });
   } catch (err: any) {
     console.error('Shopier checkout error:', err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    // Return the actual error message to the frontend for debugging
+    const errorMessage = err?.message || 'Bilinmeyen bir hata oluştu';
+    return NextResponse.json({ error: `Hata: ${errorMessage}` }, { status: 500 });
   }
 }
