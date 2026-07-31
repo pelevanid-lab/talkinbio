@@ -72,6 +72,9 @@ export type PostAdjustments = {
   textScale: number;
   /** Verilirse başlık/alt satırın şablon renginin YERİNE geçer (null = şablonun kilitli rengi). */
   textColor: string | null;
+  /** Yalnız `imageMode:'contain'` şablonlarda: obje sürüklenip metnin üstüne gelince hangisi
+   *  görünsün — true = metin objenin üstünde boyanır, false (varsayılan) = obje üstte. */
+  textOnTop: boolean;
 };
 
 export const DEFAULT_POST_ADJUSTMENTS: PostAdjustments = {
@@ -83,6 +86,7 @@ export const DEFAULT_POST_ADJUSTMENTS: PostAdjustments = {
   hueShift: 0,
   textScale: 1,
   textColor: null,
+  textOnTop: false,
 };
 
 export type RenderPostParams = {
@@ -101,14 +105,78 @@ export type RenderPostParams = {
   adjustments?: Partial<PostAdjustments>;
 };
 
+function hexToRgb(hex: string): [number, number, number] {
+  const clean = hex.replace('#', '');
+  const n = parseInt(clean.length === 3 ? clean.split('').map((c) => c + c).join('') : clean, 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  const rn = r / 255, gn = g / 255, bn = b / 255;
+  const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h: number;
+  if (max === rn) h = ((gn - bn) / d + (gn < bn ? 6 : 0)) * 60;
+  else if (max === gn) h = ((bn - rn) / d + 2) * 60;
+  else h = ((rn - gn) / d + 4) * 60;
+  return [h, s, l];
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  let [r, g, b] = [0, 0, 0];
+  if (h < 60) [r, g, b] = [c, x, 0];
+  else if (h < 120) [r, g, b] = [x, c, 0];
+  else if (h < 180) [r, g, b] = [0, c, x];
+  else if (h < 240) [r, g, b] = [0, x, c];
+  else if (h < 300) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
+  const toHex = (v: number) => Math.round((v + m) * 255).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+/** Rengin lacivert/siyaha yakın (çok karanlık) eşiği — bu eşiğin altında hue-rotate GÖRÜNMEZ
+ *  kalıyor (bkz. bulunan hata: 'karanlık sinematik'te "Renk tonu" hiçbir şey yapmıyordu),
+ *  çünkü ton dönüşü parlaklığa dokunmuyor ve neredeyse siyah bir piksel her tonda siyah kalır. */
+const DARK_LIGHTNESS_THRESHOLD = 0.22;
+
+/**
+ * `adj.hueShift`'i TEK bir renge uygular. Zemin zaten yeterince açık/canlıysa (mesh/mercan gibi)
+ * normal ton döndürme yapılır — bu, `obje-vitrini`/`soz` gibi şablonlarda ZATEN doğrulanmış
+ * davranış. Ama zemin karanlık-sinematik/ekran gibi neredeyse siyahsa ton döndürmenin gözle
+ * görülür hiçbir etkisi olmuyor; onun yerine kaydırıcının büyüklüğü kadar rengi GRİYE doğru
+ * açıyoruz (siyahtan griye) — kurucunun somut isteği buydu.
+ */
+function shiftBackgroundColor(hex: string, deg: number): string {
+  if (!deg) return hex;
+  const [r, g, b] = hexToRgb(hex);
+  const [h, s, l] = rgbToHsl(r, g, b);
+  const t = Math.min(Math.abs(deg), 180) / 180;
+  if (l < DARK_LIGHTNESS_THRESHOLD) {
+    const targetL = 0.55;
+    return hslToHex(h, s, l + (targetL - l) * t);
+  }
+  return hslToHex((h + deg + 360) % 360, s, l);
+}
+
 /**
  * Zemin — düz renk/gradient/mesh (proje planı Faz 2). Mesh, dört köşeye yakın merkezli,
  * renkten şeffafa giden radyal gradyanların normal alfa harmanlamayla üst üste binmesiyle
  * elde ediliyor — CSS `radial-gradient` mesh taklidi, ekstra kütüphane gerekmiyor.
+ *
+ * `hueShift` burada, RENK BAZINDA uygulanıyor (bkz. `shiftBackgroundColor`) — eskiden
+ * `ctx.filter = hue-rotate(...)` kullanılıyordu ama bu, karanlık zeminlerde (karanlık-sinematik)
+ * görünmez kalıyordu; artık her rengin kendi parlaklığına göre ton DÖNSÜN mü yoksa griye mi
+ * AÇILSIN karar veriliyor, bu yüzden çağıran taraf ARTIK ayrıca `ctx.filter` uygulamamalı.
  */
-function paintBackground(ctx: CanvasRenderingContext2D, background: PostBackground, width: number, height: number) {
+function paintBackground(ctx: CanvasRenderingContext2D, background: PostBackground, width: number, height: number, hueShift: number) {
   if (background.kind === 'solid') {
-    ctx.fillStyle = background.color;
+    ctx.fillStyle = shiftBackgroundColor(background.color, hueShift);
     ctx.fillRect(0, 0, width, height);
     return;
   }
@@ -121,15 +189,15 @@ function paintBackground(ctx: CanvasRenderingContext2D, background: PostBackgrou
     const cx = width / 2;
     const cy = height / 2;
     const gradient = ctx.createLinearGradient(cx - (dx * len) / 2, cy - (dy * len) / 2, cx + (dx * len) / 2, cy + (dy * len) / 2);
-    gradient.addColorStop(0, background.from);
-    gradient.addColorStop(1, background.to);
+    gradient.addColorStop(0, shiftBackgroundColor(background.from, hueShift));
+    gradient.addColorStop(1, shiftBackgroundColor(background.to, hueShift));
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
     return;
   }
 
   // mesh
-  const [c0, c1, c2, c3] = background.colors;
+  const [c0, c1, c2, c3] = background.colors.map((c) => shiftBackgroundColor(c, hueShift));
   ctx.fillStyle = c0;
   ctx.fillRect(0, 0, width, height);
   const radius = Math.max(width, height) * 0.85;
@@ -277,9 +345,9 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
 
   // 1 — Zemin. `hueShift` YALNIZCA burada uygulanıyor (bkz. PostAdjustments yorumu) —
   // görseli/objeyi hue-rotate etmek doğal görünmez, sadece zemin rengini kaydırıyoruz.
-  if (adj.hueShift) ctx.filter = `hue-rotate(${adj.hueShift}deg)`;
-  paintBackground(ctx, template.background, width, height);
-  ctx.filter = 'none';
+  // Renk bazında uygulanıyor (bkz. `paintBackground`/`shiftBackgroundColor` yorumu) — karanlık
+  // zeminlerde eskiden kullanılan `ctx.filter` yaklaşımı görünmez kalıyordu.
+  paintBackground(ctx, template.background, width, height, adj.hueShift);
   // Grain zamana göre döngüsel titrer (bkz. canvasEffects.ts) — statik/PNG export'ta
   // (elapsedMs yok) 0. karede sabitlenir, dokusu yine görünür kalır.
   const grainTime = elapsedMs === undefined ? 0 : elapsedMs / 1000;
@@ -324,19 +392,27 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
   const img = mediaObj?.element || null;
 
   if (template.imageMode === 'contain') {
-    // Başlık üstte, görsel altta kalan alanda çerçeveli.
-    let cursorY = padding;
-    if (headline) {
-      paintBlock(ctx, headline, padding + textOffsetXpx, cursorY + textOffsetYpx, family, 'left', headlineReveal);
-      cursorY += headline.height;
-    }
-    if (subline) {
-      cursorY += headline ? blockGap : 0;
-      paintBlock(ctx, subline, padding + textOffsetXpx, cursorY + textOffsetYpx, family, 'left', sublineReveal);
-      cursorY += subline.height;
-    }
+    // Başlık üstte, görsel altta kalan alanda çerçeveli — yerleşim matematiği bundan
+    // etkilenmiyor, yalnızca hangisinin diğerinin ÜSTÜNE boyandığı `adj.textOnTop`'a bağlı
+    // (kullanıcı Obje'yi sürükleyip metnin üstüne getirebiliyor, kim görünsün diye seçiyor).
+    const textStartY = padding;
+    const drawText = () => {
+      let y = textStartY;
+      if (headline) {
+        paintBlock(ctx, headline, padding + textOffsetXpx, y + textOffsetYpx, family, 'left', headlineReveal);
+        y += headline.height;
+      }
+      if (subline) {
+        y += headline ? blockGap : 0;
+        paintBlock(ctx, subline, padding + textOffsetXpx, y + textOffsetYpx, family, 'left', sublineReveal);
+      }
+    };
+    let cursorY = textStartY;
+    if (headline) cursorY += headline.height;
+    if (subline) cursorY += (headline ? blockGap : 0) + subline.height;
 
-    if (img) {
+    const drawImage = () => {
+      if (!img) return;
       const boxTop = cursorY + padding * 0.9;
       // Alt boşluk: wordmark için yer bırak.
       const boxHeight = height - boxTop - padding * 1.8;
@@ -351,12 +427,27 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
         const dh = fit.h * kb;
         const dx = padding + fit.x - (dw - fit.w) / 2 + imageOffsetXpx;
         const dy = boxTop + fit.y - (dh - fit.h) / 2 + imageOffsetYpx;
-        ctx.save();
-        roundedRectPath(ctx, padding + fit.x, boxTop + fit.y, fit.w, fit.h, radius);
-        ctx.clip();
-        ctx.drawImage(mediaObj.element, dx, dy, dw, dh);
-        ctx.restore();
+        // `frameImage: false` (ör. obje-vitrini) — kutu yalnızca BAŞLANGIÇ boyutu için var,
+        // kırpılmıyor: obje büyütülüp/sürüklenip taşabilir (bkz. PostTemplate.frameImage
+        // yorumu, bulunan hata: sabit kutuya kırpılınca büyütülen obje görünmez şekilde kesiliyordu).
+        if (template.frameImage === false) {
+          ctx.drawImage(mediaObj.element, dx, dy, dw, dh);
+        } else {
+          ctx.save();
+          roundedRectPath(ctx, padding + fit.x, boxTop + fit.y, fit.w, fit.h, radius);
+          ctx.clip();
+          ctx.drawImage(mediaObj.element, dx, dy, dw, dh);
+          ctx.restore();
+        }
       }
+    };
+
+    if (adj.textOnTop) {
+      drawImage();
+      drawText();
+    } else {
+      drawText();
+      drawImage();
     }
 
     if (template.grain) drawGrain(ctx, template.grain, grainTime, width, height);

@@ -89,6 +89,15 @@ export type PostTemplate = {
   headlineSizePct: number;
   sublineSizePct: number;
   wordmarkColor: string;
+  /**
+   * Yalnız `imageMode:'contain'`da anlamlı. true (varsayılan) = görsel yerleşimde hesaplanan
+   * kutuya KIRPILIR (ör. 'ekran': ekran görüntüsü sabit bir çerçevede kalmalı). false = kırpma
+   * yok — obje serbestçe büyütülüp taşabilir ("obje ortada yüzer" tasarımı, ör. 'obje-vitrini'
+   * — kutu yalnızca BAŞLANGIÇ boyutunu hesaplamak için var, kilitli bir çerçeve değil).
+   * Verilmezse true — bkz. bulunan hata: obje-vitrini'de %100'ün üstünde boyut/sürükleme
+   * görünmez bir kutuya çarpıp kırpılıyordu.
+   */
+  frameImage?: boolean;
   /** Görselin üstüne karartma bindirilsin mi (yalnız `cover`). */
   scrim: 'none' | 'bottom' | 'full';
   /** 0-1, verilmezse 0 — bkz. `utils/canvasEffects.ts`. */
@@ -176,6 +185,7 @@ export const POST_TEMPLATES: PostTemplate[] = [
     pillar: 'Ürün/obje · arka planı kaldırılmış',
     hint: 'Sıcak mesh-gradient zemin + hafif grain, obje/kişi ortada yüzer. "Arka planı kaldır" ile üretilen görseller için tasarlandı.',
     imageMode: 'contain',
+    frameImage: false,
     background: { kind: 'mesh', colors: ['#FFD9A0', '#FF9E7A', '#C77DFF', '#7B5CFF'] },
     headlineColor: BRAND.paper,
     sublineColor: 'rgba(244,242,237,0.75)',

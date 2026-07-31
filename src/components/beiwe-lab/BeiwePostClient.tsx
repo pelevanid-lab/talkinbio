@@ -70,6 +70,8 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
   const [textScale, setTextScale] = useState(1);
   // null = şablonun kilitli rengi — kullanıcı bir renk seçince o rengin YERİNE geçer.
   const [textColor, setTextColor] = useState<string | null>(null);
+  // Yalnız 'contain' şablonlarda anlamlı — Obje sürüklenip Yazı'nın üstüne gelince hangisi görünsün.
+  const [textOnTop, setTextOnTop] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
@@ -130,10 +132,11 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
           hueShift,
           textScale,
           textColor,
+          textOnTop,
         },
       });
     },
-    [template, format, texts, mediaObj, needsImage, imageScale, imageOffset, textOffset, hueShift, textScale, textColor],
+    [template, format, texts, mediaObj, needsImage, imageScale, imageOffset, textOffset, hueShift, textScale, textColor, textOnTop],
   );
 
   // Şablon değişince ince ayarlar sıfırlanır — her şablon kendi kilitli varsayılan
@@ -145,6 +148,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
     setHueShift(0);
     setTextScale(1);
     setTextColor(null);
+    setTextOnTop(false);
   }, [templateId]);
 
   /**
@@ -895,7 +899,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
             <div className="mt-3 pt-3 border-t border-slate-100 space-y-2.5">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-semibold text-slate-700">İnce ayar</h3>
-                  {(imageScale !== 1 || imageOffset.x !== 0 || imageOffset.y !== 0 || textOffset.x !== 0 || textOffset.y !== 0 || hueShift !== 0 || textScale !== 1 || textColor !== null) && (
+                  {(imageScale !== 1 || imageOffset.x !== 0 || imageOffset.y !== 0 || textOffset.x !== 0 || textOffset.y !== 0 || hueShift !== 0 || textScale !== 1 || textColor !== null || textOnTop) && (
                     <button
                       onClick={() => {
                         setImageScale(1);
@@ -904,6 +908,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
                         setHueShift(0);
                         setTextScale(1);
                         setTextColor(null);
+                        setTextOnTop(false);
                       }}
                       className="text-[11px] text-slate-400 hover:text-slate-700"
                     >
@@ -979,6 +984,31 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
                         )}
                       </span>
                     </label>
+                    {template.imageMode === 'contain' && needsImage && mediaObj && !isVideo && (
+                      <label className="block text-xs text-slate-600">
+                        <span className="block mb-1">Üst üste gelince kim görünsün</span>
+                        <div className="inline-flex rounded-lg border border-slate-300 overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => setTextOnTop(false)}
+                            className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                              !textOnTop ? 'bg-purple-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+                            }`}
+                          >
+                            Obje üstte
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setTextOnTop(true)}
+                            className={`px-3 py-1.5 text-xs font-medium transition-colors border-l border-slate-300 ${
+                              textOnTop ? 'bg-purple-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+                            }`}
+                          >
+                            Yazı üstte
+                          </button>
+                        </div>
+                      </label>
+                    )}
                   </>
                 )}
                 <p className="text-[11px] text-slate-400">

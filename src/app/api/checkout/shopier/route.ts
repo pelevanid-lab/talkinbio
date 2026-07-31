@@ -77,7 +77,8 @@ export async function POST(req: Request) {
       price: finalPrice,
       currency: currency,
       imageUrl: 'https://talkinbio.com/talkinbio-instagram.png',
-      fastPay: true
+      fastPay: true,
+      shopSlug: 'talkinbio'
     });
 
     // Save to database
