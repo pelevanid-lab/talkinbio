@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   X,
+  Home,
   type LucideIcon,
 } from 'lucide-react';
 import CreditBadge from '@/components/CreditBadge';
@@ -63,6 +64,13 @@ export default function DashboardShell({ business, active, children }: { busines
       </div>
 
       <nav className="flex-1 px-3 space-y-1">
+        <a
+          href="/"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#4B5A55] hover:bg-[#F4F2ED] transition-colors"
+        >
+          <Home className="w-4 h-4 shrink-0" />
+          {t('navHome')}
+        </a>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = active === item.key;
