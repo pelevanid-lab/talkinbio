@@ -223,8 +223,13 @@ function paintWordmark(
   ctx.fillStyle = color;
   ctx.textBaseline = 'bottom';
   ctx.textAlign = align;
+  // Mesh/gradient zeminlerde (örn. obje-vitrini) açık renkli wordmark, zeminin açık
+  // bölgelerine denk gelince neredeyse kayboluyordu — gölge zeminden bağımsız okunabilirlik sağlıyor.
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = size * 0.4;
   const x = align === 'left' ? padding : align === 'right' ? width - padding : width / 2;
   ctx.fillText('talkinbio.com', x, height - padding);
+  ctx.shadowBlur = 0;
 }
 
 /**

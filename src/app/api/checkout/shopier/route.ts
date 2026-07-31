@@ -76,6 +76,7 @@ export async function POST(req: Request) {
       title: title,
       price: finalPrice,
       currency: currency,
+      imageUrl: 'https://talkinbio.com/saule-avatar-v1.png',
       fastPay: true,
       customNote: `Plan: ${planId} | Business: ${businessId}`
     });
