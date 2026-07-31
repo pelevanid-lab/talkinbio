@@ -26,10 +26,14 @@ import { downloadBlob, loadMedia, type LoadedMedia } from '@/utils/imageOverlay'
 
 const LOCALE_LABEL: Record<OverlayLocale, string> = { tr: 'Türkçe', en: 'English', ru: 'Русский' };
 
+/** `items` yalnız `imageMode:'list'` şablonlarda (ör. 'ilham-karti') kullanılıyor — sabit 4
+ *  boş satırla başlıyor, doldurulmayanlar `renderPost` tarafında zaten atlanıyor. */
+const EMPTY_ITEMS = () => Array.from({ length: 4 }, () => ({ title: '', body: '' }));
+
 const EMPTY_TEXTS: Record<OverlayLocale, PostTexts> = {
-  tr: { headline: '', subline: '' },
-  en: { headline: '', subline: '' },
-  ru: { headline: '', subline: '' },
+  tr: { headline: '', subline: '', items: EMPTY_ITEMS() },
+  en: { headline: '', subline: '', items: EMPTY_ITEMS() },
+  ru: { headline: '', subline: '', items: EMPTY_ITEMS() },
 };
 
 type Props = {
@@ -107,7 +111,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
 
   const template = POST_TEMPLATES.find((t) => t.id === templateId) as PostTemplate;
   const format = POST_FORMATS.find((f) => f.id === formatId) as PostFormat;
-  const needsImage = template.imageMode !== 'none';
+  const needsImage = template.imageMode !== 'none' && template.imageMode !== 'list';
 
   // Durum değiştirmeyen saf çizim — hem önizleme efekti hem indirme bunu kullanıyor.
   // setState'i buraya koymuyoruz: efekt gövdesinde senkron setState zincirleme
@@ -411,6 +415,15 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
 
   const setText = (field: keyof PostTexts, value: string) => {
     setTexts((prev) => ({ ...prev, [locale]: { ...prev[locale], [field]: value } }));
+  };
+
+  /** "İlham kartı" (`imageMode:'list'`) için 4 sabit {title, body} çiftinden birini günceller. */
+  const setItemField = (index: number, field: 'title' | 'body', value: string) => {
+    setTexts((prev) => {
+      const items = [...(prev[locale].items ?? EMPTY_ITEMS())];
+      items[index] = { ...items[index], [field]: value };
+      return { ...prev, [locale]: { ...prev[locale], items } };
+    });
   };
 
   /**
@@ -857,6 +870,34 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
               Metin katman olarak biniyor — tek görselden üç dilde gönderi çıkar, düzeltme
               için yeniden üretim gerekmez.
             </p>
+
+            {template.imageMode === 'list' && (
+              <div className="mt-4 pt-4 border-t border-slate-100">
+                <h3 className="text-xs font-semibold text-slate-700 mb-1">İpucu kartları</h3>
+                <p className="text-[11px] text-slate-400 mb-3">
+                  Başlığın altında 2x2 ızgara olarak dizilir — boş bırakılanlar atlanır.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {(texts[locale].items ?? EMPTY_ITEMS()).map((item, i) => (
+                    <div key={i} className="rounded-lg border border-slate-200 p-2.5 space-y-1.5">
+                      <input
+                        value={item.title}
+                        onChange={(e) => setItemField(i, 'title', e.target.value)}
+                        placeholder={`İpucu ${i + 1} başlığı`}
+                        className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <textarea
+                        value={item.body}
+                        onChange={(e) => setItemField(i, 'body', e.target.value)}
+                        rows={2}
+                        placeholder="Kısa açıklama"
+                        className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
         </div>
 

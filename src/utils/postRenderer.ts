@@ -46,7 +46,11 @@ function revealTransform(elapsedMs: number | undefined, delayMs: number, duratio
   return { opacity: p, offsetY: (1 - p) * offsetPx };
 }
 
-export type PostTexts = { headline: string; subline: string };
+export type PostListItem = { title: string; body: string };
+
+/** `items` yalnız `imageMode:'list'` şablonlarda (ör. 'ilham-karti') kullanılıyor — 2x2 ipucu
+ *  ızgarası, bkz. renderPost'un `list` dalı. Diğer şablonlar bu alanı yok sayar. */
+export type PostTexts = { headline: string; subline: string; items?: PostListItem[] };
 
 /**
  * Kullanıcının şablonun kilitli yerleşimi ÜSTÜNE ekleyebildiği ince ayarlar — proje planı
@@ -145,19 +149,24 @@ function hslToHex(h: number, s: number, l: number): string {
  *  çünkü ton dönüşü parlaklığa dokunmuyor ve neredeyse siyah bir piksel her tonda siyah kalır. */
 const DARK_LIGHTNESS_THRESHOLD = 0.22;
 
+/** Simetrik eşik — neredeyse BEYAZ zeminler (ör. 'manifesto'nun kağıt rengi) de AYNI sebeple
+ *  (düşük algısal kontrast) ton dönüşünü göstermiyor; bu eşiğin üstünde griye doğru KOYULAŞTIRIYORUZ. */
+const LIGHT_LIGHTNESS_THRESHOLD = 0.85;
+
 /**
- * `adj.hueShift`'i TEK bir renge uygular. Zemin zaten yeterince açık/canlıysa (mesh/mercan gibi)
- * normal ton döndürme yapılır — bu, `obje-vitrini`/`soz` gibi şablonlarda ZATEN doğrulanmış
- * davranış. Ama zemin karanlık-sinematik/ekran gibi neredeyse siyahsa ton döndürmenin gözle
- * görülür hiçbir etkisi olmuyor; onun yerine kaydırıcının büyüklüğü kadar rengi GRİYE doğru
- * açıyoruz (siyahtan griye) — kurucunun somut isteği buydu.
+ * `adj.hueShift`'i TEK bir renge uygular. Zemin zaten yeterince açık/canlıysa (mesh/mercan gibi,
+ * ama uç noktalarda değil) normal ton döndürme yapılır — bu, `obje-vitrini`/`soz` gibi
+ * şablonlarda ZATEN doğrulanmış davranış. Ama zemin karanlık-sinematik/ekran gibi neredeyse
+ * siyahsa YA DA manifesto'nun kağıdı gibi neredeyse beyazsa ton döndürmenin gözle görülür hiçbir
+ * etkisi olmuyor; onun yerine kaydırıcının büyüklüğü kadar rengi GRİYE doğru açıyoruz/koyultuyoruz
+ * (siyahtan griye / beyazdan griye) — kurucunun somut isteği buydu.
  */
 function shiftBackgroundColor(hex: string, deg: number): string {
   if (!deg) return hex;
   const [r, g, b] = hexToRgb(hex);
   const [h, s, l] = rgbToHsl(r, g, b);
   const t = Math.min(Math.abs(deg), 180) / 180;
-  if (l < DARK_LIGHTNESS_THRESHOLD) {
+  if (l < DARK_LIGHTNESS_THRESHOLD || l > LIGHT_LIGHTNESS_THRESHOLD) {
     const targetL = 0.55;
     return hslToHex(h, s, l + (targetL - l) * t);
   }
@@ -193,6 +202,33 @@ function paintBackground(ctx: CanvasRenderingContext2D, background: PostBackgrou
     gradient.addColorStop(1, shiftBackgroundColor(background.to, hueShift));
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
+    return;
+  }
+
+  if (background.kind === 'split') {
+    ctx.fillStyle = shiftBackgroundColor(background.left, hueShift);
+    ctx.fillRect(0, 0, width, height);
+    const rad = (background.angle * Math.PI) / 180;
+    const dx = Math.cos(rad);
+    const dy = Math.sin(rad);
+    const cx = width / 2;
+    const cy = height / 2;
+    const len = Math.abs(dx) * width + Math.abs(dy) * height;
+    ctx.save();
+    ctx.beginPath();
+    // Bölme çizgisine dik, çizginin "sağ" tarafını kaplayan büyük bir dikdörtgen — açı
+    // ne olursa olsun kanvası fazlasıyla aşacak kadar büyük (len*2), kırpma net kalsın diye.
+    const nx = -dy, ny = dx;
+    const half = len;
+    ctx.moveTo(cx + nx * half, cy + ny * half);
+    ctx.lineTo(cx + nx * half + dx * len, cy + ny * half + dy * len);
+    ctx.lineTo(cx - nx * half + dx * len, cy - ny * half + dy * len);
+    ctx.lineTo(cx - nx * half, cy - ny * half);
+    ctx.closePath();
+    ctx.clip();
+    ctx.fillStyle = shiftBackgroundColor(background.right, hueShift);
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
     return;
   }
 
@@ -242,7 +278,7 @@ function fitCoverSource(imgW: number, imgH: number, boxW: number, boxH: number) 
   return { sx: (imgW - sw) / 2, sy: (imgH - sh) / 2, sw, sh };
 }
 
-type MeasuredBlock = { lines: string[]; size: number; weight: number; color: string; height: number };
+type MeasuredBlock = { lines: string[]; size: number; weight: number; color: string; height: number; glow?: string };
 
 function measureBlock(
   ctx: CanvasRenderingContext2D,
@@ -252,12 +288,13 @@ function measureBlock(
   color: string,
   family: string,
   maxWidth: number,
+  glow?: string,
 ): MeasuredBlock | null {
   const trimmed = text.trim();
   if (!trimmed) return null;
   ctx.font = `${weight} ${sizePx}px ${family}`;
   const lines = wrapLines(ctx, trimmed, maxWidth);
-  return { lines, size: sizePx, weight, color, height: lines.length * sizePx * LINE_HEIGHT };
+  return { lines, size: sizePx, weight, color, height: lines.length * sizePx * LINE_HEIGHT, glow };
 }
 
 function paintBlock(
@@ -276,12 +313,98 @@ function paintBlock(
   ctx.fillStyle = block.color;
   ctx.textAlign = align;
   ctx.textBaseline = 'top';
+  // Neon vurgu gibi şablonlar için — başlığın arkasına renkli bir parlama (bkz.
+  // `PostTemplate.headlineGlow`). Diğer şablonlarda `glow` verilmediği için etkisiz.
+  if (block.glow) {
+    ctx.shadowColor = block.glow;
+    ctx.shadowBlur = block.size * 0.5;
+  }
   let cursor = y + transform.offsetY;
   for (const line of block.lines) {
     ctx.fillText(line, x, cursor);
+    if (block.glow) ctx.fillText(line, x, cursor); // ikinci geçiş: gölge daha belirgin dursun
     cursor += block.size * LINE_HEIGHT;
   }
   ctx.restore();
+}
+
+/** Harfler arası boşluk bırakarak yazar (canvas'ta native letter-spacing yok) — büyük harf
+ *  etiket/rozet metinlerinin "aralıklı" hissi için. `ctx.font`/`fillStyle`/`textBaseline`
+ *  çağıran tarafça ÖNCEDEN ayarlanmış olmalı; bu yalnız `textAlign`'ı 'left'e sabitler. */
+function trackedTextWidth(ctx: CanvasRenderingContext2D, text: string, trackingPx: number): number {
+  let width = 0;
+  for (const ch of text) width += ctx.measureText(ch).width + trackingPx;
+  return Math.max(0, width - trackingPx);
+}
+
+function fillTrackedText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, trackingPx: number) {
+  ctx.textAlign = 'left';
+  let cursor = x;
+  for (const ch of text) {
+    ctx.fillText(ch, cursor, y);
+    cursor += ctx.measureText(ch).width + trackingPx;
+  }
+}
+
+/**
+ * Başlığın üstünde sabit, aralıklı büyük harf etiket (ör. sinema-posteri: "talkinbio sunar").
+ * Kullanıcı METNİ değiştiremiyor — `PostTemplate.eyebrow`, wordmark gibi markanın kilitli
+ * parçası. Döndürdüğü değer, çağıran tarafın başlığı ne kadar aşağı kaydırması gerektiği.
+ */
+function paintEyebrowLabel(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  size: number,
+  family: string,
+  color: string,
+  align: 'left' | 'center',
+): number {
+  const label = text.toUpperCase();
+  const trackingPx = size * 0.24;
+  ctx.save();
+  ctx.font = `600 ${size}px ${family}`;
+  ctx.fillStyle = color;
+  ctx.textBaseline = 'top';
+  const w = trackedTextWidth(ctx, label, trackingPx);
+  const startX = align === 'center' ? x - w / 2 : x;
+  fillTrackedText(ctx, label, startX, y, trackingPx);
+  ctx.restore();
+  return size * 1.9;
+}
+
+/**
+ * Rozet/hap biçimli etiket (ör. ilham-karti: "İLHAM") — stroke'lu yuvarlak kapsül içinde
+ * aralıklı büyük harf metin. Döndürdüğü değer kapsülün yüksekliği.
+ */
+function paintEyebrowBadge(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  size: number,
+  family: string,
+  color: string,
+): number {
+  const label = text.toUpperCase();
+  const trackingPx = size * 0.2;
+  ctx.save();
+  ctx.font = `600 ${size}px ${family}`;
+  const textWidth = trackedTextWidth(ctx, label, trackingPx);
+  const padX = size * 0.9;
+  const padY = size * 0.55;
+  const w = textWidth + padX * 2;
+  const h = size + padY * 2;
+  roundedRectPath(ctx, x, y, w, h, h / 2);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(1, size * 0.08);
+  ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.textBaseline = 'middle';
+  fillTrackedText(ctx, label, x + padX, y + h / 2, trackingPx);
+  ctx.restore();
+  return h;
 }
 
 function paintWordmark(
@@ -374,6 +497,7 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
     adj.textColor || template.headlineColor,
     family,
     maxTextWidth,
+    template.headlineGlow,
   );
   const subline = measureBlock(
     ctx,
@@ -388,7 +512,7 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
   const textHeight =
     (headline?.height ?? 0) + (subline?.height ?? 0) + (headline && subline ? blockGap : 0);
 
-  if (template.imageMode === 'none') mediaObj = null;
+  if (template.imageMode === 'none' || template.imageMode === 'list') mediaObj = null;
   const img = mediaObj?.element || null;
 
   if (template.imageMode === 'contain') {
@@ -481,6 +605,7 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
       adj.textColor || template.headlineColor,
       family,
       textMaxWidth,
+      template.headlineGlow,
     );
     const cardSubline = measureBlock(
       ctx,
@@ -575,13 +700,21 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
       ctx.fillRect(0, bandTop, width, height - bandTop);
     }
 
-    // 'duyuru' ortada, 'aci' sol altta.
+    // 'duyuru' ortada, 'aci' sol altta — `textVertical` verilmemişse bu eski sezgi korunur.
     const centered = template.scrim === 'full';
-    const startY = centered ? (height - textHeight) / 2 : height - padding * 2 - textHeight;
+    const vertical = template.textVertical ?? (centered ? 'center' : 'bottom');
+    const startY =
+      vertical === 'top' ? padding : vertical === 'center' ? (height - textHeight) / 2 : height - padding * 2 - textHeight;
     const x = centered ? width / 2 : padding;
     const align: CanvasTextAlign = centered ? 'center' : 'left';
 
     let cursorY = startY + textOffsetYpx;
+    // Sabit "sunar" etiketi (ör. sinema-posteri) — kullanıcı metni değiştiremiyor, wordmark
+    // gibi markanın kilitli parçası (bkz. `PostTemplate.eyebrow` yorumu).
+    if (template.eyebrow) {
+      const eyebrowSize = height * 0.021;
+      cursorY += paintEyebrowLabel(ctx, template.eyebrow, x + textOffsetXpx, cursorY, eyebrowSize, family, headline?.color ?? template.headlineColor, align === 'center' ? 'center' : 'left');
+    }
     if (headline) {
       paintBlock(ctx, headline, x + textOffsetXpx, cursorY, family, align, headlineReveal);
       cursorY += headline.height + (subline ? blockGap : 0);
@@ -594,8 +727,63 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
     return;
   }
 
-  // imageMode 'none' — görselsiz, metin dikey ortalı.
-  let cursorY = (height - textHeight) / 2 + textOffsetYpx;
+  if (template.imageMode === 'list') {
+    // "İlham kartı" — rozet + iri başlık + altında 2x2 ipucu kartı ızgarası (bkz.
+    // `PostTexts.items`, `PostTemplate.eyebrow`). Diğer şablonlardaki tek başlık/alt satır
+    // mantığından FARKLI: burada kullanıcı 4 ayrı {title, body} çifti giriyor.
+    let cursorY = padding + textOffsetYpx;
+    if (template.eyebrow) {
+      const badgeSize = height * 0.02;
+      cursorY += paintEyebrowBadge(ctx, template.eyebrow, padding + textOffsetXpx, cursorY, badgeSize, family, headline?.color ?? template.headlineColor) + padding * 0.5;
+    }
+    if (headline) {
+      paintBlock(ctx, headline, padding + textOffsetXpx, cursorY, family, 'left', headlineReveal);
+      cursorY += headline.height + (subline ? blockGap * 0.5 : padding * 0.6);
+    }
+    if (subline) {
+      paintBlock(ctx, subline, padding + textOffsetXpx, cursorY, family, 'left', sublineReveal);
+      cursorY += subline.height + padding * 0.6;
+    }
+
+    const items = (texts.items ?? []).filter((it) => it.title.trim() || it.body.trim()).slice(0, 4);
+    if (items.length > 0) {
+      const gridTop = cursorY + padding * 0.4;
+      const gap = padding * 0.6;
+      const cols = 2;
+      const rows = Math.ceil(items.length / cols);
+      const cellW = (width - padding * 2 - gap) / cols;
+      const cellH = (height - gridTop - padding * 1.6 - gap * (rows - 1)) / rows;
+      const itemTitleSize = (height * template.sublineSizePct * adj.textScale * 1.05) / 100;
+      const itemBodySize = (height * template.sublineSizePct * adj.textScale * 0.86) / 100;
+      const itemTitleColor = adj.textColor || template.headlineColor;
+      const itemBodyColor = adj.textColor || template.sublineColor;
+      items.forEach((item, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const cellX = padding + col * (cellW + gap);
+        const cellY = gridTop + row * (cellH + gap);
+        let y = cellY;
+        const title = measureBlock(ctx, item.title, itemTitleSize, 700, itemTitleColor, family, cellW);
+        const body = measureBlock(ctx, item.body, itemBodySize, 400, itemBodyColor, family, cellW);
+        if (title) {
+          paintBlock(ctx, title, cellX, y, family, 'left');
+          y += title.height + itemTitleSize * 0.3;
+        }
+        if (body) paintBlock(ctx, body, cellX, y, family, 'left');
+      });
+    }
+
+    if (template.grain) drawGrain(ctx, template.grain, grainTime, width, height);
+    if (template.vignette) drawVignette(ctx, template.vignette, width, height);
+    paintWordmark(ctx, width, height, padding, family, template.wordmarkColor, 'left');
+    return;
+  }
+
+  // imageMode 'none' — görselsiz, metin dikey konumu `textVertical` ile (verilmezse ortalı).
+  const noneVertical = template.textVertical ?? 'center';
+  let cursorY =
+    (noneVertical === 'top' ? padding : noneVertical === 'bottom' ? height - padding * 2 - textHeight : (height - textHeight) / 2) +
+    textOffsetYpx;
   if (headline) {
     paintBlock(ctx, headline, padding + textOffsetXpx, cursorY, family, 'left', headlineReveal);
     cursorY += headline.height + (subline ? blockGap : 0);

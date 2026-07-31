@@ -54,18 +54,24 @@ export type PostTemplateId =
   | 'gradient-duyuru'
   | 'buyuk-rakam'
   | 'karanlik-sinematik'
-  | 'alinti-karti';
+  | 'alinti-karti'
+  | 'sinema-posteri'
+  | 'neon-vurgu'
+  | 'manifesto'
+  | 'ayna-ikili-ton'
+  | 'ilham-karti';
 
 /**
- * Zemin — düz renkten (eski davranış) gradient/mesh'e genişletildi (proje planı Faz 2).
- * `postRenderer.ts`'teki `paintBackground` bu üç türü çizer; grain/vignette (bkz.
- * `utils/canvasEffects.ts`, Studio'nunkiyle AYNI fonksiyonlar) ayrıca `PostTemplate.grain`/
- * `vignette` alanlarıyla İSTEĞE BAĞLI uygulanır.
+ * Zemin — düz renkten (eski davranış) gradient/mesh'e genişletildi (proje planı Faz 2), sonra
+ * `split`e (proje planı Faz 5 — "5 yaratıcı şablon" turu, bkz. 'ayna-ikili-ton'). `postRenderer.ts`'teki
+ * `paintBackground` bu türleri çizer; grain/vignette (bkz. `utils/canvasEffects.ts`, Studio'nunkiyle
+ * AYNI fonksiyonlar) ayrıca `PostTemplate.grain`/`vignette` alanlarıyla İSTEĞE BAĞLI uygulanır.
  */
 export type PostBackground =
   | { kind: 'solid'; color: string }
   | { kind: 'gradient'; from: string; to: string; angle: number } // derece, 0 = soldan sağa
-  | { kind: 'mesh'; colors: [string, string, string, string] }; // dört köşe, mesh-gradient hissi
+  | { kind: 'mesh'; colors: [string, string, string, string] } // dört köşe, mesh-gradient hissi
+  | { kind: 'split'; left: string; right: string; angle: number }; // düz çizgiyle ikiye bölünmüş zemin
 
 export type PostTemplate = {
   id: PostTemplateId;
@@ -80,8 +86,10 @@ export type PostTemplate = {
    * none:    görselsiz, düz zemin.
    * card:    metin (+ küçük bir küçük resim) zeminin ÜSTÜNDE, ortada yüzen gölgeli beyaz bir
    *          kartın içinde durur — "alıntı kartı", bkz. postRenderer.ts imageMode:'card' yorumu.
+   * list:    görselsiz, rozet + başlık + altında 2x2 ipucu kartı ızgarası — "ilham kartı",
+   *          bkz. postRenderer.ts imageMode:'list' yorumu, `PostTexts.items`.
    */
-  imageMode: 'contain' | 'cover' | 'none' | 'card';
+  imageMode: 'contain' | 'cover' | 'none' | 'card' | 'list';
   background: PostBackground;
   headlineColor: string;
   sublineColor: string;
@@ -103,6 +111,18 @@ export type PostTemplate = {
   /** 0-1, verilmezse 0 — bkz. `utils/canvasEffects.ts`. */
   grain?: number;
   vignette?: number;
+  /**
+   * Sabit, kilitli küçük etiket — başlığın ÜSTÜNDE durur (ör. 'sinema-posteri'de "TALKINBIO
+   * SUNAR", 'ilham-karti'de rozet metni "İLHAM"). Kullanıcı METNİ değiştiremiyor (wordmark
+   * gibi şablonun markalı bir parçası) — verilmezse hiç çizilmiyor. `imageMode:'list'`de rozet
+   * (stroke'lu hap) olarak, diğerlerinde düz aralıklı büyük harf olarak çizilir (bkz. postRenderer.ts).
+   */
+  eyebrow?: string;
+  /** Yalnız `imageMode:'cover'|'none'`da anlamlı — metin bloğunun dikey konumu. Verilmezse
+   *  eski sezgisel davranış korunur (bkz. postRenderer.ts renderPost yorumu). */
+  textVertical?: 'top' | 'center' | 'bottom';
+  /** Verilirse başlığa neon/parlama hissi veren bir gölge rengi eklenir (ör. 'neon-vurgu'). */
+  headlineGlow?: string;
   /**
    * `config/postFonts.ts`'teki `CuratedPostFont.id`'ye referans — proje planı Faz 4: font
    * özgürlüğü kullanıcı-başına değil ŞABLON-başına, her şablon kendi fontunu TAŞIR. Kiril
@@ -258,6 +278,93 @@ export const POST_TEMPLATES: PostTemplate[] = [
     scrim: 'none',
     grain: 0.25,
     fontId: 'lora',
+  },
+  {
+    id: 'sinema-posteri',
+    label: 'Sinema posteri',
+    pillar: 'Karakter/hikaye tanıtımı',
+    hint: 'Görsel tam kanar, ağır vinyet altında üstte sabit "sunar" etiketi + ortalanmış başlık/açıklama — film afişi hissi.',
+    imageMode: 'cover',
+    background: { kind: 'solid', color: '#1F1512' },
+    headlineColor: BRAND.paper,
+    sublineColor: 'rgba(244,242,237,0.78)',
+    headlineSizePct: 6.4,
+    sublineSizePct: 2.3,
+    wordmarkColor: 'rgba(244,242,237,0.65)',
+    eyebrow: 'talkinbio sunar',
+    textVertical: 'top',
+    scrim: 'full',
+    grain: 0.25,
+    vignette: 0.6,
+    fontId: 'unbounded',
+  },
+  {
+    id: 'neon-vurgu',
+    label: 'Neon vurgu',
+    pillar: 'Özellik duyurusu · canlı/eğlenceli',
+    hint: 'Görsel tam kanar, başlık neon parlamayla öne çıkar — parti/etkinlik/canlı anlar için.',
+    imageMode: 'cover',
+    background: { kind: 'solid', color: '#0B0B10' },
+    headlineColor: '#FFFFFF',
+    sublineColor: 'rgba(255,255,255,0.8)',
+    headlineSizePct: 7,
+    sublineSizePct: 2.4,
+    wordmarkColor: 'rgba(255,255,255,0.7)',
+    headlineGlow: '#FF7A3D',
+    scrim: 'bottom',
+    grain: 0.2,
+    vignette: 0.4,
+    fontId: 'righteous',
+  },
+  {
+    id: 'manifesto',
+    label: 'Manifesto',
+    pillar: 'Marka duruşu · minimal',
+    hint: 'Görselsiz, açık/kağıt dokulu zeminde sol-altta dev kalın başlık — bol boşluk, ElevenLabs\'in "Like your voice. But different." tarzı.',
+    imageMode: 'none',
+    background: { kind: 'solid', color: BRAND.paper },
+    headlineColor: BRAND.ink,
+    sublineColor: BRAND.inkSoft,
+    headlineSizePct: 9,
+    sublineSizePct: 2.4,
+    wordmarkColor: BRAND.muted,
+    textVertical: 'bottom',
+    scrim: 'none',
+    grain: 0.12,
+    fontId: 'manrope',
+  },
+  {
+    id: 'ayna-ikili-ton',
+    label: 'Ayna / ikili ton',
+    pillar: 'Marka duruşu · grafik',
+    hint: 'Zemin düz bir çizgiyle iki zıt renge bölünür, başlık ortada — flat/grafik bir karşıtlık hissi.',
+    imageMode: 'none',
+    background: { kind: 'split', left: BRAND.ink, right: BRAND.coral, angle: 0 },
+    headlineColor: BRAND.paper,
+    sublineColor: 'rgba(244,242,237,0.85)',
+    headlineSizePct: 6.5,
+    sublineSizePct: 2.3,
+    wordmarkColor: 'rgba(244,242,237,0.75)',
+    textVertical: 'center',
+    scrim: 'none',
+    fontId: 'syne',
+  },
+  {
+    id: 'ilham-karti',
+    label: 'İlham kartı',
+    pillar: 'Liste/ipucu · görselsiz',
+    hint: 'Rozet + başlık + altında 2x2 ipucu kartı ızgarası — "4 kullanım fikri" gibi liste içerikleri için.',
+    imageMode: 'list',
+    background: { kind: 'solid', color: '#12131A' },
+    headlineColor: BRAND.paper,
+    sublineColor: 'rgba(244,242,237,0.7)',
+    headlineSizePct: 6,
+    sublineSizePct: 2.1,
+    wordmarkColor: 'rgba(244,242,237,0.6)',
+    eyebrow: 'ilham',
+    scrim: 'none',
+    grain: 0.15,
+    fontId: 'plus-jakarta-sans',
   },
 ];
 
