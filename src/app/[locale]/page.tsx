@@ -8,6 +8,7 @@ import ShowcaseSection from '@/components/ShowcaseSection';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { SauleIcon, BeiweIcon } from '@/components/AgentIcons';
 import { isConversationActive } from '@/utils/conversationWindow';
+import MobileMenu from '@/components/MobileMenu';
 import './landing.css';
 
 const LogoSVG = () => (
@@ -143,9 +144,14 @@ export default async function HomePage({ params }: any) {
               </>
             )}
           </div>
-          <button className="md:hidden p-2 text-[var(--ink)]">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
-          </button>
+          <MobileMenu 
+            isLoggedIn={isLoggedIn} 
+            texts={{
+              pricing: t('nav.pricing'),
+              login: t('nav.login'),
+              startFree: t('nav.startFree')
+            }} 
+          />
         </div>
       </header>
 
@@ -238,8 +244,8 @@ export default async function HomePage({ params }: any) {
                 </div>
               </div>
               {/* Video Mockup */}
-              <div className="w-full aspect-video bg-[var(--paper)] rounded-[24px] border border-[var(--border)] shadow-sm flex items-center justify-center relative overflow-hidden">
-                 <video src="/mockup-2.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover object-center" />
+              <div className="w-full aspect-[9/16] sm:aspect-video bg-[var(--paper)] rounded-[24px] border border-[var(--border)] shadow-sm flex items-center justify-center relative overflow-hidden">
+                 <video src="/mockup-2.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover sm:object-contain object-center" />
               </div>
               <a href="https://talkinbio.com/ulianapehlivan" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[var(--ink-soft)] hover:text-[var(--ink)] font-medium transition-colors text-sm px-2 -mt-4">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none">
