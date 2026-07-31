@@ -99,15 +99,15 @@ export default function BillingClient({ business, usageEvents, ownerEmail }: { b
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Checkout failed');
       
-      if (data.url) {
-        window.location.href = data.url;
-      } else if (data.fastPayHtml) {
+      if (data.fastPayHtml) {
         // Create a temporary div, append HTML, and submit the form
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = data.fastPayHtml;
         document.body.appendChild(tempDiv);
         const form = tempDiv.querySelector('form');
         if (form) form.submit();
+      } else if (data.url) {
+        window.location.href = data.url;
       }
     } catch (err: any) {
       console.error(err);
