@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { format, type Locale } from 'date-fns';
 import { tr, enUS, ru } from 'date-fns/locale';
 import { Coins, Inbox, Receipt, MessageCircle, Wrench, BarChart3 } from 'lucide-react';
-import { PLANS, EXTRA_PACK } from '@/config/plans';
+import { PLANS, EXTRA_PACK, TEST_PACK } from '@/config/plans';
 
 const DATE_FNS_LOCALES: Record<string, Locale> = { tr, en: enUS, ru };
 const NUMBER_LOCALES: Record<string, string> = { tr: 'tr-TR', en: 'en-US', ru: 'ru-RU' };
@@ -190,7 +190,7 @@ export default function BillingClient({ business, usageEvents, ownerEmail }: { b
           <h2 className="text-lg font-[800] text-[#14231F] font-['Bricolage_Grotesque'] mb-1">{t('topUpTitle')}</h2>
           <p className="text-sm text-[#4B5A55] mb-5">{t('topUpSubtitle')}</p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
             {PLANS.map((plan) => (
               <button
                 key={plan.id}
@@ -207,6 +207,13 @@ export default function BillingClient({ business, usageEvents, ownerEmail }: { b
             >
               <p className="text-sm font-[800] text-[#14231F]">{t('extraPackName')}</p>
               <p className="text-xs text-[#8A8880]">${EXTRA_PACK.price} · {t('credits', { count: EXTRA_PACK.credits })}</p>
+            </button>
+            <button
+              onClick={() => handleTopUpCta('test')}
+              className={`text-left border rounded-xl p-3 transition ${selectedPlan === 'test' ? 'border-[#FF6A5C] bg-[#FFEDE9]' : 'border-dashed border-[rgba(20,35,31,0.25)] hover:border-[rgba(20,35,31,0.4)]'}`}
+            >
+              <p className="text-sm font-[800] text-[#14231F]">Test Paketi</p>
+              <p className="text-xs text-[#8A8880]">${TEST_PACK.price} · {t('credits', { count: TEST_PACK.credits })}</p>
             </button>
           </div>
 

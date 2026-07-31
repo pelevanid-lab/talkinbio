@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { createClient as createServerSupabase } from '@/utils/supabase/server';
-import { PLANS, EXTRA_PACK } from '@/config/plans';
+import { PLANS, EXTRA_PACK, TEST_PACK } from '@/config/plans';
 import { ShopierClient, ShopierPaymentFlow, ShopierWebhook } from 'shopier-pat-api';
 
 export async function POST(req: Request) {
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const plan = planId === 'extra' ? EXTRA_PACK : PLANS.find((p) => p.id === planId);
+    const plan = planId === 'test' ? TEST_PACK : planId === 'extra' ? EXTRA_PACK : PLANS.find((p) => p.id === planId);
     if (!plan) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
     }
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     const webhook = new ShopierWebhook(process.env.SHOPIER_WEBHOOK_TOKEN || 'dummy');
     const flow = new ShopierPaymentFlow(client, webhook);
 
-    const title = planId === 'extra' ? 'Ek Kredi Paketi' : `${(plan as any).name || 'Talkinbio'} Plan`;
+    const title = planId === 'test' ? 'Test Paketi' : planId === 'extra' ? 'Ek Kredi Paketi' : `${(plan as any).name || 'Talkinbio'} Plan`;
 
     // Create Shopier payment
     const payment = await flow.create({
