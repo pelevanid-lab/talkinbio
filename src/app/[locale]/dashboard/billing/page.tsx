@@ -2,6 +2,7 @@ import { createClient as createServerClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import BillingClient from './BillingClient';
+import { PLANS, EXTRA_PACK, TEST_PACK } from '@/config/plans';
 
 export default async function BillingDashboardPage() {
   const supabase = await createServerClient();
@@ -35,5 +36,44 @@ export default async function BillingDashboardPage() {
     .order('created_at', { ascending: false })
     .limit(50);
 
-  return <BillingClient business={business} usageEvents={usageEvents || []} ownerEmail={userData.user.email || ''} />;
+  const { data: invoices } = await supabase
+    .from('business_invoices')
+    .select('id, plan_id, created_at')
+    .eq('business_id', business.id)
+    .eq('status', 'success')
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  const transactions: any[] = [];
+  
+  if (usageEvents) {
+    usageEvents.forEach((e: any) => transactions.push({
+      id: e.id,
+      type: 'usage',
+      agent: e.agent,
+      amount: -e.credits_charged,
+      created_at: e.created_at,
+    }));
+  }
+
+  if (invoices) {
+    invoices.forEach((i: any) => {
+      const plan = i.plan_id === 'test' ? TEST_PACK : i.plan_id === 'extra' ? EXTRA_PACK : PLANS.find(p => p.id === i.plan_id);
+      const credits = plan?.credits || 0;
+      const planName = i.plan_id === 'test' ? 'Test Paketi' : i.plan_id === 'extra' ? 'Ekstra Paket' : plan?.name || i.plan_id;
+      
+      transactions.push({
+        id: i.id,
+        type: 'reload',
+        planName,
+        amount: credits,
+        created_at: i.created_at,
+      });
+    });
+  }
+
+  transactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const recentTransactions = transactions.slice(0, 50);
+
+  return <BillingClient business={business} transactions={recentTransactions} ownerEmail={userData.user.email || ''} />;
 }

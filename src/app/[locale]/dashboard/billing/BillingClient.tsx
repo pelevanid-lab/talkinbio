@@ -22,12 +22,12 @@ const AGENT_LABEL_KEY: Record<string, string> = {
   analysis: 'agent.analysis',
 };
 
-type UsageEvent = {
+type Transaction = {
   id: string;
-  agent: string;
-  channel: string;
-  model: string;
-  credits_charged: number;
+  type: 'usage' | 'reload';
+  agent?: string;
+  planName?: string;
+  amount: number;
   created_at: string;
 };
 
@@ -38,7 +38,7 @@ type Business = {
   credit_balance: number;
 };
 
-export default function BillingClient({ business, usageEvents, ownerEmail }: { business: Business; usageEvents: UsageEvent[]; ownerEmail: string }) {
+export default function BillingClient({ business, transactions, ownerEmail }: { business: Business; transactions: Transaction[]; ownerEmail: string }) {
   const t = useTranslations('Billing');
   const locale = useLocale();
   const dateLocale = DATE_FNS_LOCALES[locale] || tr;
@@ -157,26 +157,29 @@ export default function BillingClient({ business, usageEvents, ownerEmail }: { b
 
         {/* Usage history */}
         <div className="bg-white rounded-[20px] border border-[rgba(20,35,31,0.10)] p-6">
-          <h2 className="text-lg font-[800] text-[#14231F] font-['Bricolage_Grotesque'] mb-4">{t('usageTitle')}</h2>
-          {usageEvents.length === 0 ? (
+          <h2 className="text-lg font-[800] text-[#14231F] font-['Bricolage_Grotesque'] mb-4">İşlem & Kullanım Geçmişi</h2>
+          {transactions.length === 0 ? (
             <p className="text-sm text-[#8A8880]">{t('usageEmpty')}</p>
           ) : (
             <div className="space-y-1">
-              {usageEvents.map((event) => {
-                const Icon = AGENT_ICON[event.agent] || MessageCircle;
+              {transactions.map((event) => {
+                const isReload = event.type === 'reload';
+                const Icon = isReload ? Coins : (AGENT_ICON[event.agent || ''] || MessageCircle);
+                const title = isReload ? `Kredi Yükleme (${event.planName})` : t(AGENT_LABEL_KEY[event.agent || ''] || 'agent.saule');
+                
                 return (
                   <div key={event.id} className="flex items-center justify-between py-2.5 border-b border-[rgba(20,35,31,0.06)] last:border-0">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-full bg-[#F4F2ED] text-[#4B5A55] flex items-center justify-center shrink-0">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isReload ? 'bg-[#E6F9F3] text-[#14231F]' : 'bg-[#F4F2ED] text-[#4B5A55]'}`}>
                         <Icon className="w-4 h-4" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-[#14231F] truncate">{t(AGENT_LABEL_KEY[event.agent] || 'agent.saule')}</p>
+                        <p className="text-sm font-medium text-[#14231F] truncate">{title}</p>
                         <p className="text-xs text-[#8A8880] font-mono">{format(new Date(event.created_at), 'd MMM yyyy, HH:mm', { locale: dateLocale })}</p>
                       </div>
                     </div>
-                    <span className="text-sm font-semibold text-[#14231F] shrink-0 ml-3">
-                      {event.credits_charged > 0 ? `-${event.credits_charged.toLocaleString(numberLocale)}` : t('freeLabel')}
+                    <span className={`text-sm font-semibold shrink-0 ml-3 ${isReload ? 'text-[#059669]' : 'text-[#14231F]'}`}>
+                      {isReload ? `+${event.amount.toLocaleString(numberLocale)}` : (event.amount !== 0 ? event.amount.toLocaleString(numberLocale) : t('freeLabel'))}
                     </span>
                   </div>
                 );
