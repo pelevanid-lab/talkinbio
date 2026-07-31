@@ -48,6 +48,7 @@ export default function BillingClient({ business, usageEvents, ownerEmail }: { b
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,6 +80,39 @@ export default function BillingClient({ business, usageEvents, ownerEmail }: { b
       setError(t('formErrorGeneric'));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleCheckout = async () => {
+    if (!selectedPlan || checkingOut) return;
+    setCheckingOut(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/checkout/shopier', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          planId: selectedPlan,
+          businessId: business.id,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Checkout failed');
+      
+      if (data.url) {
+        window.location.href = data.url;
+      } else if (data.fastPayHtml) {
+        // Create a temporary div, append HTML, and submit the form
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = data.fastPayHtml;
+        document.body.appendChild(tempDiv);
+        const form = tempDiv.querySelector('form');
+        if (form) form.submit();
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError('Ödeme sayfasına yönlendirilirken bir hata oluştu.');
+      setCheckingOut(false);
     }
   };
 
@@ -195,14 +229,24 @@ export default function BillingClient({ business, usageEvents, ownerEmail }: { b
                 rows={2}
                 className="w-full p-2.5 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F] bg-white resize-none"
               />
-              {error && <p className="text-sm text-[#FF6A5C]">{error}</p>}
-              <button
-                type="submit"
-                disabled={submitting}
-                className="self-start bg-[#14231F] text-white rounded-full px-5 py-2.5 text-sm font-[700] hover:opacity-90 transition disabled:opacity-60"
-              >
-                {submitting ? t('formSubmitting') : t('formSubmit')}
-              </button>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleCheckout}
+                  disabled={submitting || checkingOut}
+                  className="bg-[#FF6A5C] text-white rounded-full px-5 py-2.5 text-sm font-[700] hover:opacity-90 transition disabled:opacity-60 flex-1 w-full sm:w-auto text-center"
+                >
+                  {checkingOut ? 'Yönlendiriliyor...' : 'Kredi Kartı ile Satın Al'}
+                </button>
+                <span className="text-sm text-[#8A8880] font-medium hidden sm:inline">veya</span>
+                <button
+                  type="submit"
+                  disabled={submitting || checkingOut}
+                  className="bg-[#14231F] text-white rounded-full px-5 py-2.5 text-sm font-[700] hover:opacity-90 transition disabled:opacity-60 flex-1 w-full sm:w-auto text-center"
+                >
+                  {submitting ? t('formSubmitting') : t('formSubmit')}
+                </button>
+              </div>
             </form>
           )}
         </div>

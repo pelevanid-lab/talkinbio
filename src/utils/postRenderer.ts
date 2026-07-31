@@ -320,8 +320,11 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
     const cardWidth = width * 0.82;
     const cardPadding = cardWidth * 0.055;
     const thumbSize = img ? cardWidth * 0.16 : 0;
-    const textX = cardPadding + (img ? thumbSize + cardPadding * 0.8 : 0);
-    const textMaxWidth = cardWidth - textX - cardPadding;
+    // Kart-İÇİ göreli ofset — kartın kendi sol kenarına göre. `cardX` (kartın canvas'taki
+    // mutlak konumu, kart ortalandığı için 0 değil) aşağıda AYRICA eklenmeli, yoksa metin
+    // canvas'ın solundan sayılıp kartın/küçük resmin üstüne biner (bkz. bulunan hata).
+    const textOffsetX = cardPadding + (img ? thumbSize + cardPadding * 0.8 : 0);
+    const textMaxWidth = cardWidth - textOffsetX - cardPadding;
 
     const cardHeadline = measureBlock(
       ctx,
@@ -376,6 +379,7 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
       ctx.restore();
     }
 
+    const textX = cardX + textOffsetX;
     let textCursorY = cardY + cardOffsetY + (cardHeight - textBlockHeight) / 2;
     const flat = { opacity: 1, offsetY: 0 };
     if (cardHeadline) {

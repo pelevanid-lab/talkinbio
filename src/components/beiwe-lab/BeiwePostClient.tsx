@@ -5,7 +5,10 @@ import { AlertTriangle, Check, Download, ImageIcon, Loader2, Save, Undo2, Upload
 import type { CharacterShot } from '@/config/characters';
 import type { OverlayLocale } from '@/config/characters';
 import { OVERLAY_LOCALES } from '@/config/characters';
+import type { CharacterClip } from '@/config/clips';
+import type { StudioAsset } from '@/config/studio';
 import {
+  ESTIMATED_BG_REMOVAL_COST_USD,
   POST_FORMATS,
   POST_TEMPLATES,
   type PostFormat,
@@ -30,13 +33,24 @@ const EMPTY_TEXTS: Record<OverlayLocale, PostTexts> = {
 };
 
 type Props = {
+  /** Twin + Yardımcı Oyuncular'ın (Saule/Beiwe/eklenen sanal karakterler) TÜMÜNÜN kare
+   *  galerisi — tek karaktere kilitli değil, bkz. beiweLabScope.ts. */
   shots: CharacterShot[];
+  /** Aynı kadronun Podcast/Motion'da ürettiği videolar — galeri artık foto+video karışık. */
+  clips: CharacterClip[];
+  /** `character_studio_assets` — "Arka planı kaldır" ve "Stüdyo kütüphanesine kaydet"
+   *  sonuçlarının düştüğü havuz (bkz. removeBackground/saveToLibrary). Bu ikisi olmadan
+   *  üretilen görsel hiçbir yerde görünmüyordu — bkz. proje geçmişi, bulunan hata. */
+  assets: StudioAsset[];
   /** Kaydedilen gönderilerin yükleneceği karakter kapsamı — Beiwe Studio'nun asset
    *  kütüphanesiyle (character_studio_assets) AYNI kapsam, bkz. saveToLibrary yorumu. */
   characterId: string;
 };
 
-export default function BeiwePostClient({ shots, characterId }: Props) {
+export default function BeiwePostClient({ shots, clips, assets: initialAssets, characterId }: Props) {
+  // Sunucudan gelen ilk listeye "Arka planı kaldır"/"Stüdyo kütüphanesine kaydet" sonuçları
+  // CANLI ekleniyor — sayfa yenilenmeden galeri güncel kalsın diye (bkz. removeBackground/saveToLibrary).
+  const [libraryAssets, setLibraryAssets] = useState<StudioAsset[]>(initialAssets);
   const [templateId, setTemplateId] = useState<PostTemplateId>('ekran');
   const [formatId, setFormatId] = useState(POST_FORMATS[0].id);
   const [locale, setLocale] = useState<OverlayLocale>('tr');
@@ -230,6 +244,36 @@ export default function BeiwePostClient({ shots, characterId }: Props) {
     setShowGallery(false);
   };
 
+  /** Galeriden bir VİDEO seçer — Podcast/Motion çıktısı, `pickGalleryShot` ile AYNI akış,
+   * yalnızca `isVideo:true` ve kaynak `clip.video_url`. */
+  const pickGalleryClip = (clip: CharacterClip) => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+    uploadedFileRef.current = null;
+    setPreviousImageUrl(null);
+    setImageUrl(clip.video_url);
+    setIsVideo(true);
+    setUploadedName(null);
+    setShowGallery(false);
+  };
+
+  /** Galeriden daha önce kaydedilmiş bir görsel seçer ("Arka planı kaldır"/"Stüdyo
+   * kütüphanesine kaydet" çıktısı) — `pickGalleryShot` ile AYNI akış. */
+  const pickGalleryAsset = (asset: StudioAsset) => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+    uploadedFileRef.current = null;
+    setPreviousImageUrl(null);
+    setImageUrl(asset.url);
+    setIsVideo(false);
+    setUploadedName(null);
+    setShowGallery(false);
+  };
+
   /** Cihazdan yüklenen dosyayı (varsa) ya da galeriden seçilen gerçek URL'i fal'a gönderip
    * arka planını kaldırır — sunucu tarafı `remove-background` route'u iki girdiyi de kabul
    * ediyor (bkz. o route'un yorumu). */
@@ -257,13 +301,19 @@ export default function BeiwePostClient({ shots, characterId }: Props) {
       if (!res.ok) throw new Error(data.error || 'Arka plan kaldırılamadı.');
 
       setPreviousImageUrl(imageUrl);
-      // Sonuç fal'ın kendi barındırdığı gerçek bir URL — object URL değil, bu yüzden
-      // `uploadedFileRef`'i temizlemiyoruz ama artık ihtiyaç yok (yeni imageUrl zaten https).
+      // Sonuç artık fal'ın DEĞİL, sunucunun Supabase'e re-host edip döndürdüğü kalıcı bir
+      // URL (bkz. route'un yorumu) — object URL değil, bu yüzden `uploadedFileRef`'i
+      // temizlemiyoruz ama artık ihtiyaç yok (yeni imageUrl zaten https).
       if (objectUrlRef.current) {
         URL.revokeObjectURL(objectUrlRef.current);
         objectUrlRef.current = null;
       }
       setImageUrl(data.url);
+      // Route `character_studio_assets`e kaydettiyse (`saved:true`) galeriye canlı ekle —
+      // aksi hâlde kullanıcı ürettiği görseli bir daha hiçbir yerde bulamıyordu.
+      if (data.saved && data.asset) {
+        setLibraryAssets((prev) => [data.asset as StudioAsset, ...prev]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Arka plan kaldırılamadı.');
     } finally {
@@ -433,6 +483,11 @@ export default function BeiwePostClient({ shots, characterId }: Props) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Kaydedilemedi.');
       setSavedMessage('Kaydedildi — Beiwe Studio’daki galeriden erişebilirsin.');
+      // Görselse Post'un KENDİ galerisine de canlı ekleniyor (video zaten `clips`ten geliyor,
+      // burada tekrar eklenmiyor — o havuz character_clips, bu character_studio_assets, ikisi ayrı).
+      if (kind === 'image' && data.asset) {
+        setLibraryAssets((prev) => [data.asset as StudioAsset, ...prev]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kaydedilemedi.');
     } finally {
@@ -577,11 +632,11 @@ export default function BeiwePostClient({ shots, characterId }: Props) {
                 </button>
                 <button
                   onClick={() => setShowGallery((v) => !v)}
-                  disabled={shots.length === 0}
+                  disabled={shots.length === 0 && clips.length === 0 && libraryAssets.length === 0}
                   className="flex items-center gap-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg px-4 py-2 disabled:opacity-40"
                 >
                   <ImageIcon className="w-4 h-4" />
-                  Galeriden seç ({shots.length})
+                  Galeriden seç ({shots.length + clips.length + libraryAssets.length})
                 </button>
                 {imageUrl && !isVideo && (
                   <button
@@ -625,10 +680,19 @@ export default function BeiwePostClient({ shots, characterId }: Props) {
                 />
               </div>
 
+              {imageUrl && !isVideo && (
+                <p className="text-[11px] text-slate-400 mt-1.5">
+                  Arka planı kaldırma tahmini maliyeti ~${ESTIMATED_BG_REMOVAL_COST_USD.toFixed(2)}/görsel
+                  (doğrulanmadı — fal.ai modeli henüz gerçek bir çağrıyla test edilmedi).
+                </p>
+              )}
+
               {uploadedName && <p className="text-xs text-slate-500 mt-2">{uploadedName}</p>}
 
-              {showGallery && shots.length > 0 && (
+              {showGallery && (shots.length > 0 || clips.length > 0 || libraryAssets.length > 0) && (
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-3 max-h-56 overflow-y-auto pr-1">
+                  {/* Twin + Yardımcı Oyuncular'ın TÜM kadrosu — tek karaktere kilitli değil,
+                      bkz. BeiwePostPage'teki getAllBeiweLabCharacterIds. */}
                   {shots.map((shot) => (
                     <button
                       key={shot.id}
@@ -637,6 +701,32 @@ export default function BeiwePostClient({ shots, characterId }: Props) {
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={shot.image_url} alt="" className="w-full h-auto block" />
+                    </button>
+                  ))}
+                  {clips.map((clip) => (
+                    <button
+                      key={clip.id}
+                      onClick={() => pickGalleryClip(clip)}
+                      className="relative rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-400 transition-colors bg-black"
+                      title="Podcast/Motion videosu"
+                    >
+                      <video src={clip.video_url} muted className="w-full aspect-square object-cover block" />
+                      <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] font-semibold px-1 py-0.5 rounded">
+                        VİDEO
+                      </span>
+                    </button>
+                  ))}
+                  {/* "Arka planı kaldır" / "Stüdyo kütüphanesine kaydet" çıktıları — bkz.
+                      removeBackground/saveToLibrary, buraya CANLI ekleniyor. */}
+                  {libraryAssets.map((asset) => (
+                    <button
+                      key={asset.id}
+                      onClick={() => pickGalleryAsset(asset)}
+                      className="relative rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-400 transition-colors bg-[repeating-conic-gradient(#e5e7eb_0%_25%,white_0%_50%)] bg-[length:12px_12px]"
+                      title="Kaydedilmiş görsel"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={asset.url} alt="" className="w-full aspect-square object-contain block" />
                     </button>
                   ))}
                 </div>

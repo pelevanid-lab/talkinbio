@@ -11,6 +11,16 @@
 // Bu yüzden burada kullanıcının değiştirebileceği şey yalnızca: METİN, GÖRSEL, FORMAT ve
 // hangi ŞABLON. Tipografi, konum, renk, kenar boşluğu şablonun içinde sabit.
 
+/**
+ * `fal-ai/imageutils/rembg` (bkz. fal.ts `removeImageBackground`) fiyatlandırması TAHMİN —
+ * model kendisi DOĞRULANMADI (proje disiplini: "deneyle bulundu, dokümanla değil"), bu yüzden
+ * rakam da doğrulanana kadar tahmini kalıyor. fal.ai'nin görsel-işleme modelleri tipik olarak
+ * görsel başına düşük-sabit ücretlendiriliyor (ör. `nano-banana-pro` ~$0,13/görsel, bkz.
+ * characters.ts) — rembg gibi tek-adımlık, göreceli hafif bir model için o aralığın altında
+ * bir tahmin makul, ama ilk gerçek çağrıdan sonra fal'ın fatura sayfasından teyit edilmeli.
+ */
+export const ESTIMATED_BG_REMOVAL_COST_USD = 0.02;
+
 /** globals.css'teki `:root` değişkenlerinin aynası — canvas CSS değişkeni okuyamıyor. */
 export const BRAND = {
   paper: '#F4F2ED',

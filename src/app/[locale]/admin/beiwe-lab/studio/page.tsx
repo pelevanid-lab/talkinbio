@@ -5,20 +5,27 @@ import BeiweStudioClient from '@/components/beiwe-lab/BeiweStudioClient';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import type { CharacterClip } from '@/config/clips';
 import { TWIN_CHARACTER_ID } from '@/config/beiweLab';
+import { getAllBeiweLabCharacterIds } from '@/utils/beiweLabScope';
 
 // Beiwe Lab / Studio — Karakter Odası'ndaki "Post Production & Metin Ekleme" adımının
 // (bkz. eski `CharacterRoomClient.tsx`, `StudioSection`) Beiwe Lab'a taşınmış hâli.
 // Farkı yok — aynı `StudioSection` bileşeni, ortak klip havuzunun (Podcast + Action +
 // harici yüklemeler, `room` filtresi YOK) tamamı üzerinde çalışıyor.
+//
+// Klip havuzu TEK bir karaktere (`characterId`, proje kaydetme/yeni asset yükleme kapsamı
+// olarak kalıyor) değil, TÜM oyuncu kadrosuna (Twin + Yardımcı Oyuncular) göre çekiliyor —
+// bkz. `getAllBeiweLabCharacterIds` yorumu: Saule/Beiwe/eklenen sanal karakterler için
+// Motion/Podcast'te üretilen videolar da burada görünmeli, yalnızca Twin'inkiler değil.
 export default async function BeiweStudioPage() {
   await requireAdmin();
 
   const characterId = TWIN_CHARACTER_ID;
+  const characterIds = await getAllBeiweLabCharacterIds();
 
   const { data: clips } = await supabaseAdmin
     .from('character_clips')
     .select('*')
-    .eq('character_id', characterId)
+    .in('character_id', characterIds)
     .order('created_at', { ascending: false })
     .limit(100);
 
