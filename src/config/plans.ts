@@ -1,7 +1,7 @@
 // Faz 4.3: ödeme sağlayıcı Faz H.1'i bekliyor — bu sabitler roadmap'in kredi
 // tablosunu şeffaf göstermek için /pricing ve /dashboard/billing arasında paylaşılır.
 export const PLANS = [
-  { id: 'free', name: 'Free', price: 0, credits: 50 },
+  { id: 'free', name: 'Free', price: 0, credits: 20 },
   { id: 'starter', name: 'Starter', price: 20, credits: 400 },
   { id: 'pro', name: 'Pro', price: 90, credits: 2000 },
   { id: 'business', name: 'Business', price: 400, credits: 10000 },
