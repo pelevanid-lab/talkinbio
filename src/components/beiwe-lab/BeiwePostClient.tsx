@@ -682,8 +682,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
 
               {imageUrl && !isVideo && (
                 <p className="text-[11px] text-slate-400 mt-1.5">
-                  Arka planı kaldırma tahmini maliyeti ~${ESTIMATED_BG_REMOVAL_COST_USD.toFixed(2)}/görsel
-                  (doğrulanmadı — fal.ai modeli henüz gerçek bir çağrıyla test edilmedi).
+                  Arka planı kaldırma maliyeti ~${ESTIMATED_BG_REMOVAL_COST_USD.toFixed(4)}/görsel (doğrulandı, 2026-07-31).
                 </p>
               )}
 

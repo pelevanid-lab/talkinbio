@@ -551,11 +551,10 @@ export async function enhanceAudio(params: EnhanceAudioParams): Promise<EnhanceA
 /* Obje/arka plan kesme — Beiwe Post                                    */
 /* ------------------------------------------------------------------ */
 //
-// DOĞRULANMADI — proje disiplini "deneyle bulundu, dokümanla değil" (bkz. motionModels.ts,
-// clips.ts'teki aynı etiketleme). Model kimliği ve `result` alan adları (`image.url` vs
-// `image_url`) ilk gerçek çağrıda netleşecek; aşağıdaki çoklu-alan toleransı `enhanceAudio`
-// ile AYNI gerekçeyle var — fal'ın tam dönüş şeklini dokümantasyondan değil ilk çağrıdan
-// öğreniyoruz.
+// DOĞRULANDI (2026-07-31, kurucu testi) — model çalışıyor, gerçek maliyet $0,0045/görsel
+// (bkz. config/post.ts ESTIMATED_BG_REMOVAL_COST_USD). Hangi `result` alanının (`image.url`
+// vs `image_url` vs `image`) gerçekte döndüğü loglanmadı, o yüzden çoklu-alan toleransı
+// bilerek KORUNUYOR — `enhanceAudio` ile aynı gerekçe, tek bir alana daraltmak riskli.
 
 export type RemoveBackgroundResult = {
   url: string;

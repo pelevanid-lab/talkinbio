@@ -16,7 +16,7 @@ const MAX_BYTES = 10 * 1024 * 1024;
 /**
  * Beiwe Post — "Arka planı kaldır". Girdi cihazdan yüklenen bir dosya (multipart `file`) ya
  * da galeriden seçilmiş gerçek bir URL (JSON `{ imageUrl }`) olabilir; ikisi de aynı
- * `removeImageBackground`'a (fal.ts, DOĞRULANMADI — bkz. o dosyadaki yorum) gider.
+ * `removeImageBackground`'a (fal.ts, DOĞRULANDI 2026-07-31 — $0,0045/görsel) gider.
  *
  * fal'ın döndürdüğü URL'i OLDUĞU GİBİ döndürmüyoruz — iki sebep: (1) fal'ın barındırdığı
  * sonuçlar kalıcı değil, bir süre sonra 404 verebilir; (2) daha önemlisi, sonucun Post'un

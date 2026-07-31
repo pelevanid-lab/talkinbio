@@ -25,8 +25,8 @@ export async function POST(req: Request) {
     }
 
     if (payload.event === 'order.created') {
-      const order = payload.body;
-      const productId = order.items?.[0]?.product?.id;
+      const order = payload.body as any;
+      const productId = order.items?.[0]?.product?.id || order.id;
 
       if (!productId) {
         console.error('No productId found in order items');
