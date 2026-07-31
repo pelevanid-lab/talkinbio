@@ -67,6 +67,11 @@ export type PostAdjustments = {
   /** Derece, -180..180 — YALNIZCA zemine (gradient/mesh) uygulanır, görseli/objeyi ETKİLEMEZ
    *  (bir insan/ürün fotoğrafının rengini kaydırmak doğal görünmez, zemin farklı). */
   hueShift: number;
+  /** 0.5-2, başlık+alt satır boyut çarpanı — `imageScale` ile AYNI mantık, `headlineSizePct`/
+   *  `sublineSizePct`'in üstüne çarpılır. */
+  textScale: number;
+  /** Verilirse başlık/alt satırın şablon renginin YERİNE geçer (null = şablonun kilitli rengi). */
+  textColor: string | null;
 };
 
 export const DEFAULT_POST_ADJUSTMENTS: PostAdjustments = {
@@ -76,6 +81,8 @@ export const DEFAULT_POST_ADJUSTMENTS: PostAdjustments = {
   textOffsetX: 0,
   textOffsetY: 0,
   hueShift: 0,
+  textScale: 1,
+  textColor: null,
 };
 
 export type RenderPostParams = {
@@ -294,22 +301,22 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
   const headline = measureBlock(
     ctx,
     texts.headline,
-    (height * template.headlineSizePct) / 100,
+    (height * template.headlineSizePct * adj.textScale) / 100,
     700,
-    template.headlineColor,
+    adj.textColor || template.headlineColor,
     family,
     maxTextWidth,
   );
   const subline = measureBlock(
     ctx,
     texts.subline,
-    (height * template.sublineSizePct) / 100,
+    (height * template.sublineSizePct * adj.textScale) / 100,
     400,
-    template.sublineColor,
+    adj.textColor || template.sublineColor,
     family,
     maxTextWidth,
   );
-  const blockGap = (height * template.sublineSizePct) / 100 * 0.7;
+  const blockGap = (height * template.sublineSizePct * adj.textScale) / 100 * 0.7;
   const textHeight =
     (headline?.height ?? 0) + (subline?.height ?? 0) + (headline && subline ? blockGap : 0);
 
@@ -376,22 +383,22 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
     const cardHeadline = measureBlock(
       ctx,
       texts.headline,
-      (height * template.headlineSizePct) / 100,
+      (height * template.headlineSizePct * adj.textScale) / 100,
       700,
-      template.headlineColor,
+      adj.textColor || template.headlineColor,
       family,
       textMaxWidth,
     );
     const cardSubline = measureBlock(
       ctx,
       texts.subline,
-      (height * template.sublineSizePct) / 100,
+      (height * template.sublineSizePct * adj.textScale) / 100,
       500,
-      template.sublineColor,
+      adj.textColor || template.sublineColor,
       family,
       textMaxWidth,
     );
-    const cardBlockGap = ((height * template.sublineSizePct) / 100) * 0.5;
+    const cardBlockGap = ((height * template.sublineSizePct * adj.textScale) / 100) * 0.5;
     const textBlockHeight =
       (cardHeadline?.height ?? 0) + (cardSubline?.height ?? 0) + (cardHeadline && cardSubline ? cardBlockGap : 0);
     const cardHeight = Math.max(thumbSize + cardPadding * 2, textBlockHeight + cardPadding * 2);

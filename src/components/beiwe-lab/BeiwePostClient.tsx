@@ -67,6 +67,9 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
   const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 });
   const [textOffset, setTextOffset] = useState({ x: 0, y: 0 });
   const [hueShift, setHueShift] = useState(0);
+  const [textScale, setTextScale] = useState(1);
+  // null = şablonun kilitli rengi — kullanıcı bir renk seçince o rengin YERİNE geçer.
+  const [textColor, setTextColor] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
@@ -125,10 +128,12 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
           textOffsetX: textOffset.x,
           textOffsetY: textOffset.y,
           hueShift,
+          textScale,
+          textColor,
         },
       });
     },
-    [template, format, texts, mediaObj, needsImage, imageScale, imageOffset, textOffset, hueShift],
+    [template, format, texts, mediaObj, needsImage, imageScale, imageOffset, textOffset, hueShift, textScale, textColor],
   );
 
   // Şablon değişince ince ayarlar sıfırlanır — her şablon kendi kilitli varsayılan
@@ -138,6 +143,8 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
     setImageOffset({ x: 0, y: 0 });
     setTextOffset({ x: 0, y: 0 });
     setHueShift(0);
+    setTextScale(1);
+    setTextColor(null);
   }, [templateId]);
 
   /**
@@ -888,13 +895,15 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
             <div className="mt-3 pt-3 border-t border-slate-100 space-y-2.5">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-semibold text-slate-700">İnce ayar</h3>
-                  {(imageScale !== 1 || imageOffset.x !== 0 || imageOffset.y !== 0 || textOffset.x !== 0 || textOffset.y !== 0 || hueShift !== 0) && (
+                  {(imageScale !== 1 || imageOffset.x !== 0 || imageOffset.y !== 0 || textOffset.x !== 0 || textOffset.y !== 0 || hueShift !== 0 || textScale !== 1 || textColor !== null) && (
                     <button
                       onClick={() => {
                         setImageScale(1);
                         setImageOffset({ x: 0, y: 0 });
                         setTextOffset({ x: 0, y: 0 });
                         setHueShift(0);
+                        setTextScale(1);
+                        setTextColor(null);
                       }}
                       className="text-[11px] text-slate-400 hover:text-slate-700"
                     >
@@ -934,6 +943,44 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
                     className="w-full accent-purple-600"
                   />
                 </label>
+                {(texts[locale].headline.trim() || texts[locale].subline.trim()) && (
+                  <>
+                    <label className="block text-xs text-slate-600">
+                      <div className="flex items-center justify-between mb-1">
+                        <span>Yazı boyutu</span>
+                        <span className="text-slate-400 tabular-nums">%{Math.round(textScale * 100)}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0.5}
+                        max={2}
+                        step={0.02}
+                        value={textScale}
+                        onChange={(e) => setTextScale(Number(e.target.value))}
+                        className="w-full"
+                      />
+                    </label>
+                    <label className="flex items-center justify-between text-xs text-slate-600">
+                      <span>Yazı rengi</span>
+                      <span className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={textColor ?? template.headlineColor}
+                          onChange={(e) => setTextColor(e.target.value)}
+                          className="w-7 h-7 rounded border border-slate-300 p-0 cursor-pointer"
+                        />
+                        {textColor !== null && (
+                          <button
+                            onClick={() => setTextColor(null)}
+                            className="text-[11px] text-slate-400 hover:text-slate-700"
+                          >
+                            şablona dön
+                          </button>
+                        )}
+                      </span>
+                    </label>
+                  </>
+                )}
                 <p className="text-[11px] text-slate-400">
                   Önizlemedeki <strong>Obje</strong>/<strong>Yazı</strong> tutamaçlarını sürükleyerek
                   konumlarını değiştirebilirsin.
