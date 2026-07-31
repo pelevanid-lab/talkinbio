@@ -12,7 +12,7 @@ export async function GET(req: Request) {
 
     // Mevcut webhook'lari listele
     const webhooksList = await client.listWebhooks();
-    const webhooks = webhooksList.items || webhooksList; // fallback in case it's an array
+    const webhooks = webhooksList.data || webhooksList; // fallback in case it's an array
     const existing = (webhooks as any[]).find((w: any) => w.url === targetUrl && w.event === 'order.created');
 
     let token = '';
@@ -20,7 +20,7 @@ export async function GET(req: Request) {
       token = 'Mevcut webhook bulundu ancak token sadece ilk olusturmada gorulebilir. Lutfen Shopier panelinden veya asagidaki endpointten eski webhooku silin ve tekrar deneyin.';
     } else {
       const newWebhook = await client.createWebhook('order.created', targetUrl);
-      token = newWebhook.token;
+      token = newWebhook.token || '';
     }
 
     return NextResponse.json({ 
@@ -39,7 +39,7 @@ export async function DELETE(req: Request) {
     if (!process.env.SHOPIER_PAT) return NextResponse.json({ error: 'No PAT' });
     const client = new ShopierClient({ pat: process.env.SHOPIER_PAT });
     const webhooksList = await client.listWebhooks();
-    const webhooks = webhooksList.items || webhooksList;
+    const webhooks = webhooksList.data || webhooksList;
     for (const w of (webhooks as any[])) {
       await client.deleteWebhook(w.id);
     }
