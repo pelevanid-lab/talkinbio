@@ -11,8 +11,9 @@ export async function GET(req: Request) {
     const targetUrl = 'https://talkinbio.com/api/webhooks/shopier';
 
     // Mevcut webhook'lari listele
-    const webhooks = await client.listWebhooks();
-    const existing = webhooks.find((w: any) => w.url === targetUrl && w.event === 'order.created');
+    const webhooksList = await client.listWebhooks();
+    const webhooks = webhooksList.items || webhooksList; // fallback in case it's an array
+    const existing = (webhooks as any[]).find((w: any) => w.url === targetUrl && w.event === 'order.created');
 
     let token = '';
     if (existing) {
@@ -37,8 +38,9 @@ export async function DELETE(req: Request) {
   try {
     if (!process.env.SHOPIER_PAT) return NextResponse.json({ error: 'No PAT' });
     const client = new ShopierClient({ pat: process.env.SHOPIER_PAT });
-    const webhooks = await client.listWebhooks();
-    for (const w of webhooks) {
+    const webhooksList = await client.listWebhooks();
+    const webhooks = webhooksList.items || webhooksList;
+    for (const w of (webhooks as any[])) {
       await client.deleteWebhook(w.id);
     }
     return NextResponse.json({ success: true, message: 'Tum webhooklar silindi. Simdi sayfayi yenileyerek (GET) yeni token alabilirsiniz.' });
