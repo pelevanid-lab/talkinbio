@@ -16,6 +16,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import CreditBadge from '@/components/CreditBadge';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export type DashboardSection = 'leads' | 'analytics' | 'billing' | 'creative-studio';
 
@@ -85,6 +86,9 @@ export default function DashboardShell({ business, active, children }: { busines
           <Pencil className="w-4 h-4 shrink-0" />
           {t('navEditor')}
         </a>
+        <div className="pt-6 px-3 text-[#8A8880]">
+          <LanguageSwitcher />
+        </div>
       </nav>
 
       <div className="px-3 pb-5 pt-3 border-t border-[rgba(20,35,31,0.10)] flex flex-col gap-2">
