@@ -464,7 +464,9 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
     // daha dar bir alan olduğu için kendi ölçümünü yapıyor.
     const cardWidth = width * 0.82;
     const cardPadding = cardWidth * 0.055;
-    const thumbSize = img ? cardWidth * 0.16 : 0;
+    // `adj.imageScale` (Obje boyutu) — bulunan hata: küçük resim bu ayarı hiç okumuyordu,
+    // kaydırıcı hiçbir şey yapmıyormuş gibi görünüyordu.
+    const thumbSize = img ? cardWidth * 0.16 * adj.imageScale : 0;
     // Kart-İÇİ göreli ofset — kartın kendi sol kenarına göre. `cardX` (kartın canvas'taki
     // mutlak konumu, kart ortalandığı için 0 değil) aşağıda AYRICA eklenmeli, yoksa metin
     // canvas'ın solundan sayılıp kartın/küçük resmin üstüne biner (bkz. bulunan hata).
@@ -513,8 +515,9 @@ export async function renderPost({ canvas, template, format, texts, mediaObj, el
     ctx.shadowOffsetY = 0;
 
     if (img && mediaObj) {
-      const thumbX = cardX + cardPadding;
-      const thumbY = cardY + cardOffsetY + (cardHeight - thumbSize) / 2;
+      // Aynı bulunan hata: Obje'yi sürüklemek de küçük resmi hiç kıpırdatmıyordu.
+      const thumbX = cardX + cardPadding + imageOffsetXpx;
+      const thumbY = cardY + cardOffsetY + (cardHeight - thumbSize) / 2 + imageOffsetYpx;
       const thumbRadius = thumbSize * 0.12;
       const src = fitCoverSource(mediaObj.width, mediaObj.height, thumbSize, thumbSize);
       ctx.save();
