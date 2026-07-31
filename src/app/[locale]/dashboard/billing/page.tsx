@@ -60,7 +60,7 @@ export default async function BillingDashboardPage() {
     invoices.forEach((i: any) => {
       const plan = i.plan_id === 'test' ? TEST_PACK : i.plan_id === 'extra' ? EXTRA_PACK : PLANS.find(p => p.id === i.plan_id);
       const credits = plan?.credits || 0;
-      const planName = i.plan_id === 'test' ? 'Test Paketi' : i.plan_id === 'extra' ? 'Ekstra Paket' : plan?.name || i.plan_id;
+      const planName = i.plan_id === 'test' ? 'Test Paketi' : i.plan_id === 'extra' ? 'Ekstra Paket' : (plan as any)?.name || i.plan_id;
       
       transactions.push({
         id: i.id,
