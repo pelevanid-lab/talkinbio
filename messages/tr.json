@@ -878,8 +878,10 @@
   "CreativeStudio": {
     "pageTitle": "Creative Studio",
     "comingSoonBadge": "Yakında",
-    "heroTitle": "İşletmen için içerik üreten stüdyon burada olacak",
-    "heroDesc": "Kendi dijital ikizinle konuşan, gösteren ve tanıtan video/ses içerikleri üretmeni sağlayacak araç setini hazırlıyoruz — sesini klonlama, sahne üretimi ve post-prodüksiyon tek yerde.",
+    "liveBadge": "Kullanıma açık",
+    "heroTitle": "İşletmen için içerik üreten stüdyon burada",
+    "heroDesc": "Dijital ikizinle başla — fotoğraflarınla eğitilen görsel kimliğin, sonraki tüm sahne/video üretiminin temeli. Ses klonlama ve video içerik yakında ekleniyor.",
+    "twinCta": "Dijital İkizini Oluştur",
     "feature1Title": "Dijital İkiz",
     "feature1Desc": "Fotoğraflarınla eğitilen, seni temsil eden bir görsel kimlik.",
     "feature2Title": "Ses Klonu",

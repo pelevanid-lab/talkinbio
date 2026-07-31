@@ -39,6 +39,10 @@ type Props = {
   characterName: string;
   initialProfile: TwinProfile;
   initialShots: CharacterShot[];
+  /** Instagram içe aktarma yalnız admin route'unu (api/admin/characters/[id]/instagram)
+   * kullanıyor — bu Twin akışının çok-kiracılı hâline henüz taşınmadı, o yüzden müşteri
+   * sayfası bu butonu gizler. Admin sayfasında varsayılan (true) değişmez. */
+  allowInstagramImport?: boolean;
 };
 
 /** Yüklenen referans kareler `model: 'user-upload'` ile kaydediliyor (shots POST route). */
@@ -116,6 +120,7 @@ export default function BeiweTwinClient({
   characterName,
   initialProfile,
   initialShots,
+  allowInstagramImport = true,
 }: Props) {
   const router = useRouter();
   const [profile, setProfile] = useState<TwinProfile>(initialProfile);
@@ -390,13 +395,15 @@ export default function BeiweTwinClient({
             {teaching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
             {teaching ? 'Analiz ediliyor…' : hasIdentity ? 'Yüzü yeniden tanıt' : 'Fotoğraf yükle'}
           </button>
-          <button
-            onClick={() => setShowInstagram(true)}
-            disabled={teaching}
-            className="text-sm font-semibold text-pink-600 bg-pink-50 hover:bg-pink-100 px-4 py-2 rounded-lg disabled:opacity-50"
-          >
-            Instagram&apos;dan aktar
-          </button>
+          {allowInstagramImport && (
+            <button
+              onClick={() => setShowInstagram(true)}
+              disabled={teaching}
+              className="text-sm font-semibold text-pink-600 bg-pink-50 hover:bg-pink-100 px-4 py-2 rounded-lg disabled:opacity-50"
+            >
+              Instagram&apos;dan aktar
+            </button>
+          )}
           <span className="text-xs text-slate-400">
             En net, tek yüzün göründüğü kareler en iyi sonucu verir.
           </span>

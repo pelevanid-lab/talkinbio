@@ -75,6 +75,15 @@ export const VOICE_MODEL_NOTE = 'fal-ai/minimax · kalıcı klon kimliği, langu
 export const MINIMAX_CLONE_COST_USD = 1.5;
 
 /**
+ * `fal-ai/flux-lora-fast-training` — TAHMİN, doğrulanmadı (fal'ın kendi fiyat sayfası
+ * bu yazıda erişilemedi, 2026-08-01). Üçüncü parti kaynaklar $2-$5/eğitim aralığı
+ * bildiriyor (adım sayısına göre değişir); varsayılan `steps=1500` (lora/route.ts) için
+ * muhafazakar bir orta nokta olarak $2 kullanılıyor. İlk gerçek faturadan sonra gözden
+ * geçirilmeli.
+ */
+export const LORA_TRAINING_COST_USD = 2;
+
+/**
  * TTS maliyeti (1000 karakter başına, USD) — `speech-02-hd`, fal fiyatlandırma
  * sayfasından doğrulandı (2026-07-29). Eskiden F5-TTS için DOĞRULANMAMIŞ bir tahmindi;
  * bu artık gerçek bir rakam.

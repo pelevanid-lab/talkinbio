@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { createZip } from '@/utils/zip';
 import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
+import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
+import { LORA_TRAINING_COST_USD } from '@/config/beiweLab';
 
 const FAL_KEY = process.env.FAL_KEY;
 const LORA_TRAINING_MODEL = 'fal-ai/flux-lora-fast-training';
@@ -46,6 +48,20 @@ export async function POST(
       { error: 'LoRA eğitimi için en az 5 fotoğraf gerekli.' },
       { status: 400 },
     );
+  }
+
+  if (auth.mode === 'business') {
+    try {
+      await assertSufficientCredits(auth.business.id, LORA_TRAINING_COST_USD);
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        return NextResponse.json(
+          { error: 'Yetersiz kredi.', requiredCredits: err.requiredCredits, balance: err.balance },
+          { status: 402 },
+        );
+      }
+      throw err;
+    }
   }
 
   const trigger = (triggerWord ?? `${characterId}person`).replace(/[^a-z0-9]/gi, '');
@@ -158,6 +174,11 @@ export async function POST(
     }, { onConflict: 'id' });
 
   console.log(`[lora] Eğitim başlatıldı. request_id=${request_id}, trigger=${trigger}, photos=${imageBuffers.length}`);
+
+  // fal kuyruğu isteği kabul etti — eğitim gerçekten başladı, kredi burada düşülür.
+  if (auth.mode === 'business') {
+    await deductForGeneration(auth.business.id, LORA_TRAINING_COST_USD);
+  }
 
   return NextResponse.json({
     requestId: request_id,

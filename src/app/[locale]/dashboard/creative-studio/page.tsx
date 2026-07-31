@@ -1,13 +1,13 @@
 import { createClient as createServerClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { Sparkles, UserRound, Mic, Clapperboard } from 'lucide-react';
+import { Sparkles, UserRound, Mic, Clapperboard, ArrowRight } from 'lucide-react';
 import DashboardShell from '@/components/dashboard/DashboardShell';
 
-// Beiwe Lab'ın (bkz. src/config/beiweLab.ts) müşteriye açık, çok-kiracılı hâli
-// ayrı bir backend projesi (business_id şeması, admin-auth yerine işletme-sahibi
-// auth'u, üretim başına kredi düşümü). Bu sayfa şimdilik yalnızca giriş noktasını
-// ve markayı ("Creative Studio") dashboard'da yer tutucu olarak kuruyor.
+// Beiwe Lab'ın (bkz. src/config/beiweLab.ts) müşteriye açık, çok-kiracılı hâli — Twin
+// (Dijital İkiz) burada gerçek işlevle bağlı (/dashboard/creative-studio/twin, bkz.
+// oradaki page.tsx ve src/utils/creativeStudioScope.ts). Voice/Podcast/Post/Studio/
+// Motion/Cast henüz taşınmadı — kendi backend turlarını bekliyor, "yakında" kalıyor.
 export default async function CreativeStudioPage() {
   const supabase = await createServerClient();
   const { data: userData, error: authError } = await supabase.auth.getUser();
@@ -36,9 +36,9 @@ export default async function CreativeStudioPage() {
   const t = await getTranslations('CreativeStudio');
 
   const features = [
-    { icon: UserRound, title: t('feature1Title'), desc: t('feature1Desc') },
-    { icon: Mic, title: t('feature2Title'), desc: t('feature2Desc') },
-    { icon: Clapperboard, title: t('feature3Title'), desc: t('feature3Desc') },
+    { icon: UserRound, title: t('feature1Title'), desc: t('feature1Desc'), href: '/dashboard/creative-studio/twin', live: true },
+    { icon: Mic, title: t('feature2Title'), desc: t('feature2Desc'), live: false },
+    { icon: Clapperboard, title: t('feature3Title'), desc: t('feature3Desc'), live: false },
   ];
 
   return (
@@ -48,27 +48,39 @@ export default async function CreativeStudioPage() {
           <div className="w-16 h-16 bg-[#FFEDE9] text-[#FF6A5C] rounded-full flex items-center justify-center mx-auto mb-6">
             <Sparkles className="w-8 h-8" />
           </div>
-          <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[#FF6A5C] bg-[#FFEDE9] px-3 py-1 rounded-full mb-4">
-            {t('comingSoonBadge')}
+          <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[#059669] bg-[#E6F9F3] px-3 py-1 rounded-full mb-4">
+            {t('liveBadge')}
           </span>
           <h1 className="text-2xl sm:text-3xl font-[800] tracking-[-0.02em] text-[#14231F] font-['Bricolage_Grotesque'] mb-3">
             {t('heroTitle')}
           </h1>
-          <p className="text-[#4B5A55] max-w-xl mx-auto">
+          <p className="text-[#4B5A55] max-w-xl mx-auto mb-6">
             {t('heroDesc')}
           </p>
+          <a
+            href="/dashboard/creative-studio/twin"
+            className="inline-flex items-center gap-2 bg-[#FF6A5C] text-white rounded-full px-6 py-3 text-sm font-[700] hover:opacity-90 transition"
+          >
+            {t('twinCta')} <ArrowRight className="w-4 h-4" />
+          </a>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-          {features.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="bg-white border border-[rgba(20,35,31,0.10)] rounded-[20px] p-6">
-              <div className="w-10 h-10 bg-[#F4F2ED] text-[#14231F] rounded-full flex items-center justify-center mb-4">
-                <Icon className="w-5 h-5" />
+          {features.map(({ icon: Icon, title, desc, href, live }) => {
+            const card = (
+              <div className={`bg-white border rounded-[20px] p-6 h-full transition ${live ? 'border-[#FF6A5C]/30 hover:border-[#FF6A5C] hover:shadow-sm' : 'border-[rgba(20,35,31,0.10)]'}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-4 ${live ? 'bg-[#FFEDE9] text-[#FF6A5C]' : 'bg-[#F4F2ED] text-[#14231F]'}`}>
+                  <Icon className="w-5 h-5" />
+                </div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-[800] text-[#14231F] font-['Bricolage_Grotesque']">{title}</h3>
+                  {!live && <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8A8880] bg-[#F4F2ED] px-2 py-0.5 rounded-full">{t('comingSoonBadge')}</span>}
+                </div>
+                <p className="text-sm text-[#4B5A55]">{desc}</p>
               </div>
-              <h3 className="font-[800] text-[#14231F] font-['Bricolage_Grotesque'] mb-1">{title}</h3>
-              <p className="text-sm text-[#4B5A55]">{desc}</p>
-            </div>
-          ))}
+            );
+            return href ? <a key={title} href={href}>{card}</a> : <div key={title}>{card}</div>;
+          })}
         </div>
 
         <p className="text-center text-sm text-[#8A8880] mt-8">{t('notifyHint')}</p>

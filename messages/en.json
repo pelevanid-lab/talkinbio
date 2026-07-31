@@ -879,8 +879,10 @@
   "CreativeStudio": {
     "pageTitle": "Creative Studio",
     "comingSoonBadge": "Coming soon",
-    "heroTitle": "Your content studio is coming",
-    "heroDesc": "We're building a toolset that lets you generate video and voice content with your own digital twin — voice cloning, scene generation, and post-production, all in one place.",
+    "liveBadge": "Live now",
+    "heroTitle": "Your content studio is here",
+    "heroDesc": "Start with your digital twin — a visual identity trained on your own photos, the foundation for every scene/video you'll generate next. Voice cloning and video content are coming soon.",
+    "twinCta": "Create Your Digital Twin",
     "feature1Title": "Digital Twin",
     "feature1Desc": "A visual identity trained on your own photos, representing you.",
     "feature2Title": "Voice Clone",
