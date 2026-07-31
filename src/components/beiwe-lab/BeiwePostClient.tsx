@@ -18,6 +18,7 @@ import {
 import { findCuratedPostFont, googleFontsHref } from '@/config/postFonts';
 import { ANIMATED_POST_DURATION_MS, canvasToPng, renderPost, type PostTexts } from '@/utils/postRenderer';
 import { downloadBlob, loadMedia, type LoadedMedia } from '@/utils/imageOverlay';
+import { creditsForCost } from '@/config/pricing';
 
 // Bu sayfa bilerek LabStage (aşama akordiyonu) kullanmıyor: Twin/Voice/Podcast sıralı
 // birer üretim hattı, burası ise canlı önizlemeli bir EDİTÖR — kontrolü değiştirip
@@ -765,7 +766,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
 
               {imageUrl && !isVideo && (
                 <p className="text-[11px] text-slate-400 mt-1.5">
-                  Arka planı kaldırma maliyeti ~${ESTIMATED_BG_REMOVAL_COST_USD.toFixed(4)}/görsel (doğrulandı, 2026-07-31).
+                  Arka planı kaldırma maliyeti ~${ESTIMATED_BG_REMOVAL_COST_USD.toFixed(4)}/görsel (doğrulandı, 2026-07-31) · ≈{creditsForCost(ESTIMATED_BG_REMOVAL_COST_USD)} kredi.
                 </p>
               )}
 

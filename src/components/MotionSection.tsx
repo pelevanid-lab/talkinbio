@@ -12,6 +12,7 @@ import {
   MOTION_MODELS,
   type MotionResolution,
 } from '@/config/motionModels';
+import { creditsForCost } from '@/config/pricing';
 
 const AUDIO_LABEL = MOTION_AUDIO_EXTENSIONS.map((e) => e.toUpperCase()).join(', ');
 
@@ -339,7 +340,7 @@ export default function MotionSection({ characterId, shots, motions, voiceUrl, o
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-sm font-semibold text-slate-900">{m.label}</span>
                     <span className="text-xs text-slate-500 whitespace-nowrap">
-                      ${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn
+                      ${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn · ≈{creditsForCost(m.costPerSecondUsd)} kredi/sn
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">{m.hint}</p>
@@ -521,7 +522,7 @@ export default function MotionSection({ characterId, shots, motions, voiceUrl, o
           </button>
           {audioSeconds !== null && !audioRejected && (
             <p className="text-xs text-slate-500 -mt-3">
-              ~${(audioSeconds * model.costPerSecondUsd).toFixed(2)} (tahmin, doğrulanmadı) · {model.label},{' '}
+              ~${(audioSeconds * model.costPerSecondUsd).toFixed(2)} (tahmin, doğrulanmadı) · ≈{creditsForCost(audioSeconds * model.costPerSecondUsd)} kredi · {model.label},{' '}
               {audioSeconds.toFixed(1)} sn × ${model.costPerSecondUsd}/sn
             </p>
           )}

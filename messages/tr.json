@@ -869,7 +869,22 @@
       "deactivateTooltip": "Pasifleştir",
       "activateTooltip": "Aktifleştir"
     },
-    "navAnalytics": "Analiz"
+    "navAnalytics": "Analiz",
+    "navBilling": "İşlemler",
+    "navCreativeStudio": "Creative Studio"
+  },
+  "CreativeStudio": {
+    "pageTitle": "Creative Studio",
+    "comingSoonBadge": "Yakında",
+    "heroTitle": "İşletmen için içerik üreten stüdyon burada olacak",
+    "heroDesc": "Kendi dijital ikizinle konuşan, gösteren ve tanıtan video/ses içerikleri üretmeni sağlayacak araç setini hazırlıyoruz — sesini klonlama, sahne üretimi ve post-prodüksiyon tek yerde.",
+    "feature1Title": "Dijital İkiz",
+    "feature1Desc": "Fotoğraflarınla eğitilen, seni temsil eden bir görsel kimlik.",
+    "feature2Title": "Ses Klonu",
+    "feature2Desc": "Kendi sesinle, yazdığın herhangi bir metni seslendir.",
+    "feature3Title": "Video İçerik",
+    "feature3Desc": "Konuşan, tanıtan, ürününü anlatan kısa videolar üret.",
+    "notifyHint": "Erken erişim açıldığında sana haber vereceğiz."
   },
   "MediaUploader": {
     "defaultLabel": "Görsel Seç veya Sürükle",
@@ -923,5 +938,17 @@
     "formSubmitting": "Gönderiliyor...",
     "formSuccess": "Talebiniz alındı. Ekibimiz en kısa sürede sizinle iletişime geçecek.",
     "formErrorGeneric": "Gönderilirken bir hata oluştu, lütfen tekrar deneyin."
+  },
+  "Register": {
+    "title": "Kayıt Ol",
+    "subtitle": "Talkinbio hesabınızı oluşturun",
+    "emailLabel": "E-posta",
+    "emailPlaceholder": "ornek@sirket.com",
+    "passwordLabel": "Şifre",
+    "passwordPlaceholder": "••••••••",
+    "buttonText": "Hesap Oluştur",
+    "loading": "Oluşturuluyor...",
+    "loginLink": "Zaten hesabınız var mı? Giriş yapın",
+    "successMessage": "Kayıt başarılı! Lütfen e-posta adresinize gelen onay bağlantısına tıklayın."
   }
 }

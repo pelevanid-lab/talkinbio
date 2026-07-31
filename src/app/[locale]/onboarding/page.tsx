@@ -27,7 +27,7 @@ export default function OnboardingPage() {
     hours: {} as any,
   });
 
-  const handleNext = () => setStep((s) => Math.min(s + 1, 6));
+  const handleNext = () => setStep((s) => Math.min(s + 1, 3));
   const handlePrev = () => setStep((s) => Math.max(s - 1, 1));
 
   const submitForm = async () => {
@@ -57,6 +57,7 @@ export default function OnboardingPage() {
         category: formData.category,
         contact_method: contactMethods,
         contact_value: contactValues,
+        credit_balance: 50,
       }).select().single();
 
       if (bizError || !business) throw new Error(t('businessCreationFailedError'));
@@ -99,7 +100,7 @@ export default function OnboardingPage() {
         <div className="bg-slate-100 h-2 w-full">
           <div 
             className="bg-blue-600 h-full transition-all duration-300" 
-            style={{ width: `${(step / 6) * 100}%` }}
+            style={{ width: `${(step / 3) * 100}%` }}
           />
         </div>
 
@@ -202,37 +203,6 @@ export default function OnboardingPage() {
           )}
 
           {step === 3 && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold">{t('step3.title')}</h2>
-              <p className="text-slate-500">{t('step3.subtitle')}</p>
-
-              {/* Simplified for MVP: Textarea to parse later or simple inputs */}
-              <p className="text-sm text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
-                {t('step3.note')}
-              </p>
-            </div>
-          )}
-
-          {step === 4 && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold">{t('step4.title')}</h2>
-              <p className="text-slate-500">{t('step4.subtitle')}</p>
-              <p className="text-sm text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
-                {t('step4.note')}
-              </p>
-            </div>
-          )}
-
-          {step === 5 && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold">{t('step5.title')}</h2>
-              <p className="text-sm text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
-                {t('step5.note')}
-              </p>
-            </div>
-          )}
-
-          {step === 6 && (
             <div className="space-y-6 text-center py-8">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-4">
                 <CheckCircle2 className="w-8 h-8" />
@@ -253,7 +223,7 @@ export default function OnboardingPage() {
               {t('back')}
             </button>
 
-            {step < 6 ? (
+            {step < 3 ? (
               <button
                 onClick={handleNext}
                 disabled={isSubmitting || (step === 1 && !formData.name)}

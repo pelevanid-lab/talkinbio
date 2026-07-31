@@ -203,6 +203,15 @@ export default function LoginPage() {
               {t('backToLogin')}
             </button>
           )}
+
+          {mode === 'login' && (
+            <a
+              href="/register"
+              className="block text-center w-full text-slate-500 hover:text-[var(--coral)] text-sm font-medium mt-4 transition"
+            >
+              {t('registerLink')}
+            </a>
+          )}
         </form>
       </div>
     </div>

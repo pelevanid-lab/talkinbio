@@ -5,6 +5,7 @@ import { Loader2, MicVocal, Upload, Play, CheckCircle2, Trash2 } from 'lucide-re
 import type { CharacterShot } from '@/config/characters';
 import type { CharacterClip } from '@/config/clips';
 import { DEFAULT_PERFORMANCE_MODEL_ID, PERFORMANCE_MODELS, findPerformanceModel } from '@/config/clips';
+import { creditsForCost } from '@/config/pricing';
 
 /** Dosyanın süresini tarayıcıda ölçer; okunamazsa null döner (sunucu yine de sınırı uygular). */
 function readMediaDuration(file: File): Promise<number | null> {
@@ -198,7 +199,7 @@ export default function PodcastRoom({ characterId, shots, clips, onClipCreated, 
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-sm font-semibold text-slate-900">{m.label}</span>
                     <span className="text-xs text-slate-500 whitespace-nowrap">
-                      ${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn
+                      ${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn · ≈{creditsForCost(m.costPerSecondUsd)} kredi/sn
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">{m.hint}</p>
@@ -248,7 +249,7 @@ export default function PodcastRoom({ characterId, shots, clips, onClipCreated, 
           </button>
           {drivingSeconds !== null && (
             <p className="text-xs text-slate-500 -mt-3">
-              ~${(drivingSeconds * model.costPerSecondUsd).toFixed(2)} (tahmin, doğrulanmadı) · {model.label},{' '}
+              ~${(drivingSeconds * model.costPerSecondUsd).toFixed(2)} (tahmin, doğrulanmadı) · ≈{creditsForCost(drivingSeconds * model.costPerSecondUsd)} kredi · {model.label},{' '}
               {drivingSeconds.toFixed(1)} sn × ${model.costPerSecondUsd}/sn
             </p>
           )}

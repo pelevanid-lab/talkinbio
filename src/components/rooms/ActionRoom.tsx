@@ -12,6 +12,7 @@ import {
   MOTION_STYLES,
   type MotionIdentityMode,
 } from '@/config/motionStyles';
+import { creditsForCost } from '@/config/pricing';
 
 type MotionMode = 'reference' | 'scenario';
 
@@ -346,7 +347,7 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
                     >
                       <div className="flex items-baseline justify-between gap-2">
                         <span className="text-sm font-semibold text-slate-900">{m.label}</span>
-                        <span className="text-xs text-slate-500 whitespace-nowrap">~${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn (tahmin)</span>
+                        <span className="text-xs text-slate-500 whitespace-nowrap">~${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn (tahmin) · ≈{creditsForCost(m.costPerSecondUsd)} kredi/sn</span>
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">{m.hint}</p>
                     </button>
@@ -369,7 +370,7 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
                   >
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="text-sm font-semibold text-slate-900">{m.label}</span>
-                      <span className="text-xs text-slate-500 whitespace-nowrap">~${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn (tahmin)</span>
+                      <span className="text-xs text-slate-500 whitespace-nowrap">~${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn (tahmin) · ≈{creditsForCost(m.costPerSecondUsd)} kredi/sn</span>
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">{m.hint}</p>
                   </button>
@@ -416,7 +417,7 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
           </button>
           {mode === 'reference' && drivingSeconds !== null && (
             <p className="text-xs text-slate-500 -mt-3">
-              ~${(drivingSeconds * motionModel.costPerSecondUsd).toFixed(2)} (tahmin, doğrulanmadı) · {motionModel.label},{' '}
+              ~${(drivingSeconds * motionModel.costPerSecondUsd).toFixed(2)} (tahmin, doğrulanmadı) · ≈{creditsForCost(drivingSeconds * motionModel.costPerSecondUsd)} kredi · {motionModel.label},{' '}
               {drivingSeconds.toFixed(1)} sn × ${motionModel.costPerSecondUsd}/sn
             </p>
           )}

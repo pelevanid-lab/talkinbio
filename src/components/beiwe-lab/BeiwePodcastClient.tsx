@@ -25,6 +25,7 @@ import {
   type ScenePreset,
 } from '@/config/characters';
 import type { CharacterClip } from '@/config/clips';
+import { creditsForCost } from '@/config/pricing';
 import {
   DEFAULT_MOTION_MODEL_ID,
   MOTION_AUDIO_EXTENSIONS,
@@ -85,7 +86,7 @@ function MotionModelPicker({
             <div className="flex items-baseline justify-between gap-2">
               <span className="text-sm font-semibold text-slate-900">{m.label}</span>
               <span className="text-xs text-slate-500 whitespace-nowrap">
-                ${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn
+                ${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn · ≈{creditsForCost(m.costPerSecondUsd)} kredi/sn
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">{m.hint}</p>
@@ -567,7 +568,7 @@ export default function BeiwePodcastClient({
             {generatingScene ? 'Üretiliyor…' : 'Sahne Üret'}
           </button>
           <span className="text-xs text-slate-400">
-            ~${(ESTIMATED_COST_PER_IMAGE_USD * numImages).toFixed(2)} · 1-2 dk
+            ~${(ESTIMATED_COST_PER_IMAGE_USD * numImages).toFixed(2)} · ≈{creditsForCost(ESTIMATED_COST_PER_IMAGE_USD * numImages)} kredi · 1-2 dk
           </span>
         </div>
 

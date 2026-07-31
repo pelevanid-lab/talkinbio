@@ -869,7 +869,22 @@
       "deactivateTooltip": "Deactivate",
       "activateTooltip": "Activate"
     },
-    "navAnalytics": "Analytics"
+    "navAnalytics": "Analytics",
+    "navBilling": "Transactions",
+    "navCreativeStudio": "Creative Studio"
+  },
+  "CreativeStudio": {
+    "pageTitle": "Creative Studio",
+    "comingSoonBadge": "Coming soon",
+    "heroTitle": "Your content studio is coming",
+    "heroDesc": "We're building a toolset that lets you generate video and voice content with your own digital twin — voice cloning, scene generation, and post-production, all in one place.",
+    "feature1Title": "Digital Twin",
+    "feature1Desc": "A visual identity trained on your own photos, representing you.",
+    "feature2Title": "Voice Clone",
+    "feature2Desc": "Narrate any text you write in your own voice.",
+    "feature3Title": "Video Content",
+    "feature3Desc": "Generate short videos of yourself talking about and showcasing your business.",
+    "notifyHint": "We'll let you know when early access opens up."
   },
   "MediaUploader": {
     "defaultLabel": "Choose or Drag an Image",
@@ -923,5 +938,17 @@
     "formSubmitting": "Sending...",
     "formSuccess": "Your request has been received. Our team will get in touch with you shortly.",
     "formErrorGeneric": "Something went wrong while sending, please try again."
+  },
+  "Register": {
+    "title": "Sign Up",
+    "subtitle": "Create your Talkinbio account",
+    "emailLabel": "Email",
+    "emailPlaceholder": "name@company.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "••••••••",
+    "buttonText": "Create Account",
+    "loading": "Creating...",
+    "loginLink": "Already have an account? Log in",
+    "successMessage": "Registration successful! Please check your email to confirm your account."
   }
 }

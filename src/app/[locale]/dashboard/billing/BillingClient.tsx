@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { format, type Locale } from 'date-fns';
 import { tr, enUS, ru } from 'date-fns/locale';
-import { Coins, Inbox, Receipt, MessageCircle, Wrench, BarChart3 } from 'lucide-react';
+import { Coins, MessageCircle, Wrench, BarChart3 } from 'lucide-react';
 import { PLANS, EXTRA_PACK, TEST_PACK } from '@/config/plans';
+import DashboardShell from '@/components/dashboard/DashboardShell';
 
 const DATE_FNS_LOCALES: Record<string, Locale> = { tr, en: enUS, ru };
 const NUMBER_LOCALES: Record<string, string> = { tr: 'tr-TR', en: 'en-US', ru: 'ru-RU' };
@@ -105,9 +106,14 @@ export default function BillingClient({ business, transactions, ownerEmail }: { 
         tempDiv.innerHTML = data.fastPayHtml;
         document.body.appendChild(tempDiv);
         const form = tempDiv.querySelector('form');
-        if (form) form.submit();
+        if (form) {
+          form.target = '_blank';
+          form.submit();
+        }
+        setCheckingOut(false);
       } else if (data.url) {
-        window.location.href = data.url;
+        window.open(data.url, '_blank');
+        setCheckingOut(false);
       }
     } catch (err: any) {
       console.error(err);
@@ -117,31 +123,15 @@ export default function BillingClient({ business, transactions, ownerEmail }: { 
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F2ED]">
-      <header className="bg-white border-b border-[rgba(20,35,31,0.10)] sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-          <div>
-            <h1 className="text-xl font-[800] tracking-[-0.02em] text-[#14231F] flex items-center gap-2">
-              <Receipt className="w-5 h-5" /> {t('pageTitle')}
-            </h1>
-            <p className="text-sm text-[#4B5A55] font-['Inter']">{business.name}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <a href="/dashboard/leads" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap flex items-center gap-1.5">
-              <Inbox className="w-4 h-4" /> {t('navPanel')}
-            </a>
-
-            <a href="/dashboard/editor" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
-              {t('navEditor')}
-            </a>
-            <a href="/dashboard/analytics" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
-              {t('navAnalytics')}
-            </a>
-          </div>
-        </div>
-      </header>
-
+    <DashboardShell business={business} active="billing">
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6 font-['Inter']">
+        <div>
+          <h1 className="text-xl font-[800] tracking-[-0.02em] text-[#14231F] flex items-center gap-2">
+            <Coins className="w-5 h-5" /> {t('pageTitle')}
+          </h1>
+          <p className="text-sm text-[#4B5A55] font-['Inter']">{business.name}</p>
+        </div>
+
         {/* Balance */}
         <div className="bg-white rounded-[20px] border border-[rgba(20,35,31,0.10)] p-6 flex items-center gap-4">
           <div className="w-14 h-14 bg-[#FFEDE9] text-[#FF6A5C] rounded-full flex items-center justify-center shrink-0">
@@ -261,6 +251,6 @@ export default function BillingClient({ business, transactions, ownerEmail }: { 
           )}
         </div>
       </main>
-    </div>
+    </DashboardShell>
   );
 }

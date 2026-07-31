@@ -46,13 +46,11 @@ export default async function AnalyticsPage({ params }: any) {
   const totalViews = pageViews?.length || 0;
 
   return (
-    <div className="min-h-screen bg-[#F4F2ED]">
-      <AnalyticsClient 
-        business={business} 
-        viewsBySource={viewsBySource} 
-        totalViews={totalViews} 
-        totalConversations={conversationsCount || 0} 
-      />
-    </div>
+    <AnalyticsClient
+      business={business}
+      viewsBySource={viewsBySource}
+      totalViews={totalViews}
+      totalConversations={conversationsCount || 0}
+    />
   );
 }

@@ -1,47 +1,24 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { BarChart3, Users, MessageCircle, ExternalLink, Link } from 'lucide-react';
-import CreditBadge from '@/components/CreditBadge';
+import DashboardShell from '@/components/dashboard/DashboardShell';
 
 export default function AnalyticsClient({ business, viewsBySource, totalViews, totalConversations }: { business: any, viewsBySource: Record<string, number>, totalViews: number, totalConversations: number }) {
-  const t = useTranslations('Leads'); // Using Leads namespace since it has the nav translations
-  const tPublic = useTranslations('PublicPage');
-
   const sources = Object.entries(viewsBySource)
     .sort((a, b) => b[1] - a[1]) // Sort by highest view count
     .map(([source, count]) => ({ source, count }));
 
   return (
-    <>
-      {/* Header matching LeadsClient */}
-      <header className="bg-white border-b border-[rgba(20,35,31,0.10)] sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-          <div>
-            <h1 className="text-xl font-[800] tracking-[-0.02em] text-[#14231F]">{t('headerTitle')}</h1>
-            <p className="text-sm text-[#4B5A55] font-['Inter']">{business.name}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <CreditBadge balance={business.credit_balance ?? 0} />
-            <a href="/dashboard/leads" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
-              {t('headerTitle')}
-            </a>
-
-            <a href="/dashboard/editor" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
-              {t('navEditor')}
-            </a>
-            <a href="/dashboard/analytics" className="text-sm text-[#14231F] font-medium bg-white shadow-sm border border-[rgba(20,35,31,0.10)] px-4 py-2 rounded-full transition whitespace-nowrap">
-              {t('navAnalytics')}
-            </a>
-            <a href={`/${business.username}`} className="text-sm text-[#FF6A5C] font-medium bg-[#FFEDE9] px-4 py-2 rounded-full hover:bg-orange-100 transition whitespace-nowrap">
-              {t('navViewProfile')}
-            </a>
-          </div>
-        </div>
-      </header>
-
+    <DashboardShell business={business} active="analytics">
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-['Inter']">
+        <div className="mb-8">
+          <h1 className="text-xl font-[800] tracking-[-0.02em] text-[#14231F] flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" /> Analiz
+          </h1>
+          <p className="text-sm text-[#4B5A55]">{business.name}</p>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* Total Views Card */}
           <div className="bg-white border border-[rgba(20,35,31,0.10)] rounded-[20px] p-6 flex flex-col">
@@ -101,6 +78,6 @@ export default function AnalyticsClient({ business, viewsBySource, totalViews, t
           </div>
         </div>
       </main>
-    </>
+    </DashboardShell>
   );
 }

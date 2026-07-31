@@ -5,10 +5,10 @@ import { createClient } from '@/utils/supabase/client';
 import { formatDistanceToNow, type Locale } from 'date-fns';
 import { tr, enUS, ru } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
-import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Send, MessageCircle, Archive, ArchiveRestore, Trash2, StickyNote, Mail, LogOut } from 'lucide-react';
+import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Send, MessageCircle, Archive, ArchiveRestore, Trash2, StickyNote, Mail, Plus } from 'lucide-react';
 import ConversationsPanel from './ConversationsPanel';
 import KnowledgeBasePanel from './KnowledgeBasePanel';
-import CreditBadge from '@/components/CreditBadge';
+import DashboardShell from '@/components/dashboard/DashboardShell';
 
 const DATE_FNS_LOCALES: Record<string, Locale> = { tr, en: enUS, ru };
 
@@ -31,7 +31,9 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
   const [conversations] = useState(initialConversations);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [showArchivedLeads, setShowArchivedLeads] = useState(false);
-  
+  // Not alanı boşken varsayılan kapalı — kart başına gereksiz boş kutu göstermemek için.
+  const [openNoteIds, setOpenNoteIds] = useState<Set<string>>(() => new Set(initialLeads.filter((l: any) => l.notes).map((l: any) => l.id)));
+
   // Settings state
   const [settings, setSettings] = useState(business.saule_settings || {});
   const [isSaving, setIsSaving] = useState(false);
@@ -132,59 +134,31 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
     }
   };
 
-  const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    window.location.href = '/login';
-  };
-
   return (
-    <div className="min-h-screen bg-[#F4F2ED]">
-      {/* Header */}
-      <header className="bg-white border-b border-[rgba(20,35,31,0.10)] sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-          <div>
-            <h1 className="text-xl font-[800] tracking-[-0.02em] text-[#14231F]">{t('headerTitle')}</h1>
-            <p className="text-sm text-[#4B5A55] font-['Inter']">{business.name}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex bg-[#F4F2ED] p-1 rounded-full border border-[rgba(20,35,31,0.10)]">
-              <button
-                onClick={() => setActiveTab('leads')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'leads' ? 'bg-white text-[#14231F] shadow-sm' : 'text-[#8A8880] hover:text-[#4B5A55]'}`}
-              >
-                <Inbox className="w-4 h-4" /> {t('tabRequests')}
-              </button>
-              <button
-                onClick={() => setActiveTab('conversations')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'conversations' ? 'bg-white text-[#14231F] shadow-sm' : 'text-[#8A8880] hover:text-[#4B5A55]'}`}
-              >
-                <MessageCircle className="w-4 h-4" /> {t('tabConversations')}
-              </button>
-              <button
-                onClick={() => setActiveTab('settings')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'settings' ? 'bg-white text-[#14231F] shadow-sm' : 'text-[#8A8880] hover:text-[#4B5A55]'}`}
-              >
-                <Settings className="w-4 h-4" /> {t('tabSettings')}
-              </button>
-            </div>
-            <CreditBadge balance={business.credit_balance ?? 0} />
-
-            <a href="/dashboard/editor" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
-              {t('navEditor')}
-            </a>
-            <a href="/dashboard/analytics" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
-              {t('navAnalytics')}
-            </a>
-            <a href={`/${business.username}`} className="text-sm text-[#FF6A5C] font-medium bg-[#FFEDE9] px-4 py-2 rounded-full hover:bg-orange-100 transition whitespace-nowrap">
-              {t('navViewProfile')}
-            </a>
-            <button onClick={handleLogout} className="text-sm text-[#4B5A55] font-medium bg-[#F4F2ED] p-2 rounded-full hover:bg-red-50 hover:text-red-600 transition" title={t('logout')}>
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
+    <DashboardShell business={business} active="leads">
+      {/* In-page tabs */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <div className="inline-flex bg-white p-1 rounded-full border border-[rgba(20,35,31,0.10)]">
+          <button
+            onClick={() => setActiveTab('leads')}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'leads' ? 'bg-[#14231F] text-white' : 'text-[#8A8880] hover:text-[#4B5A55]'}`}
+          >
+            <Inbox className="w-4 h-4" /> {t('tabRequests')}
+          </button>
+          <button
+            onClick={() => setActiveTab('conversations')}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'conversations' ? 'bg-[#14231F] text-white' : 'text-[#8A8880] hover:text-[#4B5A55]'}`}
+          >
+            <MessageCircle className="w-4 h-4" /> {t('tabConversations')}
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'settings' ? 'bg-[#14231F] text-white' : 'text-[#8A8880] hover:text-[#4B5A55]'}`}
+          >
+            <Settings className="w-4 h-4" /> {t('tabSettings')}
+          </button>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-['Inter']">
@@ -244,23 +218,33 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                     )}
                   </div>
 
-                  <div className="mb-4">
-                    <label className="text-xs font-semibold text-[#8A8880] mb-1.5 flex items-center gap-1.5 font-mono uppercase tracking-wider">
-                      <StickyNote className="w-3.5 h-3.5" /> {t('notesLabel')}
-                    </label>
-                    <textarea
-                      defaultValue={lead.notes || ''}
-                      onBlur={(e) => {
-                        if (e.target.value !== (lead.notes || '')) {
-                          setLeads(leads.map(l => l.id === lead.id ? { ...l, notes: e.target.value } : l));
-                          handleUpdateNotes(lead.id, e.target.value);
-                        }
-                      }}
-                      placeholder={t('notesPlaceholder')}
-                      className="w-full p-2.5 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F] bg-white"
-                      rows={2}
-                    />
-                  </div>
+                  {openNoteIds.has(lead.id) ? (
+                    <div className="mb-4">
+                      <label className="text-xs font-semibold text-[#8A8880] mb-1.5 flex items-center gap-1.5 font-mono uppercase tracking-wider">
+                        <StickyNote className="w-3.5 h-3.5" /> {t('notesLabel')}
+                      </label>
+                      <textarea
+                        autoFocus={!lead.notes}
+                        defaultValue={lead.notes || ''}
+                        onBlur={(e) => {
+                          if (e.target.value !== (lead.notes || '')) {
+                            setLeads(leads.map(l => l.id === lead.id ? { ...l, notes: e.target.value } : l));
+                            handleUpdateNotes(lead.id, e.target.value);
+                          }
+                        }}
+                        placeholder={t('notesPlaceholder')}
+                        className="w-full p-2.5 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F] bg-white"
+                        rows={2}
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setOpenNoteIds(new Set([...openNoteIds, lead.id]))}
+                      className="mb-4 text-xs font-medium text-[#8A8880] hover:text-[#14231F] transition flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> {t('notesLabel')}
+                    </button>
+                  )}
 
                   <div className="flex items-center justify-between border-t border-[rgba(20,35,31,0.10)] pt-4">
                     <div className="flex items-center gap-4">
@@ -564,6 +548,6 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
           </p>
         </div>
       </footer>
-    </div>
+    </DashboardShell>
   );
 }
