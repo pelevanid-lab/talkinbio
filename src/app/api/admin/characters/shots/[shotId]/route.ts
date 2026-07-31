@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { MAX_CANON_SHOTS } from '@/config/characters';
-
-async function requireAdminApi(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return cookieStore.get('admin_session')?.value === process.env.ADMIN_PASSWORD;
-}
+import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 
 /** `.../storage/v1/object/public/media/<path>` → `<path>` */
 function objectPathFromPublicUrl(publicUrl: string): string | null {
@@ -15,13 +10,25 @@ function objectPathFromPublicUrl(publicUrl: string): string | null {
   return index === -1 ? null : decodeURIComponent(publicUrl.slice(index + marker.length));
 }
 
+/** Bu shot'un sahibi işletme (varsa) gerçekten istek sahibi mi — admin her zaman geçer. */
+async function authorizeShot(shotId: string) {
+  const { data: shot } = await supabaseAdmin
+    .from('character_shots')
+    .select('character_id')
+    .eq('id', shotId)
+    .maybeSingle();
+  if (!shot) return null;
+  return authorizeCharacterRequest(shot.character_id);
+}
+
 /** Kanon işaretini değiştirir ve/veya metin katmanı ayarlarını kaydeder. */
 export async function PATCH(req: Request, { params }: { params: Promise<{ shotId: string }> }) {
-  if (!(await requireAdminApi())) {
+  const { shotId } = await params;
+
+  if (!(await authorizeShot(shotId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { shotId } = await params;
   const body = (await req.json()) as { isCanon?: boolean; overlay?: unknown; similarityScore?: number | null };
   const patch: Record<string, unknown> = {};
 
@@ -82,11 +89,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ shotId
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ shotId: string }> }) {
-  if (!(await requireAdminApi())) {
+  const { shotId } = await params;
+
+  if (!(await authorizeShot(shotId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { shotId } = await params;
 
   const { data: shot } = await supabaseAdmin
     .from('character_shots')

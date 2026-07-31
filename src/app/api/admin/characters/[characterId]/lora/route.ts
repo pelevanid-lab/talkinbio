@@ -1,13 +1,7 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
-import { isCharacterId } from '@/config/characters';
 import { createZip } from '@/utils/zip';
-
-async function requireAdminApi(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return cookieStore.get('admin_session')?.value === process.env.ADMIN_PASSWORD;
-}
+import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 
 const FAL_KEY = process.env.FAL_KEY;
 const LORA_TRAINING_MODEL = 'fal-ai/flux-lora-fast-training';
@@ -34,13 +28,10 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ characterId: string }> },
 ) {
-  if (!(await requireAdminApi())) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const { characterId } = await params;
-  if (!isCharacterId(characterId)) {
-    return NextResponse.json({ error: 'Geçersiz karakter.' }, { status: 400 });
+  const auth = await authorizeCharacterRequest(characterId);
+  if (!auth) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   if (!FAL_KEY) {
@@ -184,11 +175,10 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ characterId: string }> },
 ) {
-  if (!(await requireAdminApi())) {
+  const { characterId } = await params;
+  if (!(await authorizeCharacterRequest(characterId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { characterId } = await params;
 
   const { data: profile } = await supabaseAdmin
     .from('character_profiles')

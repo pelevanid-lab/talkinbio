@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { generateOnce } from '@/agents/shared/generateOnce';
 import { buildScenePrompt } from '@/agents/shared/characterScenePrompt';
 import { FalError, generateCharacterImage, publicImageAsDataUri } from '@/utils/fal';
+import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
+import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
 import {
   ASPECT_RATIOS,
   CHARACTERS,
   DEFAULT_CAST_WARDROBE_PROMPT,
   DEFAULT_IMAGE_MODEL,
+  ESTIMATED_COST_PER_IMAGE_USD,
   MAX_CANON_SHOTS,
   MAX_IMAGES_PER_RUN,
   MAX_SCENE_REFS,
@@ -45,12 +47,12 @@ type Body = {
 };
 
 export async function POST(req: Request, { params }: { params: Promise<{ characterId: string }> }) {
-  const cookieStore = await cookies();
-  if (cookieStore.get('admin_session')?.value !== process.env.ADMIN_PASSWORD) {
+  const { characterId } = await params;
+
+  const auth = await authorizeCharacterRequest(characterId);
+  if (!auth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { characterId } = await params;
 
   const { data: profile } = await supabaseAdmin
     .from('character_profiles')
@@ -59,7 +61,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
     .single();
 
   // Statik karakterler (`CHARACTERS`) VEYA Yardımcı Oyuncular'da admin panelinden
-  // eklenmiş sanal karakterler (`character_profiles.is_cast`) — bkz. api/admin/beiwe-lab/cast.
+  // eklenmiş sanal karakterler (`character_profiles.is_cast`) VEYA bir işletmenin kendi
+  // Creative Studio Twin'i (`character_profiles.business_id`) — bkz. api/admin/beiwe-lab/cast,
+  // src/utils/creativeStudioScope.ts.
   let character: CharacterDefinition;
   if (isCharacterId(characterId)) {
     character = { ...CHARACTERS[characterId] };
@@ -67,7 +71,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
       if (profile.identity_prompt) character.identityPrompt = profile.identity_prompt;
       if (profile.reference_image_url) character.referenceFile = profile.reference_image_url;
     }
-  } else if (profile?.is_cast) {
+  } else if (profile?.is_cast || profile?.business_id) {
     character = {
       id: characterId as CharacterDefinition['id'],
       name: profile.name || characterId,
@@ -105,6 +109,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
 
   if (!rawPrompt && !intent && presets.length === 0) {
     return NextResponse.json({ error: 'Sahne tarifi, şablon veya ham prompt gerekli.' }, { status: 400 });
+  }
+
+  const generationCostUsd = ESTIMATED_COST_PER_IMAGE_USD * numImages;
+  if (auth.mode === 'business') {
+    try {
+      await assertSufficientCredits(auth.business.id, generationCostUsd);
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        return NextResponse.json(
+          { error: 'Yetersiz kredi.', requiredCredits: err.requiredCredits, balance: err.balance },
+          { status: 402 },
+        );
+      }
+      throw err;
+    }
   }
 
   try {
@@ -227,6 +246,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
 
       rows.push({
         character_id: characterId,
+        business_id: auth.mode === 'business' ? auth.business.id : null,
         image_url: publicUrl,
         prompt: finalPrompt,
         user_intent: intent || null,
@@ -247,6 +267,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
       .insert(rows)
       .select();
     if (insertError) throw insertError;
+
+    // Kredi düşümü SADECE gerçekten teslim edilen kare sayısı üzerinden — indirilemeyen
+    // görseller (rows.length < numImages) için ücretlendirme yapılmaz.
+    if (auth.mode === 'business') {
+      await deductForGeneration(auth.business.id, ESTIMATED_COST_PER_IMAGE_USD * rows.length);
+    }
 
     return NextResponse.json({ shots: inserted });
   } catch (err) {

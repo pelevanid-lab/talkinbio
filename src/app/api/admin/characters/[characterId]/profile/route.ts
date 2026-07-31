@@ -1,12 +1,6 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
-import { isCharacterId } from '@/config/characters';
-
-async function requireAdminApi(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return cookieStore.get('admin_session')?.value === process.env.ADMIN_PASSWORD;
-}
+import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 
 /**
  * PATCH /api/admin/characters/[characterId]/profile
@@ -30,13 +24,9 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ characterId: string }> },
 ) {
-  if (!(await requireAdminApi())) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const { characterId } = await params;
-  if (!isCharacterId(characterId)) {
-    return NextResponse.json({ error: 'Geçersiz karakter.' }, { status: 400 });
+  if (!(await authorizeCharacterRequest(characterId))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const body = await req.json() as Record<string, unknown>;
@@ -86,11 +76,10 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ characterId: string }> },
 ) {
-  if (!(await requireAdminApi())) {
+  const { characterId } = await params;
+  if (!(await authorizeCharacterRequest(characterId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { characterId } = await params;
 
   const { data, error } = await supabaseAdmin
     .from('character_profiles')

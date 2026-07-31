@@ -550,6 +550,7 @@
     "perMonth": "/mo",
     "credits": "{count} credits",
     "capacityExample": "≈ {saule} Assistant Agent chats OR {beiwe} Creative Agent updates",
+    "idealFor_free": "Ideal for businesses receiving 1-2 DMs daily",
     "idealFor_starter": "Ideal for businesses receiving 5-10 DMs daily",
     "idealFor_pro": "Ideal for businesses receiving 20-30 DMs daily",
     "idealFor_business": "Ideal for businesses receiving 50-60 DMs daily",
@@ -675,6 +676,7 @@
     "sendLinkButton": "Send Link",
     "sendLinkButtonLoading": "Sending...",
     "backToLogin": "Back to login",
+    "registerLink": "Don't have an account? Sign up",
     "invalidCredentials": "Incorrect email or password",
     "resetLinkSent": "A password reset link has been sent to your email address. Please check your inbox.",
     "genericError": "Something went wrong"

@@ -1,13 +1,8 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
+import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 
 export async function POST(req: Request) {
-  const cookieStore = await cookies();
-  if (cookieStore.get('admin_session')?.value !== process.env.ADMIN_PASSWORD) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   try {
     const { characterId, imageUrl, isCanon = true, similarityScore = 10 } = await req.json();
 
@@ -15,10 +10,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Karakter ID ve resim URL zorunludur.' }, { status: 400 });
     }
 
+    const auth = await authorizeCharacterRequest(characterId);
+    if (!auth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { data: shot, error } = await supabaseAdmin
       .from('character_shots')
       .insert({
         character_id: characterId,
+        business_id: auth.mode === 'business' ? auth.business.id : null,
         image_url: imageUrl,
         is_canon: isCanon,
         similarity_score: similarityScore,

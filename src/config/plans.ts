@@ -3,7 +3,7 @@
 export const PLANS = [
   { id: 'free', name: 'Free', price: 0, credits: 50 },
   { id: 'starter', name: 'Starter', price: 20, credits: 400 },
-  { id: 'pro', name: 'Pro', price: 85, credits: 2000 },
+  { id: 'pro', name: 'Pro', price: 90, credits: 2000 },
   { id: 'business', name: 'Business', price: 400, credits: 10000 },
 ] as const;
 

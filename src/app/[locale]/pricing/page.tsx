@@ -171,7 +171,6 @@ export default function PricingPage() {
                 </h2>
                 <p style={{ margin: 0 }}>
                   <span style={{ fontFamily: 'var(--font-bricolage)', fontSize: '2rem', fontWeight: 800, color: 'var(--ink)' }}>${plan.price}</span>
-                  <span style={{ color: 'var(--muted)', fontSize: '0.9rem', marginLeft: '4px' }}>{t('perMonth')}</span>
                 </p>
                 <p style={{ margin: 0, fontWeight: 700, color: 'var(--teal)', fontSize: '0.95rem' }}>{t('credits', { count: plan.credits })}</p>
                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--ink-soft)', lineHeight: 1.5, minHeight: '2.5rem' }}>

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
+import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 
 // Sahne referansı yüklemesi (ör. gerçek ekran görüntüsü) neden ayrı bir route:
 // `media` bucket'ının INSERT politikası `auth.role() = 'authenticated'` istiyor, ama admin
@@ -11,8 +11,7 @@ import { supabaseAdmin } from '@/utils/supabase/admin';
 const MAX_BYTES = 10 * 1024 * 1024;
 
 export async function POST(req: Request) {
-  const cookieStore = await cookies();
-  if (cookieStore.get('admin_session')?.value !== process.env.ADMIN_PASSWORD) {
+  if (!(await authorizeCharacterRequest())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
