@@ -180,7 +180,7 @@
       }
     },
     "heroTexts": {
-      "subtitle": "Ваш веб-сайт — это больше не просто ссылка. Это ваш умный помощник, который <strong className=\"text-[var(--ink)] font-semibold\">создает контент</strong>, <strong className=\"text-[var(--ink)] font-semibold\">отвечает мгновенно</strong> и <strong className=\"text-[var(--ink)] font-semibold\">закрывает продажи</strong> за вас.",
+      "subtitle": "Ваш веб-сайт — это больше не просто ссылка. Это говорящий веб-сайт нового поколения, который <strong className=\"text-[var(--ink)] font-semibold\">создает контент</strong>, <strong className=\"text-[var(--ink)] font-semibold\">отвечает мгновенно</strong> и <strong className=\"text-[var(--ink)] font-semibold\">закрывает продажи</strong> за вас.",
       "btnEarly": "Ранний доступ",
       "btnHow": "Как это работает?",
       "btnPricing": "Цены"
@@ -748,7 +748,7 @@
     "unpublishedBanner": "Ваша страница пока закрыта для посетителей. Заполните недостающие данные, чтобы опубликовать её."
   },
   "Metadata": {
-    "title": "Talkinbio | Круглосуточный цифровой ИИ-ассистент",
+    "title": "Talkinbio | Ваш говорящий веб-сайт нового поколения",
     "description": "Познакомьтесь с Talkinbio — ИИ-ассистентом, который общается с подписчиками в соцсетях на их языке, автоматически собирает лиды и записывает на приём."
   },
   "ContentStudio": {

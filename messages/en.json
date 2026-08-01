@@ -180,7 +180,7 @@
       }
     },
     "heroTexts": {
-      "subtitle": "Your website is no longer just a link. It's your smart assistant that <strong className=\"text-[var(--ink)] font-semibold\">creates content</strong>, <strong className=\"text-[var(--ink)] font-semibold\">answers instantly</strong>, and <strong className=\"text-[var(--ink)] font-semibold\">closes sales</strong> for you.",
+      "subtitle": "Your website is no longer just a link. It's a next-generation talking website that <strong className=\"text-[var(--ink)] font-semibold\">creates content</strong>, <strong className=\"text-[var(--ink)] font-semibold\">answers instantly</strong>, and <strong className=\"text-[var(--ink)] font-semibold\">closes sales</strong> for you.",
       "btnEarly": "Early access",
       "btnHow": "How it works?",
       "btnPricing": "Pricing"
@@ -748,7 +748,7 @@
     "unpublishedBanner": "Your profile isn't open to visitors yet. Complete the missing steps to publish it."
   },
   "Metadata": {
-    "title": "Talkinbio | 24/7 AI-Powered Digital Assistant",
+    "title": "Talkinbio | Your Next-Generation Talking Website",
     "description": "Meet Talkinbio, the AI assistant that chats with your social media followers in their language, automatically collects leads and books appointments."
   },
   "ContentStudio": {

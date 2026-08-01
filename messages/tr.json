@@ -180,7 +180,7 @@
       }
     },
     "heroTexts": {
-      "subtitle": "Websiteniz artık sadece bir link değil. Sizin yerinize <strong className=\"text-[var(--ink)] font-semibold\">içerik üreten</strong>, müşterilerinize <strong className=\"text-[var(--ink)] font-semibold\">anında cevap veren</strong> ve <strong className=\"text-[var(--ink)] font-semibold\">satış kapatan</strong> akıllı yardımcınız.",
+      "subtitle": "Websiteniz artık sadece bir link değil. Sizin yerinize <strong className=\"text-[var(--ink)] font-semibold\">içerik üreten</strong>, müşterilerinize <strong className=\"text-[var(--ink)] font-semibold\">anında cevap veren</strong> ve <strong className=\"text-[var(--ink)] font-semibold\">satış kapatan</strong> yeni nesil konuşan websiteniz.",
       "btnEarly": "Erken erişim",
       "btnHow": "Nasıl çalışır?",
       "btnPricing": "Fiyatlandırma"
@@ -748,7 +748,7 @@
     "unpublishedBanner": "Profiliniz henüz ziyaretçilere kapalı. Yayınlamak için eksikleri tamamlayın."
   },
   "Metadata": {
-    "title": "Talkinbio | 7/24 Yapay Zeka Tabanlı Dijital Asistan",
+    "title": "Talkinbio | Yeni Nesil Konuşan Websayfanız",
     "description": "Sosyal medya takipçilerinizle kendi dilinde görüşen, otomatik randevu ve talep toplayan yapay zeka asistanı Talkinbio ile tanışın."
   },
   "ContentStudio": {
