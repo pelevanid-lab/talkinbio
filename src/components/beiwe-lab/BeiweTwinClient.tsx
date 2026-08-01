@@ -13,16 +13,18 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react';
-import type { CharacterShot } from '@/config/characters';
+import { ESTIMATED_COST_PER_IMAGE_USD, type CharacterShot } from '@/config/characters';
 import {
   LORA_MIN_PHOTOS,
   LORA_MIN_SCORE,
   LORA_STATUS_LABELS,
+  LORA_TRAINING_COST_USD,
   LORA_TRAINING_THRESHOLD,
   TWIN_VALIDATION_ANGLES,
   TWIN_VERIFIED_SCORE,
   type LoraStatus,
 } from '@/config/beiweLab';
+import { creditsForCost } from '@/config/pricing';
 import SimilarityRating from '@/components/beiwe-lab/SimilarityRating';
 import InstagramImporter from '@/components/InstagramImporter';
 
@@ -479,13 +481,16 @@ export default function BeiweTwinClient({
               disabled={generatingAngle !== null}
               className="text-left rounded-xl border border-slate-200 p-4 hover:border-blue-400 hover:bg-blue-50/50 transition-colors disabled:opacity-50 disabled:hover:border-slate-200 disabled:hover:bg-transparent"
             >
-              <div className="flex items-center gap-2 mb-1">
-                {generatingAngle === angle.id ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                ) : (
-                  <Sparkles className="w-4 h-4 text-blue-600" />
-                )}
-                <span className="text-sm font-semibold text-slate-900">{angle.label}</span>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="flex items-center gap-2">
+                  {generatingAngle === angle.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                  ) : (
+                    <Sparkles className="w-4 h-4 text-blue-600" />
+                  )}
+                  <span className="text-sm font-semibold text-slate-900">{angle.label}</span>
+                </div>
+                <span className="text-[10px] text-slate-400 whitespace-nowrap">≈{creditsForCost(ESTIMATED_COST_PER_IMAGE_USD)} kredi</span>
               </div>
               <p className="text-xs text-slate-500 leading-snug">{angle.hint}</p>
             </button>
@@ -595,7 +600,7 @@ export default function BeiweTwinClient({
               className="flex items-center gap-2 bg-purple-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loraSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
-              {loraSubmitting ? 'Arşiv hazırlanıyor…' : 'LoRA Eğitimini Başlat'}
+              {loraSubmitting ? 'Arşiv hazırlanıyor…' : `LoRA Eğitimini Başlat (≈${creditsForCost(LORA_TRAINING_COST_USD)} kredi)`}
             </button>
           )}
           <button

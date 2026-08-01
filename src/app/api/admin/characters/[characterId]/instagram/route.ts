@@ -1,12 +1,6 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
-import { isCharacterId } from '@/config/characters';
-
-async function requireAdminApi(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return cookieStore.get('admin_session')?.value === process.env.ADMIN_PASSWORD;
-}
+import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 
 const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
 const MIN_PHOTOS_FOR_LORA = 10;
@@ -45,13 +39,10 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ characterId: string }> },
 ) {
-  if (!(await requireAdminApi())) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const { characterId } = await params;
-  if (!isCharacterId(characterId)) {
-    return NextResponse.json({ error: 'Geçersiz karakter.' }, { status: 400 });
+  const auth = await authorizeCharacterRequest(characterId);
+  if (!auth) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   if (!APIFY_TOKEN) {
@@ -98,6 +89,7 @@ export async function POST(
           .from('character_shots')
           .insert({
             character_id: characterId,
+            business_id: auth.mode === 'business' ? auth.business.id : null,
             image_url: publicUrl,
             is_canon: false, // Default false, they are for LoRA
             similarity_score: 10, // Give them a perfect score so they are used for LoRA

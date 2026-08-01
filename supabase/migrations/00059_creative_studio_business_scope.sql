@@ -54,17 +54,49 @@ begin
   end loop;
 end $$;
 
-alter table public.character_shots
-  add constraint character_shots_character_id_fkey
-  foreign key (character_id) references public.character_profiles(id) on delete cascade;
+-- Üretimde character_shots/character_studio_assets/character_studio_projects'te
+-- character_profiles'ta HİÇ karşılığı olmayan character_id'ler var (ör. 'saule' — Twin
+-- gibi ilk kullanımda upsert edilmemiş, sadece sabit CHARACTERS registry'sinde yaşayan bir
+-- statik karakter). FK eklemeden önce bu yetim id'ler için minimal (yalnızca id) profil
+-- satırları oluşturuyoruz — aksi halde FK, mevcut veriyi kırar.
+insert into public.character_profiles (id)
+select distinct character_id from public.character_shots
+where character_id is not null
+on conflict (id) do nothing;
 
-alter table public.character_studio_assets
-  add constraint character_studio_assets_character_id_fkey
-  foreign key (character_id) references public.character_profiles(id) on delete cascade;
+insert into public.character_profiles (id)
+select distinct character_id from public.character_studio_assets
+where character_id is not null
+on conflict (id) do nothing;
 
-alter table public.character_studio_projects
-  add constraint character_studio_projects_character_id_fkey
-  foreign key (character_id) references public.character_profiles(id) on delete cascade;
+insert into public.character_profiles (id)
+select distinct character_id from public.character_studio_projects
+where character_id is not null
+on conflict (id) do nothing;
+
+-- FK'ler idempotent değil (Postgres'te ADD CONSTRAINT IF NOT EXISTS yok) — script yarıda
+-- kesilip yeniden çalıştırılırsa "constraint already exists" ile durmasın diye önce var mı
+-- kontrol ediyoruz.
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'character_shots_character_id_fkey') then
+    alter table public.character_shots
+      add constraint character_shots_character_id_fkey
+      foreign key (character_id) references public.character_profiles(id) on delete cascade;
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'character_studio_assets_character_id_fkey') then
+    alter table public.character_studio_assets
+      add constraint character_studio_assets_character_id_fkey
+      foreign key (character_id) references public.character_profiles(id) on delete cascade;
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'character_studio_projects_character_id_fkey') then
+    alter table public.character_studio_projects
+      add constraint character_studio_projects_character_id_fkey
+      foreign key (character_id) references public.character_profiles(id) on delete cascade;
+  end if;
+end $$;
 
 -- Bu beş tablo bilerek "politikasız, yalnız service-role" kalıyordu (character_shots/
 -- character_clips yorumlarına bkz.) — güvenlik sınırı route kodunda (requireAdmin /
@@ -72,22 +104,29 @@ alter table public.character_studio_projects
 -- Aşağıdaki SELECT politikaları ek bir savunma katmanı (00009_add_business_theme.sql'deki
 -- "auth.uid() in (select owner_id from businesses ...)" kalıbıyla birebir) — RLS'e
 -- saygılı bir client'tan sorgulanırsa business sahibi kendi verisini görebilsin diye.
+-- drop+create: bu blok bir sorunla yarıda kesilip yeniden çalıştırılırsa "policy already
+-- exists" ile durmasın diye (create policy'nin IF NOT EXISTS'i yok).
+drop policy if exists "Owners can view their own Creative Studio characters" on public.character_profiles;
 create policy "Owners can view their own Creative Studio characters" on public.character_profiles for select using (
   business_id is not null and auth.uid() in (select owner_id from public.businesses where id = public.character_profiles.business_id)
 );
 
+drop policy if exists "Owners can view their own Creative Studio shots" on public.character_shots;
 create policy "Owners can view their own Creative Studio shots" on public.character_shots for select using (
   business_id is not null and auth.uid() in (select owner_id from public.businesses where id = public.character_shots.business_id)
 );
 
+drop policy if exists "Owners can view their own Creative Studio clips" on public.character_clips;
 create policy "Owners can view their own Creative Studio clips" on public.character_clips for select using (
   business_id is not null and auth.uid() in (select owner_id from public.businesses where id = public.character_clips.business_id)
 );
 
+drop policy if exists "Owners can view their own Creative Studio studio assets" on public.character_studio_assets;
 create policy "Owners can view their own Creative Studio studio assets" on public.character_studio_assets for select using (
   business_id is not null and auth.uid() in (select owner_id from public.businesses where id = public.character_studio_assets.business_id)
 );
 
+drop policy if exists "Owners can view their own Creative Studio studio projects" on public.character_studio_projects;
 create policy "Owners can view their own Creative Studio studio projects" on public.character_studio_projects for select using (
   business_id is not null and auth.uid() in (select owner_id from public.businesses where id = public.character_studio_projects.business_id)
 );

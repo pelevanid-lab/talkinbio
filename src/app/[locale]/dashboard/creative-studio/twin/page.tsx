@@ -46,7 +46,6 @@ export default async function CreativeStudioTwinPage() {
           characterName={business.name}
           initialProfile={initialProfile}
           initialShots={(shots || []) as CharacterShot[]}
-          allowInstagramImport={false}
         />
       </main>
     </DashboardShell>
