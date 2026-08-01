@@ -84,6 +84,13 @@ export const MINIMAX_CLONE_COST_USD = 1.5;
 export const LORA_TRAINING_COST_USD = 2;
 
 /**
+ * `fal-ai/deepfilternet3` (referans ses temizliği, `enhanceAudio`) — TAHMİN, hiç
+ * doğrulanmadı. Kısa bir referans kaydı için tipik gürültü-temizleme fiyatlarına göre
+ * muhafazakar bir sabit; gerçek faturadan sonra düzeltilmeli.
+ */
+export const AUDIO_ENHANCE_COST_USD = 0.02;
+
+/**
  * TTS maliyeti (1000 karakter başına, USD) — `speech-02-hd`, fal fiyatlandırma
  * sayfasından doğrulandı (2026-07-29). Eskiden F5-TTS için DOĞRULANMAMIŞ bir tahmindi;
  * bu artık gerçek bir rakam.

@@ -1,18 +1,16 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { generateCharacterVoice, transcribeReferenceAudio } from '@/utils/fal';
+import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 
 export const maxDuration = 300;
 
 export async function POST(req: Request, { params }: { params: Promise<{ characterId: string }> }) {
-  const cookieStore = await cookies();
-  if (cookieStore.get('admin_session')?.value !== process.env.ADMIN_PASSWORD) {
+  const { characterId } = await params;
+  if (!(await authorizeCharacterRequest(characterId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { characterId } = await params;
   if (!(await isKnownCharacterId(characterId))) {
     return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
   }
