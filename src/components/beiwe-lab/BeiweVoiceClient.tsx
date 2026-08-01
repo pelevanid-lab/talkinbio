@@ -18,6 +18,7 @@ import {
   ESTIMATED_VOICE_COST_PER_1K_CHARS_USD,
   MINIMAX_CLONE_COST_USD,
   MINIMAX_VOICE_EXPIRY_DAYS,
+  STUDIO_TRANSCRIBE_COST_USD,
   VOICE_MODEL_NOTE,
   VOICE_TEST_SCRIPTS,
 } from '@/config/beiweLab';
@@ -479,6 +480,13 @@ export default function BeiweVoiceClient({
             )}
           </div>
         )}
+
+        <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs text-blue-800">
+          <Fingerprint className="w-4 h-4 shrink-0" />
+          <span>
+            Ses dosyası yüklemek (otomatik deşifre çıkarma) {hideCost ? `≈${creditsForCost(STUDIO_TRANSCRIBE_COST_USD)} kredi` : `~$${STUDIO_TRANSCRIBE_COST_USD.toFixed(2)} · ≈${creditsForCost(STUDIO_TRANSCRIBE_COST_USD)} kredi`} tutar.
+          </span>
+        </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <button

@@ -2,17 +2,36 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { generateCharacterVoice, transcribeReferenceAudio } from '@/utils/fal';
+import { STUDIO_TRANSCRIBE_COST_USD } from '@/config/beiweLab';
 import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
+import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
 
 export const maxDuration = 300;
 
 export async function POST(req: Request, { params }: { params: Promise<{ characterId: string }> }) {
   const { characterId } = await params;
-  if (!(await authorizeCharacterRequest(characterId))) {
+  const auth = await authorizeCharacterRequest(characterId);
+  if (!auth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   if (!(await isKnownCharacterId(characterId))) {
     return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
+  }
+
+  // Referans yükleme (aşağıdaki iki mod) her zaman fal-ai/whisper'a bir deşifre isteği
+  // gönderiyor — üretimden önce kontrol, denemeden sonra düşüm (diğer route'larla aynı desen).
+  if (auth.mode === 'business') {
+    try {
+      await assertSufficientCredits(auth.business.id, STUDIO_TRANSCRIBE_COST_USD);
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        return NextResponse.json(
+          { error: 'Yetersiz kredi.', requiredCredits: err.requiredCredits, balance: err.balance },
+          { status: 402 },
+        );
+      }
+      throw err;
+    }
   }
 
   try {
@@ -27,6 +46,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
         refText = await transcribeReferenceAudio(presetUrl);
       } catch (err) {
         console.warn('[voice] hazır referans deşifresi çıkarılamadı, üretimde tekrar denenecek:', err);
+      }
+      if (auth.mode === 'business') {
+        await deductForGeneration(auth.business.id, STUDIO_TRANSCRIBE_COST_USD);
       }
 
       const { error: profileError } = await supabaseAdmin
@@ -78,6 +100,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
         refText = await transcribeReferenceAudio(publicUrl);
       } catch (err) {
         console.warn('[voice] referans deşifresi çıkarılamadı, üretimde tekrar denenecek:', err);
+      }
+      if (auth.mode === 'business') {
+        await deductForGeneration(auth.business.id, STUDIO_TRANSCRIBE_COST_USD);
       }
 
       // Profili güncelle.
