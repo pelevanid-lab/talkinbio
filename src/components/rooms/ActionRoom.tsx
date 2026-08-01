@@ -26,6 +26,8 @@ type Props = {
   castCharacters: CastCharacterOption[];
   onClipCreated: (clip: CharacterClip) => void;
   onClipDeleted: (clipId: string) => void;
+  /** Müşteri modunda ham $ maliyetini gizle — yalnızca kredi karşılığı görünsün. */
+  hideCost?: boolean;
 };
 
 /** Dosyanın süresini tarayıcıda ölçer; okunamazsa null döner (sunucu yine de sınırı uygular). */
@@ -44,7 +46,7 @@ function readMediaDuration(file: File): Promise<number | null> {
   });
 }
 
-export default function ActionRoom({ characterId, shots, clips, castCharacters, onClipCreated, onClipDeleted }: Props) {
+export default function ActionRoom({ characterId, shots, clips, castCharacters, onClipCreated, onClipDeleted, hideCost = false }: Props) {
   const [styleId, setStyleId] = useState(DEFAULT_MOTION_STYLE_ID);
   const [identityMode, setIdentityMode] = useState<MotionIdentityMode>('twin');
   const [selectedShot, setSelectedShot] = useState<CharacterShot | null>(null);
@@ -125,6 +127,7 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
       if (mode === 'reference' && drivingFile) {
         formData.append('drivingVideo', drivingFile);
         formData.append('motionModelId', motionModel.id);
+        if (drivingSeconds !== null) formData.append('drivingSeconds', String(drivingSeconds));
       } else {
         formData.append('sceneVideoModelId', sceneModel.id);
       }
@@ -347,7 +350,7 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
                     >
                       <div className="flex items-baseline justify-between gap-2">
                         <span className="text-sm font-semibold text-slate-900">{m.label}</span>
-                        <span className="text-xs text-slate-500 whitespace-nowrap">~${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn (tahmin) · ≈{creditsForCost(m.costPerSecondUsd)} kredi/sn</span>
+                        <span className="text-xs text-slate-500 whitespace-nowrap">{hideCost ? `≈${creditsForCost(m.costPerSecondUsd)} kredi/sn` : `~$${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn (tahmin) · ≈${creditsForCost(m.costPerSecondUsd)} kredi/sn`}</span>
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">{m.hint}</p>
                     </button>
@@ -417,8 +420,9 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
           </button>
           {mode === 'reference' && drivingSeconds !== null && (
             <p className="text-xs text-slate-500 -mt-3">
-              ~${(drivingSeconds * motionModel.costPerSecondUsd).toFixed(2)} (tahmin, doğrulanmadı) · ≈{creditsForCost(drivingSeconds * motionModel.costPerSecondUsd)} kredi · {motionModel.label},{' '}
-              {drivingSeconds.toFixed(1)} sn × ${motionModel.costPerSecondUsd}/sn
+              {hideCost
+                ? `≈${creditsForCost(drivingSeconds * motionModel.costPerSecondUsd)} kredi · ${motionModel.label}, ${drivingSeconds.toFixed(1)} sn`
+                : `~$${(drivingSeconds * motionModel.costPerSecondUsd).toFixed(2)} (tahmin, doğrulanmadı) · ≈${creditsForCost(drivingSeconds * motionModel.costPerSecondUsd)} kredi · ${motionModel.label}, ${drivingSeconds.toFixed(1)} sn × $${motionModel.costPerSecondUsd}/sn`}
             </p>
           )}
         </div>

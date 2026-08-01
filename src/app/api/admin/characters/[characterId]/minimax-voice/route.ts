@@ -1,15 +1,12 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { FalError, cloneMinimaxVoice, generateMinimaxSpeech } from '@/utils/fal';
+import { MINIMAX_CLONE_COST_USD, ESTIMATED_VOICE_COST_PER_1K_CHARS_USD } from '@/config/beiweLab';
+import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
+import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
 
 export const maxDuration = 300;
-
-async function requireAdminApi(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return cookieStore.get('admin_session')?.value === process.env.ADMIN_PASSWORD;
-}
 
 type Body =
   | { action: 'clone' }
@@ -34,11 +31,11 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ characterId: string }> },
 ) {
-  if (!(await requireAdminApi())) {
+  const { characterId } = await params;
+  const auth = await authorizeCharacterRequest(characterId);
+  if (!auth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { characterId } = await params;
   if (!(await isKnownCharacterId(characterId))) {
     return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
   }
@@ -59,6 +56,20 @@ export async function POST(
       );
     }
 
+    if (auth.mode === 'business') {
+      try {
+        await assertSufficientCredits(auth.business.id, MINIMAX_CLONE_COST_USD);
+      } catch (err) {
+        if (err instanceof InsufficientCreditsError) {
+          return NextResponse.json(
+            { error: 'Yetersiz kredi.', requiredCredits: err.requiredCredits, balance: err.balance },
+            { status: 402 },
+          );
+        }
+        throw err;
+      }
+    }
+
     try {
       const { customVoiceId } = await cloneMinimaxVoice({ referenceAudioUrl: profile.voice_url });
 
@@ -75,6 +86,10 @@ export async function POST(
           },
           { onConflict: 'id' },
         );
+
+      if (auth.mode === 'business') {
+        await deductForGeneration(auth.business.id, MINIMAX_CLONE_COST_USD);
+      }
 
       return NextResponse.json({ voiceId: customVoiceId, status: 'active' });
     } catch (err) {
@@ -109,6 +124,21 @@ export async function POST(
       );
     }
 
+    const speakCostUsd = (text.length / 1000) * ESTIMATED_VOICE_COST_PER_1K_CHARS_USD;
+    if (auth.mode === 'business') {
+      try {
+        await assertSufficientCredits(auth.business.id, speakCostUsd);
+      } catch (err) {
+        if (err instanceof InsufficientCreditsError) {
+          return NextResponse.json(
+            { error: 'Yetersiz kredi.', requiredCredits: err.requiredCredits, balance: err.balance },
+            { status: 402 },
+          );
+        }
+        throw err;
+      }
+    }
+
     try {
       const result = await generateMinimaxSpeech({
         text,
@@ -127,6 +157,10 @@ export async function POST(
           },
           { onConflict: 'id' },
         );
+
+      if (auth.mode === 'business') {
+        await deductForGeneration(auth.business.id, speakCostUsd);
+      }
 
       return NextResponse.json({ audioUrl: result.audioUrl, durationMs: result.durationMs });
     } catch (err) {

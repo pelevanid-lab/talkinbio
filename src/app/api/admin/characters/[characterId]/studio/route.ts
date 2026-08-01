@@ -1,23 +1,18 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
-import { isCharacterId } from '@/config/characters';
+import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { MAX_PROJECT_NAME_LENGTH, parseStudioTimeline } from '@/config/studio';
-
-async function requireAdminApi(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return cookieStore.get('admin_session')?.value === process.env.ADMIN_PASSWORD;
-}
+import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 
 type Body = { name?: string; motionId?: string | null; timeline: unknown };
 
 export async function POST(req: Request, { params }: { params: Promise<{ characterId: string }> }) {
-  if (!(await requireAdminApi())) {
+  const { characterId } = await params;
+  const auth = await authorizeCharacterRequest(characterId);
+  if (!auth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { characterId } = await params;
-  if (!isCharacterId(characterId)) {
+  if (!(await isKnownCharacterId(characterId))) {
     return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
   }
 
@@ -36,6 +31,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
     .from('character_studio_projects')
     .insert({
       character_id: characterId,
+      business_id: auth.mode === 'business' ? auth.business.id : null,
       motion_id: body.motionId || null,
       name,
       timeline,
@@ -52,13 +48,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
 }
 
 export async function GET(_req: Request, { params }: { params: Promise<{ characterId: string }> }) {
-  if (!(await requireAdminApi())) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const { characterId } = await params;
-  if (!isCharacterId(characterId)) {
-    return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
+  if (!(await authorizeCharacterRequest(characterId))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { data, error } = await supabaseAdmin

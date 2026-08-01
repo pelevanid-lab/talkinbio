@@ -3,11 +3,20 @@ import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { generateOnce } from '@/agents/shared/generateOnce';
 import { FalError, generateCharacterImage } from '@/utils/fal';
-import { STYLE_PROMPT, buildNegativePrompt } from '@/config/characters';
+import { STYLE_PROMPT, buildNegativePrompt, ESTIMATED_COST_PER_IMAGE_USD } from '@/config/characters';
+import { getBusinessFromRequest, type Business } from '@/utils/businessAuth';
+import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
 
-async function requireAdminApi(): Promise<boolean> {
+// Bu route bir "hangi karaktere erişim" kontrolü değil, YENİ bir karakter YARATIYOR —
+// authorizeCharacterRequest'in characterId'ye göre sahiplik kontrolü burada anlamsız
+// (henüz bir characterId yok). Admin şifresi VEYA işletme oturumu, ikisi de yeterli.
+async function authorizeCastCreation(): Promise<{ mode: 'admin' } | { mode: 'business'; business: Business } | null> {
   const cookieStore = await cookies();
-  return cookieStore.get('admin_session')?.value === process.env.ADMIN_PASSWORD;
+  if (cookieStore.get('admin_session')?.value === process.env.ADMIN_PASSWORD) {
+    return { mode: 'admin' };
+  }
+  const business = await getBusinessFromRequest();
+  return business ? { mode: 'business', business } : null;
 }
 
 const TR_MAP: Record<string, string> = {
@@ -35,7 +44,8 @@ function slugify(name: string): string {
  * olarak kullanılır — bkz. `src/components/CharacterRoomClient.tsx`'teki `mode="cast"`.
  */
 export async function POST(req: Request) {
-  if (!(await requireAdminApi())) {
+  const auth = await authorizeCastCreation();
+  if (!auth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -45,6 +55,20 @@ export async function POST(req: Request) {
 
   if (!name || !persona) {
     return NextResponse.json({ error: 'İsim ve tarif gerekli.' }, { status: 400 });
+  }
+
+  if (auth.mode === 'business') {
+    try {
+      await assertSufficientCredits(auth.business.id, ESTIMATED_COST_PER_IMAGE_USD);
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        return NextResponse.json(
+          { error: 'Yetersiz kredi.', requiredCredits: err.requiredCredits, balance: err.balance },
+          { status: 402 },
+        );
+      }
+      throw err;
+    }
   }
 
   const id = `cast-${slugify(name)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -106,6 +130,7 @@ SADECE İngilizce kimlik paragrafını döndür. Açıklama, başlık, tırnak v
 
     const { error: insertError } = await supabaseAdmin.from('character_profiles').insert({
       id,
+      business_id: auth.mode === 'business' ? auth.business.id : null,
       name,
       role: 'Yardımcı oyuncu — sanal karakter',
       is_cast: true,
@@ -113,6 +138,10 @@ SADECE İngilizce kimlik paragrafını döndür. Açıklama, başlık, tırnak v
       reference_image_url: publicUrl,
     });
     if (insertError) throw insertError;
+
+    if (auth.mode === 'business') {
+      await deductForGeneration(auth.business.id, ESTIMATED_COST_PER_IMAGE_USD);
+    }
 
     return NextResponse.json({ id, name });
   } catch (err) {

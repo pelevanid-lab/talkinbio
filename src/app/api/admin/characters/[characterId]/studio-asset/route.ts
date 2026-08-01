@@ -1,26 +1,21 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
-import { isCharacterId } from '@/config/characters';
+import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { STUDIO_ASSET_LIMITS, isStudioAssetKind } from '@/config/studio';
+import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 
 // scene-ref/route.ts ile aynı gerekçe: `media` bucket'ının INSERT politikası
 // `authenticated` istiyor, admin paneli Supabase auth değil `admin_session` çerezi
 // kullanıyor — tarayıcıdan doğrudan yükleme RLS'e takılır, bu yüzden servis rolüyle
 // sunucudan yükleniyor.
 
-async function requireAdminApi(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return cookieStore.get('admin_session')?.value === process.env.ADMIN_PASSWORD;
-}
-
 export async function POST(req: Request, { params }: { params: Promise<{ characterId: string }> }) {
-  if (!(await requireAdminApi())) {
+  const { characterId } = await params;
+  const auth = await authorizeCharacterRequest(characterId);
+  if (!auth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { characterId } = await params;
-  if (!isCharacterId(characterId)) {
+  if (!(await isKnownCharacterId(characterId))) {
     return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
   }
 
@@ -63,7 +58,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
 
   const { data: inserted, error: insertError } = await supabaseAdmin
     .from('character_studio_assets')
-    .insert({ character_id: characterId, kind, url: publicUrl, file_name: file.name })
+    .insert({
+      character_id: characterId,
+      business_id: auth.mode === 'business' ? auth.business.id : null,
+      kind,
+      url: publicUrl,
+      file_name: file.name,
+    })
     .select()
     .single();
 
@@ -76,13 +77,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
 }
 
 export async function GET(_req: Request, { params }: { params: Promise<{ characterId: string }> }) {
-  if (!(await requireAdminApi())) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const { characterId } = await params;
-  if (!isCharacterId(characterId)) {
-    return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
+  if (!(await authorizeCharacterRequest(characterId))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { data, error } = await supabaseAdmin

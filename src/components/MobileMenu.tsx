@@ -9,7 +9,6 @@ interface MobileMenuProps {
   texts: {
     pricing: string;
     login: string;
-    startFree: string;
   };
 }
 
@@ -69,13 +68,6 @@ export default function MobileMenu({ isLoggedIn, texts }: MobileMenuProps) {
                 onClick={() => setIsOpen(false)}
               >
                 {texts.login}
-              </Link>
-              <Link 
-                href="/request-access" 
-                className="btn btn-primary w-full text-center"
-                onClick={() => setIsOpen(false)}
-              >
-                {texts.startFree}
               </Link>
             </div>
           )}

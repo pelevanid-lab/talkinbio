@@ -50,9 +50,11 @@ type Props = {
   /** Kaydedilen gönderilerin yükleneceği karakter kapsamı — Beiwe Studio'nun asset
    *  kütüphanesiyle (character_studio_assets) AYNI kapsam, bkz. saveToLibrary yorumu. */
   characterId: string;
+  /** Müşteri modunda ham $ maliyetini gizle — yalnızca kredi karşılığı görünsün. */
+  hideCost?: boolean;
 };
 
-export default function BeiwePostClient({ shots, clips, assets: initialAssets, characterId }: Props) {
+export default function BeiwePostClient({ shots, clips, assets: initialAssets, characterId, hideCost = false }: Props) {
   // Sunucudan gelen ilk listeye "Arka planı kaldır"/"Stüdyo kütüphanesine kaydet" sonuçları
   // CANLI ekleniyor — sayfa yenilenmeden galeri güncel kalsın diye (bkz. removeBackground/saveToLibrary).
   const [libraryAssets, setLibraryAssets] = useState<StudioAsset[]>(initialAssets);
@@ -766,7 +768,9 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
 
               {imageUrl && !isVideo && (
                 <p className="text-[11px] text-slate-400 mt-1.5">
-                  Arka planı kaldırma maliyeti ~${ESTIMATED_BG_REMOVAL_COST_USD.toFixed(4)}/görsel (doğrulandı, 2026-07-31) · ≈{creditsForCost(ESTIMATED_BG_REMOVAL_COST_USD)} kredi.
+                  {hideCost
+                    ? `Arka planı kaldırma maliyeti ≈${creditsForCost(ESTIMATED_BG_REMOVAL_COST_USD)} kredi.`
+                    : `Arka planı kaldırma maliyeti ~$${ESTIMATED_BG_REMOVAL_COST_USD.toFixed(4)}/görsel (doğrulandı, 2026-07-31) · ≈${creditsForCost(ESTIMATED_BG_REMOVAL_COST_USD)} kredi.`}
                 </p>
               )}
 

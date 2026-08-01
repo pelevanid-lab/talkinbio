@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
-import { isCharacterId } from '@/config/characters';
+import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { FalError, removeImageBackground } from '@/utils/fal';
+import { ESTIMATED_BG_REMOVAL_COST_USD } from '@/config/post';
+import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
+import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
 
 export const maxDuration = 90;
 
@@ -28,14 +30,27 @@ const MAX_BYTES = 10 * 1024 * 1024;
  * yapılıyor.
  */
 export async function POST(req: Request, { params }: { params: Promise<{ characterId: string }> }) {
-  const cookieStore = await cookies();
-  if (cookieStore.get('admin_session')?.value !== process.env.ADMIN_PASSWORD) {
+  const { characterId } = await params;
+  const auth = await authorizeCharacterRequest(characterId);
+  if (!auth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { characterId } = await params;
-  if (!isCharacterId(characterId)) {
+  if (!(await isKnownCharacterId(characterId))) {
     return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
+  }
+
+  if (auth.mode === 'business') {
+    try {
+      await assertSufficientCredits(auth.business.id, ESTIMATED_BG_REMOVAL_COST_USD);
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        return NextResponse.json(
+          { error: 'Yetersiz kredi.', requiredCredits: err.requiredCredits, balance: err.balance },
+          { status: 402 },
+        );
+      }
+      throw err;
+    }
   }
 
   const contentType = req.headers.get('content-type') || '';
@@ -104,12 +119,22 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
 
     const { data: asset, error: insertError } = await supabaseAdmin
       .from('character_studio_assets')
-      .insert({ character_id: characterId, kind: 'image', url: publicUrl, file_name: 'arka-plan-kaldirildi.png' })
+      .insert({
+        character_id: characterId,
+        business_id: auth.mode === 'business' ? auth.business.id : null,
+        kind: 'image',
+        url: publicUrl,
+        file_name: 'arka-plan-kaldirildi.png',
+      })
       .select()
       .single();
     if (insertError) {
       console.error('[post/remove-background] asset insert failed', insertError);
       return NextResponse.json({ url: publicUrl, saved: false });
+    }
+
+    if (auth.mode === 'business') {
+      await deductForGeneration(auth.business.id, ESTIMATED_BG_REMOVAL_COST_USD);
     }
 
     return NextResponse.json({ url: publicUrl, saved: true, asset });

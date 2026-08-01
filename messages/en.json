@@ -556,7 +556,7 @@
     "idealFor_business": "Ideal for businesses receiving 50-60 DMs daily",
     "extraPackName": "Extra Credit Pack",
     "extraPackNote": "Can be purchased on top of any plan",
-    "ctaButton": "I want this plan",
+    "ctaButton": "Buy now",
     "formTitle": "Get in touch",
     "formSubtitle": "Our payment provider and contracts are being finalized — in the meantime, our team sets up your account with you by hand.",
     "formEmail": "Email",
@@ -673,6 +673,7 @@
     "rememberMe": "Remember me",
     "loginButton": "Log In",
     "loginButtonLoading": "Logging in...",
+    "googleLogin": "Continue with Google",
     "sendLinkButton": "Send Link",
     "sendLinkButtonLoading": "Sending...",
     "backToLogin": "Back to login",
@@ -953,6 +954,7 @@
     "passwordPlaceholder": "••••••••",
     "buttonText": "Create Account",
     "loading": "Creating...",
+    "googleRegister": "Continue with Google",
     "loginLink": "Already have an account? Log in",
     "successMessage": "Registration successful! Please check your email to confirm your account."
   }

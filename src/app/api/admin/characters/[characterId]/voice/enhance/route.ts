@@ -69,6 +69,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
     // 2 - fal.ai ile sesi temizle (deepfilternet3)
     const enhanced = await enhanceAudio({ audioUrl });
 
+    if (auth.mode === 'business') {
+      await deductForGeneration(auth.business.id, AUDIO_ENHANCE_COST_USD);
+    }
+
     return NextResponse.json({ audioUrl: enhanced.audioUrl });
 
   } catch (err) {

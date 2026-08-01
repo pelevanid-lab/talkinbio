@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { ChevronLeft } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 import { SAULE_CREDIT_COST, BEIWE_UPDATE_CREDIT_COST } from '@/agents/shared/credits';
 import { PLANS, EXTRA_PACK } from '@/config/plans';
 import '../landing.css';
@@ -42,40 +43,15 @@ export default function PricingPage() {
   const tNav = useTranslations('Landing.nav');
 
   const [selectedPlan, setSelectedPlan] = useState<string>('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [message, setMessage] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const handlePlanCta = (planId: string) => {
-    setSelectedPlan(planId);
-    document.getElementById('pricing-contact-form')?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!email.trim() || !phone.trim() || submitting) return;
-    setSubmitting(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/pricing-inquiry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: email.trim(),
-          phone: phone.trim(),
-          planInterest: selectedPlan || null,
-          message: message.trim(),
-        }),
-      });
-      if (!res.ok) throw new Error('failed');
-      setSubmitted(true);
-    } catch {
-      setError(t('formErrorGeneric'));
-    } finally {
-      setSubmitting(false);
+  const handlePlanCta = async (planId: string) => {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session) {
+      window.location.href = `/dashboard/billing?plan=${planId}`;
+    } else {
+      window.location.href = `/register?next=/dashboard/billing?plan=${planId}`;
     }
   };
 
@@ -89,11 +65,8 @@ export default function PricingPage() {
           <div className="links" style={{ display: 'none' }}></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <LanguageSwitcher />
-            <Link href="/login" className="btn btn-ghost" style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}>
+            <Link href="/login" className="btn btn-primary nav-cta" style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}>
               {tNav('login')}
-            </Link>
-            <Link href="/request-access" className="btn btn-primary nav-cta">
-              {tNav('startFree')}
             </Link>
           </div>
         </div>
@@ -212,44 +185,7 @@ export default function PricingPage() {
           </div>
         </div>
 
-        <div id="pricing-contact-form" style={{
-          marginTop: '5rem',
-          background: 'var(--ink)',
-          borderRadius: '20px',
-          padding: '3rem 2.5rem',
-        }}>
-          <h3 style={{ fontFamily: 'var(--font-bricolage)', fontWeight: 800, fontSize: '1.6rem', color: '#fff', margin: '0 0 0.75rem' }}>
-            {t('formTitle')}
-          </h3>
-          <p style={{ fontFamily: 'var(--font-inter)', color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem', lineHeight: 1.6, margin: '0 0 2rem', maxWidth: '480px' }}>
-            {t('formSubtitle')}
-          </p>
 
-          {submitted ? (
-            <p style={{ color: '#fff', fontFamily: 'var(--font-inter)', fontSize: '1rem' }}>{t('formSuccess')}</p>
-          ) : (
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem', maxWidth: '420px' }}>
-              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('formEmail')} style={inputStyle} />
-              <input type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t('formPhone')} style={inputStyle} />
-              <select value={selectedPlan} onChange={(e) => setSelectedPlan(e.target.value)} style={inputStyle}>
-                <option value="">{t('formPlanNone')}</option>
-                {PLANS.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-              <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder={t('formMessage')} rows={3} style={{ ...inputStyle, resize: 'none' }} />
-              {error && <p style={{ color: '#FF6A5C', fontSize: '0.85rem', margin: 0 }}>{error}</p>}
-              <button
-                type="submit"
-                disabled={submitting}
-                className="btn btn-primary"
-                style={{ borderRadius: '100px', padding: '0.85rem 1.5rem', fontWeight: 700, fontSize: '0.95rem', border: 'none', cursor: 'pointer', opacity: submitting ? 0.6 : 1 }}
-              >
-                {submitting ? t('formSubmitting') : t('formSubmit')}
-              </button>
-            </form>
-          )}
-        </div>
       </main>
 
       <footer style={{ borderTop: '1px solid rgba(20,35,31,0.10)', padding: '3rem 1.5rem', textAlign: 'center' }}>

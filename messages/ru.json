@@ -556,7 +556,7 @@
     "idealFor_business": "Идеально для бизнеса, получающего 50-60 сообщений в день",
     "extraPackName": "Дополнительный пакет кредитов",
     "extraPackNote": "Можно приобрести в дополнение к любому тарифу",
-    "ctaButton": "Хочу этот тариф",
+    "ctaButton": "Купить",
     "formTitle": "Свяжитесь с нами",
     "formSubtitle": "Наш платёжный провайдер и договоры готовятся — пока что команда настраивает ваш аккаунт вручную, вместе с вами.",
     "formEmail": "E-mail",
@@ -673,6 +673,7 @@
     "rememberMe": "Запомнить меня",
     "loginButton": "Войти",
     "loginButtonLoading": "Выполняется вход...",
+    "googleLogin": "Продолжить с Google",
     "sendLinkButton": "Отправить ссылку",
     "sendLinkButtonLoading": "Отправка...",
     "backToLogin": "Вернуться к входу",
@@ -942,5 +943,18 @@
     "formSubmitting": "Отправка...",
     "formSuccess": "Ваша заявка получена. Наша команда свяжется с вами в ближайшее время.",
     "formErrorGeneric": "Что-то пошло не так при отправке, попробуйте ещё раз."
+  },
+  "Register": {
+    "title": "Регистрация",
+    "subtitle": "Создайте аккаунт Talkinbio",
+    "emailLabel": "Эл. почта",
+    "emailPlaceholder": "name@company.com",
+    "passwordLabel": "Пароль",
+    "passwordPlaceholder": "••••••••",
+    "buttonText": "Создать аккаунт",
+    "loading": "Создание...",
+    "googleRegister": "Продолжить с Google",
+    "loginLink": "Уже есть аккаунт? Войти",
+    "successMessage": "Регистрация прошла успешно! Пожалуйста, проверьте почту для подтверждения."
   }
 }

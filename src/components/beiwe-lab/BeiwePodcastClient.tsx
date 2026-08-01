@@ -60,6 +60,7 @@ function MotionModelPicker({
   onResolutionChange,
   turbo,
   onTurboChange,
+  hideCost,
 }: {
   modelId: string;
   onModelChange: (id: string) => void;
@@ -67,6 +68,7 @@ function MotionModelPicker({
   onResolutionChange: (r: MotionResolution) => void;
   turbo: boolean;
   onTurboChange: (v: boolean) => void;
+  hideCost?: boolean;
 }) {
   const model = findMotionModel(modelId) ?? MOTION_MODELS[0];
   const resolutionOptions = motionResolutions(model);
@@ -86,7 +88,9 @@ function MotionModelPicker({
             <div className="flex items-baseline justify-between gap-2">
               <span className="text-sm font-semibold text-slate-900">{m.label}</span>
               <span className="text-xs text-slate-500 whitespace-nowrap">
-                ${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn · ≈{creditsForCost(m.costPerSecondUsd)} kredi/sn
+                {hideCost
+                  ? `≈${creditsForCost(m.costPerSecondUsd)} kredi/sn`
+                  : `$${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn · ≈${creditsForCost(m.costPerSecondUsd)} kredi/sn`}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">{m.hint}</p>
@@ -176,6 +180,8 @@ type Props = {
   initialMotions: CharacterMotion[];
   minimaxVoiceId: string | null;
   minimaxVoiceStatus: string;
+  /** Müşteri modunda ham $ maliyetini gizle — yalnızca kredi karşılığı görünsün. */
+  hideCost?: boolean;
 };
 
 export default function BeiwePodcastClient({
@@ -187,6 +193,7 @@ export default function BeiwePodcastClient({
   initialMotions,
   minimaxVoiceId,
   minimaxVoiceStatus,
+  hideCost = false,
 }: Props) {
   const [shots, setShots] = useState<CharacterShot[]>(initialShots);
   const [clips, setClips] = useState<CharacterClip[]>(initialClips);
@@ -568,7 +575,9 @@ export default function BeiwePodcastClient({
             {generatingScene ? 'Üretiliyor…' : 'Sahne Üret'}
           </button>
           <span className="text-xs text-slate-400">
-            ~${(ESTIMATED_COST_PER_IMAGE_USD * numImages).toFixed(2)} · ≈{creditsForCost(ESTIMATED_COST_PER_IMAGE_USD * numImages)} kredi · 1-2 dk
+            {hideCost
+              ? `≈${creditsForCost(ESTIMATED_COST_PER_IMAGE_USD * numImages)} kredi · 1-2 dk`
+              : `~$${(ESTIMATED_COST_PER_IMAGE_USD * numImages).toFixed(2)} · ≈${creditsForCost(ESTIMATED_COST_PER_IMAGE_USD * numImages)} kredi · 1-2 dk`}
           </span>
         </div>
 
@@ -710,6 +719,7 @@ export default function BeiwePodcastClient({
                   onResolutionChange={setOmniTextResolution}
                   turbo={omniTextTurbo}
                   onTurboChange={setOmniTextTurbo}
+                  hideCost={hideCost}
                 />
               </div>
 
@@ -824,6 +834,7 @@ export default function BeiwePodcastClient({
                   onResolutionChange={setOmniVoiceResolution}
                   turbo={omniVoiceTurbo}
                   onTurboChange={setOmniVoiceTurbo}
+                  hideCost={hideCost}
                 />
               </div>
 

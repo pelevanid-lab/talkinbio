@@ -53,6 +53,9 @@ type Props = {
    * kütüphanesinden seçer; galeri boşsa önce en az bir tane eklemesi gerekir.
    */
   voicePresets?: VoicePreset[];
+  /** Müşteri modunda ham $ maliyetini gizle — yalnızca kredi karşılığı görünsün
+   * (bkz. src/config/pricing.ts creditsForCost). Admin varsayılanı (false) değişmez. */
+  hideCost?: boolean;
 };
 
 export default function BeiweVoiceClient({
@@ -64,6 +67,7 @@ export default function BeiweVoiceClient({
   initialMinimaxVoiceStatus,
   twinVerified,
   voicePresets: initialVoicePresets,
+  hideCost = false,
 }: Props) {
   const [voicePresets, setVoicePresets] = useState<VoicePreset[]>(initialVoicePresets ?? []);
   const [presetLabel, setPresetLabel] = useState('');
@@ -85,6 +89,10 @@ export default function BeiweVoiceClient({
   const [customText, setCustomText] = useState('');
   const [audioHealth, setAudioHealth] = useState<AudioHealth | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /** Admin: "$X (≈N kredi)". Müşteri (hideCost): sadece "≈N kredi" — ham maliyeti göstermiyoruz. */
+  const costLabel = (usd: number) =>
+    hideCost ? `≈${creditsForCost(usd)} kredi` : `$${usd.toFixed(2)} (≈${creditsForCost(usd)} kredi)`;
 
   /* ---------------- aşama 1: referans ses ---------------- */
   // Kırpma bilinçli olarak YOK: F5-TTS'te referansı 15sn'ye kırpmak gerekiyordu
@@ -182,7 +190,7 @@ export default function BeiweVoiceClient({
       audioHealth && audioHealth.warnings.length > 0
         ? `\n\nUyarı: ${audioHealth.warnings.join(' ')}`
         : '';
-    if (!confirm(`Bu işlem ~$${MINIMAX_CLONE_COST_USD.toFixed(2)} (≈${creditsForCost(MINIMAX_CLONE_COST_USD)} kredi) tutuyor ve geri alınamaz. Devam edilsin mi?${healthWarning}`)) {
+    if (!confirm(`Bu işlem ~${costLabel(MINIMAX_CLONE_COST_USD)} tutuyor ve geri alınamaz. Devam edilsin mi?${healthWarning}`)) {
       return;
     }
 
@@ -526,7 +534,7 @@ export default function BeiweVoiceClient({
         <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
           <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
           <span>
-            Klonlama ücreti istek başına yaklaşık ${MINIMAX_CLONE_COST_USD.toFixed(2)} (≈{creditsForCost(MINIMAX_CLONE_COST_USD)} kredi) — bu,
+            Klonlama ücreti istek başına yaklaşık {costLabel(MINIMAX_CLONE_COST_USD)} — bu,
             klonun KENDİSİNİ yaratmanın maliyeti; MiniMax&apos;ta ücretsiz bir önizleme
             katmanı yok (doğrulandı), yani bu adımı atlayarak önden dinlemenin bir yolu yok.
             Yeni bir kimlik {MINIMAX_VOICE_EXPIRY_DAYS} gün içinde gerçek bir seslendirmede
@@ -578,8 +586,8 @@ export default function BeiweVoiceClient({
           {cloning
             ? 'Klonlanıyor…'
             : minimaxVoiceId
-              ? `Yeniden klonla (~$${MINIMAX_CLONE_COST_USD.toFixed(2)} · ≈${creditsForCost(MINIMAX_CLONE_COST_USD)} kredi)`
-              : `Klonla (~$${MINIMAX_CLONE_COST_USD.toFixed(2)} · ≈${creditsForCost(MINIMAX_CLONE_COST_USD)} kredi)`}
+              ? `Yeniden klonla (~${costLabel(MINIMAX_CLONE_COST_USD)})`
+              : `Klonla (~${costLabel(MINIMAX_CLONE_COST_USD)})`}
         </button>
       </LabStage>
 
@@ -618,7 +626,7 @@ export default function BeiweVoiceClient({
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-semibold text-slate-900">{script.label}</span>
-                  <span className="text-[10px] text-slate-400">~${cost(script.text)} · ≈{costCredits(script.text)} kredi</span>
+                  <span className="text-[10px] text-slate-400">{hideCost ? `≈${costCredits(script.text)} kredi` : `~$${cost(script.text)} · ≈${costCredits(script.text)} kredi`}</span>
                 </div>
                 <p className="text-xs text-slate-500 leading-snug">{script.hint}</p>
                 <p className="text-xs text-slate-600 bg-slate-50 rounded-lg p-2 leading-relaxed line-clamp-3">
@@ -671,7 +679,7 @@ export default function BeiweVoiceClient({
             </button>
             {customText.trim() && (
               <span className="text-xs text-slate-400">
-                {customText.length} karakter · ~${cost(customText)} · ≈{costCredits(customText)} kredi
+                {customText.length} karakter · {hideCost ? `≈${costCredits(customText)} kredi` : `~$${cost(customText)} · ≈${costCredits(customText)} kredi`}
               </span>
             )}
           </div>

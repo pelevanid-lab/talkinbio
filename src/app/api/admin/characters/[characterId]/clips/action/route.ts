@@ -1,18 +1,19 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { FalError, generateCharacterImage, generateCharacterPerformance, generateSceneVideo, publicImageAsDataUri } from '@/utils/fal';
-import { CHARACTERS, buildNegativePrompt, isCharacterId } from '@/config/characters';
+import { CHARACTERS, ESTIMATED_COST_PER_IMAGE_USD, buildNegativePrompt, isCharacterId } from '@/config/characters';
 import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { FULL_BODY_MOTION_MODELS, SCENE_VIDEO_MODELS, findFullBodyMotionModel, findSceneVideoModel } from '@/config/clips';
 import { DEFAULT_MOTION_STYLE_ID, MOTION_STYLES, findMotionStyle, type MotionIdentityMode } from '@/config/motionStyles';
+import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
+import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
+
+/** Senaryo modunda (metinden video) ve süre ölçülemediğinde sunucu girdi süresini
+ * bilmiyor — model çıktısı tipik olarak birkaç saniye; ücretlendirmede muhafazakar
+ * bir taban olarak kullanılıyor. */
+const DEFAULT_BILLED_SECONDS_FALLBACK = 5;
 
 export const maxDuration = 300;
-
-async function requireAdminApi(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return cookieStore.get('admin_session')?.value === process.env.ADMIN_PASSWORD;
-}
 
 /** nano-banana-pro'nun "/edit" soneki referans görsel ister; jenerik modda referans yok. */
 const GENERIC_IMAGE_MODEL_FALLBACK = 'fal-ai/nano-banana-pro';
@@ -56,12 +57,12 @@ async function downloadToMedia(url: string, characterId: string, ext: string, co
  * öngörülmüştü (bkz. `00050_character_clips.sql`), yalnızca üretici tarafı eksikti.
  */
 export async function POST(req: Request, { params }: { params: Promise<{ characterId: string }> }) {
-  if (!(await requireAdminApi())) {
+  const { characterId } = await params;
+  const auth = await authorizeCharacterRequest(characterId);
+  if (!auth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { characterId } = await params;
-  if (!isCharacterId(characterId)) {
+  if (!(await isKnownCharacterId(characterId))) {
     return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
   }
 
@@ -94,8 +95,36 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
       return NextResponse.json({ error: 'Jenerik karakter için bir persona tarifi gerekli.' }, { status: 400 });
     }
 
+    // Ücretlendirme için erken model/süre tahmini — asıl üretim aşağıda aynı seçimi tekrar yapıyor.
+    const drivingSecondsField = formData.get('drivingSeconds');
+    const reportedDrivingSeconds = typeof drivingSecondsField === 'string' ? Number(drivingSecondsField) : NaN;
+    const billedSeconds = Number.isFinite(reportedDrivingSeconds) && reportedDrivingSeconds > 0
+      ? reportedDrivingSeconds
+      : DEFAULT_BILLED_SECONDS_FALLBACK;
+    const videoCostUsd = mode === 'reference'
+      ? (findFullBodyMotionModel(formData.get('motionModelId')) || FULL_BODY_MOTION_MODELS[0]).costPerSecondUsd * billedSeconds
+      : (findSceneVideoModel(formData.get('sceneVideoModelId')) || SCENE_VIDEO_MODELS[0]).costPerSecondUsd * DEFAULT_BILLED_SECONDS_FALLBACK;
+    const totalCostUsd = ESTIMATED_COST_PER_IMAGE_USD + videoCostUsd;
+
+    if (auth.mode === 'business') {
+      try {
+        await assertSufficientCredits(auth.business.id, totalCostUsd);
+      } catch (err) {
+        if (err instanceof InsufficientCreditsError) {
+          return NextResponse.json(
+            { error: 'Yetersiz kredi.', requiredCredits: err.requiredCredits, balance: err.balance },
+            { status: 402 },
+          );
+        }
+        throw err;
+      }
+    }
+
     /* 1 — Stilize kaynak görsel. */
-    const character = { ...CHARACTERS[characterId] };
+    // `characterId` artık statik CHARACTERS registry'sinde olmayan business-owned
+    // Twin'leri de kapsayabiliyor (bkz. authorizeCharacterRequest) — `isCharacterId` tip
+    // daraıtmasını kullanarak sadece statik karakterlerde registry'den okuyoruz.
+    const character: { identityPrompt?: string } = isCharacterId(characterId) ? { ...CHARACTERS[characterId] } : {};
     if (identityMode === 'twin') {
       const { data: profile } = await supabaseAdmin
         .from('character_profiles')
@@ -219,6 +248,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
       .from('character_clips')
       .insert({
         character_id: characterId,
+        business_id: auth.mode === 'business' ? auth.business.id : null,
         room: 'action',
         source: 'generated',
         model: usedModel,
@@ -231,6 +261,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
       .single();
 
     if (insertError) throw insertError;
+
+    if (auth.mode === 'business') {
+      await deductForGeneration(auth.business.id, totalCostUsd);
+    }
 
     return NextResponse.json({ clip: inserted });
   } catch (err) {

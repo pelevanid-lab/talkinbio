@@ -556,7 +556,7 @@
     "idealFor_business": "Günde 50-60 DM alan işletmeler için ideal",
     "extraPackName": "Ek Kredi Paketi",
     "extraPackNote": "Herhangi bir plana ek olarak satın alınabilir",
-    "ctaButton": "Bu planı istiyorum",
+    "ctaButton": "Satın al",
     "formTitle": "Bize ulaşın",
     "formSubtitle": "Ödeme sağlayıcımız ve sözleşmelerimiz hazırlanıyor — bu süreçte kurulumu ekibimiz sizinle birlikte, elle yapıyor.",
     "formEmail": "E-posta",
@@ -673,6 +673,7 @@
     "rememberMe": "Beni Hatırla",
     "loginButton": "Giriş Yap",
     "loginButtonLoading": "Giriş Yapılıyor...",
+    "googleLogin": "Google ile Giriş Yap",
     "sendLinkButton": "Bağlantıyı Gönder",
     "sendLinkButtonLoading": "Gönderiliyor...",
     "backToLogin": "Giriş ekranına dön",
@@ -952,6 +953,7 @@
     "passwordPlaceholder": "••••••••",
     "buttonText": "Hesap Oluştur",
     "loading": "Oluşturuluyor...",
+    "googleRegister": "Google ile Kayıt Ol",
     "loginLink": "Zaten hesabınız var mı? Giriş yapın",
     "successMessage": "Kayıt başarılı! Lütfen e-posta adresinize gelen onay bağlantısına tıklayın."
   }

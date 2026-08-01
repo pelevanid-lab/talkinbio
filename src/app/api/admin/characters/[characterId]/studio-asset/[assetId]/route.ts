@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
+import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 
-async function requireAdminApi(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return cookieStore.get('admin_session')?.value === process.env.ADMIN_PASSWORD;
+/** Bu asset'in sahibi işletme (varsa) gerçekten istek sahibi mi — admin her zaman geçer. */
+async function authorizeAsset(assetId: string) {
+  const { data: asset } = await supabaseAdmin
+    .from('character_studio_assets')
+    .select('character_id')
+    .eq('id', assetId)
+    .maybeSingle();
+  if (!asset) return null;
+  return authorizeCharacterRequest(asset.character_id);
 }
 
 /** `.../storage/v1/object/public/media/<path>` → `<path>` */
@@ -18,11 +24,10 @@ export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ characterId: string; assetId: string }> },
 ) {
-  if (!(await requireAdminApi())) {
+  const { assetId } = await params;
+  if (!(await authorizeAsset(assetId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { assetId } = await params;
 
   const { data: asset } = await supabaseAdmin
     .from('character_studio_assets')

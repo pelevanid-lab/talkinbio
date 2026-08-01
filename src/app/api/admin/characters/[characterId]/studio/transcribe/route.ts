@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { FalError, transcribeAudioWords } from '@/utils/fal';
-import { isCharacterId } from '@/config/characters';
+import { STUDIO_TRANSCRIBE_COST_USD } from '@/config/beiweLab';
+import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
+import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
 
 export const maxDuration = 300;
 
@@ -12,14 +13,10 @@ export const maxDuration = 300;
  * yapıyor — `parseStudioTimeline` zaten sunucu tarafında son doğrulamayı yapacak.
  */
 export async function POST(req: Request, { params }: { params: Promise<{ characterId: string }> }) {
-  const cookieStore = await cookies();
-  if (cookieStore.get('admin_session')?.value !== process.env.ADMIN_PASSWORD) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const { characterId } = await params;
-  if (!isCharacterId(characterId)) {
-    return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
+  const auth = await authorizeCharacterRequest(characterId);
+  if (!auth) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const body = (await req.json().catch(() => null)) as { audioUrl?: string } | null;
@@ -28,8 +25,25 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
     return NextResponse.json({ error: 'Ses URL\'i geçersiz.' }, { status: 400 });
   }
 
+  if (auth.mode === 'business') {
+    try {
+      await assertSufficientCredits(auth.business.id, STUDIO_TRANSCRIBE_COST_USD);
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        return NextResponse.json(
+          { error: 'Yetersiz kredi.', requiredCredits: err.requiredCredits, balance: err.balance },
+          { status: 402 },
+        );
+      }
+      throw err;
+    }
+  }
+
   try {
     const { words } = await transcribeAudioWords({ audioUrl });
+    if (auth.mode === 'business') {
+      await deductForGeneration(auth.business.id, STUDIO_TRANSCRIBE_COST_USD);
+    }
     return NextResponse.json({ words });
   } catch (err) {
     if (err instanceof FalError) {

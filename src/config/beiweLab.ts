@@ -90,6 +90,9 @@ export const LORA_TRAINING_COST_USD = 2;
  */
 export const AUDIO_ENHANCE_COST_USD = 0.02;
 
+/** `fal-ai/whisper` (kelime bazlı transkripsiyon, Studio karaoke altyazı) — TAHMİN, doğrulanmadı. */
+export const STUDIO_TRANSCRIBE_COST_USD = 0.01;
+
 /**
  * TTS maliyeti (1000 karakter başına, USD) — `speech-02-hd`, fal fiyatlandırma
  * sayfasından doğrulandı (2026-07-29). Eskiden F5-TTS için DOĞRULANMAMIŞ bir tahmindi;

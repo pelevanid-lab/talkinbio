@@ -14,9 +14,10 @@ type Props = {
   initialShots: CharacterShot[];
   initialClips: CharacterClip[];
   castCharacters: CastCharacterOption[];
+  hideCost?: boolean;
 };
 
-export default function BeiweMotionClient({ characterId, initialShots, initialClips, castCharacters }: Props) {
+export default function BeiweMotionClient({ characterId, initialShots, initialClips, castCharacters, hideCost = false }: Props) {
   const [clips, setClips] = useState<CharacterClip[]>(initialClips);
 
   return (
@@ -27,6 +28,7 @@ export default function BeiweMotionClient({ characterId, initialShots, initialCl
       castCharacters={castCharacters}
       onClipCreated={(clip) => setClips((prev) => [clip, ...prev])}
       onClipDeleted={(clipId) => setClips((prev) => prev.filter((c) => c.id !== clipId))}
+      hideCost={hideCost}
     />
   );
 }

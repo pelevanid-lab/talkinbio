@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { FalError, generateCharacterMotion, enhanceAudio } from '@/utils/fal';
 import { isKnownCharacterId } from '@/utils/knownCharacter';
@@ -10,16 +9,17 @@ import {
   motionResolutions,
   MOTION_AUDIO_EXTENSIONS,
 } from '@/config/motionModels';
+import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
+import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
 
 export const maxDuration = 300;
 
 export async function POST(req: Request, { params }: { params: Promise<{ characterId: string }> }) {
-  const cookieStore = await cookies();
-  if (cookieStore.get('admin_session')?.value !== process.env.ADMIN_PASSWORD) {
+  const { characterId } = await params;
+  const auth = await authorizeCharacterRequest(characterId);
+  if (!auth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { characterId } = await params;
   if (!(await isKnownCharacterId(characterId))) {
     return NextResponse.json({ error: 'Bilinmeyen karakter.' }, { status: 400 });
   }
@@ -113,6 +113,24 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
       }
     }
 
+    // Süre ölçülemediyse (tarayıcı raporlamadıysa) modelin asgari süresini taban alıyoruz —
+    // eksik ücretlendirmektense muhafazakar davranmak daha güvenli.
+    const billedSeconds = Number.isFinite(reportedSeconds) && reportedSeconds > 0 ? reportedSeconds : model.minAudioSeconds;
+    const motionCostUsd = model.costPerSecondUsd * billedSeconds;
+    if (auth.mode === 'business') {
+      try {
+        await assertSufficientCredits(auth.business.id, motionCostUsd);
+      } catch (err) {
+        if (err instanceof InsufficientCreditsError) {
+          return NextResponse.json(
+            { error: 'Yetersiz kredi.', requiredCredits: err.requiredCredits, balance: err.balance },
+            { status: 402 },
+          );
+        }
+        throw err;
+      }
+    }
+
     // 1 - Ses dosyasını Supabase'e kaydet (eğer dışarıdan file geldiyse)
     if (file) {
       const audioBuffer = Buffer.from(await file.arrayBuffer());
@@ -181,6 +199,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
       .single();
 
     if (insertError) throw insertError;
+
+    if (auth.mode === 'business') {
+      await deductForGeneration(auth.business.id, motionCostUsd);
+    }
 
     return NextResponse.json({ motion: inserted });
 

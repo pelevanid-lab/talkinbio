@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { MAX_PROJECT_NAME_LENGTH, parseStudioTimeline } from '@/config/studio';
+import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 
-async function requireAdminApi(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return cookieStore.get('admin_session')?.value === process.env.ADMIN_PASSWORD;
+/** Bu projenin sahibi işletme (varsa) gerçekten istek sahibi mi — admin her zaman geçer. */
+async function authorizeProject(projectId: string) {
+  const { data: project } = await supabaseAdmin
+    .from('character_studio_projects')
+    .select('character_id')
+    .eq('id', projectId)
+    .maybeSingle();
+  if (!project) return null;
+  return authorizeCharacterRequest(project.character_id);
 }
 
 type Body = { name?: string; timeline?: unknown; outputUrl?: string | null };
@@ -17,11 +23,11 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ characterId: string; projectId: string }> },
 ) {
-  if (!(await requireAdminApi())) {
+  const { projectId } = await params;
+  if (!(await authorizeProject(projectId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { projectId } = await params;
   const body = (await req.json()) as Body;
   const patch: Record<string, unknown> = {};
 
@@ -61,11 +67,11 @@ export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ characterId: string; projectId: string }> },
 ) {
-  if (!(await requireAdminApi())) {
+  const { projectId } = await params;
+  if (!(await authorizeProject(projectId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { projectId } = await params;
   const { error } = await supabaseAdmin.from('character_studio_projects').delete().eq('id', projectId);
   if (error) {
     console.error('[studio] delete failed', error);

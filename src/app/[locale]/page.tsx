@@ -134,22 +134,16 @@ export default async function HomePage({ params }: any) {
                 Dashboard
               </Link>
             ) : (
-              <>
-                <Link href="/login" className="btn btn-ghost" style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}>
-                  {t('nav.login')}
-                </Link>
-                <Link href="/request-access" className="btn btn-primary nav-cta">
-                  {t('nav.startFree')}
-                </Link>
-              </>
+              <Link href="/login" className="btn btn-primary nav-cta" style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}>
+                {t('nav.login')}
+              </Link>
             )}
           </div>
           <MobileMenu 
             isLoggedIn={isLoggedIn} 
             texts={{
               pricing: t('nav.pricing'),
-              login: t('nav.login'),
-              startFree: t('nav.startFree')
+              login: t('nav.login')
             }} 
           />
         </div>
@@ -169,10 +163,7 @@ export default async function HomePage({ params }: any) {
                 dangerouslySetInnerHTML={{ __html: t.raw('heroTexts.subtitle') }}
               />
               <div className="hero-ctas animate-fade-up delay-200 flex flex-wrap gap-4">
-                <Link href="/request-access" className="btn btn-primary" style={{ padding: '16px 32px', fontSize: '17px' }}>
-                  {t('heroTexts.btnEarly')}
-                </Link>
-                <a href="#nasil-calisir" className="btn btn-ghost bg-white" style={{ padding: '16px 32px', fontSize: '17px' }}>
+                <a href="#nasil-calisir" className="btn btn-primary" style={{ padding: '16px 32px', fontSize: '17px' }}>
                   {t('heroTexts.btnHow')}
                 </a>
                 <Link href="/pricing" className="btn btn-ghost bg-white" style={{ padding: '16px 32px', fontSize: '17px' }}>
