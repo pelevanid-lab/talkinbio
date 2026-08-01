@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     }
 
     const formData = await req.formData();
-    const audio = formData.get('audio') as Blob | null;
+    const audio = formData.get('audio') as File | null;
     const businessId = formData.get('businessId') as string | null;
 
     if (!audio || !businessId) {
@@ -61,9 +61,12 @@ export async function POST(req: Request) {
       await deductCredits(supabaseAdmin, businessId, extraCreditsToDeduct);
     }
 
-    // Send to fal.ai Wizper (optimized Whisper) for transcription
+    // Send to fal.ai Wizper (optimized Whisper) for transcription. Dosya adı istemcinin
+    // gerçekte kaydettiği formatla eşleşmeli (bkz. ChatWidget.tsx startRecording) — sabit
+    // "recording.webm" kullanmak, iOS Safari gibi audio/mp4 üreten tarayıcılarda Wizper'ın
+    // sesi çözemeyip sessizce boş metin dönmesine yol açıyordu.
     const falFormData = new FormData();
-    falFormData.append('audio', audio, 'recording.webm');
+    falFormData.append('audio', audio, audio.name || 'recording.webm');
 
     const falResponse = await fetch('https://fal.run/fal-ai/wizper', {
       method: 'POST',

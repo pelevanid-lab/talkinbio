@@ -146,7 +146,14 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      // iOS Safari'de "audio/webm" desteklenmiyor (varsayılan olarak audio/mp4 üretiyor) —
+      // sabit "audio/webm" kullanmak, gerçekte kaydedilen formatla dosya uzantısı/tipi
+      // uyuşmadığı için fal.ai Wizper'ın sesi hiç çözemeyip sessizce boş metin dönmesine yol
+      // açıyordu (basılı tut çalışıyor gibi görünüyor ama hiçbir zaman cevap gelmiyordu).
+      const supportedMimeType = ['audio/webm', 'audio/mp4', 'audio/ogg'].find(
+        (type) => typeof MediaRecorder.isTypeSupported === 'function' && MediaRecorder.isTypeSupported(type)
+      );
+      const mediaRecorder = supportedMimeType ? new MediaRecorder(stream, { mimeType: supportedMimeType }) : new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -157,14 +164,16 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const usedMimeType = mediaRecorder.mimeType || 'audio/webm';
+        const audioBlob = new Blob(audioChunksRef.current, { type: usedMimeType });
+        const extension = usedMimeType.includes('mp4') ? 'm4a' : usedMimeType.includes('ogg') ? 'ogg' : 'webm';
         stream.getTracks().forEach((track) => track.stop());
         setIsRecording(false);
         setIsTranscribing(true);
 
         try {
           const formData = new FormData();
-          formData.append('audio', audioBlob);
+          formData.append('audio', audioBlob, `recording.${extension}`);
           formData.append('businessId', businessId);
 
           const res = await fetch('/api/chat/voice/transcribe', {
