@@ -2,29 +2,31 @@ import DashboardShell from '@/components/dashboard/DashboardShell';
 import BeiwePostClient from '@/components/beiwe-lab/BeiwePostClient';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { requireBusinessOwner } from '@/utils/businessAuth';
-import { getOrCreateBusinessTwin } from '@/utils/creativeStudioScope';
+import { getBusinessCharacterIds, getOrCreateBusinessTwin } from '@/utils/creativeStudioScope';
 import type { CharacterShot } from '@/config/characters';
 import type { CharacterClip } from '@/config/clips';
 import type { StudioAsset } from '@/config/studio';
 
-// admin/beiwe-lab/post/page.tsx'in müşteri karşılığı — admin sürümü Twin + Cast'in
-// TÜM kadrosunu tek galeride gösteriyor (getAllBeiweLabCharacterIds); Cast henüz
-// business-scoped olmadığı için müşteri sürümü yalnız kendi Twin'inin içeriğini gösterir.
+// admin/beiwe-lab/post/page.tsx'in müşteri karşılığı — admin sürümüyle aynı: Twin +
+// işletmenin kendi Cast'inin TÜM kadrosu tek galeride (bkz. getBusinessCharacterIds,
+// admin'deki getAllBeiweLabCharacterIds'in business-scoped karşılığı). Yeni kayıtlar
+// (asset yükleme vb.) yine yalnız Twin'in kapsamında kalıyor — admin'le aynı desen.
 export default async function CreativeStudioPostPage() {
   const business = await requireBusinessOwner();
   const characterId = await getOrCreateBusinessTwin(business.id);
+  const characterIds = await getBusinessCharacterIds(business.id, business.name);
 
   const [{ data: shots }, { data: clips }, { data: assets }] = await Promise.all([
     supabaseAdmin
       .from('character_shots')
       .select('*')
-      .eq('character_id', characterId)
+      .in('character_id', characterIds)
       .order('created_at', { ascending: false })
       .limit(120),
     supabaseAdmin
       .from('character_clips')
       .select('*')
-      .eq('character_id', characterId)
+      .in('character_id', characterIds)
       .order('created_at', { ascending: false })
       .limit(60),
     supabaseAdmin

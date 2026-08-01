@@ -2,20 +2,20 @@ import DashboardShell from '@/components/dashboard/DashboardShell';
 import BeiweStudioClient from '@/components/beiwe-lab/BeiweStudioClient';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { requireBusinessOwner } from '@/utils/businessAuth';
-import { getOrCreateBusinessTwin } from '@/utils/creativeStudioScope';
+import { getBusinessCharacterIds, getOrCreateBusinessTwin } from '@/utils/creativeStudioScope';
 import type { CharacterClip } from '@/config/clips';
 
-// admin/beiwe-lab/studio/page.tsx'in müşteri karşılığı — admin sürümü Twin + Cast'in
-// TÜM kadrosunun klip havuzunu gösteriyor; Cast henüz business-scoped olmadığı için
-// müşteri sürümü yalnız kendi Twin'inin klip havuzunu gösterir.
+// admin/beiwe-lab/studio/page.tsx'in müşteri karşılığı — admin sürümüyle aynı: Twin +
+// işletmenin kendi Cast'inin TÜM kadrosunun klip havuzu (bkz. getBusinessCharacterIds).
 export default async function CreativeStudioStudioPage() {
   const business = await requireBusinessOwner();
   const characterId = await getOrCreateBusinessTwin(business.id);
+  const characterIds = await getBusinessCharacterIds(business.id, business.name);
 
   const { data: clips } = await supabaseAdmin
     .from('character_clips')
     .select('*')
-    .eq('character_id', characterId)
+    .in('character_id', characterIds)
     .order('created_at', { ascending: false })
     .limit(100);
 

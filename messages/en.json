@@ -874,7 +874,7 @@
       "activateTooltip": "Activate"
     },
     "navAnalytics": "Analytics",
-    "navBilling": "Transactions",
+    "navBilling": "Buy Credits",
     "navCreativeStudio": "Creative Studio"
   },
   "CreativeStudio": {
@@ -927,7 +927,7 @@
     "noBusinessTitle": "You haven't set up a business yet",
     "noBusinessDescription": "Create your profile first to see your billing and usage details.",
     "createProfileBtn": "Create Profile",
-    "pageTitle": "Billing & Usage",
+    "pageTitle": "Buy Credits & Usage",
     "navPanel": "Panel",
     "navContent": "Content",
     "navEditor": "Editor",

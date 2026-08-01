@@ -874,7 +874,7 @@
       "activateTooltip": "Aktifleştir"
     },
     "navAnalytics": "Analiz",
-    "navBilling": "İşlemler",
+    "navBilling": "Kredi Yükle",
     "navCreativeStudio": "Creative Studio"
   },
   "CreativeStudio": {
@@ -927,7 +927,7 @@
     "noBusinessTitle": "Henüz bir işletme kurmamışsınız",
     "noBusinessDescription": "Faturalandırma ve kullanım bilgilerinizi görebilmek için önce profilinizi oluşturun.",
     "createProfileBtn": "Profili Oluştur",
-    "pageTitle": "Faturalandırma & Kullanım",
+    "pageTitle": "Kredi Yükle & Kullanım",
     "navPanel": "Panel",
     "navContent": "İçerik",
     "navEditor": "Editör",

@@ -5,7 +5,7 @@ import { CHARACTERS, ESTIMATED_COST_PER_IMAGE_USD, buildNegativePrompt, isCharac
 import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { FULL_BODY_MOTION_MODELS, SCENE_VIDEO_MODELS, findFullBodyMotionModel, findSceneVideoModel } from '@/config/clips';
 import { DEFAULT_MOTION_STYLE_ID, MOTION_STYLES, findMotionStyle, type MotionIdentityMode } from '@/config/motionStyles';
-import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
+import { authorizeCharacterRequest, assertOwnsCharacter } from '@/utils/creativeStudioScope';
 import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
 
 /** Senaryo modunda (metinden video) ve süre ölçülemediğinde sunucu girdi süresini
@@ -147,6 +147,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
     if (identityMode === 'cast' && castCharacterId) {
       if (!(await isKnownCharacterId(castCharacterId))) {
         return NextResponse.json({ error: 'Seçilen yardımcı oyuncu bulunamadı.' }, { status: 400 });
+      }
+      // İşletme modunda seçilen cast karakteri de gerçekten bu işletmenin mi kontrol et —
+      // yoksa başka bir işletmenin kimliği/avatarı ödünç alınabilir.
+      if (auth.mode === 'business') {
+        try {
+          await assertOwnsCharacter(auth.business.id, castCharacterId);
+        } catch {
+          return NextResponse.json({ error: 'Seçilen yardımcı oyuncu bulunamadı.' }, { status: 400 });
+        }
       }
       const staticCast = isCharacterId(castCharacterId) ? CHARACTERS[castCharacterId] : undefined;
       const { data: castProfile } = await supabaseAdmin

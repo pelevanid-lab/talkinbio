@@ -2,16 +2,17 @@ import DashboardShell from '@/components/dashboard/DashboardShell';
 import BeiweMotionClient from '@/components/beiwe-lab/BeiweMotionClient';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { requireBusinessOwner } from '@/utils/businessAuth';
-import { getOrCreateBusinessTwin } from '@/utils/creativeStudioScope';
+import { getBusinessCastRoster, getOrCreateBusinessTwin } from '@/utils/creativeStudioScope';
 import type { CharacterShot } from '@/config/characters';
 import type { CharacterClip } from '@/config/clips';
 
-// admin/beiwe-lab/motion/page.tsx'in müşteri karşılığı — Cast henüz business-scoped
-// olmadığı için müşteri sürümünde "Yardımcı Oyuncu" kimlik modu boş bir listeyle gelir
-// (jenerik ve Twin modları çalışır).
+// admin/beiwe-lab/motion/page.tsx'in müşteri karşılığı — "Yardımcı Oyuncu" kimlik modu
+// artık işletmenin kendi Cast'ini listeliyor (bkz. getBusinessCastRoster).
 export default async function CreativeStudioMotionPage() {
   const business = await requireBusinessOwner();
   const characterId = await getOrCreateBusinessTwin(business.id);
+  const roster = await getBusinessCastRoster(business);
+  const castCharacters = roster.filter((r) => r.id !== characterId);
 
   const [{ data: shots }, { data: clips }] = await Promise.all([
     supabaseAdmin
@@ -40,7 +41,7 @@ export default async function CreativeStudioMotionPage() {
           characterId={characterId}
           initialShots={(shots || []) as CharacterShot[]}
           initialClips={(clips || []) as CharacterClip[]}
-          castCharacters={[]}
+          castCharacters={castCharacters}
           hideCost
         />
       </main>

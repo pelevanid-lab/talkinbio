@@ -874,7 +874,7 @@
       "activateTooltip": "Активировать"
     },
     "navAnalytics": "Аналитика",
-    "navBilling": "Транзакции",
+    "navBilling": "Купить кредиты",
     "navCreativeStudio": "Creative Studio"
   },
   "CreativeStudio": {
@@ -927,7 +927,7 @@
     "noBusinessTitle": "Вы ещё не создали бизнес-страницу",
     "noBusinessDescription": "Сначала создайте профиль, чтобы увидеть данные о балансе и использовании.",
     "createProfileBtn": "Создать профиль",
-    "pageTitle": "Оплата и использование",
+    "pageTitle": "Покупка кредитов и использование",
     "navPanel": "Панель",
     "navContent": "Контент",
     "navEditor": "Редактор",

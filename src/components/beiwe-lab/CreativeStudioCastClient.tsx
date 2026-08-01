@@ -101,7 +101,21 @@ export default function CreativeStudioCastClient({ initialCharacters }: { initia
                   <div className="w-14 h-14 rounded-full bg-[#F4F2ED] mb-2" />
                 )}
                 <p className="text-sm font-semibold text-[#14231F]">{c.name}</p>
-                <p className="text-xs text-[#8A8880]">{c.role}</p>
+                <p className="text-xs text-[#8A8880] mb-3">{c.role}</p>
+                <div className="flex items-center gap-2 mt-auto">
+                  <a
+                    href={`/dashboard/creative-studio/voice/${c.id}`}
+                    className="text-xs font-medium text-[#14231F] bg-[#F4F2ED] px-2.5 py-1 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition"
+                  >
+                    Ses
+                  </a>
+                  <a
+                    href={`/dashboard/creative-studio/podcast/${c.id}`}
+                    className="text-xs font-medium text-[#14231F] bg-[#F4F2ED] px-2.5 py-1 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition"
+                  >
+                    Video
+                  </a>
+                </div>
               </div>
             ))}
           </div>
