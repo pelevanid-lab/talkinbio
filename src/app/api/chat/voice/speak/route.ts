@@ -4,12 +4,19 @@ import { createClient as createServerSupabase } from '@/utils/supabase/server';
 
 export const maxDuration = 30;
 
+// Female voice mappings based on personality tone
+const FEMALE_VOICE_TONES: Record<string, { voice: string; stability: number; similarity_boost: number }> = {
+  friendly: { voice: 'Rachel', stability: 0.45, similarity_boost: 0.75 },  // Sıcak & Samimi
+  formal: { voice: 'Domino', stability: 0.75, similarity_boost: 0.85 },    // Resmi & Profesyonel
+  energetic: { voice: 'Bella', stability: 0.35, similarity_boost: 0.65 },  // Enerjik
+};
+
 // POST /api/chat/voice/speak
-// Body: JSON { text: string, businessId: string, preview?: boolean }
+// Body: JSON { text: string, businessId: string, preview?: boolean, tone?: string }
 // Returns: JSON { audioUrl: string }
 export async function POST(req: Request) {
   try {
-    const { text, businessId, preview } = await req.json();
+    const { text, businessId, preview, tone: requestTone } = await req.json();
 
     if (!text || !businessId) {
       return new Response('Missing text or businessId', { status: 400 });
@@ -19,6 +26,8 @@ export async function POST(req: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
+
+    let activeTone = requestTone || 'friendly';
 
     if (preview) {
       // For preview in dashboard, ensure user is authenticated
@@ -44,7 +53,14 @@ export async function POST(req: Request) {
       if (!business?.saule_settings?.voiceEnabled) {
         return new Response('Voice not enabled for this business', { status: 403 });
       }
+
+      if (business?.saule_settings?.personalityTone) {
+        activeTone = business.saule_settings.personalityTone;
+      }
     }
+
+    // Get female voice configuration based on KİŞİLİK & TON selection
+    const voiceConfig = FEMALE_VOICE_TONES[activeTone] || FEMALE_VOICE_TONES.friendly;
 
     // Try fal.ai TTS endpoints (eleven-v3 -> turbo-v2.5)
     const endpoints = [
@@ -65,8 +81,14 @@ export async function POST(req: Request) {
           },
           body: JSON.stringify({
             text: text.slice(0, 4000),
+            voice: voiceConfig.voice,
+            stability: voiceConfig.stability,
+            similarity_boost: voiceConfig.similarity_boost,
             input: {
               text: text.slice(0, 4000),
+              voice: voiceConfig.voice,
+              stability: voiceConfig.stability,
+              similarity_boost: voiceConfig.similarity_boost,
             },
           }),
         });

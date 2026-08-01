@@ -58,7 +58,7 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
       const res = await fetch('/api/chat/voice/speak', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: sampleText, businessId: business.id, preview: true }),
+        body: JSON.stringify({ text: sampleText, businessId: business.id, preview: true, tone: settings.personalityTone || 'friendly' }),
       });
       if (!res.ok) {
         const errText = await res.text();
@@ -586,27 +586,6 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
 
                 {settings.voiceEnabled && (
                   <div className="bg-[#F4F2ED] p-4 rounded-xl mt-4 animate-in fade-in slide-in-from-top-2 flex flex-col gap-4">
-                    {/* Voice Model */}
-                    <div>
-                      <label className="block text-xs font-semibold text-[#8A8880] mb-2 font-mono uppercase tracking-wider">{t('voiceModelLabel')}</label>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {(['alloy', 'nova', 'echo', 'shimmer'] as const).map((model) => (
-                          <button
-                            key={model}
-                            type="button"
-                            onClick={() => setSettings({ ...settings, voiceModel: model })}
-                            className={`p-2.5 rounded-xl border text-sm font-medium text-center transition-all ${
-                              (settings.voiceModel || 'alloy') === model
-                                ? 'border-[#FF6A5C] bg-white text-[#FF6A5C] ring-1 ring-[#FF6A5C]'
-                                : 'border-[rgba(20,35,31,0.10)] bg-white text-[#4B5A55] hover:bg-white hover:border-[#FF6A5C]'
-                            }`}
-                          >
-                            {t(`voiceModel${model.charAt(0).toUpperCase() + model.slice(1)}` as any)}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
                     {/* Welcome message per language (Fixed display + Listen button) */}
                     <div>
                       <label className="block text-xs font-semibold text-[#8A8880] mb-2 font-mono uppercase tracking-wider">{t('voiceWelcomeLabel')}</label>
