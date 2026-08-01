@@ -157,7 +157,7 @@ export default function PricingPage() {
                   className="btn btn-primary"
                   style={{ marginTop: 'auto', borderRadius: '100px', padding: '0.75rem 1.2rem', fontWeight: 700, fontSize: '0.9rem', border: 'none', cursor: 'pointer' }}
                 >
-                  {plan.id === 'free' ? tNav('login') : t('ctaButton')}
+                  {plan.id === 'free' ? t('freeCtaButton') : t('ctaButton')}
                 </button>
               </div>
             );

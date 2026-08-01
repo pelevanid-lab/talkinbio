@@ -57,7 +57,7 @@ export default function OnboardingPage() {
         category: formData.category,
         contact_method: contactMethods,
         contact_value: contactValues,
-        credit_balance: 50,
+        credit_balance: 20,
       }).select().single();
 
       if (bizError || !business) throw new Error(t('businessCreationFailedError'));
