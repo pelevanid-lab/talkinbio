@@ -3,6 +3,8 @@ import { supabaseAdmin } from '@/utils/supabase/admin';
 import { generateText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
+import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
+import { IDENTITY_ANALYSIS_COST_USD } from '@/config/beiweLab';
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -18,8 +20,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Karakter ID ve resim URLleri zorunludur.' }, { status: 400 });
     }
 
-    if (!(await authorizeCharacterRequest(characterId))) {
+    const auth = await authorizeCharacterRequest(characterId);
+    if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (auth.mode === 'business') {
+      try {
+        await assertSufficientCredits(auth.business.id, IDENTITY_ANALYSIS_COST_USD);
+      } catch (err) {
+        if (err instanceof InsufficientCreditsError) {
+          return NextResponse.json(
+            { error: 'Yetersiz kredi.', requiredCredits: err.requiredCredits, balance: err.balance },
+            { status: 402 },
+          );
+        }
+        throw err;
+      }
     }
 
     // Resimleri Vercel AI SDK formatına uygun (URL veya Base64) hazırlıyoruz.
@@ -65,6 +82,10 @@ Important instructions:
       }, { onConflict: 'id' });
 
     if (dbError) throw dbError;
+
+    if (auth.mode === 'business') {
+      await deductForGeneration(auth.business.id, IDENTITY_ANALYSIS_COST_USD);
+    }
 
     return NextResponse.json({ identityPrompt });
   } catch (err: any) {

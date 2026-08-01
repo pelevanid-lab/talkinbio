@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { ESTIMATED_COST_PER_IMAGE_USD, type CharacterShot } from '@/config/characters';
 import {
+  IDENTITY_ANALYSIS_COST_USD,
   LORA_MIN_PHOTOS,
   LORA_MIN_SCORE,
   LORA_STATUS_LABELS,
@@ -388,6 +389,13 @@ export default function BeiweTwinClient({
           <strong>kimlik tarifi</strong> çıkarılır. Her twin üretimi bu tarifi ve referans kareyi
           kullanır — sahne değişse de yüz değişmez.
         </p>
+
+        <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm text-blue-800">
+          <Coins className="w-4 h-4 shrink-0" />
+          <span>
+            Fotoğraf yükleyip analiz ettirmek <strong>≈{creditsForCost(IDENTITY_ANALYSIS_COST_USD)} kredi</strong> tutar.
+          </span>
+        </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <button
