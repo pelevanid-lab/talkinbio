@@ -1438,6 +1438,7 @@ export default function EditorClient({
             businessName={business.name}
             locale={locale}
             initialMessages={[]}
+            sauleSettings={business.saule_settings}
             customGreeting={business.saule_settings?.customGreetingEnabled ? business.saule_settings?.customGreeting : null}
           />
         </div>

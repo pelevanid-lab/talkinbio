@@ -5,7 +5,7 @@ import { useChat, UIMessage } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SauleIcon } from './AgentIcons';
-import { Send, X, MessageCircle, User, RotateCcw } from 'lucide-react';
+import { Send, X, MessageCircle, User, RotateCcw, Mic, Volume2, Loader2, Square } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import AgentMarkdown from './AgentMarkdown';
@@ -22,11 +22,108 @@ function getMessageText(m: UIMessage): string {
 
 type LocalizedGreeting = Partial<Record<'tr' | 'en' | 'ru', string>>;
 
-export default function ChatWidget({ businessId, businessName, locale, initialMessages = [], customGreeting, variant = 'sheet', preview = false, initialCreditsExhausted = false }: { businessId: string, businessName: string, locale: string, initialMessages?: LegacyMessage[], customGreeting?: LocalizedGreeting | null, variant?: 'sheet' | 'inline', preview?: boolean, initialCreditsExhausted?: boolean }) {
+export default function ChatWidget({ businessId, businessName, locale, initialMessages = [], customGreeting, sauleSettings, variant = 'sheet', preview = false, initialCreditsExhausted = false }: { businessId: string, businessName: string, locale: string, initialMessages?: LegacyMessage[], customGreeting?: LocalizedGreeting | null, sauleSettings?: any, variant?: 'sheet' | 'inline', preview?: boolean, initialCreditsExhausted?: boolean }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const t = useTranslations('ChatWidget');
+
+  // Voice messaging state
+  const isVoiceEnabled = !!sauleSettings?.voiceEnabled;
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Play audio response from TTS API
+  const speakText = async (text: string) => {
+    if (!isVoiceEnabled || !text) return;
+    try {
+      setIsPlayingAudio(true);
+      const res = await fetch('/api/chat/voice/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, businessId }),
+      });
+      if (!res.ok) throw new Error('Speech failed');
+      const data = await res.json();
+      if (data.audioUrl) {
+        if (currentAudioRef.current) {
+          currentAudioRef.current.pause();
+        }
+        const audio = new Audio(data.audioUrl);
+        currentAudioRef.current = audio;
+        audio.onended = () => setIsPlayingAudio(false);
+        audio.onerror = () => setIsPlayingAudio(false);
+        await audio.play();
+      } else {
+        setIsPlayingAudio(false);
+      }
+    } catch (err) {
+      console.error('Audio play error:', err);
+      setIsPlayingAudio(false);
+    }
+  };
+
+  // Start recording voice
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        stream.getTracks().forEach((track) => track.stop());
+        setIsRecording(false);
+        setIsTranscribing(true);
+
+        try {
+          const formData = new FormData();
+          formData.append('audio', audioBlob);
+          formData.append('businessId', businessId);
+
+          const res = await fetch('/api/chat/voice/transcribe', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!res.ok) throw new Error('Transcription failed');
+          const { text } = await res.json();
+
+          if (text?.trim()) {
+            sendMessage({ text: text.trim() });
+          }
+        } catch (err) {
+          console.error('Transcription error:', err);
+        } finally {
+          setIsTranscribing(false);
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Mic access denied or error:', err);
+      alert('Mikrofon erişimi izni gerekli.');
+    }
+  };
+
+  // Stop recording voice
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+  };
 
   // Mobil klavye düzeltmesi: bazı tarayıcılarda (örn. Instagram in-app WebView)
   // klavye açılınca layout viewport küçülmüyor, sadece visual viewport küçülüyor.
@@ -308,34 +405,65 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
 
               <div className="p-4 bg-white border-t border-[var(--border-light)]">
                 {!creditsExhausted && (
-                <form onSubmit={onFormSubmit} className="flex relative items-end">
-                  <textarea
-                    value={input}
-                    onChange={(e) => {
-                      setInput(e.target.value);
-                      e.target.style.height = 'auto';
-                      e.target.style.height = `${e.target.scrollHeight}px`;
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        if (input.trim() && !isLoading) {
-                          e.currentTarget.form?.requestSubmit();
+                <form onSubmit={onFormSubmit} className="flex relative items-end gap-2">
+                  {/* Left Side Microphone Button (when voice enabled) */}
+                  {isVoiceEnabled && (
+                    <button
+                      type="button"
+                      onMouseDown={startRecording}
+                      onMouseUp={stopRecording}
+                      onTouchStart={startRecording}
+                      onTouchEnd={stopRecording}
+                      disabled={isLoading || isTranscribing}
+                      title={t('micHold')}
+                      className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all shadow-sm ${
+                        isRecording
+                          ? 'bg-red-500 text-white animate-pulse ring-4 ring-red-200'
+                          : isTranscribing
+                          ? 'bg-amber-100 text-amber-600'
+                          : 'bg-[var(--paper)] text-[var(--ink-soft)] hover:bg-[var(--coral-tint)] hover:text-[var(--coral)]'
+                      }`}
+                    >
+                      {isTranscribing ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : isRecording ? (
+                        <Square className="w-4 h-4 fill-white" />
+                      ) : (
+                        <Mic className="w-5 h-5" />
+                      )}
+                    </button>
+                  )}
+
+                  <div className="relative flex-1">
+                    <textarea
+                      value={input}
+                      onChange={(e) => {
+                        setInput(e.target.value);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = `${e.target.scrollHeight}px`;
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          if (input.trim() && !isLoading) {
+                            e.currentTarget.form?.requestSubmit();
+                          }
                         }
-                      }
-                    }}
-                    rows={1}
-                    placeholder={t('placeholder')}
-                    className="w-full pl-4 pr-12 py-3 bg-[var(--paper)] border border-[var(--border-light)] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[var(--coral)]/20 focus:border-[var(--coral)] transition-all text-sm resize-none overflow-hidden min-h-[46px] max-h-[150px]"
-                    style={{ maxHeight: '150px' }}
-                  />
-                  <button
-                    type="submit"
-                    disabled={isLoading || !input.trim()}
-                    className="absolute right-1 bottom-1 w-10 h-10 bg-[var(--coral)] text-white rounded-full flex items-center justify-center hover:bg-orange-600 disabled:opacity-50 transition-colors shadow-sm"
-                  >
-                    <Send className="w-4 h-4 ml-0.5" />
-                  </button>
+                      }}
+                      rows={1}
+                      placeholder={isRecording ? t('listening') : isTranscribing ? t('transcribing') : t('placeholder')}
+                      disabled={isRecording || isTranscribing}
+                      className="w-full pl-4 pr-12 py-3 bg-[var(--paper)] border border-[var(--border-light)] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[var(--coral)]/20 focus:border-[var(--coral)] transition-all text-sm resize-none overflow-hidden min-h-[46px] max-h-[150px]"
+                      style={{ maxHeight: '150px' }}
+                    />
+                    <button
+                      type="submit"
+                      disabled={isLoading || !input.trim() || isRecording || isTranscribing}
+                      className="absolute right-1 bottom-1 w-10 h-10 bg-[var(--coral)] text-white rounded-full flex items-center justify-center hover:bg-orange-600 disabled:opacity-50 transition-colors shadow-sm"
+                    >
+                      <Send className="w-4 h-4 ml-0.5" />
+                    </button>
+                  </div>
                 </form>
                 )}
                 <p className="text-center text-[10px] text-[var(--muted)] mt-2">

@@ -216,7 +216,7 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
           The expanded chat sheet still opens as a fixed 85dvh overlay from inside ChatWidget. */}
       <div className="shrink-0 relative z-50">
         <div className="max-w-md mx-auto w-full relative">
-          <ChatWidget businessId={business.id} businessName={business.name} locale={locale} initialMessages={initialMessages} customGreeting={customGreeting} preview={isOwner} initialCreditsExhausted={(business.credit_balance ?? 0) <= 0} />
+          <ChatWidget businessId={business.id} businessName={business.name} locale={locale} initialMessages={initialMessages} customGreeting={customGreeting} sauleSettings={business.saule_settings} preview={isOwner} initialCreditsExhausted={(business.credit_balance ?? 0) <= 0} />
         </div>
       </div>
     </div>

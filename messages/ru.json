@@ -371,6 +371,9 @@
     "chatErrorFallback": "Произошла ошибка при отправке сообщения. Если вы отправили слишком длинный текст, попробуйте разбить его на части и отправить снова.",
     "publishToggleError": "Ошибка при обновлении статуса публикации.",
     "acknowledgeError": "Произошла ошибка при выполнении операции.",
+    "micHold": "Удерживайте микрофон для разговора",
+    "listening": "Слушаю...",
+    "transcribing": "Обработка голоса...",
     "saveBlockError": "Ошибка при сохранении.",
     "sync": {
       "title": "Обновить другие языки?",
@@ -528,7 +531,7 @@
     }
   },
   "ChatWidget": {
-    "welcome": "Здравствуйте! Я ассистент от имени {name}. Чем я могу вам помочь?",
+    "welcome": "Здравствуйте! Добро пожаловать на страницу {name}. Чем могу вам помочь?",
     "assistantSuffix": "Ассистент",
     "online": "Онлайн",
     "placeholder": "Напишите сообщение...",
@@ -846,6 +849,19 @@
     "greetingTitle": "Персональное приветствие",
     "greetingDesc": "Задайте первое сообщение сами.",
     "greetingHint": "Показывается в зависимости от языка, на котором посетитель просматривает страницу; для языка, который вы оставите пустым, используется приветствие Assistant Agent по умолчанию.",
+    "voiceTitle": "Голосовое общение (Beta)",
+    "voiceDesc": "Позвольте посетителям общаться через микрофон; ассистент ответит голосом. При включении в начале диалога проигрывается звуковое приветствие.",
+    "voiceToggleLabel": "Включить голосовое общение",
+    "voiceModelLabel": "Голос ассистента",
+    "voiceWelcomeLabel": "Текст звукового приветствия",
+    "voiceWelcomeHint": "Текст будет прочитан вслух на языке посетителя. Если оставить пустым, будет использовано приветствие по умолчанию.",
+    "voiceWelcomePlaceholderTr": "Напр.: Merhaba! Uliana Pehlivan sayfasına hoş geldiniz. Size nasıl yardımcı olabilirim?",
+    "voiceWelcomePlaceholderEn": "Напр.: Hello! Welcome to Uliana Pehlivan's page. How can I help you?",
+    "voiceWelcomePlaceholderRu": "Напр.: Здравствуйте! Добро пожаловать на страницу Uliana Pehlivan. Чем могу вам помочь?",
+    "voiceModelAlloy": "Alloy (Нейтральный)",
+    "voiceModelNova": "Nova (Женский)",
+    "voiceModelEcho": "Echo (Мужской)",
+    "voiceModelShimmer": "Shimmer (Тёплый)",
     "footerTextBeforeEmail": "Talkinbio — постоянно развивающееся приложение. Если у вас есть отзывы, пожелания или жалобы, вы можете написать нам на ",
     "footerTextAfterEmail": ".",
     "conversations": {

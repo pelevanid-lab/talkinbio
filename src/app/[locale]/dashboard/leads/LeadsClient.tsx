@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { formatDistanceToNow, type Locale } from 'date-fns';
 import { tr, enUS, ru } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
-import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Send, MessageCircle, Archive, ArchiveRestore, Trash2, StickyNote, Mail, Plus } from 'lucide-react';
+import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Send, MessageCircle, Archive, ArchiveRestore, Trash2, StickyNote, Mail, Plus, Mic } from 'lucide-react';
 import ConversationsPanel from './ConversationsPanel';
 import KnowledgeBasePanel from './KnowledgeBasePanel';
 import DashboardShell from '@/components/dashboard/DashboardShell';
@@ -500,9 +500,9 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                         they demonstrate what to type for that specific visitor-facing language field. */}
                     <p className="text-xs text-[#8A8880]">{t('greetingHint')}</p>
                     {([
-                      { locale: 'tr' as const, label: 'Türkçe', placeholder: 'Örn: Merhaba, ben Assistant Agent. Size nasıl yardımcı olabilirim?' },
-                      { locale: 'en' as const, label: 'English', placeholder: "e.g. Hi, I'm Assistant Agent. How can I help you?" },
-                      { locale: 'ru' as const, label: 'Русский', placeholder: 'Напр.: Привет, я Assistant Agent. Чем могу помочь?' },
+                      { locale: 'tr' as const, label: 'Türkçe', placeholder: 'Örn: Merhaba! Uliana Pehlivan sayfasına hoş geldiniz. Size nasıl yardımcı olabilirim?' },
+                      { locale: 'en' as const, label: 'English', placeholder: "e.g. Hello! Welcome to Uliana Pehlivan's page. How can I help you?" },
+                      { locale: 'ru' as const, label: 'Русский', placeholder: 'Напр.: Здравствуйте! Добро пожаловать на страницу Uliana Pehlivan. Чем могу вам помочь?' },
                     ]).map(({ locale: greetingLocale, label, placeholder }) => (
                       <div key={greetingLocale}>
                         <label className="block text-xs font-semibold text-[#8A8880] mb-1 font-mono uppercase tracking-wider">{label}</label>
@@ -515,6 +515,80 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                         />
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Voice Communication */}
+              <div className="py-4 border-t border-[rgba(20,35,31,0.10)]">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 bg-[#FFEDE9] text-[#FF6A5C] rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                      <Mic className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-[#14231F]">{t('voiceTitle')}</h3>
+                      <p className="text-sm text-[#4B5A55]">{t('voiceDesc')}</p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={!!settings.voiceEnabled}
+                      onChange={(e) => setSettings({ ...settings, voiceEnabled: e.target.checked })}
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FF6A5C]"></div>
+                  </label>
+                </div>
+
+                {settings.voiceEnabled && (
+                  <div className="bg-[#F4F2ED] p-4 rounded-xl mt-4 animate-in fade-in slide-in-from-top-2 flex flex-col gap-4">
+                    {/* Voice Model */}
+                    <div>
+                      <label className="block text-xs font-semibold text-[#8A8880] mb-2 font-mono uppercase tracking-wider">{t('voiceModelLabel')}</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {(['alloy', 'nova', 'echo', 'shimmer'] as const).map((model) => (
+                          <button
+                            key={model}
+                            type="button"
+                            onClick={() => setSettings({ ...settings, voiceModel: model })}
+                            className={`p-2.5 rounded-xl border text-sm font-medium text-center transition-all ${
+                              (settings.voiceModel || 'alloy') === model
+                                ? 'border-[#FF6A5C] bg-white text-[#FF6A5C] ring-1 ring-[#FF6A5C]'
+                                : 'border-[rgba(20,35,31,0.10)] bg-white text-[#4B5A55] hover:bg-white hover:border-[#FF6A5C]'
+                            }`}
+                          >
+                            {t(`voiceModel${model.charAt(0).toUpperCase() + model.slice(1)}` as any)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Welcome message per language */}
+                    <div>
+                      <label className="block text-xs font-semibold text-[#8A8880] mb-2 font-mono uppercase tracking-wider">{t('voiceWelcomeLabel')}</label>
+                      <p className="text-xs text-[#8A8880] mb-3">{t('voiceWelcomeHint')}</p>
+                      {([
+                        { locale: 'tr' as const, label: 'Türkçe', placeholder: t('voiceWelcomePlaceholderTr') },
+                        { locale: 'en' as const, label: 'English', placeholder: t('voiceWelcomePlaceholderEn') },
+                        { locale: 'ru' as const, label: 'Русский', placeholder: t('voiceWelcomePlaceholderRu') },
+                      ]).map(({ locale: wLocale, label, placeholder }) => (
+                        <div key={wLocale} className="mb-2">
+                          <label className="block text-xs font-semibold text-[#8A8880] mb-1 font-mono uppercase tracking-wider">{label}</label>
+                          <textarea
+                            value={settings.voiceWelcomeMessage?.[wLocale] || ''}
+                            onChange={(e) => setSettings({
+                              ...settings,
+                              voiceWelcomeMessage: { ...settings.voiceWelcomeMessage, [wLocale]: e.target.value }
+                            })}
+                            placeholder={placeholder}
+                            className="w-full p-3 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F] bg-white"
+                            rows={2}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

@@ -5,6 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 // aynı mantık) — gerçek maliyet Faz 4.2'nin usage_events verisiyle değiştikçe
 // kod değişikliği gerekmeden kalibre edilebilsin diye.
 export const SAULE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE) || 1;
+export const SAULE_VOICE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_VOICE) || 5;
 export const BEIWE_UPDATE_CREDIT_COST = Number(process.env.CREDIT_COST_BEIWE_UPDATE) || 6;
 export const BEIWE_INSTALL_CREDIT_COST = Number(process.env.CREDIT_COST_BEIWE_INSTALL) || 10;
 

@@ -528,7 +528,7 @@
     }
   },
   "ChatWidget": {
-    "welcome": "Hi! I'm {name}'s assistant. How can I help you?",
+    "welcome": "Hello! Welcome to {name}'s page. How can I help you?",
     "assistantSuffix": "Assistant",
     "online": "Online",
     "placeholder": "Type a message...",
@@ -540,8 +540,11 @@
     "formMessage": "Your message (optional)",
     "formSubmit": "Send",
     "formSubmitting": "Sending...",
-    "formSuccess": "Your message has been sent. The business owner will contact you soon.",
-    "formErrorGeneric": "Something went wrong while sending, please try again."
+    "formSuccess": "Your message has been sent. The business owner will get back to you shortly.",
+    "formErrorGeneric": "An error occurred while sending, please try again.",
+    "micHold": "Press and hold microphone to speak",
+    "listening": "Listening...",
+    "transcribing": "Processing audio..."
   },
   "Pricing": {
     "eyebrow": "Plans",
@@ -846,6 +849,19 @@
     "greetingTitle": "Custom Greeting",
     "greetingDesc": "Set the first message yourself.",
     "greetingHint": "Shown based on the language the visitor is viewing the page in; for any language you leave blank, Assistant Agent's default greeting is used.",
+    "voiceTitle": "Voice Communication (Beta)",
+    "voiceDesc": "Let visitors speak with a microphone; your assistant will reply with voice. When enabled, a welcome audio plays at the start of each conversation.",
+    "voiceToggleLabel": "Enable Voice Communication",
+    "voiceModelLabel": "Assistant Voice",
+    "voiceWelcomeLabel": "Voice Welcome Message",
+    "voiceWelcomeHint": "The text read aloud based on the visitor's language. If left blank, the default page greeting is used.",
+    "voiceWelcomePlaceholderTr": "E.g.: Merhaba! Uliana Pehlivan sayfasına hoş geldiniz. Size nasıl yardımcı olabilirim?",
+    "voiceWelcomePlaceholderEn": "E.g.: Hello! Welcome to Uliana Pehlivan's page. How can I help you?",
+    "voiceWelcomePlaceholderRu": "E.g.: Здравствуйте! Добро пожаловать на страницу Uliana Pehlivan. Чем могу вам помочь?",
+    "voiceModelAlloy": "Alloy (Neutral)",
+    "voiceModelNova": "Nova (Female)",
+    "voiceModelEcho": "Echo (Male)",
+    "voiceModelShimmer": "Shimmer (Warm)",
     "footerTextBeforeEmail": "Talkinbio is a constantly evolving app. If you have feedback, requests, or complaints, you can reach us at ",
     "footerTextAfterEmail": ".",
     "conversations": {

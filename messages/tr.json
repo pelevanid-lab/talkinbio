@@ -528,7 +528,7 @@
     }
   },
   "ChatWidget": {
-    "welcome": "Merhaba! Ben {name}'ın asistanıyım. Size nasıl yardımcı olabilirim?",
+    "welcome": "Merhaba! {name} sayfasına hoş geldiniz. Size nasıl yardımcı olabilirim?",
     "assistantSuffix": "Asistanı",
     "online": "Çevrimiçi",
     "placeholder": "Bir mesaj yazın...",
@@ -541,7 +541,10 @@
     "formSubmit": "Gönder",
     "formSubmitting": "Gönderiliyor...",
     "formSuccess": "Mesajınız iletildi. İşletme sahibi en kısa sürede sizinle iletişime geçecek.",
-    "formErrorGeneric": "Gönderilirken bir hata oluştu, lütfen tekrar deneyin."
+    "formErrorGeneric": "Gönderilirken bir hata oluştu, lütfen tekrar deneyin.",
+    "micHold": "Mikrofona basılı tutarak konuşun",
+    "listening": "Dinleniyor...",
+    "transcribing": "Ses işleniyor..."
   },
   "Pricing": {
     "eyebrow": "Planlar",
@@ -846,6 +849,19 @@
     "greetingTitle": "Özel Karşılama",
     "greetingDesc": "İlk mesajı siz belirleyin.",
     "greetingHint": "Ziyaretçinin sayfayı görüntülediği dile göre gösterilir; boş bıraktığınız dilde Assistant Agent'ın varsayılan karşılaması kullanılır.",
+    "voiceTitle": "Sesli İletişim (Beta)",
+    "voiceDesc": "Ziyaretçileriniz mikrofonla konuşabilsin; asistanınız sesli yanıt versin. Açıkken sohbet başlangıcında bir karşılama sesi çalar.",
+    "voiceToggleLabel": "Sesli İletişimi Etkinleştir",
+    "voiceModelLabel": "Asistan Sesi",
+    "voiceWelcomeLabel": "Sesli Karşılama Metni",
+    "voiceWelcomeHint": "Ziyaretçinin diline göre okunacak metin. Boş bırakırsanız varsayılan karşılama kullanılır.",
+    "voiceWelcomePlaceholderTr": "Örn: Merhaba! Uliana Pehlivan sayfasına hoş geldiniz. Size nasıl yardımcı olabilirim?",
+    "voiceWelcomePlaceholderEn": "E.g.: Hello! Welcome to Uliana Pehlivan's page. How can I help you?",
+    "voiceWelcomePlaceholderRu": "Напр.: Здравствуйте! Добро пожаловать на страницу Uliana Pehlivan. Чем могу вам помочь?",
+    "voiceModelAlloy": "Alloy (Nötr)",
+    "voiceModelNova": "Nova (Kadın)",
+    "voiceModelEcho": "Echo (Erkek)",
+    "voiceModelShimmer": "Shimmer (Sıcak)",
     "footerTextBeforeEmail": "Talkinbio sürekli gelişen bir uygulama. Geri bildiriminiz, istekleriniz veya şikayetleriniz varsa bize ",
     "footerTextAfterEmail": " adresinden ulaşabilirsiniz.",
     "conversations": {
