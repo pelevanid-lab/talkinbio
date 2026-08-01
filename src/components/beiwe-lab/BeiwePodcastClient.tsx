@@ -37,6 +37,7 @@ import {
   type MotionResolution,
 } from '@/config/motionModels';
 import {
+  AUDIO_ENHANCE_COST_USD,
   PODCAST_AKSIYON_IDS,
   PODCAST_KADRAJ_IDS,
   PODCAST_SCENE_LIKE_THRESHOLD,
@@ -818,6 +819,15 @@ export default function BeiwePodcastClient({
                     {' · '}otomatik pürüzsüzleştirilecek
                   </p>
                 )}
+                {omniAudioFile && omniAudioSeconds !== null && (() => {
+                  const model = findMotionModel(omniVoiceModelId) ?? MOTION_MODELS[0];
+                  const totalUsd = model.costPerSecondUsd * omniAudioSeconds + AUDIO_ENHANCE_COST_USD;
+                  return (
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {hideCost ? `≈${creditsForCost(totalUsd)} kredi` : `~$${totalUsd.toFixed(2)} · ≈${creditsForCost(totalUsd)} kredi`} (video + otomatik ses temizleme)
+                    </p>
+                  );
+                })()}
                 {omniAudioFile && !motionAudioMime(omniAudioFile.name) && (
                   <p className="text-xs text-red-600 mt-1">
                     Desteklenmiyor — kabul edilenler: {MOTION_AUDIO_EXTENSIONS.map((e) => e.toUpperCase()).join(', ')}.

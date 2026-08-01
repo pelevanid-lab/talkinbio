@@ -156,11 +156,19 @@ export default function BillingClient({ business, transactions, ownerEmail }: { 
             {PLANS.map((plan) => {
               const sauleChats = Math.floor(plan.credits / SAULE_CREDIT_COST);
               const beiweUpdates = Math.floor(plan.credits / BEIWE_UPDATE_CREDIT_COST);
+              const isFree = plan.id === 'free';
               return (
                 <button
                   key={plan.id}
-                  onClick={() => handleTopUpCta(plan.id)}
-                  className={`text-left border rounded-xl p-5 transition flex flex-col gap-3 ${selectedPlan === plan.id ? 'border-[#FF6A5C] bg-[#FFEDE9]' : 'border-[rgba(20,35,31,0.10)] hover:border-[rgba(20,35,31,0.25)]'}`}
+                  onClick={isFree ? undefined : () => handleTopUpCta(plan.id)}
+                  disabled={isFree}
+                  className={`text-left border rounded-xl p-5 flex flex-col gap-3 ${
+                    isFree 
+                      ? 'border-[rgba(20,35,31,0.10)] opacity-80 cursor-default bg-[#F4F2ED]' 
+                      : selectedPlan === plan.id 
+                        ? 'border-[#FF6A5C] bg-[#FFEDE9] transition' 
+                        : 'border-[rgba(20,35,31,0.10)] hover:border-[rgba(20,35,31,0.25)] transition'
+                  }`}
                 >
                   <p className="text-lg font-[800] text-[#14231F]">{plan.name}</p>
                   <p className="text-2xl font-[800] text-[#14231F] font-['Bricolage_Grotesque']">${plan.price}</p>

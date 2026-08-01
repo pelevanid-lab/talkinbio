@@ -9,6 +9,7 @@ import {
   motionResolutions,
   MOTION_AUDIO_EXTENSIONS,
 } from '@/config/motionModels';
+import { AUDIO_ENHANCE_COST_USD } from '@/config/beiweLab';
 import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
 
@@ -116,7 +117,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
     // Süre ölçülemediyse (tarayıcı raporlamadıysa) modelin asgari süresini taban alıyoruz —
     // eksik ücretlendirmektense muhafazakar davranmak daha güvenli.
     const billedSeconds = Number.isFinite(reportedSeconds) && reportedSeconds > 0 ? reportedSeconds : model.minAudioSeconds;
-    const motionCostUsd = model.costPerSecondUsd * billedSeconds;
+    // shouldEnhance açıksa ayrı bir fal çağrısı (deepfilternet3) daha yapılıyor — maliyete ekle.
+    const motionCostUsd = model.costPerSecondUsd * billedSeconds + (shouldEnhance ? AUDIO_ENHANCE_COST_USD : 0);
     if (auth.mode === 'business') {
       try {
         await assertSufficientCredits(auth.business.id, motionCostUsd);

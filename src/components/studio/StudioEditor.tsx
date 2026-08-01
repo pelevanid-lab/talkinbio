@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import type { CharacterClip } from '@/config/clips';
 import { OVERLAY_FONTS, type OverlayFont } from '@/config/characters';
+import { AUDIO_ENHANCE_COST_USD, STUDIO_TRANSCRIBE_COST_USD } from '@/config/beiweLab';
+import { creditsForCost } from '@/config/pricing';
 import {
   MAX_CAPTIONS,
   MAX_CUTAWAYS,
@@ -2171,7 +2173,7 @@ export default function StudioEditor({
                 className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs font-medium text-slate-600 hover:border-slate-400 disabled:opacity-50"
               >
                 {enhancingAudio ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                {enhancingAudio ? 'İyileştiriliyor…' : 'Sesi iyileştir (gürültü temizle)'}
+                {enhancingAudio ? 'İyileştiriliyor…' : `Sesi iyileştir (gürültü temizle) · ≈${creditsForCost(AUDIO_ENHANCE_COST_USD)} kredi`}
               </button>
             )}
           </div>
@@ -2234,9 +2236,7 @@ export default function StudioEditor({
                 {transcribing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Captions className="w-3.5 h-3.5" />}
                 {transcribing
                   ? 'Çıkarılıyor…'
-                  : timeline.captions.length > 0
-                    ? 'Yeniden oluştur'
-                    : 'Altyazıları oluştur'}
+                  : `${timeline.captions.length > 0 ? 'Yeniden oluştur' : 'Altyazıları oluştur'} · ≈${creditsForCost(STUDIO_TRANSCRIBE_COST_USD)} kredi`}
               </button>
               {timeline.captions.length > 0 && (
                 <button

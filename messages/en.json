@@ -550,7 +550,7 @@
     "perMonth": "/mo",
     "credits": "{count} credits",
     "capacityExample": "≈ {saule} Assistant Agent chats OR {beiwe} Creative Agent updates",
-    "idealFor_free": "Ideal for businesses receiving 1-2 DMs daily. Every new registered user is rewarded with a one-time grant of 20 credits.",
+    "idealFor_free": "Every new registered user is rewarded with a one-time grant of 20 credits.",
     "idealFor_starter": "Ideal for businesses receiving 5-10 DMs daily",
     "idealFor_pro": "Ideal for businesses receiving 20-30 DMs daily",
     "idealFor_business": "Ideal for businesses receiving 50-60 DMs daily",

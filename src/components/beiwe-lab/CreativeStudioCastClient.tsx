@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { Loader2, Plus, Sparkles } from 'lucide-react';
+import { ESTIMATED_COST_PER_IMAGE_USD } from '@/config/characters';
+import { creditsForCost } from '@/config/pricing';
 
 export type CastCharacterSummary = { id: string; name: string; role: string; avatarUrl?: string };
 
@@ -76,7 +78,7 @@ export default function CreativeStudioCastClient({ initialCharacters }: { initia
             className="flex items-center gap-2 bg-[#FF6A5C] text-white rounded-full px-5 py-2.5 text-sm font-[700] hover:opacity-90 transition disabled:opacity-50"
           >
             {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            {creating ? 'Üretiliyor… (~20sn)' : 'Oluştur'}
+            {creating ? 'Üretiliyor… (~20sn)' : `Oluştur (≈${creditsForCost(ESTIMATED_COST_PER_IMAGE_USD)} kredi)`}
           </button>
         </div>
       </div>

@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { Loader2, Plus, X } from 'lucide-react';
+import { ESTIMATED_COST_PER_IMAGE_USD } from '@/config/characters';
+import { creditsForCost } from '@/config/pricing';
 
 export type CastCharacterSummary = {
   id: string;
@@ -172,7 +174,7 @@ export default function CastRoomTabs({
                 className="flex items-center gap-2 bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
               >
                 {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                {creating ? 'Üretiliyor… (~20sn)' : 'Oluştur'}
+                {creating ? 'Üretiliyor… (~20sn)' : `Oluştur (≈${creditsForCost(ESTIMATED_COST_PER_IMAGE_USD)} kredi)`}
               </button>
             </div>
           </div>
