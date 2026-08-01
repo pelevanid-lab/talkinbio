@@ -662,7 +662,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
               />
               <button
                 type="button"
-                className="absolute right-1.5 w-10 h-10 bg-[var(--coral)] text-white rounded-full flex items-center justify-center"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-10 h-10 bg-[var(--coral)] text-white rounded-full flex items-center justify-center"
               >
                 <Send className="w-4 h-4 ml-0.5" />
               </button>
