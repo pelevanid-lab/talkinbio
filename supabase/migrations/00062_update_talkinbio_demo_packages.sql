@@ -119,10 +119,10 @@ set
       },
       {
         "id": "extra",
-        "tr": {"title": "Ek Kredi", "description": "100 kredi. Mevcut bakiyenizin üstüne eklenir; abonelik değildir.", "price": "$5"},
-        "en": {"title": "Extra Credits", "description": "100 credits. Added on top of your current balance; not a subscription.", "price": "$5"},
-        "ru": {"title": "Дополнительные кредиты", "description": "100 кредитов. Добавляется к текущему балансу; это не подписка.", "price": "$5"},
-        "price": "$5"
+        "tr": {"title": "Ek Kredi", "description": "100 kredi. Mevcut bakiyenizin üstüne eklenir; abonelik değildir.", "price": "$8"},
+        "en": {"title": "Extra Credits", "description": "100 credits. Added on top of your current balance; not a subscription.", "price": "$8"},
+        "ru": {"title": "Дополнительные кредиты", "description": "100 кредитов. Добавляется к текущему балансу; это не подписка.", "price": "$8"},
+        "price": "$8"
       }
     ]
   }$$::jsonb,
@@ -172,10 +172,10 @@ select
       },
       {
         "id": "extra",
-        "tr": {"title": "Ek Kredi", "description": "100 kredi. Mevcut bakiyenizin üstüne eklenir; abonelik değildir.", "price": "$5"},
-        "en": {"title": "Extra Credits", "description": "100 credits. Added on top of your current balance; not a subscription.", "price": "$5"},
-        "ru": {"title": "Дополнительные кредиты", "description": "100 кредитов. Добавляется к текущему балансу; это не подписка.", "price": "$5"},
-        "price": "$5"
+        "tr": {"title": "Ek Kredi", "description": "100 kredi. Mevcut bakiyenizin üstüne eklenir; abonelik değildir.", "price": "$8"},
+        "en": {"title": "Extra Credits", "description": "100 credits. Added on top of your current balance; not a subscription.", "price": "$8"},
+        "ru": {"title": "Дополнительные кредиты", "description": "100 кредитов. Добавляется к текущему балансу; это не подписка.", "price": "$8"},
+        "price": "$8"
       }
     ]
   }$$::jsonb,
@@ -205,9 +205,9 @@ set content = $${
     {
       "question": {"tr": "Fiyatlar ve kredi paketleri nedir?", "en": "What are the prices and credit packages?", "ru": "Какие цены и кредитные пакеты?"},
       "answer": {
-        "tr": "Deneme $0 → 20 kredi; Starter $15 → 200 kredi; Pro $40 → 600 kredi; Business $90 → 1.500 kredi; Ek Kredi $5 → 100 kredi. Paketler abonelik değil, süresi bitmeyen kredi bakiyesidir.",
-        "en": "Trial $0 → 20 credits; Starter $15 → 200 credits; Pro $40 → 600 credits; Business $90 → 1,500 credits; Extra Credits $5 → 100 credits. Packages are not subscriptions; they are non-expiring credit balances.",
-        "ru": "Пробный $0 → 20 кредитов; Starter $15 → 200 кредитов; Pro $40 → 600 кредитов; Business $90 → 1500 кредитов; дополнительные кредиты $5 → 100 кредитов. Пакеты не являются подпиской; это бессрочный кредитный баланс."
+        "tr": "Deneme $0 → 20 kredi; Starter $15 → 200 kredi; Pro $40 → 600 kredi; Business $90 → 1.500 kredi; Ek Kredi $8 → 100 kredi. Paketler abonelik değil, süresi bitmeyen kredi bakiyesidir.",
+        "en": "Trial $0 → 20 credits; Starter $15 → 200 credits; Pro $40 → 600 credits; Business $90 → 1,500 credits; Extra Credits $8 → 100 credits. Packages are not subscriptions; they are non-expiring credit balances.",
+        "ru": "Пробный $0 → 20 кредитов; Starter $15 → 200 кредитов; Pro $40 → 600 кредитов; Business $90 → 1500 кредитов; дополнительные кредиты $8 → 100 кредитов. Пакеты не являются подпиской; это бессрочный кредитный баланс."
       }
     },
     {
@@ -233,7 +233,7 @@ where business_id = '11111111-1111-1111-1111-111111111111'::uuid
 
 update public.saule_knowledge
 set
-  content = 'Fiyat sorulduğunda güncel paketleri net söyle: Deneme $0 → 20 kredi (yeni kayıtta tek seferlik), Starter $15 → 200 kredi, Pro $40 → 600 kredi, Business $90 → 1.500 kredi, Ek Kredi $5 → 100 kredi. Paketler abonelik değil, süresi bitmeyen kredi bakiyesidir. Yazılı Assistant Agent oturumu 50 mesaja kadar 1 kredi; mikrofonla soru oturumu STT dahil 5 kredi; tek alanı AI ile güncelleme 6 kredi; çok bölümlü sayfa kurulumu 10 kredi. Ziyaretçiyi Paketler bölümüne yönlendir.',
+  content = 'Fiyat sorulduğunda güncel paketleri net söyle: Deneme $0 → 20 kredi (yeni kayıtta tek seferlik), Starter $15 → 200 kredi, Pro $40 → 600 kredi, Business $90 → 1.500 kredi, Ek Kredi $8 → 100 kredi. Paketler abonelik değil, süresi bitmeyen kredi bakiyesidir. Yazılı Assistant Agent oturumu 50 mesaja kadar 1 kredi; mikrofonla soru oturumu STT dahil 5 kredi; tek alanı AI ile güncelleme 6 kredi; çok bölümlü sayfa kurulumu 10 kredi. Ziyaretçiyi Paketler bölümüne yönlendir.',
   is_active = true
 where business_id = '11111111-1111-1111-1111-111111111111'::uuid
   and title = 'Fiyatlandırma';
@@ -242,7 +242,7 @@ insert into public.saule_knowledge (business_id, title, content, is_active)
 select
   '11111111-1111-1111-1111-111111111111'::uuid,
   'Fiyatlandırma',
-  'Fiyat sorulduğunda güncel paketleri net söyle: Deneme $0 → 20 kredi (yeni kayıtta tek seferlik), Starter $15 → 200 kredi, Pro $40 → 600 kredi, Business $90 → 1.500 kredi, Ek Kredi $5 → 100 kredi. Paketler abonelik değil, süresi bitmeyen kredi bakiyesidir. Yazılı Assistant Agent oturumu 50 mesaja kadar 1 kredi; mikrofonla soru oturumu STT dahil 5 kredi; tek alanı AI ile güncelleme 6 kredi; çok bölümlü sayfa kurulumu 10 kredi. Ziyaretçiyi Paketler bölümüne yönlendir.',
+  'Fiyat sorulduğunda güncel paketleri net söyle: Deneme $0 → 20 kredi (yeni kayıtta tek seferlik), Starter $15 → 200 kredi, Pro $40 → 600 kredi, Business $90 → 1.500 kredi, Ek Kredi $8 → 100 kredi. Paketler abonelik değil, süresi bitmeyen kredi bakiyesidir. Yazılı Assistant Agent oturumu 50 mesaja kadar 1 kredi; mikrofonla soru oturumu STT dahil 5 kredi; tek alanı AI ile güncelleme 6 kredi; çok bölümlü sayfa kurulumu 10 kredi. Ziyaretçiyi Paketler bölümüne yönlendir.',
   true
 where not exists (
   select 1 from public.saule_knowledge
