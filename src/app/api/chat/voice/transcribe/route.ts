@@ -67,7 +67,12 @@ export async function POST(req: Request) {
     // be a valid dictionary or object") — yani basılı-tut hiçbir zaman gerçekten çalışmamış,
     // transkripsiyon sessizce başarısız oluyordu (üretimde doğrulandı, 2026-08-01).
     const audioBuffer = Buffer.from(await audio.arrayBuffer());
-    const audioDataUri = `data:${audio.type || 'audio/webm'};base64,${audioBuffer.toString('base64')}`;
+    // Gerçek tarayıcıların MediaRecorder'ı mimeType'ı hep codec parametresiyle birlikte
+    // veriyor (ör. "audio/webm;codecs=opus"). Bunu olduğu gibi data URI'ye koymak
+    // ("data:audio/webm;codecs=opus;base64,...") fal.ai'nin ayrıştırıcısını bozup yine 422/502
+    // döndürüyordu — sadece kodeksiz temel medya tipini kullanmalıyız.
+    const baseMimeType = (audio.type || 'audio/webm').split(';')[0].trim();
+    const audioDataUri = `data:${baseMimeType};base64,${audioBuffer.toString('base64')}`;
 
     const falResponse = await fetch('https://fal.run/fal-ai/wizper', {
       method: 'POST',
