@@ -61,19 +61,21 @@ export async function POST(req: Request) {
       await deductCredits(supabaseAdmin, businessId, extraCreditsToDeduct);
     }
 
-    // Send to fal.ai Wizper (optimized Whisper) for transcription. Dosya adı istemcinin
-    // gerçekte kaydettiği formatla eşleşmeli (bkz. ChatWidget.tsx startRecording) — sabit
-    // "recording.webm" kullanmak, iOS Safari gibi audio/mp4 üreten tarayıcılarda Wizper'ın
-    // sesi çözemeyip sessizce boş metin dönmesine yol açıyordu.
-    const falFormData = new FormData();
-    falFormData.append('audio', audio, audio.name || 'recording.webm');
+    // fal.ai Wizper multipart/form-data DOSYA YÜKLEMESİ KABUL ETMİYOR — JSON body içinde
+    // "audio_url" bekliyor (hosted bir URL ya da base64 data URI). Eskiden burada FormData
+    // ile ham dosya gönderiliyordu; fal.ai bunu her zaman 422 ile reddediyordu ("Input should
+    // be a valid dictionary or object") — yani basılı-tut hiçbir zaman gerçekten çalışmamış,
+    // transkripsiyon sessizce başarısız oluyordu (üretimde doğrulandı, 2026-08-01).
+    const audioBuffer = Buffer.from(await audio.arrayBuffer());
+    const audioDataUri = `data:${audio.type || 'audio/webm'};base64,${audioBuffer.toString('base64')}`;
 
     const falResponse = await fetch('https://fal.run/fal-ai/wizper', {
       method: 'POST',
       headers: {
         Authorization: `Key ${process.env.FAL_KEY}`,
+        'Content-Type': 'application/json',
       },
-      body: falFormData,
+      body: JSON.stringify({ audio_url: audioDataUri }),
     });
 
     if (!falResponse.ok) {
