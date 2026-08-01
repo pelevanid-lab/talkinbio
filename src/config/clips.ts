@@ -48,15 +48,15 @@ export type PerformanceModel = {
 export const PERFORMANCE_MODELS: PerformanceModel[] = [
   {
     id: 'fal-ai/wan-motion',
-    label: 'Wan Motion',
-    hint: 'Performans aktarımı — kendi hareketini/mimiğini karaktere giydirir',
+    label: 'clipWanMotionLabel',
+    hint: 'clipWanMotionHint',
     costPerSecondUsd: 0.06, // 720p tahmini, fal zam yaparsa sessizce yanlışa döner
     supportsPrompt: true,
   },
   {
     id: 'fal-ai/bytedance/dreamactor/v2',
-    label: 'DreamActor v2',
-    hint: 'ByteDance — yüz/dudak hareketini ayrıca vurguluyor, doğrulanmadı',
+    label: 'clipDreamActorLabel',
+    hint: 'clipDreamActorHint',
     costPerSecondUsd: 0.05,
     supportsPrompt: false,
   },
@@ -90,8 +90,8 @@ export type FullBodyMotionModel = {
 export const FULL_BODY_MOTION_MODELS: FullBodyMotionModel[] = [
   {
     id: 'fal-ai/mimic-motion',
-    label: 'MimicMotion (deneysel)',
-    hint: 'Boydan poz/hareket aktarımı — yüz mimiğinden çok tüm gövde koreografisine odaklı. Henüz doğrulanmadı.',
+    label: 'clipMimicMotionLabel',
+    hint: 'clipMimicMotionHint',
     costPerSecondUsd: 0.1,
     supportsPrompt: false,
   },
@@ -123,8 +123,8 @@ export type SceneVideoModel = {
 export const SCENE_VIDEO_MODELS: SceneVideoModel[] = [
   {
     id: 'fal-ai/kling-video/v2/master/image-to-video',
-    label: 'Kling v2 Master (deneysel)',
-    hint: 'Sürücü video yok — yalnız görsel + senaryo metninden video üretir. Henüz doğrulanmadı.',
+    label: 'clipKlingLabel',
+    hint: 'clipKlingHint',
     costPerSecondUsd: 0.28,
   },
 ];

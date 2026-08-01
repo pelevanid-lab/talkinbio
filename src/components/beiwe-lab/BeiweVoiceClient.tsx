@@ -369,16 +369,9 @@ export default function BeiweVoiceClient({
         state={stage1State}
       >
         {initialVoicePresets !== undefined ? (
-          <p className="text-sm text-slate-600">
-            {characterName} sanal bir karakter — kendi sesi yok. Aşağıdaki hazır ses
-            kütüphanesinden beğendiğin bir kaydı seç, o bu karakterin referansı olsun.
-          </p>
+          <p className="text-sm text-slate-600">{t('voiceSanalKarakter', { characterName })} {t('voiceHazirSesSec')}</p>
         ) : (
-          <p className="text-sm text-slate-600">
-            Tek kişinin konuştuğu bir kayıt yükle. 2026-07-29 karşılaştırmasında uzun ve
-            <strong> işlenmemiş</strong> (kırpılmamış, gürültü temizliği kapalı) referans en
-            iyi benzerliği verdi — kaydı kısaltmaya ya da temizlemeye çalışma, olduğu gibi yükle.
-          </p>
+          <p className="text-sm text-slate-600">{t('voiceTekKisiYukle')} {t('voice2026Karsilastirma1')} <strong> {t('voiceIslenmemis')}</strong> {t('voiceKarsilastirma2')}</p>
         )}
 
         {initialVoicePresets !== undefined && (
@@ -386,10 +379,7 @@ export default function BeiweVoiceClient({
             <p className="text-xs font-semibold text-slate-500">{t('voicePresetVoices')}</p>
 
             {voicePresets.length === 0 ? (
-              <p className="text-xs text-slate-400">
-                Henüz hiç hazır ses eklenmedi. Aşağıdan ilkini ekle — bu kütüphane tüm
-                yardımcı oyuncular arasında paylaşılır.
-              </p>
+              <p className="text-xs text-slate-400">{t('voiceHicHazirSes')}</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {voicePresets.map((preset) => {
@@ -467,8 +457,7 @@ export default function BeiweVoiceClient({
                 : 'border-emerald-200 bg-emerald-50 text-emerald-800'
             }`}
           >
-            <p className="font-semibold mb-1">
-              Kayıt sağlık kontrolü (bedava — {audioHealth.durationSeconds.toFixed(0)} sn,
+            <p className="font-semibold mb-1">{t('voiceKayitSaglikBedava')} — {audioHealth.durationSeconds.toFixed(0)} sn,
               ortalama {audioHealth.avgVolumeDb.toFixed(0)} dB)
             </p>
             {audioHealth.warnings.length > 0 ? (
@@ -574,10 +563,7 @@ export default function BeiweVoiceClient({
         {minimaxStatus === 'expired' && (
           <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
             <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            <span>
-              Bu kimlik artık geçersiz görünüyor (muhtemelen {MINIMAX_VOICE_EXPIRY_DAYS} gün
-              kullanılmadığı için silindi). Yeniden klonla.
-            </span>
+            <span>{t('voiceKimlikGecersiz')} ({MINIMAX_VOICE_EXPIRY_DAYS} {t('voiceGunKullanilmadigiIcinSilindi')}</span>
           </div>
         )}
 
@@ -702,7 +688,7 @@ export default function BeiweVoiceClient({
         {takes.length > 0 && voiceUrl && (
           <div className="border-t border-slate-100 pt-4 space-y-2">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3">
-              <p className="text-xs font-semibold text-slate-500 sm:w-56">Referans (karşılaştır)</p>
+              <p className="text-xs font-semibold text-slate-500 sm:w-56">{t('voiceReferansKarsilastir')}</p>
               <audio src={voiceUrl} controls className="h-9 flex-1 min-w-0" />
             </div>
             <p className="text-[10px] text-slate-400">
@@ -731,7 +717,7 @@ export default function BeiweVoiceClient({
               ? 'Onaylamadan önce en az bir deneme dinle.'
               : approved
                 ? t('voiceApprovedNotice')
-                : 'Bu karakterin görsel twin\'i henüz doğrulanmadı. Ses katmanı bağımsız çalışır ancak üretim için ikisi de onaylanmalıdır.'}
+                : t('voiceGorselTwinDogrulanmadi')}
           </span>
         </div>
       </LabStage>

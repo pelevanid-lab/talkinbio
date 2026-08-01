@@ -70,7 +70,7 @@ export default function CastRoomTabs({
       router.push(`${basePath}/${data.id}`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Karakter oluşturulamadı.');
+      setError(err instanceof Error ? err.message : t('castErrorCreate'));
     } finally {
       setCreating(false);
     }

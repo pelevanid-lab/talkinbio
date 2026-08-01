@@ -60,11 +60,6 @@ export async function runSauleTurn({
     if (!dailyOk) {
       throw new AgentTurnError(getAbuseLimitMessage('daily-cap', locale, directLinks), 429);
     }
-    // Faz 4.3: kredi bitince sert blokaj değil — istemci (ChatWidget) bu JSON
-    // payload'ı yakalayıp LLM'siz mesaj-bırakma formuna döner (fiili ücretsiz katman).
-    if (!hasCredits(business)) {
-      throw new AgentTurnError(creditsExhaustedPayload(locale, directLinks), 402);
-    }
   }
 
   // Find the most recent conversation for this key; reuse it only if it's still
@@ -87,10 +82,19 @@ export async function runSauleTurn({
     }
   }
 
-  if (willCreateNewConversation && !isPreview) {
-    const sessionOpenOk = await checkSessionOpenRateLimit(supabaseAdmin, businessId, conversationKey);
-    if (!sessionOpenOk) {
-      throw new AgentTurnError(getAbuseLimitMessage('session-open', locale), 429);
+  if (!isPreview) {
+    // Faz 4.3: Kredi modeli güncellendi — Her mesaj yerine her "oturum" için kredi düşülür.
+    // Sadece YENİ bir oturum başlatılırken bakiyeye bakılır. Eğer oturum halihazırda açıksa
+    // (kredisi başlangıçta ödenmişse) bakiye sıfırlansa bile oturum sonuna kadar (SESSION_MESSAGE_CAP) devam edebilir.
+    if (willCreateNewConversation && !hasCredits(business)) {
+      throw new AgentTurnError(creditsExhaustedPayload(locale, directLinks), 402);
+    }
+
+    if (willCreateNewConversation) {
+      const sessionOpenOk = await checkSessionOpenRateLimit(supabaseAdmin, businessId, conversationKey);
+      if (!sessionOpenOk) {
+        throw new AgentTurnError(getAbuseLimitMessage('session-open', locale), 429);
+      }
     }
   }
 
@@ -140,9 +144,12 @@ export async function runSauleTurn({
         system: 'Kullanıcıya kibarca bu sohbette mesaj sınırına ulaşıldığını söyle; "Yeni sohbet" butonuyla temiz bir oturum başlatabileceğini veya erken erişim talebinde bulunmak isterse isim/e-posta bırakabileceğini belirt. Kısa ve sıcak yaz, ziyaretçinin yazdığı dilde yanıtla.',
         messages: [{ role: 'user' as const, content: userMessage }],
         onFinish: async ({ text, usage, model }) => {
+          const creditsToDeduct = willCreateNewConversation ? SAULE_CREDIT_COST : 0;
           await persistAssistantMessage(text);
-          await recordUsageEvent(supabaseAdmin, { businessId, agent: 'saule', channel, model: model.modelId, usage, creditsCharged: SAULE_CREDIT_COST });
-          await deductCredits(supabaseAdmin, businessId, SAULE_CREDIT_COST);
+          await recordUsageEvent(supabaseAdmin, { businessId, agent: 'saule', channel, model: model.modelId, usage, creditsCharged: creditsToDeduct });
+          if (creditsToDeduct > 0) {
+            await deductCredits(supabaseAdmin, businessId, creditsToDeduct);
+          }
         },
       });
     }
@@ -174,9 +181,12 @@ export async function runSauleTurn({
       ? { capture_lead: captureLeadTool({ supabaseAdmin, businessId, conversationId, contactValues, directLinks, isPreview, notificationEmail: sauleSettings.notificationEmail }) }
       : {},
     onFinish: async ({ text, toolCalls, usage, model }) => {
+      const creditsToDeduct = willCreateNewConversation ? SAULE_CREDIT_COST : 0;
       await persistAssistantMessage(text);
-      await recordUsageEvent(supabaseAdmin, { businessId, agent: 'saule', channel, model: model.modelId, usage, creditsCharged: SAULE_CREDIT_COST });
-      await deductCredits(supabaseAdmin, businessId, SAULE_CREDIT_COST);
+      await recordUsageEvent(supabaseAdmin, { businessId, agent: 'saule', channel, model: model.modelId, usage, creditsCharged: creditsToDeduct });
+      if (creditsToDeduct > 0) {
+        await deductCredits(supabaseAdmin, businessId, creditsToDeduct);
+      }
       // A tool (capture_lead / capture_access_request) was available this turn, but the model
       // never invoked it and still wrote a confirmation-sounding reply — i.e. it told the visitor
       // their info was saved when nothing was written to the DB. Log so this is visible in server

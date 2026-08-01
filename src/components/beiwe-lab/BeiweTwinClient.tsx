@@ -227,7 +227,7 @@ export default function BeiweTwinClient({
       if (!res.ok) throw new Error(data.error || t('twinGenerationFailed'));
       setShots((prev) => [...(data.shots as CharacterShot[]), ...prev]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Twin üretilemedi.');
+      setError(err instanceof Error ? err.message : t('twinErrorGenerate'));
     } finally {
       setGeneratingAngle(null);
     }
@@ -289,7 +289,7 @@ export default function BeiweTwinClient({
         lora_trigger_word: data.triggerWord ?? prev.lora_trigger_word,
       }));
     } catch (err) {
-      setLoraError(err instanceof Error ? err.message : 'LoRA eğitimi başlatılamadı.');
+      setLoraError(err instanceof Error ? err.message : t('twinErrorLora'));
     } finally {
       setLoraSubmitting(false);
     }
@@ -337,7 +337,7 @@ export default function BeiweTwinClient({
           )}
           <div>
             <p className="text-sm font-semibold text-slate-900">{characterName}</p>
-            <p className="text-xs text-slate-500">Twin üretim hattı</p>
+            <p className="text-xs text-slate-500">{t('twinSummaryTitle')}</p>
           </div>
         </div>
 
@@ -345,17 +345,17 @@ export default function BeiweTwinClient({
           <div>
             <p className="text-slate-400">Kimlik</p>
             <p className={`font-semibold ${hasIdentity ? 'text-emerald-600' : 'text-slate-400'}`}>
-              {hasIdentity ? 'Tanıtıldı' : 'Bekliyor'}
+              {hasIdentity ? t('twinSummaryIntroduced') : t('twinSummaryWaiting')}
             </p>
           </div>
           <div>
             <p className="text-slate-400">Twin</p>
             <p className={`font-semibold ${isVerified ? 'text-amber-600' : 'text-slate-400'}`}>
-              {isVerified ? 'Doğrulandı' : `${twinShots.length} deneme`}
+              {isVerified ? t('twinSummaryVerified') : t('twinSummaryTrials', { count: twinShots.length })}
             </p>
           </div>
           <div>
-            <p className="text-slate-400">Eğitim seti</p>
+            <p className="text-slate-400">{t('twinSummaryTrainingSet')}</p>
             <p className="font-semibold text-slate-800">
               {loraPool.length}/{LORA_TRAINING_THRESHOLD}
             </p>
@@ -383,7 +383,7 @@ export default function BeiweTwinClient({
       <Stage
         index={1}
         title="Yüzü Tanıt"
-        question="Bu twin kimin yüzünden doğuyor?"
+        question={t('twinStage1Question')}
         state={stage1State}
       >
         <p className="text-sm text-slate-600">
@@ -456,8 +456,7 @@ export default function BeiweTwinClient({
             <button
               onClick={() => setShowIdentityPrompt((v) => !v)}
               className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-medium text-slate-600"
-            >
-              <span>Üretilen kimlik tarifi (İngilizce)</span>
+            ><span>{t('twinIdentityPromptTitle')}</span>
               <ChevronDown
                 className={`w-3.5 h-3.5 transition-transform ${showIdentityPrompt ? 'rotate-180' : ''}`}
               />
@@ -475,9 +474,9 @@ export default function BeiweTwinClient({
       <Stage
         index={2}
         title="Twin Üret & Doğrula"
-        question="Bu yüz gerçekten sana benziyor mu?"
+        question={t('twinStage2Question')}
         state={stage2State}
-        lockedMsg="Önce yüzü tanıt"
+        lockedMsg={t('twinStage2LockedMsg')}
       >
         <p className="text-sm text-slate-600">
           Bu aşamada sahne değil <strong>kimlik</strong> sınanır. Üç sabit açı üret, her kareye
@@ -509,9 +508,7 @@ export default function BeiweTwinClient({
         </div>
 
         {twinShots.length === 0 ? (
-          <p className="text-xs text-slate-400 border-t border-slate-100 pt-4">
-            Henüz twin denemesi yok. Yukarıdan bir açı seç.
-          </p>
+          <p className="text-xs text-slate-400 border-t border-slate-100 pt-4">{t('twinStage2NoTrials')}</p>
         ) : (
           <div className="border-t border-slate-100 pt-4">
             <h3 className="text-sm font-semibold text-slate-800 mb-3">
@@ -564,9 +561,9 @@ export default function BeiweTwinClient({
       <Stage
         index={3}
         title="LoRA Eğitimi"
-        question="Bu yüz kalıcı bir modele dönüşsün mü?"
+        question={t('twinStage3Question')}
         state={stage3State}
-        lockedMsg={`Önce ${TWIN_VERIFIED_SCORE}+ puanlı bir twin üret`}
+        lockedMsg={t('twinStage3LockedMsg', { score: TWIN_VERIFIED_SCORE })}
       >
         <p className="text-sm text-slate-600">
           {LORA_MIN_SCORE}+ puan alan kareler eğitim setine girer. Set{' '}
@@ -614,7 +611,7 @@ export default function BeiweTwinClient({
             <button
               onClick={startLoraTraining}
               disabled={!loraReady || loraSubmitting}
-              title={!loraReady ? `Önce ${LORA_TRAINING_THRESHOLD} kareye ulaş` : undefined}
+              title={!loraReady ? t('twinStage3NotReadyTitle', { threshold: LORA_TRAINING_THRESHOLD }) : undefined}
               className="flex items-center gap-2 bg-purple-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loraSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
@@ -649,9 +646,7 @@ export default function BeiweTwinClient({
 
         {profile.lora_status === 'failed' && (
           <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            <span>Önceki eğitim denemesi başarısız oldu (fal tarafında). Yeniden başlatabilirsin.</span>
-          </div>
+            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" /><span>{t('twinStage3TrainingFailed')}</span></div>
         )}
 
         {!loraReady && (

@@ -18,36 +18,36 @@ export type MotionStyle = {
 export const MOTION_STYLES: MotionStyle[] = [
   {
     id: 'anime',
-    label: 'Anime',
-    hint: 'Japon anime çizim stili — keskin hatlar, büyük gözler, düz renk gölgeleme.',
+    label: 'motionStyleAnimeLabel',
+    hint: 'motionStyleAnimeHint',
     prompt:
       'Japanese anime art style, clean cel-shaded illustration, sharp linework, expressive large eyes, vibrant flat colour shading, dynamic anime composition.',
   },
   {
     id: 'cizgi-film',
-    label: 'Çizgi film',
-    hint: 'Batı tarzı 3D/2D çizgi film karakteri — yumuşak hatlar, oyuncu ifade.',
+    label: 'motionStyleCartoonLabel',
+    hint: 'motionStyleCartoonHint',
     prompt:
       'Western animated cartoon style, stylised proportions, smooth rounded shapes, playful exaggerated expression, Pixar/DreamWorks-like rendering.',
   },
   {
     id: 'cinematic',
-    label: 'Cinematic',
-    hint: 'Film seti kalitesinde ışık ve renk derinliği — gerçekçi ama abartılı prodüksiyon.',
+    label: 'motionStyleCinematicLabel',
+    hint: 'motionStyleCinematicHint',
     prompt:
       'Cinematic film still, dramatic directional lighting, anamorphic lens look, rich color grading, shallow depth of field, blockbuster movie production value.',
   },
   {
     id: 'fantastic',
-    label: 'Fantastic',
-    hint: 'Fantastik/masalsı dünya — büyülü ışık, sürreal ortam.',
+    label: 'motionStyleFantasticLabel',
+    hint: 'motionStyleFantasticHint',
     prompt:
       'Fantasy digital art, painterly magical atmosphere, glowing surreal lighting, epic otherworldly environment, high detail concept-art rendering.',
   },
   {
     id: 'trend',
-    label: 'Trend (stilsiz)',
-    hint: 'Stil bindirmeden — gerçek görüntü, yalnızca güncel bir trend formatını taklit eder.',
+    label: 'motionStyleTrendLabel',
+    hint: 'motionStyleTrendHint',
     prompt: 'Photorealistic, natural everyday video look — no stylisation, no filter.',
   },
 ];
@@ -70,17 +70,17 @@ export type MotionIdentityMode = 'twin' | 'cast' | 'generic';
 export const MOTION_IDENTITY_MODES: { id: MotionIdentityMode; label: string; hint: string }[] = [
   {
     id: 'twin',
-    label: 'Twin kimliği',
-    hint: 'Galeriden seçilen bir Twin karesi stilize edilir — kimlik büyük ölçüde korunur.',
+    label: 'motionIdentityTwinLabel',
+    hint: 'motionIdentityTwinHint',
   },
   {
     id: 'cast',
-    label: 'Yardımcı Oyuncu',
-    hint: 'Saule, Beiwe ya da eklediğin sanal bir karakterin avatarı stilize edilir.',
+    label: 'motionIdentityCastLabel',
+    hint: 'motionIdentityCastHint',
   },
   {
     id: 'generic',
-    label: 'Jenerik / rastgele karakter',
-    hint: 'Kimlik referansı yok — yalnızca yazdığın persona tarifinden sıfırdan üretilir.',
+    label: 'motionIdentityGenericLabel',
+    hint: 'motionIdentityGenericHint',
   },
 ];

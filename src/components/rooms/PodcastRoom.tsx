@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Loader2, MicVocal, Upload, Play, CheckCircle2, Trash2 } from 'lucide-react';
 import type { CharacterShot } from '@/config/characters';
 import type { CharacterClip } from '@/config/clips';
@@ -32,6 +33,7 @@ type Props = {
 };
 
 export default function PodcastRoom({ characterId, shots, clips, onClipCreated, onClipDeleted }: Props) {
+  const t = useTranslations('BeiweLab');
   const [selectedShot, setSelectedShot] = useState<CharacterShot | null>(null);
   const [drivingFile, setDrivingFile] = useState<File | null>(null);
   const [drivingSeconds, setDrivingSeconds] = useState<number | null>(null);
@@ -53,13 +55,13 @@ export default function PodcastRoom({ characterId, shots, clips, onClipCreated, 
   };
 
   const handleDelete = async (clipId: string) => {
-    if (!confirm('Bu klibi silmek istediğinize emin misiniz?')) return;
+    if (!confirm(t('podcastDeleteConfirm'))) return;
     setDeletingId(clipId);
     try {
       const res = await fetch(`/api/admin/characters/${characterId}/clips/${clipId}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Silinirken bir hata oluştu.');
+        throw new Error(data.error || t('podcastErrorDelete'));
       }
       onClipDeleted(clipId);
     } catch (err) {
@@ -71,11 +73,11 @@ export default function PodcastRoom({ characterId, shots, clips, onClipCreated, 
 
   const handleGenerate = async () => {
     if (!selectedShot) {
-      setError('Lütfen galeriden bir kanon görsel seçin.');
+      setError(t('podcastErrorNoImage'));
       return;
     }
     if (!drivingFile) {
-      setError('Lütfen sürücü video yükleyin — kendini konuşurken/jest yaparken çeken bir video.');
+      setError(t('podcastErrorNoVideo'));
       return;
     }
 
@@ -93,14 +95,14 @@ export default function PodcastRoom({ characterId, shots, clips, onClipCreated, 
         body: formData,
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Üretilemedi.');
+      if (!res.ok) throw new Error(data.error || t('podcastErrorGenerate'));
 
       onClipCreated(data.clip);
       setDrivingFile(null);
       setDrivingSeconds(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Üretilemedi.');
+      setError(err instanceof Error ? err.message : t('podcastErrorGenerate'));
     } finally {
       setGenerating(false);
     }
@@ -117,14 +119,12 @@ export default function PodcastRoom({ characterId, shots, clips, onClipCreated, 
         {/* Üretim Formu */}
         <div className="space-y-6">
           <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-1">1. Kanon Görsel Seç</h3>
-            <p className="text-xs text-slate-500 mb-3">
-              Karakterin kimliğini bu kareden alacak — kendi performansın buna giydirilecek.
-            </p>
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">{t('podcastStep1Title')}</h3>
+            <p className="text-xs text-slate-500 mb-3">{t('podcastStep1Desc')}</p>
             {(() => {
               const eligibleShots = shots.filter((shot) => shot.similarity_score === null || shot.similarity_score >= 7);
               if (eligibleShots.length === 0) {
-                return <p className="text-sm text-slate-500">Önce yukarıdan uygun (7 puan ve üzeri) bir görsel üretmelisiniz.</p>;
+                return <p className="text-sm text-slate-500">{t('podcastStep1NoImage')}</p>;
               }
               return (
                 <div className="grid grid-cols-3 gap-2 max-h-[300px] overflow-y-auto pr-2 pb-2">
@@ -151,13 +151,8 @@ export default function PodcastRoom({ characterId, shots, clips, onClipCreated, 
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-1">2. Sürücü Video Yükle</h3>
-            <p className="text-xs text-slate-500 mb-3">
-              Kendini, gerçekten söylemek istediğin metni okuyarak/jest yaparak çek — hem hareket hem ses bu videodan
-              geliyor (görüntü sessiz üretilip videonun kendi sesi aynen klibe aktarılıyor, sonradan başka ses
-              koymuyoruz). Işıklı çek ve kanon karedeki gibi ellerin kadrajda olsun (model görmediği eli tahmin etmek
-              zorunda kalırsa bozuk çıkar).
-            </p>
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">{t('podcastStep2Title')}</h3>
+            <p className="text-xs text-slate-500 mb-3">{t('podcastStep2Desc')}</p>
             <input
               type="file"
               ref={fileInputRef}
@@ -172,7 +167,7 @@ export default function PodcastRoom({ characterId, shots, clips, onClipCreated, 
             >
               <Upload className="w-5 h-5 text-slate-400" />
               <span className="text-sm font-medium text-slate-600">
-                {drivingFile ? drivingFile.name : 'Sürücü video seçin (veya sürükleyin)'}
+                {drivingFile ? drivingFile.name : t('podcastStep2UploadBtn')}
               </span>
             </label>
             {drivingFile && (
@@ -218,7 +213,7 @@ export default function PodcastRoom({ characterId, shots, clips, onClipCreated, 
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={2}
                 maxLength={600}
-                placeholder="Sakin, ölçülü mimikler ve doğal jestler — abartısız."
+                placeholder={t('podcastStep4Placeholder')}
                 className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm placeholder:text-slate-400 focus:border-blue-500 focus:outline-none"
               />
               <p className="text-xs text-slate-500 mt-1">
@@ -249,7 +244,7 @@ export default function PodcastRoom({ characterId, shots, clips, onClipCreated, 
           </button>
           {drivingSeconds !== null && (
             <p className="text-xs text-slate-500 -mt-3">
-              ~${(drivingSeconds * model.costPerSecondUsd).toFixed(2)} (tahmin, doğrulanmadı) · ≈{creditsForCost(drivingSeconds * model.costPerSecondUsd)} kredi · {model.label},{' '}
+              ~${(drivingSeconds * model.costPerSecondUsd).toFixed(2)} ({t('actionCostEstimateUnverified')}) · ≈{creditsForCost(drivingSeconds * model.costPerSecondUsd)} kredi · {model.label},{' '}
               {drivingSeconds.toFixed(1)} sn × ${model.costPerSecondUsd}/sn
             </p>
           )}
@@ -262,7 +257,7 @@ export default function PodcastRoom({ characterId, shots, clips, onClipCreated, 
           </h3>
           {podcastClips.length === 0 ? (
             <div className="flex items-center justify-center h-[200px] bg-slate-50 rounded-xl border border-slate-200 border-dashed">
-              <p className="text-sm text-slate-500">Henüz klip üretilmedi.</p>
+              <p className="text-sm text-slate-500">{t('podcastNoClips')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4">

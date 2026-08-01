@@ -186,16 +186,16 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
               {t('actionStep1StyleDesc')}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {MOTION_STYLES.map((s) => (
+              {MOTION_STYLES.map((styleObj) => (
                 <button
-                  key={s.id}
-                  onClick={() => setStyleId(s.id)}
+                  key={styleObj.id}
+                  onClick={() => setStyleId(styleObj.id)}
                   className={`text-left rounded-xl border p-3 transition-colors ${
-                    styleId === s.id ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200' : 'border-slate-200 hover:border-slate-300'
+                    styleId === styleObj.id ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200' : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  <span className="text-sm font-semibold text-slate-900">{s.label}</span>
-                  <p className="text-xs text-slate-500 mt-0.5 leading-snug">{s.hint}</p>
+                  <span className="text-sm font-semibold text-slate-900">{t(styleObj.label as any)}</span>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-snug">{t(styleObj.hint as any)}</p>
                 </button>
               ))}
             </div>
@@ -204,16 +204,16 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
           <div>
             <h3 className="text-sm font-semibold text-slate-900 mb-1">{t('actionStep2Identity')}</h3>
             <div className="flex gap-2 mb-3">
-              {MOTION_IDENTITY_MODES.map((m) => (
+              {MOTION_IDENTITY_MODES.map((modeObj) => (
                 <button
-                  key={m.id}
-                  onClick={() => setIdentityMode(m.id)}
+                  key={modeObj.id}
+                  onClick={() => setIdentityMode(modeObj.id)}
                   className={`flex-1 text-left rounded-xl border p-3 transition-colors ${
-                    identityMode === m.id ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200' : 'border-slate-200 hover:border-slate-300'
+                    identityMode === modeObj.id ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200' : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  <span className="text-sm font-semibold text-slate-900">{m.label}</span>
-                  <p className="text-xs text-slate-500 mt-0.5 leading-snug">{m.hint}</p>
+                  <span className="text-sm font-semibold text-slate-900">{t(modeObj.label as any)}</span>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-snug">{t(modeObj.hint as any)}</p>
                 </button>
               ))}
             </div>
@@ -351,10 +351,10 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
                       }`}
                     >
                       <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-sm font-semibold text-slate-900">{m.label}</span>
-                        <span className="text-xs text-slate-500 whitespace-nowrap">{hideCost ? `≈${creditsForCost(m.costPerSecondUsd)} kredi/sn` : `~$${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn {t('actionCostEstimate')} · ≈${creditsForCost(m.costPerSecondUsd)} kredi/sn`}</span>
+                        <span className="text-sm font-semibold text-slate-900">{t(m.label as any)}</span>
+                        <span className="text-xs text-slate-500 whitespace-nowrap">{hideCost ? `≈${creditsForCost(m.costPerSecondUsd)} kredi/sn` : `~$${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn ${t('actionCostEstimateUnverified')} · ≈${creditsForCost(m.costPerSecondUsd)} kredi/sn`}</span>
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5">{m.hint}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{t(m.hint as any)}</p>
                     </button>
                   ))}
                 </div>
@@ -374,10 +374,10 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
                     }`}
                   >
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-sm font-semibold text-slate-900">{m.label}</span>
+                      <span className="text-sm font-semibold text-slate-900">{t(m.label as any)}</span>
                       <span className="text-xs text-slate-500 whitespace-nowrap">~${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn (tahmin) · ≈{creditsForCost(m.costPerSecondUsd)} kredi/sn</span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5">{m.hint}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{t(m.hint as any)}</p>
                   </button>
                 ))}
               </div>
@@ -423,8 +423,8 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
           {mode === 'reference' && drivingSeconds !== null && (
             <p className="text-xs text-slate-500 -mt-3">
               {hideCost
-                ? `≈${creditsForCost(drivingSeconds * motionModel.costPerSecondUsd)} kredi · ${motionModel.label}, ${drivingSeconds.toFixed(1)} sn`
-                : `~$${(drivingSeconds * motionModel.costPerSecondUsd).toFixed(2)} {t('actionCostEstimateUnverified')} · ≈${creditsForCost(drivingSeconds * motionModel.costPerSecondUsd)} kredi · ${motionModel.label}, ${drivingSeconds.toFixed(1)} sn × $${motionModel.costPerSecondUsd}/sn`}
+                ? `≈${creditsForCost(drivingSeconds * motionModel.costPerSecondUsd)} kredi · ${t(motionModel.label as any)}, ${drivingSeconds.toFixed(1)} sn`
+                : `~$${(drivingSeconds * motionModel.costPerSecondUsd).toFixed(2)} {t('actionCostEstimateUnverified')} · ≈${creditsForCost(drivingSeconds * motionModel.costPerSecondUsd)} kredi · ${t(motionModel.label as any)}, ${drivingSeconds.toFixed(1)} sn × $${motionModel.costPerSecondUsd}/sn`}
             </p>
           )}
         </div>
