@@ -1,38 +1,55 @@
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
+import { createClient as createServerSupabase } from '@/utils/supabase/server';
 
 export const maxDuration = 30;
 
 // POST /api/chat/voice/speak
-// Body: JSON { text: string, businessId: string }
-// Returns: JSON { audio_url: string } or audio stream
+// Body: JSON { text: string, businessId: string, preview?: boolean }
+// Returns: JSON { audioUrl: string }
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies();
-    const visitorSessionId = cookieStore.get('visitor_session_id')?.value;
-    if (!visitorSessionId) {
-      return new Response('Missing visitor_session_id', { status: 401 });
-    }
-
-    const { text, businessId } = await req.json();
+    const { text, businessId, preview } = await req.json();
 
     if (!text || !businessId) {
       return new Response('Missing text or businessId', { status: 400 });
     }
 
-    // Verify business and get voice settings
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
-    const { data: business } = await supabaseAdmin
-      .from('businesses')
-      .select('saule_settings')
-      .eq('id', businessId)
-      .single();
 
-    if (!business?.saule_settings?.voiceEnabled) {
-      return new Response('Voice not enabled for this business', { status: 403 });
+    if (preview) {
+      // For preview in dashboard, verify owner
+      const supabaseAuth = await createServerSupabase();
+      const { data: { user } } = await supabaseAuth.auth.getUser();
+      const { data: business } = await supabaseAdmin
+        .from('businesses')
+        .select('owner_id')
+        .eq('id', businessId)
+        .single();
+
+      if (!business || !user || user.id !== business.owner_id) {
+        return new Response('Preview unauthorized', { status: 403 });
+      }
+    } else {
+      // For visitors, check visitor_session_id and voiceEnabled setting
+      const cookieStore = await cookies();
+      const visitorSessionId = cookieStore.get('visitor_session_id')?.value;
+      if (!visitorSessionId) {
+        return new Response('Missing visitor_session_id', { status: 401 });
+      }
+
+      const { data: business } = await supabaseAdmin
+        .from('businesses')
+        .select('saule_settings')
+        .eq('id', businessId)
+        .single();
+
+      if (!business?.saule_settings?.voiceEnabled) {
+        return new Response('Voice not enabled for this business', { status: 403 });
+      }
     }
 
     // Call fal.ai ElevenLabs Turbo v2.5 TTS endpoint
@@ -56,7 +73,6 @@ export async function POST(req: Request) {
     }
 
     const result = await falResponse.json();
-    // fal.ai returns { audio: { url: "https://..." } }
     const audioUrl = result.audio?.url || result.audio_url || result.url;
 
     if (!audioUrl) {

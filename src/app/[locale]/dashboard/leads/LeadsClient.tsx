@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { formatDistanceToNow, type Locale } from 'date-fns';
 import { tr, enUS, ru } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
-import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Send, MessageCircle, Archive, ArchiveRestore, Trash2, StickyNote, Mail, Plus, Mic } from 'lucide-react';
+import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Send, MessageCircle, Archive, ArchiveRestore, Trash2, StickyNote, Mail, Plus, Mic, Volume2, Play, VolumeX } from 'lucide-react';
 import ConversationsPanel from './ConversationsPanel';
 import KnowledgeBasePanel from './KnowledgeBasePanel';
 import DashboardShell from '@/components/dashboard/DashboardShell';
@@ -41,6 +41,45 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
   
   const [metaSuccess, setMetaSuccess] = useState<string | null>(null);
   const [metaError, setMetaError] = useState<string | null>(null);
+
+  // Audio preview state
+  const [playingLocale, setPlayingLocale] = useState<string | null>(null);
+  const [loadingLocale, setLoadingLocale] = useState<string | null>(null);
+  const sampleAudioRef = useState<{ current: HTMLAudioElement | null }>({ current: null })[0];
+
+  const handlePlayVoiceSample = async (sampleLocale: 'tr' | 'en' | 'ru', sampleText: string) => {
+    if (playingLocale === sampleLocale) {
+      sampleAudioRef.current?.pause();
+      setPlayingLocale(null);
+      return;
+    }
+    try {
+      setLoadingLocale(sampleLocale);
+      const res = await fetch('/api/chat/voice/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: sampleText, businessId: business.id, preview: true }),
+      });
+      if (!res.ok) throw new Error('Preview failed');
+      const data = await res.json();
+      if (data.audioUrl) {
+        if (sampleAudioRef.current) {
+          sampleAudioRef.current.pause();
+        }
+        const audio = new Audio(data.audioUrl);
+        sampleAudioRef.current = audio;
+        audio.onended = () => setPlayingLocale(null);
+        audio.onerror = () => { setPlayingLocale(null); setLoadingLocale(null); };
+        await audio.play();
+        setPlayingLocale(sampleLocale);
+      }
+    } catch (err) {
+      console.error('Audio preview error:', err);
+      alert('Ses önizleme hatası, lütfen tekrar deneyin.');
+    } finally {
+      setLoadingLocale(null);
+    }
+  };
   
   // URL parametresinden başarı/hata durumunu kontrol et
   if (typeof window !== 'undefined' && !metaSuccess && !metaError) {
@@ -565,29 +604,56 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
                       </div>
                     </div>
 
-                    {/* Welcome message per language */}
+                    {/* Welcome message per language (Fixed display + Listen button) */}
                     <div>
                       <label className="block text-xs font-semibold text-[#8A8880] mb-2 font-mono uppercase tracking-wider">{t('voiceWelcomeLabel')}</label>
-                      <p className="text-xs text-[#8A8880] mb-3">{t('voiceWelcomeHint')}</p>
-                      {([
-                        { locale: 'tr' as const, label: 'Türkçe', placeholder: t('voiceWelcomePlaceholderTr') },
-                        { locale: 'en' as const, label: 'English', placeholder: t('voiceWelcomePlaceholderEn') },
-                        { locale: 'ru' as const, label: 'Русский', placeholder: t('voiceWelcomePlaceholderRu') },
-                      ]).map(({ locale: wLocale, label, placeholder }) => (
-                        <div key={wLocale} className="mb-2">
-                          <label className="block text-xs font-semibold text-[#8A8880] mb-1 font-mono uppercase tracking-wider">{label}</label>
-                          <textarea
-                            value={settings.voiceWelcomeMessage?.[wLocale] || ''}
-                            onChange={(e) => setSettings({
-                              ...settings,
-                              voiceWelcomeMessage: { ...settings.voiceWelcomeMessage, [wLocale]: e.target.value }
-                            })}
-                            placeholder={placeholder}
-                            className="w-full p-3 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F] bg-white"
-                            rows={2}
-                          />
-                        </div>
-                      ))}
+                      <div className="space-y-3">
+                        {([
+                          {
+                            localeKey: 'tr' as const,
+                            label: 'Türkçe',
+                            text: `Merhaba! ${business.name} sayfasına hoş geldiniz. Size nasıl yardımcı olabilirim?`,
+                          },
+                          {
+                            localeKey: 'en' as const,
+                            label: 'English',
+                            text: `Hello! Welcome to ${business.name}'s page. How can I help you?`,
+                          },
+                          {
+                            localeKey: 'ru' as const,
+                            label: 'Русский',
+                            text: `Здравствуйте! Добро пожаловать на страницу ${business.name}. Чем могу вам помочь?`,
+                          },
+                        ]).map(({ localeKey, label, text }) => (
+                          <div key={localeKey} className="bg-white p-3.5 rounded-xl border border-[rgba(20,35,31,0.10)]">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-xs font-bold text-[#FF6A5C] font-mono uppercase tracking-wider">{label}</span>
+                              <button
+                                type="button"
+                                onClick={() => handlePlayVoiceSample(localeKey, text)}
+                                disabled={loadingLocale === localeKey}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all shadow-sm ${
+                                  playingLocale === localeKey
+                                    ? 'bg-[#FF6A5C] text-white animate-pulse'
+                                    : 'bg-[#FFEDE9] text-[#FF6A5C] hover:bg-[#FF6A5C] hover:text-white'
+                                }`}
+                              >
+                                {loadingLocale === localeKey ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : playingLocale === localeKey ? (
+                                  <VolumeX className="w-3.5 h-3.5" />
+                                ) : (
+                                  <Volume2 className="w-3.5 h-3.5" />
+                                )}
+                                {playingLocale === localeKey ? 'Durdur' : 'Sesli Dinle'}
+                              </button>
+                            </div>
+                            <p className="text-sm text-[#14231F] font-medium leading-relaxed bg-[#F4F2ED]/60 p-2.5 rounded-lg border border-[rgba(20,35,31,0.05)]">
+                              "{text}"
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
