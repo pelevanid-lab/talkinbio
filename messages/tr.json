@@ -17,7 +17,7 @@
       "note": "Sınırlı erken erişim · 10 dakikada yayında"
     },
     "statement": {
-      "text": "Nasıl çekeceğim diye düşünmeyin, saatlerce DM cevaplamayın veya randevu kovalayarak vakit kaybetmeyin. Siz sadece asıl işinize odaklanın; geriye kalan tüm dijital yükü talkinbio üstlensin."
+      "text": "Talkinbio, bio linkini tek sayfalık bir liste olmaktan çıkarır; ziyaretçinin sorusuna göre doğru hizmeti, portfolyoyu, bilgiyi veya iletişim adımını açan canlı bir web deneyimine dönüştürür."
     },
     "steps": {
       "title": "Kurulumun kendisi, ajanının eğitimi.",
@@ -108,12 +108,12 @@
     },
     "threeDots": {
       "title": "Logomuzdaki 3 nokta ne anlatıyor?",
-      "dot1Title": "İçerik Üretmek",
-      "dot1Desc": "Nasıl çekeceğim diye düşünmenize gerek yok. Sıradan bir fotoğrafınızı verin, markanıza uygun profesyonel gönderiler saniyeler içinde hazır olsun.",
-      "dot2Title": "Anında Cevaplamak",
-      "dot2Desc": "Çalışırken veya uyurken gelen mesajları dert etmeyin. Sizin yerinize işletmenizi ve işinizi en iyi şekilde anlatan yardımcınız, ziyaretçilerinize 7/24 cevap verir.",
-      "dot3Title": "Satış Kapatmak",
-      "dot3Desc": "Sadece bilgi verilip lead alınmaz, lead'ler takip edilir, satış kapatılır. Alınan randevular önünüze liste olarak düşer."
+      "dot1Title": "Soruyu Anlamak",
+      "dot1Desc": "Ziyaretçi fiyat, süreç, randevu veya hizmet detayı sorar. Talkinbio sorunun hangi sayfa bölümüne ait olduğunu anlar.",
+      "dot2Title": "Doğru Sahneyi Açmak",
+      "dot2Desc": "Sadece chat cevabı yazmaz; ilgili hizmeti, portfolyoyu, SSS'i veya iletişim bölümünü sayfanın içinde açar.",
+      "dot3Title": "İlgiyi İlerletmek",
+      "dot3Desc": "Cevap sayfada yoksa yazılı olarak iletir; ziyaretçi hazır olduğunda iletişim, randevu veya talep adımına yönlendirir."
     },
     "showcase": {
       "title": "Yapay zekanın işletmelere<br />kattığı gücü keşfedin",
@@ -180,7 +180,8 @@
       }
     },
     "heroTexts": {
-      "subtitle": "Bio linkin artık konuşuyor. <strong className=\"text-[var(--ink)] font-semibold\">İçerik üretiyor</strong>, <strong className=\"text-[var(--ink)] font-semibold\">soruları yanıtlıyor</strong>, talepleri alıp <strong className=\"text-[var(--ink)] font-semibold\">satışı kapatıyor</strong>.",
+      "title": "Ziyaretçiye göre açılan web siten.",
+      "subtitle": "Ziyaretçiler soru sorar. Talkinbio onları <strong className=\"text-[var(--ink)] font-semibold\">doğru hizmete</strong>, <strong className=\"text-[var(--ink)] font-semibold\">doğru bilgiye</strong> veya <strong className=\"text-[var(--ink)] font-semibold\">iletişim adımına</strong> götürür.",
       "btnEarly": "Erken erişim",
       "btnHow": "Nasıl çalışır?",
       "btnPricing": "Fiyatlandırma"
@@ -275,6 +276,8 @@
     "appearance": "Görünüm",
     "modeLight": "Açık",
     "modeDark": "Koyu",
+    "accentColor": "Vurgu rengi",
+    "accentColorHint": "Blok kartlarındaki çizgi, butonlar ve odak vurguları bu renkten beslenir.",
     "shortcuts": "Kısayollar",
     "shortcutsHint": "Profil başlığının altında gösterilir. En fazla 4 bağlantı veya hizmet.",
     "shortcutAdd": "+ Kısayol ekle (bağlantı veya hizmet)",
@@ -534,7 +537,7 @@
     "placeholder": "Bir mesaj yazın...",
     "defaultPreview": "Size nasıl yardımcı olabilirim?",
     "newChat": "Yeni sohbet",
-    "signature": "",
+    "signature": "talkinbio ile konuşuyorsunuz",
     "formName": "Adınız",
     "formContact": "Telefon veya e-posta",
     "formMessage": "Mesajınız (opsiyonel)",

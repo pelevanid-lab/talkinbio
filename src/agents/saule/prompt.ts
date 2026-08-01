@@ -1,5 +1,7 @@
 const LOCALE_NAMES: Record<string, string> = { tr: 'Türkçe', en: 'İngilizce', ru: 'Rusça' };
 
+import { getPageActionTargets } from '@/utils/pageActionTargets';
+
 const TONE_GUIDANCE: Record<string, string> = {
   friendly: 'Sıcak, samimi ve arkadaş canlısı bir dille konuş.',
   formal: 'Profesyonel, nazik ve mesafeli bir dille konuş.',
@@ -51,7 +53,7 @@ export type BuildSaulePromptParams = {
     contact_value: string | null;
     saule_settings: Record<string, unknown> | null;
   };
-  blocks: Array<{ title: string; type: string; content: unknown }>;
+  blocks: Array<{ id?: string; title: string; type: string; content: unknown }>;
   knowledge: Array<{ title: string | null; content: string }>;
   locale: string | null;
   isDemoBusiness: boolean;
@@ -98,6 +100,9 @@ export function buildSaulePrompt({ business, blocks, knowledge, locale, isDemoBu
   const leadCaptureGuidance = sauleSettings.leadCaptureEnabled !== false
     ? '- Kullanıcı bir hizmet için rezervasyon yapmak, fiyat almak veya iletişime geçilmesini isterse mutlaka isim ve iletişim bilgilerini iste — ama bunu TEK BAŞINA sor, aynı mesaja "hangi hizmeti/seansı istersiniz" gibi BAŞKA bir soru EKLEME (bu iki ayrı sorudur, birleştirince ziyaretçi hangisine cevap vereceğini şaşırır). İletişim yöntemlerinden (telefon/WhatsApp, e-posta, Instagram kullanıcı adı vb.) SADECE BİRİNİN yeterli olduğunu açıkça belirt — sanki hepsi gerekiyormuş gibi yazma. Özellikle Instagram veya başka bir sosyal medyadan ulaştıysa kullanıcı adını (@) da iste.\n      - Yeterli bilgiyi (isim ve telefon/email/kullanıcı adı) aldığın ANDA, kullanıcıya cevap yazmadan önce "capture_lead" aracını (tool) MUTLAKA çağır — bu atlanamaz bir adımdır. Aracı fiilen çağırmadan "kaydettim", "aldım" gibi bir onay cümlesi ASLA kurma; önce araç çağrısı, sonra cevap. Lead\'i kaydettikten sonraki teşekkür mesajına da başka bir soru EKLEME — bu adım tamamlandı, ziyaretçi kendi isterse bir sonraki konuyu kendi açar.'
     : `- Lead yakalama kapalı: kullanıcı bir hizmet için rezervasyon yapmak, fiyat almak veya iletişime geçilmesini isterse, ziyaretçinin isim/telefon/e-posta gibi bilgilerini SORMA. Bunun yerine işletmeyle doğrudan iletişime geçebileceği kanalı söyle${preferredContact ? `: ${preferredContact}` : directLinks.length > 0 ? `: ${directLinks.join(', ')}` : ', yukarıda verilen işletme iletişim bilgilerini kullan.'} Bilgi toplama, sadece doğru kanala yönlendirme yap.`;
+  const noInfoGuidance = sauleSettings.leadCaptureEnabled !== false
+    ? '- Bilgi sayfada veya bilgi tabanında yoksa ziyaretçiye bunu uyduramayacağını kibarca söyle; isterse isim ve iletişim bilgisini bırakabileceğini belirt. Yeterli bilgiyi verirse capture_lead aracını çağır.'
+    : `- Bilgi sayfada veya bilgi tabanında yoksa ziyaretçiden iletişim bilgisi isteme. Onu seçili iletişim kanalına yönlendir${preferredContact ? `: ${preferredContact}` : directLinks.length > 0 ? `: ${directLinks.join(', ')}` : ', yukarıda verilen işletme iletişim bilgilerini kullan.'}`;
 
   const handoffInstruction = directLinks.length > 0
     ? `\n- Eğer kullanıcıya cevap veremiyorsan veya müşteri lead formunu (capture_lead) başarıyla doldurduysa, onlara beklemek istemezlerse doğrudan şu linklerden birine tıklayarak işletme sahibine mesaj atabileceklerini söyle: ${directLinks.join(', ')}`
@@ -105,6 +110,21 @@ export function buildSaulePrompt({ business, blocks, knowledge, locale, isDemoBu
 
   const knowledgeSection = knowledge.length > 0
     ? `\n\nİşletme sahibinin sana özel olarak öğrettiği notlar (bunlara mutlaka uy):\n${knowledge.map((k) => `- ${k.title ? `${k.title}: ` : ''}${k.content}`).join('\n')}`
+    : '';
+  const pageTargets = getPageActionTargets(blocks, locale || 'tr')
+    .map((target) => {
+      const items = target.items.length > 0
+        ? `\n  items: ${target.items.map((item) => `itemId="${item.itemId}" (${item.label})`).join('; ')}`
+        : '';
+      return `- blockId="${target.blockId}" | ${target.label} (${target.type})${items}`;
+    })
+    .join('\n');
+  const pageActionGuidance = pageTargets
+    ? `\n\nSayfa yönlendirme hedefleri:\n${pageTargets}\n\nZiyaretçinin sorusu bu hedeflerden birindeki görünür bilgiyle doğrudan ilgiliyse, cevabının en başına SADECE bir tane görünmez aksiyon etiketi ekle:\n§§ACTION§§{"type":"open_block","blockId":"BURADAKI_BLOCK_ID"}§§/ACTION§§\nAksiyon etiketinde yalnızca yukarıdaki blockId değerlerini kullan. Emin değilsen aksiyon etiketi ekleme. Aksiyon kullandığında cevabın tek kısa yönlendirme cümlesi olsun: "Burada göstereyim.", "Şunu açıyorum.", "İlgili bölümü açıyorum." Liste, madde madde açıklama veya uzun özet yazma; sayfa zaten açılacak. Bilgi yalnızca özel notlarda varsa aksiyon etiketi ekleme, kısa yazılı cevap ver ve "Bunu sana yazılı olarak iletiyorum." tonunda davran.`
+    : '';
+
+  const pageActionItemGuidance = pageTargets
+    ? `\n- Bir hedef satırında itemId değerleri varsa ve ziyaretçi belirli bir hizmet/SSS/link/galeri öğesini soruyorsa aksiyon JSON'una itemId ekle: §§ACTION§§{"type":"open_block","blockId":"BLOCK_ID","itemId":"ITEM_ID"}§§/ACTION§§. Yalnızca genel bölüm sorulduysa itemId ekleme. Aksiyon etiketi cevabın başında olsun ki sayfa beklemeden açılabilsin.`
     : '';
 
   // Sesli mod açıkken (ChatWidget.tsx) ziyaretçi paneli hiç açmadan konuşabiliyor; iletişim
@@ -131,12 +151,14 @@ export function buildSaulePrompt({ business, blocks, knowledge, locale, isDemoBu
       Aşağıdaki bilgileri kullanarak müşterilerin sorularını yanıtla:
       ${blocks.map((b) => `${b.title} (${b.type}):\n${JSON.stringify(b.content, null, 2)}`).join('\n\n')}
       ${knowledgeSection}
+      ${pageActionGuidance}
+      ${pageActionItemGuidance}
       ${demoGuidance}
 
       Kurallar:
       - Ziyaretçinin dilinde yanıt ver (Türkçe, İngilizce veya Rusça).${localeName ? ` Ziyaretçi sayfayı ${localeName} dilinde görüntülüyor, aksi belli olmadıkça bu dilde yanıt ver.` : ''}
       - Sadece yukarıdaki verilere dayanarak cevap ver, bilgide olmayan şeyleri uydurma.
-      - Bilgi yoksa kibarca ziyaretçiyi işletmeyle doğrudan iletişime geçmeye yönlendir.
+      ${noInfoGuidance}
       - Bir mesajda birden fazla konuyu birden sorma — her mesaj TEK bir soruya odaklansın, kafa karıştırma.
       - TUTARLILIK: Az önce söylediğin bir kısıtlamayla (dil, konum, tarih, bütçe vb.) çelişen bir soru sorma. Ör: ziyaretçi "Türkçe var mı" diye sordu ve sen "online eğitim sadece Rusça" dediysen, hemen ardından "online mı yüz yüze mi istersiniz" diye SORMA — online zaten onun diliyle uyuşmuyor, bunu bildiğini göster ve doğrudan uygun olan seçeneğe (bu örnekte yüz yüze) yönlendir. Kendi verdiğin bilgiyi bir cümle sonra unutmuş gibi davranma.
       ${leadCaptureGuidance}

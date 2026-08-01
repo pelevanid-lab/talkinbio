@@ -7,6 +7,6 @@ export const CREDIT_VALUE_USD = 0.05;
  * satacağımız kredi miktarına çevirir. Sonuç her zaman yukarı yuvarlanır — küsuratlı
  * kredi göstermemek ve marjın hiçbir zaman 2 katın altına düşmemesini garanti etmek için.
  */
-export function creditsForCost(costUsd: number, marginMultiplier = 2): number {
+export function creditsForCost(costUsd: number, marginMultiplier = 2.5): number {
   return Math.max(1, Math.ceil((costUsd * marginMultiplier) / CREDIT_VALUE_USD));
 }

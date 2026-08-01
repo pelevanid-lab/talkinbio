@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { format, type Locale } from 'date-fns';
 import { tr, enUS, ru } from 'date-fns/locale';
 import { Coins, MessageCircle, Wrench, BarChart3 } from 'lucide-react';
-import { PLANS, EXTRA_PACK, TEST_PACK } from '@/config/plans';
+import { PLANS, EXTRA_PACK } from '@/config/plans';
 import { SAULE_CREDIT_COST, BEIWE_UPDATE_CREDIT_COST } from '@/agents/shared/credits';
 import DashboardShell from '@/components/dashboard/DashboardShell';
 

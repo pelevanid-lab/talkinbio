@@ -4,77 +4,84 @@ import AdminLayout from '@/components/AdminLayout';
 import ContinuousImprovementTabs from '@/components/ContinuousImprovementTabs';
 
 /* ------------------------------------------------------------------ */
-/* Static data — Yalın Kanvas V.1                                     */
-/* Fermi Tahmini (V.1.1) ve Çekim Gücü Yol Haritası (V.1.1) ile hizalı. */
+/* Static data — Yalın Kanvas V.2                                     */
+/* Fermi Tahmini (V.2) ve Çekim Gücü Yol Haritası (V.2) ile hizalı.    */
 /* Statik — yenilikler oldukça kod bazında güncellenir.                */
+/*                                                                      */
+/* V.2 (2026-08-01) — konumlanma değişti: ürün artık "DM'e cevap veren  */
+/* chatbot" değil, "ziyaretçinin sorusuna göre doğru sahneyi açan       */
+/* sayfa". Fiyatlandırma gerçek koda (src/config/plans.ts) hizalandı — */
+/* eski V.1'in $9/$29/$79 aylık abonelik rakamları kurgusaldı, koddaki  */
+/* gerçek model tek seferlik kredi paketidir. Tek-segment (solo         */
+/* diyetisyen) beachhead kısıtı kaldırıldı — kurucu kararı 2026-08-01.  */
 /* ------------------------------------------------------------------ */
 
 const canvas = {
   problem: [
-    'Küçük işletmeler ve serbest çalışanlar bio linklerine trafik alıyor ama trafik ölü: Linktree tarzı sayfalar statik — soru cevaplamaz, randevu talebi almaz, lead toplamaz.',
-    'Ziyaretçi soruları (fiyat, uygunluk, süre, "grup mu bireysel mi?") DM\'yi dolduruyor; işletme sahibi mesajlara yetişemiyor, geç cevap müşteri kaybettiriyor.',
-    'Formlar yüksek terk oranıyla çalışıyor; ziyaretçi form doldurmak değil, soru sormak istiyor.',
+    'Küçük işletmeler ve serbest çalışanlar bio linklerine trafik alıyor ama trafik ölü: Linktree tarzı sayfalar statik bir link listesi — ziyaretçi ne aradığını bulmak için sayfada dolaşmak zorunda, sayfa ona göre açılmıyor.',
+    'Ziyaretçi soruları (fiyat, uygunluk, süre, "online mı yüz yüze mi?") DM\'yi dolduruyor; işletme sahibi mesajlara yetişemiyor, geç cevap müşteri kaybettiriyor.',
+    'Formlar yüksek terk oranıyla çalışıyor; ziyaretçi form doldurmak değil, sorusuna karşılığında somut bir sayfa (süreç, fiyat, randevu) görmek istiyor.',
   ],
   existingAlternatives: [
-    'Linktree, Bio.fm gibi statik link toplama araçları (ücretsiz ama etkileşimsiz)',
+    'Linktree, Bio.fm gibi statik link toplama araçları (ücretsiz ama sayfa herkese aynı görünür, kimseye göre açılmaz)',
     'DM/WhatsApp üzerinden manuel cevaplama (ölçeklenmiyor; geç cevap = kayıp müşteri)',
-    "Intercom, Tidio gibi chatbot widget'ları (kurumsal, pahalı, web sitesi gerektiriyor — bio ekosistemine yabancı)",
+    "Intercom, Tidio gibi chatbot widget'ları (kurumsal, pahalı; soruyu uzun metinle cevaplar ama ziyaretçiyi sayfanın ilgili bölümüne GÖTÜRMEZ — sohbet ile sayfa iki ayrı dünyadır)",
   ],
   solution: [
-    "Saule — bio linkinde 7/24 konuşan asistan: soruları YALNIZCA işletmenin doğrulanmış verisinden cevaplar (uydurmaz), lead toplar, yapılandırılmış randevu talebi alır (Faz 1.5'te eklendi: tercih edilen gün/saat alanı; gerçek takvim entegrasyonu v2).",
-    "Beiwe — kurulum sohbetle: işletme sahibiyle röportaj yapar, bloklar halinde kurar, içeriği 3 dilde üretir, işletmeye özgün tema tasarlar. (Yol haritası: hizmet şemasına süre/kontenjan/grup-bireysel alanları eklenecek — kanvasın vaadiyle kod henüz eşit değil.)",
-    'Sayfa ürün ambalajı, asistan ürünün kendisi: profil sayfası asistan etrafında otomatik oluşur.',
-    '(v2) Saule gerçek DM kanallarına taşınır — önce WhatsApp, sonra Instagram: sohbet, müşterinin zaten olduğu yerde gerçekleşir.',
+    'Ziyaretçi soru sorduğunda uzun bir sohbet metni almaz: sayfa, cevabın yaşadığı bloğa (hizmet, fiyat, randevu, SSS) geçer. Bugün blok tıklamasıyla bu geçiş zaten çalışıyor (tam sayfa "sahne" + geri butonu); asistanın soruya bakıp doğru bloğu KENDİSİ açması roadmap\'te — henüz uygulanmadı.',
+    "Kurulum sohbetle: işletme sahibiyle röportaj yapan agent bloklar halinde kurar, içeriği tr/en/ru'da üretir, işletmeye özgün tema tasarlar.",
+    'Sayfa ürün ambalajı, asistan yönlendirme mekanizması: "ziyaretçiye göre açılan web sitesi" — chatbot değil, chatbot sayfayı doğru yere götüren bir katman.',
+    '(v2) Gerçek DM kanallarına taşınma (WhatsApp, sonra Instagram) hâlâ yol haritasında, ama artık birincil vaat değil — birincil vaat sayfanın kendisi.',
   ],
   keyMetrics: [
     'Aylık aktif işletme (MAU) ve kurulum tamamlama oranı',
-    "Ziyaretçi→sohbet etkileşim oranı; sohbet→lead dönüşümü; ilk lead'e geçen süre (landing demo hunisi admin/analytics'te canlı ölçülüyor — Faz 1.6)",
-    'MRR, churn, LTV/CAC',
-    "Birim maliyet — GERÇEK ÖLÇÜM (2026-07-16, Sonnet 4.5): Saule mesajı $0,026 | Beiwe güncelleme $0,121 | Beiwe tam kurulum $0,147. Beiwe'nin ~18-19K token'lık sabit sistem prompt yükü, küçük güncellemeleri tam kurulum kadar maliyetli kılıyor — kredi çarpanları (1:3:10) uyuşmuyor, Faz 4'te yeniden kalibre edilecek.",
-    'Kredi çarpanlarının doğrulanması (Saule 1 / Beiwe güncelleme 3 / kurulum 10) — usage_events ölçümüyle, ilk 100 kullanıcıda haftalık takip; ilk çarpanların yanlış olduğu zaten gösterildi (bkz. yukarı)',
-    'Kredi tüketim dağılımı (kullanıcılar krediyi neye harcıyor?) ve devir bakiyesi toplamı (kredi borcu riski)',
+    "Ziyaretçi→sohbet etkileşim oranı; sohbet→doğru bloğun açılması→lead dönüşümü (landing demo hunisi admin/analytics'te canlı ölçülüyor — Faz 1.6)",
+    'Ödeyen müşteri sayısı, kredi paketi tekrar-satın-alma oranı (abonelik yok — bu model MRR yerine "ne sıklıkta yeniden kredi alınıyor" ile ölçülür, henüz veri yok)',
+    "Birim maliyet — GERÇEK ÖLÇÜM (2026-07-16, Sonnet 4.5): Saule mesajı $0,026 | Beiwe güncelleme $0,121 | Beiwe tam kurulum $0,147. Beiwe'nin ~18-19K token'lık sabit sistem prompt yükü küçük güncellemeleri tam kurulum kadar maliyetli kılıyor.",
+    'Kredi maliyet katsayılarının doğrulanması — kod bugün Saule 1 / Beiwe güncelleme 6 / kurulum 10 kredi kullanıyor (src/agents/shared/limits.ts); gerçek maliyet oranı yukarıdaki ölçümle hâlâ tam örtüşmüyor.',
+    'Kredi tüketim dağılımı (kullanıcılar krediyi neye harcıyor?) ve bakiye tükenme oranı',
   ],
   uniqueValueProposition:
-    "Bio linkin artık cevap veriyor. Linktree ziyaretçiye liste gösterir; Talkinbio'da Saule ziyaretçiyle konuşur, sorusunu işletmenin doğrulanmış bilgisiyle cevaplar ve onu lead'e/randevu talebine dönüştürür.",
+    'Ziyaretçiye göre açılan web siten. Linktree ziyaretçiye aynı listeyi gösterir; Talkinbio\'da ziyaretçi soru sorar, sayfa cevabın olduğu bölüme açılır — randevuya, fiyata, doğru hizmete kadar.',
   highLevelConcept:
-    '"Linktree + resepsiyonist" — ya da: "Bio\'ndaki 7/24 çalışan asistan."',
+    '"Statik Linktree\'nin, ziyaretçiye göre açılan hali" — ya da: "Her ziyaretçiye kendi sorusuna göre açılan bio sayfası."',
   unfairAdvantage: [
-    "Katman 1 (bugün, Faz 1.8'de tamamlandı — 2026-07-17'de yayında): her Saule widget'ının altında \"Saule ile konuşuyorsunuz — talkinbio.com\" imzası; müşterinin her ziyaretçisi potansiyel müşteri, ürün kullanıldıkça kendini pazarlar. Dürüst not: bu kopyalanabilir bir döngü, tek başına haksız avantaj değil — Linktree aynı modele büyüdü. Dönüşüm etkisi henüz doğrulanmadı (Faz S UTM'leriyle ölçülecek).",
-    'Katman 2 — Gerçek hendek (zamanla birikir): işletme başına konuşma geçmişi + Saule bilgi tabanı (Faz 1.4, yayında) + konuşmalardan öğrenen sayfa geliştirme öneri döngüsü (Faz 3). Asistan her sohbette işletmeye daha akıllanır; rakibe geçmek sıfırdan demek — geçiş maliyeti burada yatıyor.',
-    "Katman 3 — Konumlanma: \"konuşarak kurulan + konuşan sayfa\" bütünlüğü; Linktree'nin sayfası var ama konuşmuyor, Intercom'un botu var ama bio ekosisteminde değil.",
+    "Katman 1 — ürün içi viral imza: her sayfanın altında \"talkinbio.com\" imzası (widget içinde UTM'li link) bugün de kodda var, ANCAK imza metni şu an boş render ediliyor (messages/tr.json ve en.json 'signature' anahtarı boş string — 2026-07-29'daki Saule/Beiwe isimlendirme değişikliğinde geride kalmış bir bug, dolduruncaya kadar bu katman fiilen çalışmıyor). Doldurulsa bile: kopyalanabilir bir döngü, tek başına haksız avantaj değil — Linktree aynı modele büyüdü.",
+    'Katman 2 — Gerçek hendek (zamanla birikir): işletme başına konuşma geçmişi + bilgi tabanı + konuşmalardan öğrenen sayfa geliştirme öneri döngüsü (Faz 3, henüz yapılmadı). Asistan her sohbette işletmeye daha akıllanır; rakibe geçmek sıfırdan demek.',
+    'Katman 3 — Konumlanma: "soruya göre açılan sayfa" kategorisi henüz tanımlanmamış; Linktree\'nin sayfası var ama yönlendirmiyor, Intercom\'un botu var ama sayfayı değiştirmiyor. Bu boşluk bugün boş ama savunmasız — hız ve niş derinliği dışında bir hendek yok.',
   ].join('\n\n'),
   channels: [
-    'Ana kanal: ürün içi viral döngü (Saule imzası — Faz 1.8, yayında) + niş topluluklar (koç/eğitmen Facebook grupları, Discord)',
-    '"Linktree alternatifi", "konuşan bio linki" içerikleri + yayınlanan her müşteri profili domain\'e çalışan indekslenebilir sayfa (teknik temel: Faz S, henüz yapılmadı)',
-    'Product Hunt lansmanı (erken benimseyici dalgası — Faz 4 sonrası)',
+    "Ana kanal: ürün içi viral döngü (widget imzası — şu an metni boş, doldurulmayı bekliyor) + niş topluluklar (koç/eğitmen/danışman Facebook grupları, Discord)",
+    '"Linktree alternatifi", "ziyaretçiye göre açılan sayfa" içerikleri + yayınlanan her müşteri profili domain\'e çalışan indekslenebilir sayfa (teknik temel: Faz S, henüz yapılmadı)',
+    'Product Hunt lansmanı (erken benimseyici dalgası — ilk ödeyen müşteriler sonrası)',
     'Ücretli reklam yok (LTV/CAC kanıtlanana kadar)',
   ],
   customerSegments: [
-    'Randevu bazlı çalışan profesyoneller (koç, terapist, eğitmen, güzellik uzmanı) — birincil kama',
-    'Serbest çalışanlar ve danışmanlar',
-    'Küçük yerel işletmeler (kuaför, butik, kafe)',
-    "İçerik üreticileri ve mikro-influencer'lar (ikincil — değer önerisi farklı, ayrıca doğrulanmalı)",
+    'Randevu/hizmet bazlı çalışan profesyoneller (danışman, koç, terapist, eğitmen, güzellik uzmanı)',
+    'Küçük yerel işletmeler ve hizmet sağlayıcılar (kuaför, mimar, stüdyo)',
+    'Ürün/marka sahipleri — portfolyo, hikâye, satın alma adımı olan sayfa isteyenler',
+    "Not (2026-08-01): tek-segment beachhead kısıtı (önceki V.1'de solo diyetisyen) kurucu kararıyla kaldırıldı — ürün çok sektörlü olarak konumlandırılıyor; bu, hiçbir segmentte henüz müşteri kanıtı olmadığı anlamına da gelir.",
   ],
   earlyAdopters: [
-    'Instagram/TikTok\'tan müşteri kazanan, DM yükünden bunalan, randevuyla çalışan 25-40 yaş profesyoneller',
+    'Instagram/TikTok\'tan müşteri kazanan, sayfası "sadece link listesi" olan, hizmet/ürün satan bireysel profesyoneller',
     'Halihazırda Linktree kullanan ama "statik" bulanlar',
-    "Gerçek ilk dogfooding vakası: Talkinbio'nun kendi demo işletmesi (Faz 1.6, landing'de canlı) — Saule kendi ürününü satıyor. \"Uliana Studio\", landing mockup'ındaki hayali örnek profildir, gerçek bir müşteri değildir; karıştırılmamalı.",
+    "Gerçek ilk dogfooding vakası: Talkinbio'nun kendi demo işletmesi (landing'de canlı) — ürün kendi kendini satıyor.",
   ],
   costStructure: [
-    "Claude API: Sonnet 4.5 (Saule sohbetleri + Beiwe standart görevleri); daha güçlü model yalnız Beiwe ağır görevlerinde (AI SDK güncellemesi sonrası — Faz 2). GERÇEK ÖLÇÜM: Saule $0,026/mesaj, Beiwe güncelleme $0,121, Beiwe kurulum $0,147 — Beiwe'nin sabit ~18-19K token sistem prompt yükü küçük işlemleri de pahalı kılıyor, prompt caching + bağlam diyeti (Faz 2.3) bu yüzden öncelikli.",
+    "Claude API: Sonnet 4.5 (sohbet + standart kurulum görevleri). GERÇEK ÖLÇÜM: mesaj $0,026, güncelleme $0,121, kurulum $0,147 — sabit ~18-19K token sistem prompt yükü küçük işlemleri de pahalı kılıyor, prompt caching + bağlam diyeti önceliklidir.",
+    'Sesli cevap (TTS): her oynatmada fal.ai/ElevenLabs\'e gidiyor (src/app/api/chat/voice/speak) — cache YOK ve kredi düşmüyor; şu an kontrolsüz bir maliyet kalemi. Kayıt-altına-al-bir-kez-öde modeline geçiş roadmap\'te ama henüz yapılmadı.',
     'Kredisiz onboarding\'in API maliyeti müşteri edinme maliyetine (CAC) yazılır.',
-    "Altyapı: Vercel + Supabase; ödeme komisyonu ~%3. Sağlayıcı kararı (iyzico/Stripe) hâlâ açık — dolar-sabit fiyat kararı (2026-07-17) TR/USD fiyat çelişkisini kapattı, artık net gereksinim: dolar fiyat + TL tahsilatı birlikte destekleyen sağlayıcı seçilmeli.",
+    'Altyapı: Vercel + Supabase; ödeme sağlayıcısı Shopier (entegre, canlı) — komisyon payı kredi fiyatına yansıtılmalı, şu an ayrıca kalemlendirilmiyor.',
     'Geliştirme/destek — tek kurucu bant genişliği (bkz. ROADMAP riskler).',
   ],
   revenueStreams: [
-    'Starter $9/ay → 200 kredi (yıllık %20 indirim: $7,2/ay)',
-    'Pro $29/ay → 700 kredi (yıllık %20 indirim: $23,2/ay)',
-    'Business $79/ay → 1.800 kredi (yıllık %20 indirim: $63,2/ay)',
-    'Fiyatlar dolara sabit; TL tahsilat güncel kur üzerinden yapılır, lokal sabit TL fiyat yoktur (karar 2026-07-17 — girdi maliyetleri dolar).',
-    'Ek kredi paketi: $5 → 100 kredi (birim pahalı — plana yükseltme teşviki)',
-    'Kredi devri: kullanılmayan krediler devreder, bakiye tavanı 2 aylık kota',
-    'Kredi bitince asistan kapanmaz — sayfa + "mesaj bırakın" modu yaşar (fiili ücretsiz katman etkisi)',
-    "Birim ekonomi: $0,045/kredi; Starter marjı tipik kullanımda %69, en dar senaryoda (yalnızca güncelleme) %11 — kredi tavanı doğal zarar-durdurucu.",
+    'Abonelik değil, tek seferlik kredi paketi satışı (src/config/plans.ts): Free $0 → 20 kredi (kayıt anında) · Starter $20 → 400 kredi · Pro $90 → 2.000 kredi · Business $400 → 10.000 kredi.',
+    'Ek kredi paketi: $5 → 100 kredi.',
+    '1 kredi = $0,05 (CREDIT_VALUE_USD, src/config/pricing.ts); AI üretim işlemleri gerçek maliyetin en az 2 katı fiyatla krediye çevrilir (creditsForCost, marj çarpanı 2x).',
+    'Açık madde: kodda hâlâ duran $0,10 → 10 kredilik bir "TEST_PACK" var — kredi başı $0,01, yani $0,05 varsayımının 5\'te biri. Kalıcı bir paket mi, unutulmuş bir test artığı mı — karara bağlanmalı.',
+    "Ziyaretçi sohbeti oturum bazlı: 50 mesaja kadar tek oturum = 1 kredi (SESSION_MESSAGE_CAP, SAULE_CREDIT_COST — kodda canlı). Ses cevabı ek 5 kredi (SAULE_VOICE_CREDIT_COST) ama yukarıdaki bug yüzünden şu an fiilen düşmüyor.",
+    'Kredi bitince asistan kapanmaz — sayfa + "mesaj bırakın" modu yaşar (fiilen kalıcı ücretsiz katman etkisi; ücretsiz kayıt kredisi 20\'dir, sonrasında sayfa görünür kalır).',
+    'Birim ekonomi henüz gerçek ödeyen müşteri verisiyle doğrulanmadı — 0/10 (bkz. Çekim Gücü Yol Haritası).',
   ],
 };
 
@@ -124,7 +131,7 @@ export default function LeanCanvasPage() {
         <h1 className="text-3xl font-bold text-slate-900">Yalın Kanvas</h1>
         <p className="text-slate-500 mt-1">Sürekli Gelişim</p>
         <p className="text-xs text-slate-400 mt-1 font-mono">
-          V.1 · 2026-07-17 — statik anlık görüntü; Fermi Tahmini V.1.1 ve Çekim Gücü Yol Haritası V.1.1 ile hizalı.
+          V.2 · 2026-08-01 — statik anlık görüntü; Fermi Tahmini V.2 ve Çekim Gücü Yol Haritası V.2 ile hizalı.
           Yenilikler oldukça kod bazında güncellenir.
         </p>
       </div>

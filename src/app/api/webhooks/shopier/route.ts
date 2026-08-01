@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { ShopierWebhook, ShopierClient } from 'shopier-pat-api';
-import { PLANS, EXTRA_PACK, TEST_PACK } from '@/config/plans';
+import { PLANS, EXTRA_PACK } from '@/config/plans';
 
 export async function POST(req: Request) {
   try {
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       }
 
       // Find the plan to add credits
-      const plan = invoice.plan_id === 'test' ? TEST_PACK : invoice.plan_id === 'extra' ? EXTRA_PACK : PLANS.find(p => p.id === invoice.plan_id);
+      const plan = invoice.plan_id === 'extra' ? EXTRA_PACK : PLANS.find(p => p.id === invoice.plan_id);
       if (!plan) {
          console.error('Invalid plan in invoice:', invoice.plan_id);
          return NextResponse.json({ success: true });

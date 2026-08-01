@@ -17,7 +17,7 @@
       "note": "Limited early access · Live in 10 minutes"
     },
     "statement": {
-      "text": "Don't worry about how to shoot, don't spend hours answering DMs, and don't waste time chasing appointments. You just focus on your real work; let talkinbio handle the rest of the digital burden."
+      "text": "Talkinbio turns your bio link from a one-page list into a live web experience that opens the right service, portfolio, information, or contact step based on each visitor's question."
     },
     "steps": {
       "title": "The setup itself is your agent's training.",
@@ -108,12 +108,12 @@
     },
     "threeDots": {
       "title": "What do the 3 dots in our logo mean?",
-      "dot1Title": "Create Content",
-      "dot1Desc": "No need to stress over how to shoot. Provide a simple photo, and get professional, brand-aligned social media posts ready in seconds.",
-      "dot2Title": "Reply Instantly",
-      "dot2Desc": "Don't worry about messages piling up while you work or sleep. Your smart assistant represents your business and your work perfectly and replies 24/7.",
-      "dot3Title": "Close Sales",
-      "dot3Desc": "It doesn't just provide information and capture leads; it follows up on leads and closes sales. Booked appointments come directly to your dashboard as a list."
+      "dot1Title": "Understand the Question",
+      "dot1Desc": "A visitor asks about pricing, process, booking, or service details. Talkinbio understands which part of the website should answer.",
+      "dot2Title": "Open the Right Scene",
+      "dot2Desc": "It does not stop at a chat answer; it opens the relevant service, portfolio, FAQ, or contact section inside the page.",
+      "dot3Title": "Move Interest Forward",
+      "dot3Desc": "If the answer is not on the page, it writes it clearly; when the visitor is ready, it guides them to contact, booking, or request capture."
     },
     "showcase": {
       "title": "Discover the power of AI<br />for your business",
@@ -180,7 +180,8 @@
       }
     },
     "heroTexts": {
-      "subtitle": "Your bio link is talking now. It <strong className=\"text-[var(--ink)] font-semibold\">creates content</strong>, <strong className=\"text-[var(--ink)] font-semibold\">answers questions</strong>, takes requests, and <strong className=\"text-[var(--ink)] font-semibold\">closes sales</strong>.",
+      "title": "A website that opens for each visitor.",
+      "subtitle": "Visitors ask a question. Talkinbio takes them to the <strong className=\"text-[var(--ink)] font-semibold\">right service</strong>, the <strong className=\"text-[var(--ink)] font-semibold\">right information</strong>, or the <strong className=\"text-[var(--ink)] font-semibold\">right contact step</strong>.",
       "btnEarly": "Early access",
       "btnHow": "How it works?",
       "btnPricing": "Pricing"
@@ -275,6 +276,8 @@
     "appearance": "Appearance",
     "modeLight": "Light",
     "modeDark": "Dark",
+    "accentColor": "Accent color",
+    "accentColorHint": "Block card lines, buttons, and focus highlights use this color.",
     "shortcuts": "Shortcuts",
     "shortcutsHint": "Shown under the profile header. Up to 4 links or services.",
     "shortcutAdd": "+ Add shortcut (link or service)",
@@ -534,7 +537,7 @@
     "placeholder": "Type a message...",
     "defaultPreview": "How can I help you?",
     "newChat": "New chat",
-    "signature": "",
+    "signature": "You're talking with talkinbio",
     "formName": "Your name",
     "formContact": "Phone or email",
     "formMessage": "Your message (optional)",

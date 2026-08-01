@@ -11,44 +11,47 @@ import {
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
-/* DATA — Tüm rakamlar Fermi V.1.1 ve Çekim Gücü Yol Haritası V.1.1   */
+/* DATA — Tüm rakamlar Fermi V.2 ve Çekim Gücü Yol Haritası V.2       */
 /* ile eşleşmektedir. Değiştirilmeden önce bu dosyaları kontrol et.    */
 /*                                                                      */
-/* Pazar zinciri (Fermi V.1.1):                                        */
+/* Konumlanma (2026-08-01): ürün artık "DM otomasyonu / chatbot"      */
+/* değil, "ziyaretçinin sorusuna göre doğru sayfayı açan site".       */
+/* Tek-segment (solo diyetisyen) beachhead kısıtı ve "ücretsiz deneme */
+/* yok" kararı kurucu tarafından geçersiz kılındı — ürün Free         */
+/* katmanla ve çok sektörlü konumlandırılıyor.                        */
+/*                                                                      */
+/* Pazar zinciri (Fermi V.2, DM-özel filtre kaldırıldığı için V.1'e   */
+/* göre bir adım kısa):                                                */
 /*   62M IG kullanıcısı (TR) × %2,4 satıcı = 1,5M                    */
-/*   1,5M × %40 DM ile iş yapan = 600K                                */
-/*   600K × %5 ödeme yapabilir = 30K adreslenebilir TR                */
+/*   1,5M × %5 ödeme yapabilir ≈ 30K adreslenebilir TR                */
 /*   Global (MENA+LatAm benzer zincir): +120K → toplam ~150K          */
 /*                                                                      */
-/* Fiyat (karar 2026-07-17): Dolar-sabit. Starter $9, Pro $29,        */
-/* Business $79. TL tahsilat güncel kur üzerinden. Lokal sabit TL yok.*/
+/* Fiyat — GERÇEK KOD (src/config/plans.ts), abonelik değil kredi     */
+/* paketi: Free $0→20 kredi · Starter $20→400 · Pro $90→2.000 ·       */
+/* Business $400→10.000 · Ek paket $5→100. Dolar-sabit; TL tahsilat   */
+/* güncel kur üzerinden (Shopier entegrasyonu, kod doğrulandı).        */
 /*                                                                      */
-/* ARPU: Teorik blended $22. Starter-ağırlıklı erken dönem karması    */
-/* + %20 yıllık indirim → efektif ARPU $15.                           */
-/*                                                                      */
-/* Birim ekonomi: $0,045/kredi. LTV = $15/0,05 = $300 (%5 churn).     */
-/* CAC < $100 hedefi (LTV/3 kuralı). Viral imza döngüsü kritik.       */
+/* Yıllık müşteri değeri: ort. ilk paket ~$53 (Starter-ağırlıklı      */
+/* karma varsayımı) × yılda 2 tekrar-alım (ÖLÇÜLMEDİ, varsayım) =     */
+/* ~$106/yıl. Bu, eski V.1'in "efektif ARPU $15/ay" rakamının yerini  */
+/* alıyor; eski rakamın koda hiçbir zaman karşılığı yoktu.             */
 /* ------------------------------------------------------------------ */
 
 const elevatorPitch = {
-  tr: `Instagram veya WhatsApp'tan müşteri alan her hizmet sahibinin ortak acısı şudur: DM'ler çoğalıyor, takip edilemiyor, lead'ler kaybolup gidiyor.
+  tr: `Bio linkindeki her ziyaretçi aynı statik listeyi görür — ne aradığı fark etmez. Sorusu olan biri ya DM'e yazar ya da sayfada kaybolup çıkar.
 
-Türkiye'de bu şekilde iş yapan yaklaşık 600.000 satıcı var — koçlar, güzellik uzmanları, özel ders verenler, pet bakıcıları. Bunların hepsinin ortak sorusu: "Bugün kaç kişi soru sordu, kaçına cevap veremedim?"
+Türkiye'de sosyal medyadan müşteri kazanan yaklaşık 1,5 milyon bireysel satıcı var — koçlar, güzellik uzmanları, danışmanlar, mimarlar, marka sahipleri. Hepsinin sayfası aynı sorunu yaşıyor: link listesi ziyaretçiye göre açılmıyor.
 
-talkinbio bu boşluğu kapatır. Saule, yapay zeka destekli müşteri asistanınızdır; bio sayfanızı ziyaret eden her potansiyel müşteriyle 7/24 konuşur, sorularını yanıtlar, randevu alır ve lead listesi oluşturur. Beiwe ise bu konuşmaları analiz ederek sizi her hafta pazarlama önerileriyle buluşturur.
+talkinbio bunu değiştirir. Ziyaretçi soru sorduğunda sayfa cevabın olduğu bölüme açılır — hizmet, fiyat, randevu, ne ise. Uzun bir sohbet metni değil, gerçek bir sayfa görür.
 
-Sabah kalkınca, takip edilemeyen DM değil — sıralanmış lead listesi bulursunuz.
+Ücretsiz başla — 20 kredilik ilk deneyimle kendin gör. Beğenirsen $20'dan başlayan kredi paketleriyle devam et. Abonelik yok, sadece ihtiyacın oldukça yüklediğin bir bakiye.`,
+  en: `Every visitor to your bio link sees the same static list — no matter what they're looking for. Someone with a question either messages you directly or scrolls around and leaves.
 
-Fiyat: $9/ay. Kurulum 10 dakika. Ücretsiz deneme yok — çünkü değer tespit edilene kadar ödeme yoksa, taahhüt de yoktur.`,
-  en: `Every service provider who gets clients through Instagram or WhatsApp shares the same pain: DMs pile up, follow-ups slip through, and leads disappear.
+Roughly 1.5 million individual sellers in Turkey alone gain customers through social media — coaches, beauty professionals, consultants, architects, brand owners. All of them share the same problem: their page doesn't open differently for each visitor.
 
-In Turkey alone, roughly 600,000 sellers operate this way — coaches, beauty professionals, tutors, pet sitters. They all share the same question: "How many people asked something today that I never got back to?"
+talkinbio changes that. When a visitor asks a question, the page opens to wherever the answer lives — the service, the price, the booking step. Not a wall of chat text — an actual page.
 
-talkinbio closes that gap. Saule, your AI-powered customer assistant, engages every bio-page visitor 24/7 — answers questions, books appointments, and builds your lead list. Beiwe then analyzes those conversations and surfaces weekly marketing insights.
-
-You wake up not to missed DMs, but to a ranked lead list.
-
-Price: $9/month. Setup: 10 minutes. No free trial — because without payment, there's no real commitment to test.`,
+Start free — try it with 20 credits. Then continue with credit packs starting at $20. No subscription, just a balance you top up when you need it.`,
 };
 
 /* ------------------------------------------------------------------ */
@@ -61,14 +64,14 @@ const perspectives = [
     label: 'Müşteri Konuşması',
     icon: Users,
     color: 'blue',
-    audience: 'Instagram/WhatsApp üzerinden iş yapan bireysel hizmet sahibi',
-    hook: '"Bu hafta kaç kişi soru sordu, kaçına cevap veremedim?"',
-    context: 'Hedef müşteri: koç, güzellik uzmanı, özel ders veren, pet bakıcısı, serbest çalışan. Günde 5-30 DM alan, takibini kaybeden, müşteri kaçtığında fark etmeyen birisi.',
-    problem: "Soruna saatlerce cevap gelmeyince potansiyel müşteri başka birine gidiyor. Takip etmek isteseler bile not defteri, mesaj geçmişi, spreadsheet karmaşası var. Linktree sadece link paylaşıyor — soruları yanıtlamıyor. CRM'ler çok karmaşık ve pahalı.",
-    solution: 'talkinbio, bio sayfanı 7/24 çalışan bir asistana dönüştürür. Saule ziyaretçinin sorusunu anlar ve yanıtlar, randevu toplar, lead kaydeder. Sen sabah kalkınca hazır liste bulursun — cevap vermediğin DM değil. Beiwe bu konuşmalardan haftalık içerik önerisi üretir.',
-    cta: '"İlk kurulumu seninle birlikte yapıyoruz — 10 dakika. Fiyat $9/ay; TL karşılığı ~370 TL, kur üzerinden. 30 gün sonra kaç lead topladığını göreceksin — devam edip etmeme kararı o veri üzerinde."',
-    objection: '"Benim için çok karmaşık gibi görünüyor." → Beiwe kurulum sürecinde seni adım adım yönlendiriyor. Kod yok, form yok, teknik bilgi gerekmiyor. İlk kurulumu birlikte yapıyoruz.',
-    secondObjection: "\"$9/ay çok mu yüksek?\" → Kaçan bir lead ortalama 1-3 saat iş demek. Saatlik ücretini 370 TL'nin üzerinde tutuyorsan, bir lead'in maliyeti aylık aboneliği katlıyor.",
+    audience: 'Instagram/WhatsApp üzerinden hizmet veya ürün satan bireysel işletme sahibi',
+    hook: '"Sayfanı ziyaret eden biri aradığını bulamayınca DM\'ine mi yazıyor, yoksa çıkıp mı gidiyor?"',
+    context: 'Hedef müşteri: koç, güzellik uzmanı, danışman, mimar, eğitmen, marka sahibi — tek segment kısıtı yok (2026-08-01 kararı). Ortak nokta: bio linki var ama link listesi statik, ziyaretçi ne aradığını sayfada arayarak bulmak zorunda.',
+    problem: "Linktree yalnızca link gösterir; hangi linkin ziyaretçinin sorusuna cevap olduğunu ziyaretçi kendisi bulmalı. Cevap bulamayınca ya DM'e yazıyor (takip edilemiyor) ya da sayfadan çıkıyor. CRM'ler çok karmaşık ve pahalı.",
+    solution: 'talkinbio, bio sayfanı ziyaretçiye göre açılan bir sayfaya dönüştürür. Ziyaretçi soru sorduğunda sayfa cevabın olduğu bölüme (hizmet, fiyat, randevu) geçer — uzun bir sohbet metni değil, gerçek bir sayfa görür. İlk 20 kredi ücretsiz.',
+    cta: '"Ücretsiz başla — 20 kredilik ilk deneyimi kendin gör. Beğenirsen $20\'dan (TL karşılığı kur üzerinden) başlayan kredi paketleriyle devam et, abonelik yok."',
+    objection: '"Benim için çok karmaşık gibi görünüyor." → Kurulum sohbetle yapılıyor: kod yok, form yok, teknik bilgi gerekmiyor.',
+    secondObjection: '"Ücretsiz deneyip bırakırsam ne olur?" → Kredi bitince sayfan kapanmaz, yayında kalır — sadece sohbet "mesaj bırakın" moduna geçer.',
   },
   {
     id: 'investor',
@@ -76,13 +79,13 @@ const perspectives = [
     icon: DollarSign,
     color: 'emerald',
     audience: "Erken aşama bootstrapped SaaS'a bakan melek yatırımcı veya mikro-VC",
-    hook: "\"TR'de $400K ARR tavanı olan, kasıtlı muhafazakâr modellenmiş bir başlangıç noktası. Asıl hikâye v2'de.\"",
-    context: 'Şu an Aşama 1 (Problem/Çözüm Uyumu). Bootstrapped başlangıç. Tek kurucu. Hedef: ilk 10 ödeme yapan müşteri → $100K ARR doğrulaması → v2 öncesi yatırımcı konuşması.',
-    problem: "Türkiye'de sosyal medya üzerinden aktif satış yapan ~1,5 milyon bireysel hizmet sağlayıcısı var. Bu sayının %40'ı müşterisiyle DM üzerinden iş yapıyor: 600K satıcı. Bu segment için bugün ödeme yapılabilir, gerçekten işe yarayan bir araç neredeyse yok. CRM'ler fazla karmaşık, Linktree sadece link paylaşıyor. Boşluk kasıtlı olarak boş bırakılmış.",
-    solution: 'talkinbio bu segmentin ilk dikey SaaS\'ı: Saule (web widget, konuşan bio) + Beiwe (marketing agent). Gelir: kredi modeli, $9/$29/$79, dolar-sabit fiyat. Efektif ARPU: $15 (Starter-ağırlıklı erken dönem karması + %20 yıllık indirim). Birim ekonomi: $0,045/kredi, Starter %69 marj. LTV=$300 (%5 churn). CAC hedefi <$100 — viral imza döngüsüne (Faz 1.8) bağlı.',
-    cta: "TR'de P/Ç Uyumu (10 müşteri → 550 müşteri → $100K ARR eşiği). Sonraki adım v2 (WA+IG DM) ile MENA+LatAm: global adreslenebilir ~150K, baz senaryo ~4.500 müşteri = $810K ARR, stretch %6 yakalama = ~$1,6M ARR. $100K ARR doğrulamasında sizi bilgilendiririm — v2 öncesi konuşalım.",
-    objection: '"TR pazarı çok küçük." → TR tavanı (~$400K ARR, 2.200 müşteri) kasıtlı muhafazakâr modellendi. Doğrulama zemini, ölçek zemini değil. v2 kanallarla (WhatsApp+IG DM) ve Faz 7 dil genişlemesiyle asıl hitap global DM-satış kategorisidir.',
-    secondObjection: '"Tek kurucu riski?" → En büyük kırılma noktası bu — ve kabul edildi. Faz 3 (Beiwe) modüler tasarlandı; gecikmesi lansmanı bloklemiyor.',
+    hook: "\"TR'de ~$223K/yıl tavanı olan, kasıtlı muhafazakâr modellenmiş bir başlangıç noktası — fiyatlandırma yakın zamanda gerçek koda oturtuldu, asıl hikâye v2'de.\"",
+    context: 'Şu an Aşama 1 (Problem/Çözüm Uyumu). Bootstrapped, tek kurucu. Hedef: ilk 10 ödeme yapan müşteri → ~$100K/yıl doğrulaması → v2 öncesi yatırımcı konuşması.',
+    problem: "Türkiye'de sosyal medya üzerinden aktif satış yapan ~1,5 milyon bireysel satıcı var. Bio sayfaları statik link listesi (Linktree) ya da hiç yok. Ziyaretçiyi doğru bilgiye/adıma yönlendiren bir katman kategori olarak henüz tanımlanmamış.",
+    solution: 'talkinbio bu boşluğun ilk ürünü: ziyaretçinin sorusuna göre açılan sayfa + konuşarak kurulum. Gelir: abonelik değil kredi cüzdanı — Free (20 kredi) → Starter $20/400kr → Pro $90/2.000kr → Business $400/10.000kr. Varsayımsal yıllık müşteri değeri ~$106 — tekrar-alım sıklığı henüz ölçülmedi, bu açık bir madde.',
+    cta: "TR'de P/Ç Uyumu (10 müşteri → ~950 müşteri → ~$100K/yıl eşiği). Sonraki adım v2 (WA+IG DM) ile MENA+LatAm: global adreslenebilir ~150K, baz senaryo ~4.500 müşteri = ~$477K/yıl, stretch ~9.000 müşteri = ~$954K/yıl. ~$100K/yıl doğrulamasında sizi bilgilendiririm.",
+    objection: '"TR pazarı çok küçük." → TR tavanı (~$223K/yıl) kasıtlı muhafazakâr modellendi. Doğrulama zemini, ölçek zemini değil. v2 kanallarla asıl hitap globaldir.',
+    secondObjection: '"Tek kurucu riski + henüz hiç ödeyen müşteri yok?" → Doğru, bugün 0/10. Strateji belgelerindeki fiyatlar da yakın zamana kadar gerçek koddan kopuktu — bu düzeltildi; sıradaki adım gerçek müşteri kanıtı.',
   },
   {
     id: 'advisor',
@@ -90,13 +93,13 @@ const perspectives = [
     icon: Lightbulb,
     color: 'purple',
     audience: 'Metodoloji, pazar veya teknik konularda rehberlik edecek danışman/mentor',
-    hook: '"Running Lean metodolojisini gerçekten uygulayan bir süreç — ama üç açık sorun var, bunlarda deneyiminize ihtiyacımız var."',
-    context: 'Ash Maurya\'nın "Önce Sorun/Çözüm Uyumu, sonra ürün" ilkesiyle: müşteri görüşmeleri önce, ödeme testi manuel, ücretsiz deneme yok. Şu an Aşama 1 başlangıcı. OMTM: ödeme yapan müşteri sayısı. Sayaç 0/10.',
-    problem: 'Bireysel hizmet sahipleri için araç yelpazesi iki uçta: ya çok basit (Linktree — sadece link, soru yanıtlamıyor) ya çok karmaşık ve pahalı (CRM — teknik bilgi gerekiyor, kurulum saatler sürüyor). Bu boşlukta "konuşan bio" kategorisi tanımlanmamış.',
-    solution: 'Süreç: 20 problem görüşmesi → ücretli 10 kişilik pilot ($9/ay, manuel tahsilat — ücretsiz deneme yok) → ölçüm → build/pivot/devam kararı. Şu ana kadar doğrulanan yalnızca: birim maliyet ölçümleri ($0,026/mesaj, $0,121/güncelleme, $0,147/kurulum) ve kredi oranı (1:4.6:5.6, beklenti 1:3:10\'du). Doğrulanmamış: viral imza dönüşüm oranı, dolar-sabit fiyata karşı kur-churn etkisi.',
-    cta: 'Danışmanlık ihtiyacı: (a) $9/ay dolar-sabit fiyat TR\'de gerçekten bariyer mi, yoksa değer iletişimi sorunu mu? (b) Faz 1.8 viral imza döngüsü CAC\'ı organik olarak $100 altına çekebilir mi — yoksa meta reklamına geçmek kaçınılmaz mı? (c) Meta evrak süreci (WA Business API + IG DM) için süreç deneyimi.',
-    objection: '"Problem görüşmelerini neden 20 ile sınırladın?" → Maurya\'nın 20 görüşme önerisi Türkiye bağlamında yeterli olabilir; pazar homojen ve küçük. 20\'de tekrar eden acı nokta netleşmezse sayıyı artıracağım.',
-    secondObjection: '"Ücretsiz deneme neden yok?" → Ücretsiz erken erişim meraklı toplar, müşteri değil. İlk 10 ödeyen, değer varlığının testidir — Maurya\'nın "ödeme taahhüttür" ilkesi.',
+    hook: '"Running Lean sürecini uyguluyoruz, ama Kanvas ile kod arasında iki ciddi sapma bulduk: fiyatlar kurgusaldı, konumlanma yanlış katmandaydı. İkisi de düzeltildi — şimdi sıfır müşteri kanıtıyla yeniden başlıyoruz."',
+    context: 'Şu an Aşama 1 başlangıcı. OMTM: ödeme yapan müşteri sayısı. Sayaç 0/10. 2026-08-01\'de konumlanma da değişti: "DM chatbotu" değil "ziyaretçiye göre açılan sayfa."',
+    problem: 'Bireysel hizmet sahipleri için araç yelpazesi iki uçta: ya çok basit (Linktree — link gösterir, yönlendirmez) ya çok karmaşık (CRM). "Ziyaretçiye göre açılan sayfa" kategorisi tanımlanmamış.',
+    solution: 'Süreç: 20 problem görüşmesi → Free katmanla başlayan pilot → concierge kurulum + 30 gün aktif kullanım → build/pivot/devam kararı. Doğrulanan yalnızca: birim maliyet ölçümleri ($0,026/mesaj, $0,121/güncelleme, $0,147/kurulum). Doğrulanmamış: viral imza dönüşümü (bugün imza metni teknik olarak boş), $20 giriş fiyatının kabulü, ~$106/yıl varsayımının arkasındaki tekrar-alım oranı.',
+    cta: 'Danışmanlık ihtiyacı: (a) Free katmandan ilk ödemeye geçiş oranı gerçekçi mi? (b) Widget imzası düzeltilip ölçülene kadar CAC organik kalabilir mi? (c) Kredi cüzdanı modelinde "tekrar-alım sıklığı" varsayımını doğrulamanın en hızlı yolu ne?',
+    objection: '"Problem görüşmelerini neden 20 ile sınırladın?" → Pazar homojen ve küçük; 20\'de tekrar eden acı nokta netleşmezse sayıyı artıracağım.',
+    secondObjection: '"Konumlanmayı bu kadar geç mi değiştirdiniz?" → Evet — ilk sürüm DM/chatbot çerçevesini öne çıkarıyordu, ürünün asıl farkı (sayfanın kendisinin değişmesi) arka planda kalmıştı. Gecikmiş bir düzeltmeydi, erken bir tercih değil.',
   },
   {
     id: 'pitch',
@@ -104,13 +107,13 @@ const perspectives = [
     icon: Briefcase,
     color: 'amber',
     audience: 'Hızlı değerlendirme yapan herhangi bir iş muhatabı',
-    hook: '"600K potansiyel satıcı, sıfır araç. talkinbio bu boşluğun ilk çözümü."',
-    context: 'Türkiye\'de 1,5 milyon sosyal medya satıcısının 600 bini DM ile iş yapıyor. Bu 600K satıcının adreslenebilir alt kümesi (ödeme kapasiteli): ~30K TR, ~120K global (MENA+LatAm benzer zincir).',
-    problem: 'DM ile iş yapan satıcılar müşteri sorularını manuel takip ediyor. Cevap gecikmesi = kaybedilen iş. Linktree sadece link verir, CRM\'ler çok karmaşık. Aradaki "konuşan bio" katmanı yok.',
-    solution: 'talkinbio = Saule (bio sayfasında 7/24 konuşan AI widget) + Beiwe (konuşmaları pazarlama önerisine çeviren agent). Kurulum 10 dakika. Kredi modeli: Starter $9/ay (200 kr) | Pro $29 (700 kr) | Business $79 (1.800 kr). Dolar-sabit. TL tahsilat kur üzerinden.',
-    cta: 'Aşama 1: 10 ödeme yapan müşteri (manuel satış + pilot). Ölçek: Faz 1.8 viral imza → CAC organik. Kırılma noktaları: 550 müşteri ($100K ARR) → 4.500 müşteri ($810K ARR, v2 global). Bugün: sayaç 0/10.',
-    objection: '"Rakipler?" → Linktree link paylaşır, ManyChat bot kurar, büyük CRM\'ler aşırı karmaşık. talkinbio "konuşan bio" kategorisini tanımlıyor — bu segmentin dikey SaaS\'ı.',
-    secondObjection: '"Neden şimdi?" → WhatsApp Business API kurulumu artık çok daha erişilebilir ve DM trafiği satıcılar için yönetilemez bir hacme ulaştı. Zamanlamayı bekleyen pazar olgunluğu var.',
+    hook: '"1,5M potansiyel satıcı, link listesi dışında neredeyse hiçbir araç yok. talkinbio ziyaretçiye göre açılan sayfayı sunan ilk ürün."',
+    context: "Türkiye'de ~1,5 milyon sosyal medya satıcısı var. Adreslenebilir alt küme (ödeme kapasiteli): ~30K TR, ~120K global (MENA+LatAm benzer zincir).",
+    problem: 'Bio sayfaları statik link listesi. Ziyaretçi ne aradığını bulamayınca ya DM\'e yazıyor (takip edilemiyor) ya da çıkıp gidiyor. Linktree link verir, CRM\'ler çok karmaşık.',
+    solution: 'talkinbio = ziyaretçinin sorusuna göre açılan sayfa + konuşarak kurulum. Fiyat: abonelik değil kredi cüzdanı — Free (20 kredi) → Starter $20 (400 kredi) → Pro $90 (2.000 kredi) → Business $400 (10.000 kredi). Dolar-sabit, TL tahsilat kur üzerinden.',
+    cta: 'Aşama 1: 10 ödeme yapan müşteri (manuel satış + pilot). Kırılma noktaları: ~950 müşteri (~$100K/yıl) → ~4.500 müşteri (~$477K/yıl, v2 global). Bugün: sayaç 0/10.',
+    objection: '"Rakipler?" → Linktree link paylaşır, büyük CRM\'ler aşırı karmaşık. talkinbio "ziyaretçiye göre açılan sayfa" kategorisini tanımlıyor.',
+    secondObjection: '"Neden şimdi?" → Sosyal medyadan gelen trafik satıcılar için yönetilemez bir DM hacmine ulaştı; ziyaretçiyi kendi başına doğru yere yönlendiren bir sayfa artık gerekli.',
   },
 ];
 
@@ -123,8 +126,8 @@ const slides = [
     num: 1,
     title: 'Vizyon & Değer Teklifi',
     icon: Rocket,
-    content: '"Bio linkin artık cevap veriyor." — Sosyal medya üzerinden iş yapan hizmet sahiplerinin kaçırdığı lead\'leri yakalayan, 7/24 müşteri karşılayan konuşan bio platformu.',
-    detail: 'UVP tek cümle, somut çıktı üzerine kurulu: "sabah hazır lead listesiyle uyan." Habersiz bir ziyaretçi 5 saniyede ne kazandığını anlamalı. "Konuşan bio" kategori adı yeni — bu, sahiplenilmesi gereken bir boşluk.',
+    content: '"Ziyaretçiye göre açılan web siten." — Bio linkine gelen her ziyaretçi aynı statik listeyi görmek yerine, sorduğu soruya göre doğru sayfaya yönlendirilir.',
+    detail: 'UVP tek cümle, somut davranış üzerine kurulu: ziyaretçi soru sorar, sayfa cevabın olduğu yere açılır. Habersiz bir ziyaretçi 5 saniyede ne kazandığını anlamalı. "Ziyaretçiye göre açılan sayfa" kategori adı yeni — sahiplenilmesi gereken bir boşluk.',
     maurya: '"Değer teklifinizi test etmenin en ucuz yolu: yabancı birine söyle, gözlerinde anlam görüyor musun? Eğer açıklamak zorunda kalıyorsan, mesaj bulanık."',
     keyMetric: null,
     risk: null,
@@ -133,90 +136,90 @@ const slides = [
     num: 2,
     title: 'Sorun',
     icon: AlertTriangle,
-    content: 'DM satıcısının üç acı noktası: (1) Sorulara saatler sonra cevap → müşteri gidiyor. (2) Takip sistemi yok — not defteri, mesaj geçmişi, spreadsheet karmaşası. (3) Hangi içeriğin lead getirdiği bilinmiyor.',
-    detail: 'Bu sorunları yaşayan ~600K satıcı TR\'de var. Mevcut çözümler: Linktree (link paylaşır, cevaplamaz), CRM (teknik bilgi ister, pahalı). Boşluk kasıtlı olarak boş. Problem görüşmelerinde (0/20) bu üç noktanın tekrar edip etmediği doğrulanacak.',
+    content: 'Bio sayfası ziyaretçisinin acı noktası: (1) Ne aradığını bulamıyor, link listesinde geziniyor. (2) Sorusu varsa DM\'e yazıyor — cevap gecikirse gidiyor. (3) İşletme sahibi hangi sorunun/içeriğin lead getirdiğini bilmiyor.',
+    detail: 'Bu sorunu yaşayan ~1,5M satıcı TR\'de var (adreslenebilir alt küme ~30K). Mevcut çözümler: Linktree (link paylaşır, yönlendirmez), CRM (pahalı, karmaşık). Problem görüşmelerinde (0/20) bu noktaların tekrar edip etmediği doğrulanacak.',
     maurya: '"Sorun gerçekse müşteri halihazırda geçici çözümler üretmiştir. O geçici çözümleri sor — mevcut alternatifler listende onlar var."',
-    keyMetric: 'Doğrulanmamış: "kaçırılan lead başına günlük kayıp" gerçek miktar',
+    keyMetric: 'Doğrulanmamış: ziyaretçinin "aradığını bulamama" anındaki terk oranı',
     risk: 'Sorun sert değil, "rahatsızlık" olarak algılanıyorsa ödeme olmaz',
   },
   {
     num: 3,
     title: 'Müşteri Segmenti & Erken Benimseyenler',
     icon: Users,
-    content: 'Birincil: Türkiye\'de Instagram/WhatsApp üzerinden aktif hizmet satan bireysel satıcı (~1,5M). Filtre 1: müşteriyle DM üzerinden iş yapan (~%40 = 600K). Filtre 2: ödeme kapasiteli = ~30K adreslenebilir. Erken benimseyen: günde 10+ DM alan, randevu takibini spreadsheet veya not defteri ile yapan, tekrarlayan müşteri tabanı olan koç/güzellik/özel ders.',
-    detail: 'Fermi zinciri: 62M TR IG kullanıcısı × %2,4 satıcı = 1,5M → ×%40 DM kullanan = 600K → ×%5 ödeyebilen = 30K. Global (MENA+LatAm benzer zincir): +120K → toplam ~150K adreslenebilir. Erken benimseyen kriterler: DM\'den lead kaybettiğini biliyor, teknik bariyeri düşük, sosyal medyada aktif.',
+    content: 'Birincil: Türkiye\'de Instagram/WhatsApp üzerinden aktif hizmet/ürün satan bireysel satıcı (~1,5M) — danışman, koç, kuaför, mimar, eğitmen, marka sahibi. Tek segment kısıtı yok (2026-08-01 kararı); erken benimseyen ortak özellik: sayfası "sadece link listesi", ziyaretçi sorularını manuel takip ediyor.',
+    detail: 'Fermi zinciri: 62M TR IG kullanıcısı × %2,4 satıcı = 1,5M → ×%5 ödeyebilen ≈ 30K adreslenebilir TR (DM-özel filtre kaldırıldı, segment artık daha geniş). Global (MENA+LatAm benzer zincir): +120K → toplam ~150K adreslenebilir.',
     maurya: '"Erken benimseyeni herkes yapmak, kimse yapmamaktır. Bir isim, bir meslek, bir spesifik acı nokta — bu kadar."',
     keyMetric: 'TR adreslenebilir: ~30K / Global: ~150K',
-    risk: '%5 ödeme kapasitesi varsayımı; gerçek oran %3\'e düşerse TR tavanı ~$227K\'ya iner',
+    risk: '%5 ödeme kapasitesi varsayımı hâlâ doğrulanmadı; gerçek oran düşerse TAM küçülür',
   },
   {
     num: 4,
     title: 'Benzersiz Değer Teklifi (UVP)',
     icon: Target,
-    content: '"Bio linkin artık cevap veriyor — 10 dakikada kur, 7/24 müşteri karşıla." Rakiplerden fark: Linktree link paylaşır (cevaplamaz), CRM\'ler karmaşık (teknik bilgi ister). talkinbio ikisi arasındaki "konuşan bio" katmanını açıyor.',
-    detail: 'Üst düzey konsept: "Bio sayfan için AI asistan." Ürün kolumuzun ana ürün/pazar hipotezi: "Hizmet sahibi, sayfasında cevap veren bir asistan olduğunda daha fazla lead\'e dönüşür." Bu hipotez A/B testi veya kohort analizi ile ölçülecek (Aşama 2).',
-    maurya: '"UVP ürününü değil, müşteri sonucunu satmalı. \'AI widget\' değil \'hazır lead listesi\' — fark bu."',
+    content: '"Ziyaretçiye göre açılan web siten." Rakiplerden fark: Linktree link paylaşır (yönlendirmez), CRM\'ler karmaşık (teknik bilgi ister). talkinbio ikisi arasındaki boşluğu, "sayfanın kendisi değişiyor" fikriyle dolduruyor.',
+    detail: 'Üst düzey konsept: "Statik Linktree\'nin, ziyaretçiye göre açılan hali." Ana ürün/pazar hipotezi: "Ziyaretçi doğru yere kendiliğinden yönlendirildiğinde daha fazla lead\'e/randevuya dönüşür." Bu hipotez henüz ölçülmedi (Aşama 2\'de kohort analiziyle test edilecek).',
+    maurya: '"UVP ürününü değil, müşteri sonucunu satmalı. \'AI widget\' değil \'doğru sayfanın kendiliğinden açılması\' — fark bu."',
     keyMetric: 'Landing demo → erişim talebi dönüşüm oranı (admin/analytics canlı ölçülüyor)',
-    risk: 'UVP anlaşılmazsa kurulum başlamaz; 10 dakika vaadi test edilmeli',
+    risk: 'UVP anlaşılmazsa kurulum başlamaz; "sayfa açılıyor" davranışı bugün asistan tarafında henüz uygulanmadı (roadmap)',
   },
   {
     num: 5,
     title: 'Çözüm',
     icon: Mic,
-    content: 'Saule (v1): bio sayfada embed AI widget — ziyaretçiyle konuşur, randevu alır, lead kaydeder. İmzası: "Saule ile konuşuyorsunuz — talkinbio.com." Beiwe (v1 → v2): kurulum yönlendirme + haftalık pazarlama özeti. v2: WhatsApp+IG DM doğrudan entegrasyon (Meta evrak sonrası).',
-    detail: 'v1 kapsamı: web widget, Beiwe kurulum akışı, lead listesi, temel analytics. v2 kapsamı (kanallar Faz 5-6, dil Faz 7): WA Business API + IG DM, çok dilli destek, MENA/LatAm lokalizasyon. Saule imzası viral döngünün motoru: her konuşma bir organik tanıtım. Birim maliyet: $0,026/mesaj (gerçek ölçüm). Kredi oranı: Saule:güncelleme:kurulum = 1:4.6:5.6 (beklenti 1:3:10\'du — gerçek ölçümle revize edildi).',
+    content: 'Bugün: blok tıklaması ziyaretçiyi ilgili bölüme (tam sayfa "sahne" + geri butonu) götürüyor — bu çalışıyor. Asistanın SORUYA bakıp doğru bloğu kendisi açması henüz yapılmadı, yol haritasının bir sonraki adımı. Kurulum sohbetle: işletme sahibiyle röportaj yapan agent bloklar halinde kurar, içeriği tr/en/ru\'da üretir.',
+    detail: 'v1 kapsamı: web widget, sohbetle kurulum, lead listesi, temel analytics, blok bazlı sayfa. v2 kapsamı: WA Business API + IG DM, MENA/LatAm lokalizasyon. Birim maliyet: $0,026/mesaj (gerçek ölçüm, 2026-07-16). Kredi maliyeti bugün kodda: mesaj 1 kredi / güncelleme 6 / kurulum 10 (src/agents/shared/limits.ts) — gerçek maliyet oranıyla tam örtüşmüyor, kalibrasyon açık madde.',
     maurya: '"Çözümü üç özellikle sınırla; fazlası odak kaybı. Her özellik bir Kanvas sorununa bağlı olmalı."',
-    keyMetric: 'Gerçek ölçüm: $0,045/kredi · $0,026/mesaj · Starter %69 marj',
-    risk: 'Beiwe kurulumu 10 dakikayı aşarsa erken churn riski; test edilmedi',
+    keyMetric: 'Gerçek ölçüm: $0,026/mesaj · kredi maliyeti henüz tam kalibre değil',
+    risk: 'Asistanın soruya göre sayfa açması (ürünün ana vaadi) henüz kodda yok — landing bunu göstermeden vaat anlaşılmaz',
   },
   {
     num: 6,
     title: 'Gelir Modeli',
     icon: DollarSign,
-    content: 'Kredi aboneliği: Starter $9/ay (200 kr) · Pro $29/ay (700 kr) · Business $79/ay (1.800 kr). Yıllık ödeme: %20 indirim (fiyatı 12 ay kilitler — kur-churn bariyer). Ek paket: $5 → 100 kredi (birim pahalı; plan yükseltme teşviki). Fiyat dolar-sabit; TL tahsilat güncel kur üzerinden.',
-    detail: 'Teorik blended ARPU: $22 (örnek varsayım: %60×$9 + %30×$29 + %10×$79 = $22,0). Efektif ARPU: $15 — Starter-ağırlıklı erken dönem karması + %20 yıllık indirim. Birim ekonomi: LTV = $15/0,05 = $300 (%5 churn). CAC < $100 hedefi (LTV/3). Starter marjı: %69 (tipik kullanım) → en dar senaryo (yalnızca güncelleme): %11. Kur riski: $9/ay bugün ~370 TL; devalüasyonda TL karşılığı yükselir → churn baskısı. Yanıt: yıllık kilit + değer iletişimi "kaçan lead\'in maliyeti" üzerinden.',
-    maurya: '"Fiyat değer hipotezinin testidir." (Not: Ücretsiz deneme verirsek taahhüt ölçemeyiz. İlk 10 müşteri öder — bu bizim kararımız ve fiyat doğrulamamızdır.)',
-    keyMetric: 'Efektif ARPU $15 · LTV $300 · CAC hedefi <$100',
-    risk: 'Kur yükselmesi → TL karşılığı yükseliş → Starter churn; yıllık plan payı bunu yumuşatıyor mu? Test edilmedi.',
+    content: 'Kredi cüzdanı (abonelik değil): Free $0 (20 kredi) · Starter $20 (400 kredi) · Pro $90 (2.000 kredi) · Business $400 (10.000 kredi) · Ek paket $5 (100 kredi). Fiyat dolar-sabit; TL tahsilat güncel kur üzerinden (Shopier entegrasyonu, kod doğrulandı).',
+    detail: 'Ort. ilk paket değeri ~$53 (Starter-ağırlıklı karma varsayımı). Yıllık tekrar-alım sıklığı HİÇ ölçülmedi — burada yılda 2 varsayılıyor → ~$106/yıl varsayımsal müşteri değeri. 1 kredi=$0,05; AI üretimi gerçek maliyetin 2 katına satılıyor (creditsForCost). Kredi bitince sayfa kapanmaz, "mesaj bırakın" moduna düşer.',
+    maurya: '"Fiyat değer hipotezinin testidir." (Not: Free katman artık var — 20 kredilik ilk deneyim taahhüt ölçmez ama denemeyi kolaylaştırır; asıl taahhüt testi ilk ödenen pakettir.)',
+    keyMetric: 'Ort. ilk paket ~$53 · Varsayımsal yıllık değer ~$106 (ölçülmedi)',
+    risk: 'Tekrar-alım sıklığı varsayımı (yılda 2×) hiç test edilmedi — gerçek oran 1\'e düşerse tüm senaryolar yarıya iner',
   },
   {
     num: 7,
     title: 'Pazar Boyutu (Fermi)',
     icon: BarChart2,
-    content: 'TR adreslenebilir: ~30K satıcı. TR ARR senaryoları: Kötümser %1 = ~$54K · Orta %3 = ~$162K · İyimser TR tavanı %7 (2.100 müşteri) = ~$378K. v2 Global (baz %3): ~4.500 müşteri = $810K ARR. v2 Stretch (%6 yakalama): ~9.000 müşteri = $1,6M ARR.',
-    detail: 'Fermi zinciri: 62M TR IG × %2,4 satıcı = 1,5M → × %40 DM kullanan = 600K → × %5 ödeyebilir = 30K. Muhafazakâr not: "%5 ödeme istekliliği" en spekülatif çarpan — $9/ay dolar-sabit, kur bariyeriyle %3\'e düşerse adreslenebilir 18K\'ya, TR tavanı ~$227K\'ya iner. Global: aynı zincir MENA+LatAm için ek ~120K → toplam adreslenebilir ~150K. Pazar için Cal.com benchmarkı: 60K ödeme yapan, $5M ARR — referans tempo.',
+    content: 'TR adreslenebilir: ~30K satıcı. TR yıllık gelir senaryoları: Kötümser %1 = ~$32K · Orta %3 = ~$95K · İyimser TR tavanı %7 (2.100 müşteri) = ~$223K. v2 Global (baz %3): ~4.500 müşteri = ~$477K/yıl. v2 Stretch (%6): ~9.000 müşteri = ~$954K/yıl.',
+    detail: 'Fermi zinciri: 62M TR IG × %2,4 satıcı = 1,5M → × %5 ödeyebilir = ~30K (DM-özel filtre kaldırıldığı için zincir V.1\'e göre bir adım kısaldı). Global: aynı zincir MENA+LatAm için ek ~120K → toplam ~150K. Cal.com benchmarkı: 60K ödeme yapan, $5M ARR — referans tempo.',
     maurya: '"Pazar boyutunu bir zincir olarak sun. Her halkayı savunabilmelisin. \'150M sosyal medya kullanıcısı var\' bir pazarlık değil, bir kaçış."',
-    keyMetric: 'TR tavan $378K · Global baz $810K · Global stretch $1,6M',
-    risk: '%5 ödeme istekliliği %3\'e düşerse TR tavanı ~$227K\'ya iner; tüm senaryolar ~2 kat küçülür',
+    keyMetric: 'TR tavan ~$223K/yıl · Global baz ~$477K/yıl · Global stretch ~$954K/yıl',
+    risk: '%5 ödeme istekliliği VE yılda-2-tekrar-alım varsayımı — iki bağımsız tahmin çarpılıyor, ikisi de ölçülmedi',
   },
   {
     num: 8,
     title: 'Çekim Gücü & Güncel Metrikler',
     icon: TrendingUp,
-    content: 'Şu an: Aşama 1 — Problem/Çözüm Uyumu. OMTM: ödeme yapan müşteri. Sayaç: görüşme 0/20 · ücretli pilot 0/10 · ödeme 0/10. Kırılma noktaları: 10 ödeme → 550 müşteri ($100K ARR) → 4.500 müşteri ($810K baz ARR).',
-    detail: 'Doğrulanmış yalnızca: birim maliyet ölçümleri ($0,026/mesaj, $0,121/güncelleme, $0,147/kurulum), kredi oranı gerçek ölçüm (1:4.6:5.6). Doğrulanmamış: viral imza dönüşüm oranı (UTM\'lerle ölçülecek), dolar-sabit fiyata kur-churn tepkisi, $9/ay ödeme istekliliği gerçek oran, Beiwe kurulum süresi (10 dk vaadi). Ücretli pilot başlangıcı bekliyor.',
+    content: 'Şu an: Aşama 1 — Problem/Çözüm Uyumu. OMTM: ödeme yapan müşteri. Sayaç: görüşme 0/20 · ücretli pilot 0/10 · ödeme 0/10. Kırılma noktaları: 10 ödeme → ~950 müşteri (~$100K/yıl) → ~4.500 müşteri (~$477K/yıl baz).',
+    detail: 'Doğrulanmış yalnızca: birim maliyet ölçümleri ($0,026/mesaj, $0,121/güncelleme, $0,147/kurulum). Doğrulanmamış: viral imza dönüşümü (bugün imza metni teknik olarak boş — önce düzeltilmesi lazım), $20 giriş fiyatının kabulü, tekrar-alım sıklığı, asistanın soruya göre sayfa açma davranışının (ürünün ana vaadi) gerçek ziyaretçilerde çalışması.',
     maurya: '"Çekim, tahmin değil kanıttır. Meraklı kullanıcılar değil, ödeme yapan müşteriler sayılır. Her diğer metrik vanity."',
-    keyMetric: 'Doğrulanmış: $0,026/mesaj · Doğrulanmamış: viral dönüşüm, kur-churn',
-    risk: 'Viral imza döngüsü çalışmazsa CAC organik kalmaz; ücretli meta reklamı gerekirse <$100 CAC TR\'de zordur',
+    keyMetric: 'Doğrulanmış: $0,026/mesaj · Doğrulanmamış: viral dönüşüm, tekrar-alım oranı, ana ürün davranışı',
+    risk: 'İmza döngüsü çalışmıyor (bug) → CAC organik kalmaz; ücretli kanal gerekirse <$100 CAC TR\'de zordur',
   },
   {
     num: 9,
     title: 'Haksız Avantaj',
     icon: Lightbulb,
-    content: '1. Saule imzası = viral döngü: her konuşma organik marka tanıtımı, her widget bir büyüme kanalı. 2. Konuşma verisi birikimi: Beiwe ne kadar kullanılırsa o kadar özelleşir — yeni giren rakip bu veri avantajını hemen kopyalayamaz. 3. Türkçe-ilk dil derinliği: MENA/LatAm lokalizasyon modelini zaten taşıyan bir ürün mimarisi.',
-    detail: 'Kopyalanamayan şey: ürünün kendisi değil, kullanıcı konuşma verisi + viral büyüme döngüsünün bileşimi. Bugün bu avantajlar sıfır — viral imza Faz 1.8\'de yeni canlıya girdi, veri birikimi henüz başlamadı. Dolayısıyla bu bir "vaat" değil, "inşa edilen süreç" olarak sunulmalı.',
+    content: '1. Widget imzası = potansiyel viral döngü — ama bugün metni boş, çalışmıyor (önce düzeltilmeli). 2. Konuşma verisi birikimi: asistan ne kadar kullanılırsa o kadar özelleşir. 3. Blok-tabanlı sayfa mimarisi zaten çok dilli (tr/en/ru) — MENA/LatAm lokalizasyonu mimari değişiklik değil, dil paketi eklemek.',
+    detail: 'Kopyalanamayan şey: ürünün kendisi değil, kullanıcı konuşma verisi + (düzeltildiğinde) viral büyüme döngüsünün bileşimi. Bugün bu avantajların ikisi de "inşa edilen süreç" — biri henüz çalışmıyor, diğeri henüz birikmedi.',
     maurya: '"Haksız avantaj bugün sahip olduğun şey değil, başkalarının yarın sahip olamayacağı şey. Ama o zamana kadar hız ve niş yeterlidir."',
-    keyMetric: 'Saule imzası viral dönüşüm oranı (UTM ile ölçülecek, Faz 1.8)',
-    risk: 'Linktree veya büyük bir oyuncu bu segmenti fark ederse hızla kopyalar; hız tek savunma',
+    keyMetric: 'Widget imza dönüşüm oranı — ölçülemez, çünkü imza metni boş',
+    risk: 'Linktree veya büyük bir oyuncu "ziyaretçiye göre açılan sayfa" fikrini fark ederse hızla kopyalar; hız tek savunma',
   },
   {
     num: 10,
     title: 'Çağrı (Call to Action)',
     icon: Target,
-    content: 'Aşama 1 için: 10 ödeme yapan müşteri. Pilot ücretli, $9/ay, manuel tahsilat. 30 gün aktif Saule kullanımı → lead toplandı mı? Sonuç: devam/pivot/dur. Ücretsiz deneme yok.',
-    detail: 'Müşteri çağrısı: "Birlikte kuralım. $9/ay. 30 gün lead toplarsın, veriyi görürsün." Yatırımcı çağrısı: "$100K ARR (550 müşteri) doğrulamasında bilgilendiririm — v2 öncesi konuşalım." Danışman çağrısı: "$9 dolar-sabit bariyer gerçek mi, değer iletişim sorunu mu? Bu soruya cevabın varsa haber ver." Bugünkü somut adım: 20 problem görüşmesi planla, ilk 5\'ini bu hafta yap.',
+    content: 'Aşama 1 için: 10 ödeme yapan müşteri. Free katmanla başla, concierge pilotla destekle, 30 gün aktif kullanım → kredi tükenince paket satın alıyor mu? Sonuç: devam/pivot/dur.',
+    detail: 'Müşteri çağrısı: "Ücretsiz dene, 20 kredi. Beğenirsen $20\'dan devam et." Yatırımcı çağrısı: "~$100K/yıl doğrulamasında bilgilendiririm — v2 öncesi konuşalım." Danışman çağrısı: "Tekrar-alım oranını en hızlı nasıl ölçeriz?" Bugünkü somut adım: 20 problem görüşmesi planla, ilk 5\'ini bu hafta yap; widget imza metnini doldur.',
     maurya: '"Her sunumun sonunda net bir adım ol. Tarih yok, isim yok, somut eylem yok — o konuşma olmamış sayılır."',
-    keyMetric: 'Hedef: 10 ödeme · 550 müşteri = $100K ARR · 4.500 = $810K ARR',
+    keyMetric: 'Hedef: 10 ödeme · 950 müşteri = ~$100K/yıl · 4.500 = ~$477K/yıl',
     risk: 'Pilot müşteri bulamazsan problem var demektir — ürün değil, sorun doğrulaması önce gelir',
   },
 ];
@@ -378,7 +381,7 @@ export default function LeanPitchPage() {
             Ash Maurya · <em>Running Lean</em>, Bölüm 5 — Hikâyeni net anlat. Her izleyici farklı duyar; iş modeli aynı kalır.
           </p>
           <p className="text-xs text-slate-400 mt-1 font-mono">
-            V.2 · 2026-07-17 · Fermi V.1.1 + Çekim Gücü Yol Haritası V.1.1 verileriyle eşleştirildi. Statik.
+            V.2 · 2026-08-01 · Fermi V.2 + Çekim Gücü Yol Haritası V.2 verileriyle eşleştirildi. Statik.
           </p>
         </div>
 
@@ -416,8 +419,8 @@ export default function LeanPitchPage() {
             <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
                 { label: 'Açılış', text: 'Spesifik acı nokta ile başla' },
-                { label: 'Çözüm', text: 'Somut çıktıyı söyle — lead listesi' },
-                { label: 'Çağrı', text: 'Net fiyat + ücretsiz deneme yok kararı' },
+                { label: 'Çözüm', text: 'Somut davranışı söyle — sayfanın doğru yere açılması' },
+                { label: 'Çağrı', text: 'Net fiyat + ücretsiz başlama' },
               ].map((item) => (
                 <div key={item.label}>
                   <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400">{item.label}</p>
@@ -581,7 +584,7 @@ export default function LeanPitchPage() {
               },
               {
                 title: 'İzleyiciyi Önce Anla',
-                body: 'Müşteri somut çıktı ister (lead listesi). Yatırımcı büyüme hikâyesi ister (v2 global). Danışman açık soru ister (kur-churn testi). Aynı slaytla üçünü kazanamazsın.',
+                body: 'Müşteri somut davranış ister (sayfanın doğru yere açılması). Yatırımcı büyüme hikâyesi ister (v2 global). Danışman açık soru ister (tekrar-alım oranı testi). Aynı slaytla üçünü kazanamazsın.',
                 icon: Users,
               },
               {

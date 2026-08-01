@@ -8,4 +8,3 @@ export const PLANS = [
 ] as const;
 
 export const EXTRA_PACK = { price: 5, credits: 100 };
-export const TEST_PACK = { price: 0.1, credits: 10 };

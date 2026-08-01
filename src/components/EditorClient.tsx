@@ -625,6 +625,17 @@ export default function EditorClient({
     }
   };
 
+  const handleSetPrimaryColor = async (primary: string) => {
+    if (!/^#[0-9a-fA-F]{6}$/.test(primary) || theme.colors.primary === primary) return;
+    const nextTheme: Theme = { ...theme, colors: { ...theme.colors, primary } };
+    setTheme(nextTheme);
+    const { error } = await supabase.from('businesses').update({ theme: nextTheme }).eq('id', business.id);
+    if (!error) {
+      business.theme = nextTheme;
+      await markNeedsRepublish();
+    }
+  };
+
   // Faz 2.5: her işletme en fazla 3 (şu an sistemdeki tüm) dil arasından en az 1'ini aktif
   // tutmalı — Faz 7'de dil sayısı 6'ya çıktığında bu seçim maliyeti/karmaşıklığı sınırlayacak.
   const toggleActiveLocale = async (locale: string) => {
@@ -1097,6 +1108,28 @@ export default function EditorClient({
                       </button>
                     );
                   })}
+                </div>
+                <div className="mt-3 pt-3 border-t border-slate-200">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-medium text-slate-500">{t('accentColor')}</span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={theme.colors.primary}
+                        onChange={(e) => setTheme({ ...theme, colors: { ...theme.colors, primary: e.target.value } })}
+                        onBlur={(e) => handleSetPrimaryColor(e.target.value)}
+                        className="w-9 h-9 rounded-lg border border-slate-300 bg-white p-1 cursor-pointer"
+                        aria-label={t('accentColor')}
+                      />
+                      <input
+                        value={theme.colors.primary}
+                        onChange={(e) => setTheme({ ...theme, colors: { ...theme.colors, primary: e.target.value } })}
+                        onBlur={(e) => handleSetPrimaryColor(e.target.value)}
+                        className="w-24 p-2 text-xs font-mono border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-[var(--coral)]"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">{t('accentColorHint')}</p>
                 </div>
               </div>
 

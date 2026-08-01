@@ -2,7 +2,7 @@
 
 import { DEFAULT_THEME, Theme, resolveThemeColors } from '@/config/archetypes';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Mail, MessageCircle, Link as LinkIcon, AtSign } from 'lucide-react';
+import { ArrowRight, Mail, MessageCircle, Link as LinkIcon, AtSign } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkBreaks from 'remark-breaks';
 import { useLocale } from 'next-intl';
@@ -12,6 +12,7 @@ import { isVideoUrl } from '@/utils/mediaType';
 import { iconForLinkUrl } from '@/utils/linkIcon';
 import { hasRealContentForLocale, isItemVisibleInLocale, getLocalizedValue } from '@/config/blockTypes';
 import { SauleIcon } from './AgentIcons';
+import { stableItemId } from '@/utils/pageActionTargets';
 
 type RenderCtx = {
   locale: string;
@@ -26,6 +27,7 @@ type RenderCtx = {
   // configured behavior has no usable target — renderServices hides the button in that case.
   onOrderNowClick: ((message: string) => void) | null;
   businessName: string;
+  activeItemId?: string | null;
 };
 
 // Static Tailwind class lookups (never string-interpolated — Tailwind needs literal class names to compile them).
@@ -60,6 +62,31 @@ function orderNowMessage(itemTitle: string, locale: string): string {
 // title was cleared in the editor to reset it.
 function blockTitleOf(block: any, locale: string) {
   return block.content?.[locale]?.title || defaultTitleFor(block.type, locale) || block.title || block.type;
+}
+
+function blockEyebrow(block: any, locale: string): string {
+  const labels: Record<string, Record<string, string>> = {
+    about: { tr: 'Tanıtım', en: 'Intro', ru: 'Обзор' },
+    services: { tr: 'Hizmet', en: 'Service', ru: 'Услуги' },
+    extra_services: { tr: 'Hizmet', en: 'Service', ru: 'Услуги' },
+    pricing: { tr: 'Paket', en: 'Offer', ru: 'Пакет' },
+    hours: { tr: 'Saatler', en: 'Hours', ru: 'Часы' },
+    faq: { tr: 'Yanıt', en: 'Answer', ru: 'Ответ' },
+    gallery: { tr: 'Görsel', en: 'Visual', ru: 'Визуал' },
+    testimonials: { tr: 'Referans', en: 'Proof', ru: 'Отзывы' },
+    links: { tr: 'Bağlantı', en: 'Link', ru: 'Ссылка' },
+    contact: { tr: 'İletişim', en: 'Contact', ru: 'Контакт' },
+    custom: { tr: 'Sayfa', en: 'Page', ru: 'Страница' },
+  };
+  return labels[block.type]?.[locale] || block.type;
+}
+
+function blockPreviewMedia(block: any): string | null {
+  if (block.content?.mediaUrl) return block.content.mediaUrl;
+  if (block.content?.backgroundImage) return block.content.backgroundImage;
+  if (!Array.isArray(block.content?.items)) return null;
+  const mediaItem = block.content.items.find((item: any) => item?.mediaUrl || (block.type === 'gallery' && item?.url));
+  return mediaItem?.mediaUrl || mediaItem?.url || null;
 }
 
 // Wraps bare content in a surface card when the archetype's layoutStyle calls for it (see RenderCtx.cardWrap).
@@ -292,8 +319,9 @@ function renderTextBlock(block: any, ctx: RenderCtx) {
 function getLocalizedItems(block: any, locale: string) {
   return (block.content?.items || [])
     .filter((item: any) => isItemVisibleInLocale(item, locale))
-    .map((item: any) => ({
+    .map((item: any, index: number) => ({
       ...item,
+      __tbItemId: stableItemId(item, index),
       title: getLocalizedValue(item, locale, 'title'),
       description: getLocalizedValue(item, locale, 'description'),
       caption: getLocalizedValue(item, locale, 'caption'),
@@ -303,6 +331,14 @@ function getLocalizedItems(block: any, locale: string) {
       label: getLocalizedValue(item, locale, 'label'),
       url: getLocalizedValue(item, locale, 'url') // some components look for url, others label, etc.
     }));
+}
+
+function itemDataProps(item: any) {
+  return { 'data-tb-item-id': item.__tbItemId };
+}
+
+function itemFocusClass(item: any, ctx: RenderCtx) {
+  return item.__tbItemId && item.__tbItemId === ctx.activeItemId ? 'tb-focused-item' : '';
 }
 
 function renderServices(block: any, ctx: RenderCtx) {
@@ -336,7 +372,7 @@ function renderServices(block: any, ctx: RenderCtx) {
           {items.map((item, idx) => {
             const itemLoc = item[locale] || item;
             return (
-              <div key={idx} className="flex items-start gap-4 pb-6 border-b last:border-0 last:pb-0" style={{ borderColor: 'var(--border)' }}>
+              <div key={idx} {...itemDataProps(item)} className={`flex items-start gap-4 pb-6 border-b last:border-0 last:pb-0 transition-all ${itemFocusClass(item, ctx)}`} style={{ borderColor: 'var(--border)' }}>
                 <span className={`text-4xl leading-none opacity-30 shrink-0 ${headingFont}`} style={{ color: 'var(--primary)' }}>
                   {String(idx + 1).padStart(2, '0')}
                 </span>
@@ -369,7 +405,7 @@ function renderServices(block: any, ctx: RenderCtx) {
             const itemLoc = item[locale] || item;
             const reverse = idx % 2 === 1;
             return (
-              <div key={idx} className={`flex ${reverse ? 'flex-row-reverse' : 'flex-row'} gap-4 items-center`}>
+              <div key={idx} {...itemDataProps(item)} className={`flex ${reverse ? 'flex-row-reverse' : 'flex-row'} gap-4 items-center transition-all ${itemFocusClass(item, ctx)}`}>
                 {item.mediaUrl && (
                   <div className={`w-2/5 shrink-0 h-32 overflow-hidden ${radiusClass}`}>
                     {isVideoUrl(item.mediaUrl) ? (
@@ -407,7 +443,7 @@ function renderServices(block: any, ctx: RenderCtx) {
           {items.map((item, idx) => {
             const itemLoc = item[locale] || item;
             return (
-              <div key={idx} className="flex items-baseline gap-3 py-3 border-b last:border-0" style={{ borderColor: 'var(--border)' }}>
+              <div key={idx} {...itemDataProps(item)} className={`flex items-baseline gap-3 py-3 border-b last:border-0 transition-all ${itemFocusClass(item, ctx)}`} style={{ borderColor: 'var(--border)' }}>
                 <span className={`font-semibold ${headingFont}`}>{renderColoredSegments(itemLoc.title || item.title)}</span>
                 <span className="flex-1 border-b border-dotted opacity-30 translate-y-[-4px]" style={{ borderColor: 'var(--text-muted)' }} />
                 {item.price && (
@@ -452,7 +488,8 @@ function renderServices(block: any, ctx: RenderCtx) {
             return (
               <div
                 key={idx}
-                className={`p-5 border transition-transform hover:-translate-y-1 ${radiusClass} flex flex-col`}
+                {...itemDataProps(item)}
+                className={`p-5 border transition-transform hover:-translate-y-1 ${radiusClass} flex flex-col ${itemFocusClass(item, ctx)}`}
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
               >
                 {pos !== 'bottom' && MediaEl}
@@ -588,7 +625,7 @@ function renderFAQ(block: any, ctx: RenderCtx) {
             const question = item.question?.[locale] || item.question;
             const answer = item.answer?.[locale] || item.answer;
             return (
-            <div key={idx} className="flex items-start gap-4 pb-6 border-b last:border-0 last:pb-0" style={{ borderColor: 'var(--border)' }}>
+            <div key={idx} {...itemDataProps(item)} className={`flex items-start gap-4 pb-6 border-b last:border-0 last:pb-0 transition-all ${itemFocusClass(item, ctx)}`} style={{ borderColor: 'var(--border)' }}>
               <span className={`text-4xl leading-none opacity-30 shrink-0 ${headingFont}`} style={{ color: 'var(--primary)' }}>
                 {String(idx + 1).padStart(2, '0')}
               </span>
@@ -613,7 +650,7 @@ function renderFAQ(block: any, ctx: RenderCtx) {
             const question = item.question?.[locale] || item.question;
             const answer = item.answer?.[locale] || item.answer;
             return (
-            <details key={idx} className={`border ${radiusClass} overflow-hidden`} style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+            <details key={idx} {...itemDataProps(item)} className={`border ${radiusClass} overflow-hidden transition-all ${itemFocusClass(item, ctx)}`} style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
               <summary className="cursor-pointer list-none p-4 font-medium text-sm flex justify-between items-center gap-3 [&::-webkit-details-marker]:hidden">
                 <span>{renderColoredSegments(question)}</span>
                 <span className="opacity-40 shrink-0" style={{ color: 'var(--primary)' }}>+</span>
@@ -636,8 +673,9 @@ function renderFAQ(block: any, ctx: RenderCtx) {
           return (
           <button
             key={idx}
+            {...itemDataProps(item)}
             onClick={() => window.dispatchEvent(new CustomEvent('sendToChat', { detail: stripColorSyntax(question) }))}
-            className={`text-left px-4 py-2 border transition-all hover:scale-105 ${radiusClass}`}
+            className={`text-left px-4 py-2 border transition-all hover:scale-105 ${radiusClass} ${itemFocusClass(item, ctx)}`}
             style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--primary)' }}
           >
             <span className="font-medium text-sm">{renderColoredSegments(question)}</span>
@@ -663,7 +701,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
           {items.map((item: any, idx: number) => {
             const caption = item.caption?.[locale] || item.caption;
             return (
-              <div key={idx} className="relative shrink-0 w-[85%] h-72 snap-center group overflow-hidden">
+              <div key={idx} {...itemDataProps(item)} className={`relative shrink-0 w-[85%] h-72 snap-center group overflow-hidden transition-all ${itemFocusClass(item, ctx)}`}>
                 {isVideoUrl(item.url) ? (
                   <video src={item.url} className="w-full h-full object-cover" controls />
                 ) : (
@@ -690,7 +728,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
           {items.map((item: any, idx: number) => {
             const caption = item.caption?.[locale] || item.caption;
             return (
-              <div key={idx} className={`relative overflow-hidden group h-64 sm:h-80 ${radiusClass}`}>
+              <div key={idx} {...itemDataProps(item)} className={`relative overflow-hidden group h-64 sm:h-80 ${radiusClass} transition-all ${itemFocusClass(item, ctx)}`}>
                 {isVideoUrl(item.url) ? (
                   <video src={item.url} className="w-full h-full object-cover" controls />
                 ) : (
@@ -717,7 +755,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
           {items.map((item: any, idx: number) => {
             const caption = item.caption?.[locale] || item.caption;
             return (
-              <div key={idx} className={`break-inside-avoid relative group overflow-hidden ${radiusClass}`}>
+              <div key={idx} {...itemDataProps(item)} className={`break-inside-avoid relative group overflow-hidden ${radiusClass} transition-all ${itemFocusClass(item, ctx)}`}>
                 {isVideoUrl(item.url) ? (
                   <video src={item.url} className="w-full object-cover" controls />
                 ) : (
@@ -743,7 +781,7 @@ function renderGallery(block: any, ctx: RenderCtx) {
         {items.map((item: any, idx: number) => {
           const caption = item.caption;
           return (
-            <div key={idx} className={`relative overflow-hidden group ${radiusClass}`}>
+            <div key={idx} {...itemDataProps(item)} className={`relative overflow-hidden group ${radiusClass} transition-all ${itemFocusClass(item, ctx)}`}>
               {isVideoUrl(item.url) ? (
                 <video src={item.url} className="w-full h-40 md:h-64 object-cover" controls />
               ) : (
@@ -779,7 +817,7 @@ function renderTestimonials(block: any, ctx: RenderCtx) {
             const quote = item.quote;
             const role = item.role;
             return (
-              <div key={idx} className="text-center max-w-lg mx-auto">
+              <div key={idx} {...itemDataProps(item)} className={`text-center max-w-lg mx-auto transition-all ${itemFocusClass(item, ctx)}`}>
                 <div className="text-5xl mb-3 opacity-30 font-serif leading-none" style={{ color: 'var(--primary)' }}>"</div>
                 <p className={`text-2xl leading-snug italic mb-4 ${headingFont}`}>{renderColoredSegments(quote)}</p>
                 <div className="font-semibold text-sm">{item.author}</div>
@@ -799,7 +837,7 @@ function renderTestimonials(block: any, ctx: RenderCtx) {
             const quote = item.quote;
             const role = item.role;
             return (
-              <div key={idx} className={`p-4 border ${radiusClass}`} style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+              <div key={idx} {...itemDataProps(item)} className={`p-4 border ${radiusClass} transition-all ${itemFocusClass(item, ctx)}`} style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
                 <p className="text-sm italic mb-3 opacity-90 leading-relaxed">{renderColoredSegments(quote)}</p>
                 <div className="font-semibold text-xs">{item.author}</div>
                 {role && <div className="text-[11px] opacity-70 mt-0.5" style={{ color: 'var(--text-muted)' }}>{renderColoredSegments(role)}</div>}
@@ -820,7 +858,8 @@ function renderTestimonials(block: any, ctx: RenderCtx) {
             return (
               <div
                 key={idx}
-                className={`min-w-[85%] md:min-w-[300px] p-6 border snap-center ${radiusClass}`}
+                {...itemDataProps(item)}
+                className={`min-w-[85%] md:min-w-[300px] p-6 border snap-center ${radiusClass} transition-all ${itemFocusClass(item, ctx)}`}
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
               >
                 <div className="text-[var(--primary)] text-3xl mb-2 opacity-50 leading-none font-serif">"</div>
@@ -853,10 +892,11 @@ function renderLinks(block: any, ctx: RenderCtx) {
           {items.map((item: any, idx: number) => (
             <a
               key={idx}
+              {...itemDataProps(item)}
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              className={`p-4 text-center font-semibold border shadow-sm transition hover:scale-[1.02] ${radiusClass}`}
+              className={`p-4 text-center font-semibold border shadow-sm transition hover:scale-[1.02] ${radiusClass} ${itemFocusClass(item, ctx)}`}
               style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--primary)' }}
             >
               {renderColoredSegments(item.label)}
@@ -877,11 +917,12 @@ function renderLinks(block: any, ctx: RenderCtx) {
             return (
               <a
                 key={idx}
+                {...itemDataProps(item)}
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 title={item.label}
-                className="w-14 h-14 rounded-full border flex items-center justify-center transition hover:scale-110"
+                className={`w-14 h-14 rounded-full border flex items-center justify-center transition hover:scale-110 ${itemFocusClass(item, ctx)}`}
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--primary)' }}
               >
                 <Icon className="w-6 h-6" />
@@ -900,10 +941,11 @@ function renderLinks(block: any, ctx: RenderCtx) {
         {items.map((item: any, idx: number) => (
           <a
             key={idx}
+            {...itemDataProps(item)}
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            className={`w-full p-4 text-center font-semibold border shadow-sm transition hover:scale-[1.02] ${radiusClass}`}
+            className={`w-full p-4 text-center font-semibold border shadow-sm transition hover:scale-[1.02] ${radiusClass} ${itemFocusClass(item, ctx)}`}
             style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--primary)' }}
           >
             {renderColoredSegments(item.label)}
@@ -1008,6 +1050,8 @@ export default function ArchetypeRenderer({
   theme: themeProp,
   businessName,
   activeBlockId: controlledActiveBlockId,
+  activeItemId,
+  activeOpenSequence = 0,
   onActiveBlockChange,
   contactMethod,
   contactValue,
@@ -1020,6 +1064,8 @@ export default function ArchetypeRenderer({
   // "back" control itself instead of it floating inside the scrollable block content. Falls back
   // to internal state when omitted.
   activeBlockId?: string | null,
+  activeItemId?: string | null,
+  activeOpenSequence?: number,
   onActiveBlockChange?: (id: string | null) => void,
   // business.contact_method / business.contact_value — rendered as a real page section (like any
   // other block) when at least one method has a value, positioned right after services.
@@ -1042,6 +1088,12 @@ export default function ArchetypeRenderer({
       activeBlockNodeRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
     }
   }, [activeBlockId]);
+
+  useEffect(() => {
+    if (!activeBlockId || !activeItemId || !activeBlockNodeRef.current) return;
+    const node = activeBlockNodeRef.current.querySelector(`[data-tb-item-id="${CSS.escape(activeItemId)}"]`);
+    node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [activeBlockId, activeItemId]);
 
   const theme = themeProp || DEFAULT_THEME;
 
@@ -1110,7 +1162,7 @@ export default function ArchetypeRenderer({
   const bodyFont = 'tb-body';
   const cardWrap = theme.layoutStyle === 'card-heavy';
   const sectionGapClass = SECTION_GAP_CLASS[theme.layoutStyle] || 'gap-10';
-  const renderCtx: RenderCtx = { locale, radiusClass, headingFont, theme, cardWrap, onOrderNowClick, businessName };
+  const renderCtx: RenderCtx = { locale, radiusClass, headingFont, theme, cardWrap, onOrderNowClick, businessName, activeItemId };
 
   const renderBlock = (block: any) => {
     const renderFn = BLOCK_RENDERERS[block.type];
@@ -1128,7 +1180,7 @@ export default function ArchetypeRenderer({
       className={`min-h-full pb-20 ${bodyFont}`}
       style={{
         ...styleVars,
-        backgroundColor: 'var(--bg)',
+        background: 'var(--tb-page-bg, var(--bg))',
         color: 'var(--text)'
       }}
     >
@@ -1141,6 +1193,56 @@ export default function ArchetypeRenderer({
         .markdown-body a { color: inherit; text-decoration: underline; }
         .tb-heading { font-family: var(--heading-font); }
         .tb-body { font-family: var(--body-font); }
+        .tb-focused-item {
+          outline: 2px solid var(--primary);
+          outline-offset: 4px;
+          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.14);
+          transform: translateY(-1px);
+        }
+        .tb-linktree-tile {
+          position: relative;
+          isolation: isolate;
+          overflow: hidden;
+          min-height: 64px;
+          box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+        }
+        .tb-linktree-tile::before {
+          content: "";
+          position: absolute;
+          inset: 0 auto 0 0;
+          width: 4px;
+          background: var(--primary);
+          opacity: 0.9;
+        }
+        .tb-linktree-tile::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(135deg, transparent 38%, color-mix(in srgb, var(--primary) 10%, transparent));
+          z-index: -1;
+        }
+        .tb-active-block {
+          position: relative;
+          animation: tbSceneIn 520ms ease-out both;
+        }
+        .tb-active-block::before {
+          content: "";
+          position: absolute;
+          inset: -10px;
+          border: 1px solid var(--primary);
+          border-radius: 18px;
+          pointer-events: none;
+          animation: tbSceneFrame 1100ms ease-out both;
+        }
+        @keyframes tbSceneIn {
+          from { opacity: 0; transform: translateY(18px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes tbSceneFrame {
+          0% { opacity: 0; transform: scale(0.98); }
+          18% { opacity: 0.38; }
+          100% { opacity: 0; transform: scale(1.015); }
+        }
       `}</style>
 
       <div className="flex flex-col gap-10">
@@ -1148,14 +1250,37 @@ export default function ArchetypeRenderer({
           <div className="flex flex-col gap-3 mt-2">
             {visibleBlocks.map(block => {
               const blockTitle = blockTitleOf(block, locale);
+              const previewMedia = blockPreviewMedia(block);
               return (
                 <button
                   key={block.id}
                   onClick={() => setActiveBlockId(block.id)}
-                  className="w-full py-3 px-4 rounded-2xl text-base font-semibold border shadow-sm transition hover:scale-[1.02]"
+                  className="tb-linktree-tile group w-full py-4 pl-5 pr-4 rounded-2xl text-left border transition duration-200 hover:-translate-y-0.5"
                   style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
                 >
-                  {renderColoredSegments(blockTitle)}
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="flex items-center gap-3 min-w-0">
+                      {previewMedia && (
+                        <span className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg)' }}>
+                          {isVideoUrl(previewMedia) ? (
+                            <video src={previewMedia} className="w-full h-full object-cover" muted playsInline />
+                          ) : (
+                            <img src={previewMedia} alt="" className="w-full h-full object-cover" />
+                          )}
+                        </span>
+                      )}
+                      <span className="min-w-0">
+                        <span className="block text-[10px] font-semibold uppercase opacity-45 mb-0.5">{blockEyebrow(block, locale)}</span>
+                        <span className="block text-base font-bold leading-snug">{renderColoredSegments(blockTitle)}</span>
+                      </span>
+                    </span>
+                    <span
+                      className="w-9 h-9 rounded-full border flex items-center justify-center shrink-0 transition group-hover:translate-x-0.5"
+                      style={{ borderColor: 'var(--border)', color: 'var(--primary)', backgroundColor: 'color-mix(in srgb, var(--primary) 8%, var(--surface))' }}
+                    >
+                      <ArrowRight className="w-4 h-4" />
+                    </span>
+                  </span>
                 </button>
               );
             })}
@@ -1165,7 +1290,11 @@ export default function ArchetypeRenderer({
         {(layoutMode === 'website' || activeBlockId) && (
           <div className={`flex flex-col ${sectionGapClass}`}>
             {visibleBlocks.map(block => (
-              <div key={block.id} ref={block.id === activeBlockId ? activeBlockNodeRef : undefined}>
+              <div
+                key={block.id === activeBlockId ? `${block.id}:${activeOpenSequence}` : block.id}
+                ref={block.id === activeBlockId ? activeBlockNodeRef : undefined}
+                className={block.id === activeBlockId ? 'tb-active-block scroll-mt-4' : undefined}
+              >
                 {renderBlock(block)}
               </div>
             ))}

@@ -5,19 +5,25 @@ import ContinuousImprovementTabs from '@/components/ContinuousImprovementTabs';
 import { TrendingUp, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
-/* Static data — Fermi V.1                                            */
+/* Static data — Fermi V.2 (2026-08-01)                                */
 /* ------------------------------------------------------------------ */
 
 /*
-  Fiyatlama kararı (2026-07-17, Enes): fiyatlar DOLARA SABİTTİR; TL tahsilat
-  güncel kur üzerinden yapılır, lokal sabit TL fiyat yoktur. Birim ekonomi
-  ($0,045/kredi, ROADMAP 4.3) dolar bazında geçerliliğini korur.
+  Fiyatlama gerçeği (src/config/plans.ts, src/config/pricing.ts): ürün ABONELİK
+  değil, tek seferlik kredi paketi cüzdanıdır. Free $0→20 kredi · Starter
+  $20→400 kredi · Pro $90→2.000 kredi · Business $400→10.000 kredi · Ek paket
+  $5→100 kredi. 1 kredi = $0,05. Fiyatlar dolara sabit; Shopier ödeme
+  entegrasyonu (src/app/api/checkout/shopier) TL tahsilatı güncel kur
+  üzerinden yapıyor — bu V.1'deki dolar-sabit-fiyat kararıyla tutarlı, KOD
+  DOĞRULUYOR. Değişen şey V.1'in $9/$29/$79 "/ay" abonelik rakamlarıydı —
+  bunlar hiçbir zaman koda yansımadı, kurgusaldı; V.2 gerçek fiyatları kullanır.
 
-  ARPU: $22 teorik blended ARPU, Starter-ağırlıklı erken dönem plan karması
-  + %20 yıllık ödeme indirimi nedeniyle ~$15 efektif ARPU'ya indirilmiştir.
-
-  Pazar: Sadece "sosyal medya kullanıcısı" değil, "müşterisiyle DM'den
-  iş yapan satıcı" spesifik filtresiyle modellenmiştir.
+  Abonelik olmadığı için "ARPU/ay" ve "MRR" kavramları burada birebir
+  uygulanmaz. Bunun yerine: bir müşterinin YILLIK değeri = (ilk paket
+  büyüklüğü) × (yılda kaç kez kredi tükenip yenilendiği). İkinci çarpan —
+  tekrar-alım sıklığı — hiç ölçülmedi, aşağıda açıkça varsayım olarak
+  etiketlendi. Pazar zinciri (adreslenebilir müşteri sayısı) V.1'den
+  değişmedi, ürünün konumlanmasından bağımsız bir tahmindir.
 */
 
 const scenarios = [
@@ -27,11 +33,11 @@ const scenarios = [
     color: 'red',
     captureRate: 'TR adreslenebilirin %1\'i',
     customers: '~300',
-    arpu: '$15/ay (efektif)',
-    mrr: '~$4.500',
-    arr: '~$54K',
+    arpu: '$106/yıl (varsayım)',
+    mrr: '~$2.650/ay',
+    arr: '~$32K',
     comment:
-      'Erken dönem ürün-pazar uyumsuzluğu veya yüksek churn. ' +
+      'Erken dönem ürün-pazar uyumsuzluğu veya çok seyrek tekrar-alım. ' +
       'Tek kurucu için ancak hayatta kalma çizgisi.',
   },
   {
@@ -40,12 +46,12 @@ const scenarios = [
     color: 'yellow',
     captureRate: 'TR adreslenebilirin %3\'ü',
     customers: '~900',
-    arpu: '$15/ay (efektif)',
-    mrr: '~$13.500',
-    arr: '~$162K',
+    arpu: '$106/yıl (varsayım)',
+    mrr: '~$7.950/ay',
+    arr: '~$95K',
     comment:
       'Türkiye\'de sağlıklı, sürdürülebilir bir bootstrapped iş. ' +
-      'SaaS metrikleri oturmuş ancak pazar sınırlarına yaklaşılmış.',
+      'Kredi paketleri büyüdüğü için (min. $20) eski V.1 senaryolarından daha yüksek çıkıyor.',
   },
   {
     id: 'optimistic-tr',
@@ -53,12 +59,12 @@ const scenarios = [
     color: 'blue',
     captureRate: 'TR adreslenebilirin %7\'si',
     customers: '~2.100',
-    arpu: '$15/ay (efektif)',
-    mrr: '~$31.500',
-    arr: '~$378K',
+    arpu: '$106/yıl (varsayım)',
+    mrr: '~$18.550/ay',
+    arr: '~$223K',
     comment:
-      'Türkiye için teorik tavan (~$400K ARR). Pazarın %7\'sini yakalamak ' +
-      'SaaS için ciddi bir doygunluk noktasıdır. VC ölçeği için yetersiz.',
+      'Türkiye için teorik tavan. Pazarın %7\'sini yakalamak ' +
+      'ciddi bir doygunluk noktasıdır. VC ölçeği için yetersiz.',
   },
   {
     id: 'optimistic-global',
@@ -66,13 +72,13 @@ const scenarios = [
     color: 'green',
     captureRate: 'Global adreslenebilirin %3\'ü',
     customers: '~4.500',
-    arpu: '$15/ay (Efektif)',
-    mrr: '~$67.500',
-    arr: '~$810K',
+    arpu: '$106/yıl (varsayım)',
+    mrr: '~$39.750/ay',
+    arr: '~$477K',
     comment:
       'WhatsApp+IG DM (v2) aktif. MENA/LatAm pazarlarına giriş. ' +
       'Aynı muhafazakâr yakalama oranı (%3) ve alım gücü bariyerleriyle. ' +
-      'Bu hedefin stretch/iyimser versiyonu ise ~$1,6M ARR (%6 yakalama) civarındadır.',
+      'Stretch/iyimser versiyonu ~$954K (%6 yakalama, 9.000 müşteri) civarındadır.',
   },
 ];
 
@@ -109,42 +115,45 @@ const comparables = [
 
 const thresholds = [
   {
-    target: '$100K ARR',
-    what: '~550 ödeme yapan müşteri ($15 ARPU)',
-    note: 'Erken doğrulama eşiği — TR adreslenebilir pazarının %1,8\'i. Ulaşılabilir.',
+    target: '~$100K/yıl',
+    what: '~950 ödeme yapan müşteri ($106/yıl varsayımsal değer)',
+    note: 'Erken doğrulama eşiği — TR adreslenebilir pazarının ~%3\'ü. Not: eşik büyüklüğü V.1\'e göre yükseldi çünkü minimum paket artık $20 (eskiden $9/ay).',
     achievable: true,
   },
   {
-    target: '~$400K ARR',
-    what: '~2.200 müşteri',
+    target: '~$223K/yıl',
+    what: '~2.100 müşteri',
     note: 'Türkiye\'nin teorik tavanı. Adreslenebilir pazarın %7\'si — çok zorlu.',
     achievable: true,
   },
   {
-    target: '$810K – $1,6M ARR',
-    what: 'v2 Global (Baz: 4.5K müşteri / Stretch: 9K)',
+    target: '$477K – $954K/yıl',
+    what: 'v2 Global (Baz: 4,5K müşteri / Stretch: 9K)',
     note: 'Türkiye tek başına bu ölçeği vermez. v2 kanallar (WA+IG DM) ve Faz 7 dil genişlemesi olmadan senaryo dışı.',
     achievable: false,
   },
 ];
 
+// NOT: risks dizisi bugün hiçbir yerde render edilmiyor (sayfada kullanılmayan
+// veri) — kaldırılmadı çünkü ileride "Riskler" bölümü olarak eklenmesi
+// muhtemel; en azından rakamları güncel tutuluyor.
 const risks = [
   {
     actor: 'Kur Bariyeri (Dolar-Sabit Fiyat)',
-    threat: 'Fiyat dolara sabit: kur yükseldikçe TL karşılığı fiyat da yükselir. $9/ay bugün ~370 TL; devalüasyonda bariyer büyür, churn hızlanır. Risk gelir tarafında değil, müşteri tutma tarafındadır.',
-    defense: 'Gelir dolar bazında korunur (karar 2026-07-17). Yıllık ödeme (%20 indirim) fiyatı 12 ay kilitler; değer iletişimi "kaçan lead\'in maliyeti" üzerinden yapılır.',
+    threat: 'Fiyat dolara sabit: kur yükseldikçe TL karşılığı fiyat da yükselir. Starter paketi ($20) bugün ~800 TL; devalüasyonda bariyer büyür. Risk gelir tarafında değil, müşteri tutma tarafındadır.',
+    defense: 'Gelir dolar bazında korunur; Shopier entegrasyonu TL tahsilatı güncel kur üzerinden yapıyor (kod doğrulandı). Değer iletişimi "kaçan lead\'in maliyeti" üzerinden yapılır.',
     severity: 'high',
   },
   {
     actor: 'Linktree / Rakip AI Katmanı',
-    threat: 'Büyük oyuncular bu segmenti fark ederse hızla kopyalayabilir.',
-    defense: 'Hız ve niş derinliği: DM otomasyonu odaklı kurulum deneyimi + yerel dil.',
+    threat: 'Büyük oyuncular "soruya göre açılan sayfa" konumlanmasını fark ederse hızla kopyalayabilir.',
+    defense: 'Hız ve niş derinliği: konuşarak kurulum deneyimi + yerel dil.',
     severity: 'medium',
   },
   {
-    actor: 'Churn & CAC (LTV Bağlantısı)',
-    threat: 'Aylık %5 churn ile LTV = $15 / 0,05 = $300. CAC < LTV/3 kuralı gereği edinim maliyeti <$100 olmalı.',
-    defense: 'Ücretli kanallarla <$100 CAC TR\'de zordur. Faz 1.8 viral imza döngüsü (2026-07-17\'de yayında) ve Faz 3 "Beiwe" çalışmazsa model kırılır; imza dönüşümü Faz S UTM\'leriyle ölçülecek.',
+    actor: 'Tekrar-Alım Oranı (Yıllık Değer Bağlantısı)',
+    threat: 'Yıllık $106 müşteri değeri varsayımı, kredi paketinin yılda ~2 kez yenilendiği varsayımına dayanıyor — bu HİÇ ölçülmedi. Gerçek oran 1\'e düşerse tüm senaryolar yarıya iner.',
+    defense: 'Widget imza döngüsü (şu an metni boş, düzeltilmeyi bekliyor) organik CAC\'ı düşürebilir; ama önce tekrar-alım oranının gerçek kullanıcı verisiyle ölçülmesi gerekiyor.',
     severity: 'high',
   },
 ];
@@ -213,7 +222,8 @@ export default function FermiEstimationPage() {
             Muhafazakâr yaklaşım — canımızın istediğini değil, işin gerektirdiği zorluğu görmek için.
           </p>
           <p className="text-xs text-slate-400 mt-1 font-mono">
-            V.1.1 · 2026-07-17 — DM katmanı aktif; fiyat dolara sabit, efektif ARPU plan karmasından
+            V.2 · 2026-08-01 — abonelik yerine tek seferlik kredi paketi (src/config/plans.ts); yıllık
+            değer, ölçülmemiş bir tekrar-alım varsayımına dayanır (bkz. Gelir Modeli)
           </p>
         </div>
 
@@ -302,34 +312,43 @@ export default function FermiEstimationPage() {
         <section>
           <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center font-mono">2</span>
-            Gelir Modeli — Efektif ARPU (Dolar-Sabit Fiyat)
+            Gelir Modeli — Kredi Paketi (Abonelik Değil)
           </h2>
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
             <div className="p-5">
               <p className="text-sm text-slate-700 mb-4">
-                <strong>Fiyatlama kararı (2026-07-17):</strong> Fiyatlar dolara sabittir ($9 / $29 / $79);
-                TL tahsilat güncel kur üzerinden yapılır, lokal sabit TL fiyat yoktur — girdi maliyetleri
-                dolar olduğu için başka yolu yok. Bu sayede birim ekonomi (ROADMAP 4.3, $0,045/kredi)
-                dolar bazında geçerliliğini korur. Teorik blended ARPU ~$22'dir; ancak erken dönemde
-                plan karması Starter'a yaslanır ve yıllık ödeme %20 indirimlidir — muhafazakâr
-                efektif ARPU bu yüzden ~$15 alınır.
+                <strong>Gerçek fiyatlama (src/config/plans.ts):</strong> Ürün abonelik değil, tek seferlik
+                kredi paketi cüzdanıdır. Free $0→20 kredi · Starter $20→400 kredi · Pro $90→2.000 kredi ·
+                Business $400→10.000 kredi · Ek paket $5→100 kredi. Fiyatlar dolara sabit — Shopier
+                entegrasyonu TL tahsilatı güncel kur üzerinden yapıyor (kod doğrulandı). 1 kredi = $0,05.
+              </p>
+              <p className="text-sm text-slate-700 mb-4">
+                Abonelik olmadığı için "ARPU/ay" kavramı burada birebir uygulanmaz. Bunun yerine:
+                <strong> yıllık müşteri değeri = ilk paket büyüklüğü × yılda kaç kez kredi yenileniyor.</strong> İlk
+                paket büyüklüğü, erken dönemde Starter-ağırlıklı bir karma varsayılarak (%75 Starter, %20 Pro,
+                %5 Business) <strong>~$53</strong> çıkar. Tekrar-alım sıklığı ise HİÇ ölçülmedi — burada
+                <strong> yılda 2 kez</strong> varsayılıyor (tamamen tahmin, gerçek kullanıcı verisi yok).
+                İkisinin çarpımı: <strong>~$106/yıl varsayımsal müşteri değeri.</strong>
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-2">
                 <div className="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-4">
-                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Teorik Blended ARPU</p>
-                  <p className="text-xl font-bold font-mono text-slate-400 line-through decoration-slate-400/50">$22.00</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Ort. İlk Paket Değeri</p>
+                  <p className="text-xl font-bold font-mono text-slate-700">~$53</p>
+                  <p className="text-[10px] text-slate-400 mt-1">%75 Starter + %20 Pro + %5 Business varsayımı</p>
                 </div>
                 <div className="flex-1 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-xs text-blue-600 uppercase tracking-wider mb-1 font-semibold">Efektif ARPU (Starter-ağırlıklı karma + yıllık indirim)</p>
-                  <p className="text-xl font-bold font-mono text-blue-900">~$15.00</p>
+                  <p className="text-xs text-blue-600 uppercase tracking-wider mb-1 font-semibold">Varsayımsal Yıllık Müşteri Değeri</p>
+                  <p className="text-xl font-bold font-mono text-blue-900">~$106/yıl</p>
+                  <p className="text-[10px] text-blue-500 mt-1">× yılda 2 tekrar-alım (ölçülmedi)</p>
                 </div>
               </div>
             </div>
             <div className="px-5 py-3 border-t border-slate-100 bg-slate-50">
               <p className="text-xs text-slate-600">
-                Kur riski gelir tarafında değil, müşteri tutma tarafındadır: kur yükseldikçe TL karşılığı
-                fiyat artar, churn baskısı büyür. Finansal hedefler bu efektif ARPU üzerinden hesaplanmalıdır.
+                Bu sayfadaki her senaryo iki bağımsız varsayımın çarpımıdır: adreslenebilir pazar payı VE
+                tekrar-alım sıklığı. Tekrar-alım oranı gerçek veriyle ölçülene kadar bu sütun bir tavan/taban
+                değil, kaba bir yön göstergesidir.
               </p>
             </div>
           </div>
@@ -384,8 +403,9 @@ export default function FermiEstimationPage() {
             </h2>
             <div className="bg-slate-900 rounded-xl p-6 text-white h-full flex flex-col">
               <p className="text-sm leading-relaxed text-slate-300 mb-4 flex-1">
-                Türkiye pazarı (~30K adreslenebilir, $15 ARPU) kendi başına bir VC ölçeği veya devasa bir çıkış yaratmaz.
-                Pazarın %7'sini yakalamak gibi uçuk bir senaryoda bile <strong>tavan ~$400K ARR</strong> civarındadır.
+                Türkiye pazarı (~30K adreslenebilir, ~$106/yıl varsayımsal müşteri değeri) kendi başına bir VC
+                ölçeği veya devasa bir çıkış yaratmaz. Pazarın %7'sini yakalamak gibi uçuk bir senaryoda bile
+                <strong> tavan ~$223K/yıl</strong> civarındadır.
               </p>
               <div className="bg-white/10 rounded-lg p-4 border border-white/10">
                 <p className="text-emerald-400 font-semibold text-sm mb-1 flex items-center gap-2">

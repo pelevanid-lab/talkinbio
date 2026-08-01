@@ -43,33 +43,33 @@ const milestones: Milestone[] = [
     status: 'active',
     timeHorizon: '0 – 6. ay',
     successCriteria:
-      '10 ödeme yapan müşteri + sorun görüşmelerinde tekrar eden acı nokta doğrulandı + $9 dolar-sabit fiyat noktasının (TL tahsilat kur üzerinden) kabul gördüğü test edildi',
+      '10 ödeme yapan müşteri + sorun görüşmelerinde tekrar eden acı nokta doğrulandı + kredi paketi fiyat noktasının (Starter $20, TL tahsilat kur üzerinden) kabul gördüğü test edildi',
     omtm: 'Ödeme yapan müşteri sayısı',
     omtmNote:
-      'Sadece kayıt veya deneme değil — gerçek ödeme. Tek rakamlı sayılar bile bu aşamada anlamlı sinyal. Fiyat dolara sabitlendi (karar 2026-07-17); test edilen, $9 noktasının kabulüdür. Faz 4 faturalandırması öncesi ödemeler bilinçli olarak manuel tahsil edilir (havale/elden). ÜCRETSİZ DENEME YOK (karar 2026-07-17): ilk 10 müşterinin tamamı öder; tek ücretsiz hesap test kullanıcısıdır (Uliana Pehlivan). Aşama sayacı (başlangıç 2026-07-17): görüşme 0/20 · ücretli pilot 0/10 · ödeme 0/10.',
+      'Sadece kayıt veya deneme değil — gerçek ödeme (Free katmandan bir kredi paketine geçiş). Tek rakamlı sayılar bile bu aşamada anlamlı sinyal. Fiyat dolara sabit, gerçek paket Starter $20/400 kredi (src/config/plans.ts). Ürün Free katman içerir (20 kredi, kurucu kararı 2026-08-01 — önceki "ücretsiz deneme yok" kararı geçersiz kılındı); iki hesap (kurucu + Uliana Pehlivan) 1 milyar kredi ile test amaçlı istisna. Aşama sayacı (başlangıç 2026-07-17): görüşme 0/20 · ücretli pilot 0/10 · ödeme 0/10.',
     assumptions: [
       {
-        text: 'Hizmet sahipleri DM\'den kaçan lead için ödeme yapar',
+        text: 'Hizmet sahipleri, ziyaretçiyi doğru sayfaya götüren bir asistan için ödeme yapar',
         status: 'unvalidated',
       },
       {
-        text: '$9/ay (~370 TL) mikro satıcı için kabul edilebilir bir bariyer',
+        text: 'Starter paketi ($20, ~800 TL) mikro satıcı için kabul edilebilir bir giriş fiyatı',
         status: 'unvalidated',
       },
       {
-        text: 'Beiwe kurulumu, landing\'in vaat ettiği gibi ~10 dakikada tamamlanır',
+        text: 'Sohbetle kurulum, landing\'in vaat ettiği gibi ~10 dakikada tamamlanır',
         status: 'unvalidated',
       },
       {
-        text: 'Kullanıcılar sayfayı paylaşmadan önce birkaç kez düzenler (viral imza döngüsü)',
+        text: 'Kullanıcılar sayfayı paylaşmadan önce birkaç kez düzenler (viral imza döngüsü — bugün imza metni boş, bu varsayım fiilen test edilemiyor)',
         status: 'unvalidated',
       },
     ],
     experiments: [
       '20 hedef segment görüşmesi — problem interview scripti, çözüm gösterme yok',
-      '10 kişilik ÜCRETLİ pilot ($9/ay, manuel tahsilat — ücretsiz deneme yok): Beiwe kurulumu + 30 gün Saule aktif → gerçek lead var mı?',
-      'Fiyat kabul testi: $9/ay, kur üzerinden TL karşılığıyla sunulduğunda pilotta direnç görüyor mu?',
-      'Landing demo hunisi: Saule konuşması → erişim talebi dönüşüm oranı (admin/analytics\'te canlı ölçülüyor, Faz 1.6)',
+      '10 kişilik pilot: Free katmanla (20 kredi) başlat, concierge kurulum + 30 gün aktif kullanım → kaç tanesi kredisi tükenince paket satın alıyor?',
+      'Fiyat kabul testi: Starter paketi $20, kur üzerinden TL karşılığıyla sunulduğunda pilotta direnç görüyor mu?',
+      'Landing demo hunisi: asistan konuşması → erişim talebi dönüşüm oranı (admin/analytics\'te canlı ölçülüyor, Faz 1.6)',
     ],
     mauryaNote:
       'Bu aşamada satmak utanç verici değil — zorunlu. Ödeme, söz değil, taahhüttür.',
@@ -83,25 +83,25 @@ const milestones: Milestone[] = [
     status: 'locked',
     timeHorizon: '6 – 18. ay',
     successCriteria:
-      "~550 ödeme yapan müşteri ($100K ARR eşiği, $15 efektif ARPU ile) + aylık churn < %5 + NPS > 40 + referral kanalı organik trafik üretiyor. Not: 550, adreslenebilir 30K pazarının %1,8'i — erken doğrulama için ulaşılabilir.",
-    omtm: 'Aylık elde tutulan ödeme yapan müşteri (net MRR büyümesi)',
+      "~950 ödeme yapan müşteri (~$100K/yıl eşiği, ~$106/yıl varsayımsal müşteri değeriyle) + tekrar-alım oranı ölçülüyor + NPS > 40 + referral kanalı organik trafik üretiyor. Not: 950, adreslenebilir 30K pazarının ~%3'ü — erken doğrulama için ulaşılabilir.",
+    omtm: 'Aylık elde tutulan ödeme yapan müşteri (net gelir büyümesi)',
     omtmNote:
-      'Müşteri kazanım hızı değil, kalanların oranı. Aylık %5 churn = yılda %46 kayıp. Churn yüksekse ürün-pazar uyumu yoktur — büyüme yanılsaması yaratır.',
+      'Müşteri kazanım hızı değil, kalanların ve tekrar kredi alanların oranı. Abonelik olmadığı için "churn" burada iptal değil, kredisi bitince yenilememek demektir — bu oran hiç ölçülmedi.',
     assumptions: [
       {
-        text: "Beiwe marketing agent (Faz 3) retention'ı anlamlı artırır",
+        text: "Sayfayı besleyen içerik/pazarlama agent'ı (Faz 3) tekrar-alımı anlamlı artırır",
         status: 'unvalidated',
       },
       {
-        text: 'Saule\'nin "Saule ile konuşuyorsunuz — talkinbio.com" imzası (Faz 1.8, yayında) viral döngü yaratır',
+        text: 'Widget imza döngüsü viral döngü yaratır — ÖN KOŞUL: imza metni şu an boş (messages/*.json), önce doldurulması gerekiyor',
         status: 'unvalidated',
       },
       {
-        text: "WhatsApp entegrasyonu olmadan $100K ARR'a ulaşmak mümkün",
+        text: "WhatsApp entegrasyonu olmadan ~$100K/yıl'a ulaşmak mümkün",
         status: 'unvalidated',
       },
       {
-        text: 'Dolar-sabit fiyat, kur dalgalanmasında kabul edilebilir churn üretir',
+        text: 'Dolar-sabit fiyat, kur dalgalanmasında kabul edilebilir tekrar-alım oranı üretir',
         status: 'unvalidated',
       },
     ],
@@ -123,13 +123,13 @@ const milestones: Milestone[] = [
     status: 'locked',
     timeHorizon: '18 – 36. ay',
     successCriteria:
-      '~$810K ARR (Global 4.5K ödeme yapan müşteri, $15 ARPU) + öngörülebilir büyüme (CAC < LTV / 3) + WhatsApp & Instagram DM aktif + Faz 7 dil genişlemesi (ar/es/pt) yayında + TR + MENA kanalları tekrarlanabilir. Türkiye tavanı ~$400K ARR — v2 global genişleme ana büyüme motorudur.',
-    omtm: 'Net yeni MRR (yeni + expansion − churn)',
+      '~$477K/yıl (Global 4,5K ödeme yapan müşteri, ~$106/yıl varsayımsal değer) + öngörülebilir büyüme (CAC < LTV / 3) + WhatsApp & Instagram DM aktif + Faz 7 dil genişlemesi (ar/es/pt) yayında + TR + MENA kanalları tekrarlanabilir. Türkiye tavanı ~$223K/yıl — v2 global genişleme ana büyüme motorudur.',
+    omtm: 'Net yeni gelir (yeni müşteri + tekrar-alım − kayıp)',
     omtmNote:
       'Türkiye tavanını aştıktan sonra büyüme yalnızca yeni pazardan gelir. v2 kanallar çalışmıyorsa büyüme durur — bu aşamada en büyük varsayım budur.',
     assumptions: [
       {
-        text: 'WhatsApp/IG DM entegrasyonu (v2) churn\'ü anlamlı düşürür',
+        text: 'WhatsApp/IG DM entegrasyonu (v2) tekrar-alım oranını anlamlı artırır',
         status: 'unvalidated',
       },
       {
@@ -155,6 +155,16 @@ const milestones: Milestone[] = [
 // Ayna-odası denetimi (kural, 2026-07-17): bu günlüğün amacı belgeler arası tutarlılık değil,
 // gerçeklikle temastır. Hedef: 6 ay içinde girdilerin çoğunluğu 'customer' olsun.
 const pivotLog = [
+  {
+    date: '2026-08-01',
+    assumption: 'Ürünün merkezi vaadi "DM otomasyonu / konuşan chatbot" mı, yoksa "ziyaretçinin sorusuna göre doğru sayfayı açan site" mi?',
+    result:
+      'Karar (Enes): konumlanma ikinciye kaydı — sohbet artık ürünün kendisi değil, sayfayı doğru yere yönlendiren bir mekanizma. Aynı oturumda, kurucu iki önceki kararı bilinçli olarak geçersiz kıldı: "ücretsiz deneme yok" kaldırıldı (ürün Free katmanla devam ediyor) ve tek-segment (solo diyetisyen) beachhead kısıtı kaldırıldı (ürün çok sektörlü konumlandırılıyor).',
+    action:
+      "Yalın Kanvas, Fermi Tahmini ve Çekim Gücü Yol Haritası V.2'ye güncellendi. Ayrıca fark edildi: V.1'in $9/$29/$79 aylık abonelik rakamlarının hiçbir zaman kodda karşılığı yoktu — src/config/plans.ts'teki gerçek model tek seferlik kredi paketidir (Free 20 kredi, Starter $20/400, Pro $90/2.000, Business $400/10.000); tüm finansal projeksiyonlar bu gerçek fiyatlarla yeniden hesaplandı. İlk 10 (diyetisyen playbook) sayfası bu yüzden kaldırıldı.",
+    type: 'scope',
+    evidence: 'internal',
+  },
   {
     date: '2026-07-17',
     assumption: 'Ücretsiz deneme/erken erişim, pilot müşteri kazanmayı kolaylaştırır',
@@ -338,7 +348,7 @@ export default function TractionRoadmapPage() {
           <p className="text-slate-500 text-sm">
             Ash Maurya · <em>Running Lean</em>, Bölüm 4 — Doğru zamanda doğru eylemi yap. Ürün/pazar uyumundan önce pivot et, sonra optimize et.
           </p>
-          <p className="text-xs text-slate-400 mt-1 font-mono">V.1.1 · 2026-07-17 · Fermi V.1.1 (dolar-sabit fiyat) ile uyumlu. Statik — yenilikler oldukça kod bazında güncellenir</p>
+          <p className="text-xs text-slate-400 mt-1 font-mono">V.2 · 2026-08-01 · Fermi V.2 (kredi paketi modeli) ile uyumlu. Statik — yenilikler oldukça kod bazında güncellenir</p>
         </div>
 
         {/* Stage Progress */}
@@ -392,14 +402,14 @@ export default function TractionRoadmapPage() {
           </div>
           <p className="text-slate-400 text-sm mb-5">
             Maurya: "Geriye doğru çalış. Hedefini bilmeden yol haritası çizemezsin."
-            Fermi Tahmini V.1.1 (dolar-sabit fiyat, muhafazakâr) baz alındı.
+            Fermi Tahmini V.2 (kredi paketi modeli, muhafazakâr) baz alındı.
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'ARR Hedefi (Baz)', value: '~$810K', note: '4.5K müşteri, global' },
-              { label: 'Stretch Hedef', value: '~$1,6M', note: '9K müşteri (%6 yakalama)' },
-              { label: 'Ort. Efektif ARPU', value: '$15/ay', note: 'Dolar-sabit fiyat; Starter-ağırlıklı karma + yıllık indirim' },
-              { label: 'Zaman Ufku', value: '36 ay', note: 'Gerçekçi tempo: 550 → 4.5K' },
+              { label: 'Yıllık Gelir Hedefi (Baz)', value: '~$477K', note: '4,5K müşteri, global' },
+              { label: 'Stretch Hedef', value: '~$954K', note: '9K müşteri (%6 yakalama)' },
+              { label: 'Varsayımsal Müşteri Değeri', value: '$106/yıl', note: 'Dolar-sabit fiyat; ölçülmemiş tekrar-alım varsayımı (yılda 2×)' },
+              { label: 'Zaman Ufku', value: '36 ay', note: 'Gerçekçi tempo: 950 → 4,5K' },
             ].map((item) => (
               <div key={item.label} className="bg-white/10 rounded-xl p-4">
                 <p className="text-[10px] uppercase tracking-wider text-slate-400 mb-1">{item.label}</p>
@@ -448,7 +458,7 @@ export default function TractionRoadmapPage() {
               <tbody className="divide-y divide-slate-100">
                 {milestones.map((m) => {
                   const sc = statusConfig[m.status];
-                  const thresholds = ['10 ödeme yapan müşteri (Faz 4 öncesi manuel tahsilat)', '~550 müşteri + churn < %5 ($100K ARR, $15 ARPU)', '~$810K ARR + CAC < LTV/3 (v2 + global baz hedef)'];
+                  const thresholds = ['10 ödeme yapan müşteri (Faz 4 öncesi manuel tahsilat)', '~950 müşteri (~$100K/yıl, ~$106/yıl varsayımsal değer)', '~$477K/yıl + CAC < LTV/3 (v2 + global baz hedef)'];
                   return (
                     <tr key={m.id} className={m.status === 'active' ? 'bg-blue-50/40' : ''}>
                       <td className="px-5 py-3 font-medium text-slate-900">{m.stage}</td>

@@ -151,14 +151,13 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
 
   const handleDeleteLead = async (leadId: string) => {
     if (!window.confirm(t('deleteLeadConfirm'))) return;
-    const prev = leads;
-    setLeads(leads.filter(l => l.id !== leadId));
-    const { error } = await supabase.from('leads').delete().eq('id', leadId);
-    if (error) {
-      console.error(error);
-      setLeads(prev);
+    const { data, error } = await supabase.from('leads').delete().eq('id', leadId).select('id');
+    if (error || !data || data.length === 0) {
+      console.error(error || new Error(`Lead ${leadId} not deleted (0 rows affected)`));
       alert(t('deleteError'));
+      return;
     }
+    setLeads(leads.filter(l => l.id !== leadId));
   };
 
   const handleSaveSettings = async () => {

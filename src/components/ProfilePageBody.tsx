@@ -11,6 +11,7 @@ import { resolveShortcuts } from '@/utils/shortcuts';
 import { hasRealContentForLocale } from '@/config/blockTypes';
 import { defaultTitleFor } from '@/config/localeTitles';
 import { Menu, X } from 'lucide-react';
+import { useOptionalPublicPageRuntime } from './PublicPageRuntime';
 
 function BlockMenu({ blocks, locale, c, onSelect }: { blocks: any[], locale: string, c: any, onSelect: (id: string) => void }) {
   const [open, setOpen] = useState(false);
@@ -70,7 +71,17 @@ type LocalizedText = Partial<Record<'tr' | 'en' | 'ru', string>> | null;
 // Owns activeBlockId so the "back" control can live in the same header (ProfileHeader) as the
 // avatar/name/language switcher instead of floating inside the scrollable block content below.
 export default function ProfilePageBody({ blocks, theme, businessName, pageTitle, tagline, category, contactMethod, contactValue, orderNowBehavior }: { blocks: any[], theme?: Theme | null, businessName: string, pageTitle: string, tagline?: LocalizedText, category?: string | null, contactMethod?: string | null, contactValue?: string | null, orderNowBehavior?: string | null }) {
-  const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
+  const [localActiveBlockId, setLocalActiveBlockId] = useState<string | null>(null);
+  const pageRuntime = useOptionalPublicPageRuntime();
+  const activeBlockId = pageRuntime?.activeBlockId ?? localActiveBlockId;
+  const setActiveBlockId = (id: string | null) => {
+    if (pageRuntime) {
+      if (id) pageRuntime.openBlock(id);
+      else pageRuntime.clearActiveBlock();
+      return;
+    }
+    setLocalActiveBlockId(id);
+  };
   const locale = useLocale() as 'tr' | 'en' | 'ru';
   const resolvedTheme = theme || DEFAULT_THEME;
 
@@ -86,7 +97,7 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
 
   return (
     <>
-      <div className="sticky top-0 z-40 pt-4 pb-3 -mt-4 -mx-4 px-4" style={{ backgroundColor: c.background }}>
+      <div className="sticky top-0 z-40 pt-4 pb-3 -mt-4 -mx-4 px-4" style={{ background: `var(--tb-page-bg-sticky, ${c.background})` }}>
         <ProfileHeader
           avatarUrl={avatarUrl}
           name={pageTitle}
@@ -108,6 +119,8 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
             theme={theme}
             businessName={businessName}
             activeBlockId={activeBlockId}
+            activeItemId={pageRuntime?.activeItemId ?? null}
+            activeOpenSequence={pageRuntime?.openSequence ?? 0}
             onActiveBlockChange={setActiveBlockId}
             contactMethod={contactMethod}
             contactValue={contactValue}

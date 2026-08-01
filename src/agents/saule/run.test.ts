@@ -78,6 +78,40 @@ describe('runSauleTurn', () => {
     expect(supabaseAdmin.from).toHaveBeenCalledWith('messages');
   });
 
+  it('opens a visible page section without calling the LLM when the visitor asks for it', async () => {
+    const { runSauleTurn } = await import('./run');
+    const { streamText } = await import('ai');
+    const supabaseAdmin = createFakeSupabase({
+      blocks: [
+        {
+          id: 'services-block',
+          type: 'services',
+          is_visible: true,
+          content: {
+            tr: { title: 'Neler Yapabilir' },
+            items: [{ id: 'consulting', tr: { title: 'Online Danışmanlık', description: 'Görüşme akışı' } }],
+          },
+        },
+      ],
+    });
+
+    const result = await runSauleTurn({
+      supabaseAdmin,
+      businessId: 'biz-1',
+      channel: 'web',
+      conversationKey: 'visitor-abc',
+      userMessage: 'Online danışmanlık nasıl işliyor?',
+      locale: 'tr',
+      newConversation: false,
+      isPreview: false,
+    });
+
+    await expect(result.text).resolves.toBe(
+      '§§ACTION§§{"type":"open_block","blockId":"services-block","itemId":"consulting"}§§/ACTION§§İlgili yeri açıyorum.'
+    );
+    expect(streamText).not.toHaveBeenCalled();
+  });
+
   it('warns when the model claims success without calling the capture tool (caught in production, 2026-07-18)', async () => {
     const { runSauleTurn } = await import('./run');
     const supabaseAdmin = createFakeSupabase();
@@ -156,7 +190,11 @@ describe('runSauleTurn', () => {
   it('throws a 402 AgentTurnError with a credits_exhausted JSON payload when the business has no credits (Faz 4.3)', async () => {
     const { runSauleTurn } = await import('./run');
     const { AgentTurnError } = await import('@/agents/shared/errors');
-    const supabaseAdmin = createFakeSupabase({ businesses: { id: 'biz-1', name: 'Test İşletmesi', contact_value: '{}', saule_settings: {}, credit_balance: 0 } });
+    const inactiveConversation = { id: 'old-conv-1', last_message_at: '2000-01-01T00:00:00.000Z', created_at: '2000-01-01T00:00:00.000Z' };
+    const supabaseAdmin = createFakeSupabase({
+      businesses: { id: 'biz-1', name: 'Test İşletmesi', contact_value: '{}', saule_settings: {}, credit_balance: 0 },
+      conversations: inactiveConversation,
+    });
 
     expect.assertions(3);
     try {
@@ -181,7 +219,8 @@ describe('runSauleTurn', () => {
   it('deducts a credit via the deduct_credits RPC after a successful Saule turn (Faz 4.3)', async () => {
     const { runSauleTurn } = await import('./run');
     const { SAULE_CREDIT_COST } = await import('@/agents/shared/credits');
-    const supabaseAdmin = createFakeSupabase();
+    const inactiveConversation = { id: 'old-conv-1', last_message_at: '2000-01-01T00:00:00.000Z', created_at: '2000-01-01T00:00:00.000Z' };
+    const supabaseAdmin = createFakeSupabase({ conversations: inactiveConversation });
 
     const result = (await runSauleTurn({
       supabaseAdmin,

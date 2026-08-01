@@ -2,7 +2,7 @@ import { createClient as createServerClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import BillingClient from './BillingClient';
-import { PLANS, EXTRA_PACK, TEST_PACK } from '@/config/plans';
+import { PLANS, EXTRA_PACK } from '@/config/plans';
 
 export default async function BillingDashboardPage() {
   const supabase = await createServerClient();
@@ -58,9 +58,9 @@ export default async function BillingDashboardPage() {
 
   if (invoices) {
     invoices.forEach((i: any) => {
-      const plan = i.plan_id === 'test' ? TEST_PACK : i.plan_id === 'extra' ? EXTRA_PACK : PLANS.find(p => p.id === i.plan_id);
+      const plan = i.plan_id === 'extra' ? EXTRA_PACK : PLANS.find(p => p.id === i.plan_id);
       const credits = plan?.credits || 0;
-      const planName = i.plan_id === 'test' ? 'Test Paketi' : i.plan_id === 'extra' ? 'Ekstra Paket' : (plan as any)?.name || i.plan_id;
+      const planName = i.plan_id === 'test' ? 'Kaldırılan test paketi' : i.plan_id === 'extra' ? 'Ekstra Paket' : (plan as any)?.name || i.plan_id;
       
       transactions.push({
         id: i.id,

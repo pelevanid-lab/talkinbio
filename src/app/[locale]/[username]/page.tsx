@@ -1,12 +1,15 @@
 import { notFound } from 'next/navigation';
 import { cookies, headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
+import type { CSSProperties } from 'react';
 import ChatWidget from '@/components/ChatWidget';
 import ProfilePageBody from '@/components/ProfilePageBody';
+import { PublicPageRuntimeProvider } from '@/components/PublicPageRuntime';
 import { createClient } from '@/utils/supabase/server';
 import { DEFAULT_THEME, resolveThemeColors } from '@/config/archetypes';
 import { googleFontsHref } from '@/utils/googleFonts';
 import { isConversationActive } from '@/utils/conversationWindow';
+import { getPageActionTargets, withContactPageActionTarget } from '@/utils/pageActionTargets';
 
 // Her ziyarette taze saule_settings (voiceEnabled dahil) çekilsin
 export const dynamic = 'force-dynamic';
@@ -131,6 +134,12 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
   const customGreeting = sauleSettings.customGreetingEnabled && sauleSettings.customGreeting
     ? sauleSettings.customGreeting
     : null;
+  const pageActionTargets = withContactPageActionTarget(
+    getPageActionTargets(blocks || [], locale),
+    business.contact_method,
+    business.contact_value,
+    locale
+  );
 
   // 3. Fetch past conversation if visitor_session_id exists
   let initialMessages: any[] = [];
@@ -177,9 +186,23 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
   // Koyu modda tüm viewport (header satırı dahil) koyu zemine uyar — ArchetypeRenderer'ın kendi
   // renkli div'i yalnızca blok alanını kaplıyor, profil başlığı ve boşluklar bunun dışında.
   const resolvedColors = resolveThemeColors(theme);
+  const pageCanvas =
+    theme.mode === 'dark'
+      ? resolvedColors.background
+      : `linear-gradient(180deg, color-mix(in srgb, ${resolvedColors.primary} 9%, #ffffff) 0%, color-mix(in srgb, ${resolvedColors.primary} 4%, ${resolvedColors.background}) 44%, ${resolvedColors.background} 100%)`;
+  const stickyCanvas =
+    theme.mode === 'dark'
+      ? resolvedColors.background
+      : `color-mix(in srgb, ${resolvedColors.primary} 6%, ${resolvedColors.background})`;
+  const pageStyle = {
+    background: pageCanvas,
+    color: resolvedColors.text,
+    '--tb-page-bg': pageCanvas,
+    '--tb-page-bg-sticky': stickyCanvas,
+  } as CSSProperties;
 
   return (
-    <div className="flex flex-col h-[100dvh] relative" style={{ backgroundColor: resolvedColors.background, color: resolvedColors.text }}>
+    <div className="flex flex-col h-[100dvh] relative" style={pageStyle}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -193,6 +216,7 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
         </div>
       )}
       
+      <PublicPageRuntimeProvider targets={pageActionTargets}>
       {/* Scrollable content — flex-1 min-h-0 so it fills only the space ABOVE the in-flow Saule
           dock below. Blocks scroll within here; the last block ends above Saule and can never
           slide under it (no magic pb-[…] needed). */}
@@ -217,11 +241,12 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
       {/* Saule dock — an in-flow flex child (NOT fixed), so it reserves its own vertical space and
           the block area above shrinks to fit. Overlap with blocks is structurally impossible.
           The expanded chat sheet still opens as a fixed 85dvh overlay from inside ChatWidget. */}
-      <div className="shrink-0 relative z-50">
+      <div className="shrink-0 relative z-50" style={{ background: 'var(--tb-page-bg-sticky)' }}>
         <div className="max-w-md mx-auto w-full relative">
           <ChatWidget businessId={business.id} businessName={business.name} locale={locale} initialMessages={initialMessages} customGreeting={customGreeting} sauleSettings={business.saule_settings} preview={isOwner} initialCreditsExhausted={(business.credit_balance ?? 0) <= 0} />
         </div>
       </div>
+      </PublicPageRuntimeProvider>
     </div>
   );
 }

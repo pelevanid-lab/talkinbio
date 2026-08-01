@@ -9,6 +9,7 @@ import { Send, X, MessageCircle, User, RotateCcw, Mic, Volume2, Loader2, Square 
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import AgentMarkdown from './AgentMarkdown';
+import { useOptionalPublicPageRuntime } from './PublicPageRuntime';
 
 type LegacyMessage = { id: string; role: string; content: string };
 
@@ -28,13 +29,30 @@ type LocalizedGreeting = Partial<Record<'tr' | 'en' | 'ru', string>>;
 // onun yerine kısa bir "şimdi yazıyorum" cümlesiyle değiştirilir.
 const INFO_MARKER_START = '§§INFO§§';
 const INFO_MARKER_END = '§§/INFO§§';
+const ACTION_MARKER_START = '§§ACTION§§';
+const ACTION_MARKER_END = '§§/ACTION§§';
 
 function stripInfoMarkers(text: string): string {
-  return text.replace(new RegExp(INFO_MARKER_START, 'g'), '').replace(new RegExp(INFO_MARKER_END, 'g'), '');
+  return text
+    .replace(new RegExp(INFO_MARKER_START, 'g'), '')
+    .replace(new RegExp(INFO_MARKER_END, 'g'), '')
+    .replace(new RegExp(`${ACTION_MARKER_START}[\\s\\S]*?${ACTION_MARKER_END}`, 'g'), '');
 }
 
 function hasInfoBlock(text: string): boolean {
   return text.includes(INFO_MARKER_START);
+}
+
+function shouldOpenWrittenAnswer(text: string): boolean {
+  const clean = stripInfoMarkers(text).trim();
+  if (!clean || parsePageAction(text)) return false;
+  const lineCount = clean.split('\n').filter((line) => line.trim()).length;
+  return (
+    hasInfoBlock(text) ||
+    clean.length > 140 ||
+    lineCount >= 3 ||
+    /e-?posta|email|telefon|whatsapp|adres|ula[şs]abil|ileti[şs]im|randevu|erken eri[şs]im/i.test(clean)
+  );
 }
 
 // Panel yazıyla önemli bilgiyi gösterirken TTS aynı anda o mesajın geri kalanını da sesli
@@ -42,6 +60,26 @@ function hasInfoBlock(text: string): boolean {
 // mesajda konuşulan tek şey kısa "şimdi yazıyorum" cümlesi; mesajın metni SADECE yazıyla kalır.
 function buildSpokenText(text: string, filler: string): string {
   return hasInfoBlock(text) ? filler : text;
+}
+
+function parsePageAction(text: string): { type: 'open_block'; blockId: string; itemId?: string | null } | null {
+  const start = text.indexOf(ACTION_MARKER_START);
+  const end = text.indexOf(ACTION_MARKER_END);
+  if (start === -1 || end === -1 || end <= start) return null;
+  const raw = text.slice(start + ACTION_MARKER_START.length, end).trim();
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed?.type === 'open_block' && typeof parsed.blockId === 'string') {
+      return {
+        type: 'open_block',
+        blockId: parsed.blockId,
+        itemId: typeof parsed.itemId === 'string' ? parsed.itemId : null,
+      };
+    }
+  } catch {
+    return null;
+  }
+  return null;
 }
 
 function MicButton({ isRecording, isTranscribing, disabled, onPressStart, onPressEnd, title }: {
@@ -87,9 +125,13 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const t = useTranslations('ChatWidget');
+  const pageRuntime = useOptionalPublicPageRuntime();
 
   // Voice messaging state
-  const isVoiceEnabled = !!sauleSettings?.voiceEnabled;
+  // The old voiceEnabled flag used live STT + per-answer TTS. The new product direction keeps
+  // voice as cached cue packs, so dynamic visitor voice stays off unless a separate emergency flag
+  // is deliberately enabled while the cue system is being built.
+  const isVoiceEnabled = !!sauleSettings?.voiceEnabled && !!sauleSettings?.dynamicVoiceEnabled;
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -111,6 +153,8 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
   const spokenMessageIdRef = useRef<string | null>(
     initialMessages.length > 0 ? initialMessages[initialMessages.length - 1].id : null
   );
+  const handledActionRef = useRef<string | null>(null);
+  const handledWrittenAnswerRef = useRef<string | null>(null);
 
   // Play audio response from TTS API
   const speakText = async (text: string) => {
@@ -416,6 +460,29 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
     return () => window.removeEventListener('sendToChat', handleSendToChat);
   }, [sendMessage]);
 
+  useEffect(() => {
+    if (!pageRuntime) return;
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== 'assistant') return;
+    const action = parsePageAction(getMessageText(last));
+    if (!action) return;
+    const actionKey = `${last.id}:${action.blockId}:${action.itemId || ''}`;
+    if (handledActionRef.current === actionKey) return;
+    handledActionRef.current = actionKey;
+    const result = pageRuntime.openBlock(action.blockId, action.itemId);
+    if (result.ok) setIsExpanded(false);
+  }, [messages, pageRuntime]);
+
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== 'assistant' || last.id.startsWith('welcome-')) return;
+    const rawText = getMessageText(last);
+    if (!shouldOpenWrittenAnswer(rawText)) return;
+    if (handledWrittenAnswerRef.current === last.id) return;
+    handledWrittenAnswerRef.current = last.id;
+    queueMicrotask(() => setIsExpanded(true));
+  }, [messages]);
+
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
@@ -446,7 +513,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className={variant === 'sheet'
-                ? 'fixed left-0 right-0 h-[85dvh] bg-white rounded-t-3xl shadow-2xl z-[70] flex flex-col overflow-hidden'
+                ? 'fixed left-3 right-3 mx-auto max-w-md h-[58dvh] bg-white rounded-3xl shadow-2xl z-[70] flex flex-col overflow-hidden border border-[var(--border-light)]'
                 : 'absolute inset-0 bg-white z-20 flex flex-col overflow-hidden'}
               style={variant === 'sheet' ? { bottom: keyboardGap, maxHeight: keyboardGap > 0 ? `calc(100dvh - ${keyboardGap}px)` : undefined } : undefined}
             >
@@ -621,27 +688,38 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
           flex sibling that the content area's `flex-1` correctly shrinks around. */}
       {!isExpanded && (
         <div
-          onClick={toggleExpand}
-          className={variant === 'sheet' ? 'w-full p-4 flex flex-col justify-end cursor-pointer group' : 'w-full p-3 flex flex-col justify-end cursor-pointer group shrink-0'}
+          className={variant === 'sheet' ? 'w-full p-4 flex flex-col justify-end group' : 'w-full p-3 flex flex-col justify-end group shrink-0'}
         >
           {/* Quick preview of last message */}
-          <div className="bg-white border border-[var(--border-light)] rounded-2xl shadow-lg p-4 flex items-center justify-between mb-4 transform transition group-hover:-translate-y-1">
-            <div className="flex items-center space-x-3 overflow-hidden">
-              <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border border-[var(--border-light)] bg-[var(--paper)] p-[2px]">
-                <SauleIcon size={40} className="w-full h-full" />
+          <button
+            type="button"
+            onClick={toggleExpand}
+            className="w-full text-left bg-white/95 backdrop-blur border border-[var(--border-light)] rounded-2xl shadow-md p-3 flex items-center justify-between mb-2 transform transition group-hover:-translate-y-0.5"
+          >
+            <div className="flex items-center space-x-2.5 overflow-hidden">
+              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-[var(--border-light)] bg-[var(--paper)] p-[2px]">
+                <SauleIcon size={32} className="w-full h-full" />
               </div>
               <div className="truncate">
-                <p className="text-sm text-[var(--ink)] truncate">
-                  {(messages.length > 0 ? stripInfoMarkers(getMessageText(messages[messages.length - 1])) : '').substring(0, 40) || t('defaultPreview')}...
+                <p className="text-xs sm:text-sm text-[var(--ink)] truncate">
+                  {(messages.length > 0 ? stripInfoMarkers(getMessageText(messages[messages.length - 1])) : '').substring(0, 48) || t('defaultPreview')}...
                 </p>
               </div>
             </div>
-            <div className={`w-8 h-8 rounded-full bg-[var(--paper)] flex items-center justify-center flex-shrink-0 transition ${isPlayingAudio ? 'text-[var(--coral)]' : 'text-[var(--ink-soft)] group-hover:bg-[var(--coral-tint)] group-hover:text-[var(--coral)]'}`}>
+            <div className={`w-7 h-7 rounded-full bg-[var(--paper)] flex items-center justify-center flex-shrink-0 transition ${isPlayingAudio ? 'text-[var(--coral)]' : 'text-[var(--ink-soft)] group-hover:bg-[var(--coral-tint)] group-hover:text-[var(--coral)]'}`}>
               {isPlayingAudio ? <Volume2 className="w-4 h-4 animate-pulse" /> : <MessageCircle className="w-4 h-4" />}
             </div>
-          </div>
+          </button>
 
-          <form onSubmit={(e) => { e.preventDefault(); toggleExpand(); }} className="flex relative items-center gap-2">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!input.trim() || isLoading || isRecording || isTranscribing) return;
+              sendMessage({ text: input });
+              setInput('');
+            }}
+            className="flex relative items-center gap-2"
+          >
             {/* Sesli konuşma: sohbet panelini hiç açmadan basılı tut ve konuş — bkz. yukarıdaki
                 karşılama/cevap efekti, panel sadece "önemli bilgi" varsa kendiliğinden açılıyor. */}
             {isVoiceEnabled && (
@@ -654,15 +732,24 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
                 title={t('micHold')}
               />
             )}
-            <div className="relative flex-1 pointer-events-none">
+            <div className="relative flex-1">
               <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    e.currentTarget.form?.requestSubmit();
+                  }
+                }}
                 placeholder={isRecording ? t('listening') : t('placeholder')}
-                className="w-full pl-4 pr-12 py-3.5 bg-[var(--paper)] border border-[var(--border-light)] rounded-full text-sm placeholder-[var(--muted)]"
-                readOnly
+                disabled={isRecording || isTranscribing}
+                className="w-full pl-4 pr-12 py-3 bg-white/95 backdrop-blur border border-[var(--border-light)] rounded-full text-sm placeholder-[var(--muted)] shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--coral)]/20 focus:border-[var(--coral)]"
               />
               <button
-                type="button"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-10 h-10 bg-[var(--coral)] text-white rounded-full flex items-center justify-center"
+                type="submit"
+                disabled={isLoading || !input.trim() || isRecording || isTranscribing}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-10 h-10 bg-[var(--coral)] text-white rounded-full flex items-center justify-center disabled:opacity-50"
               >
                 <Send className="w-4 h-4 ml-0.5" />
               </button>

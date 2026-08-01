@@ -1,4 +1,5 @@
 import { streamText, isStepCount } from 'ai';
+import type { TextStreamPart } from 'ai';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getModel } from '@/utils/ai';
 import { isConversationActive } from '@/utils/conversationWindow';
@@ -12,6 +13,8 @@ import { hasCredits, deductCredits, creditsExhaustedPayload, SAULE_CREDIT_COST }
 import { buildSaulePrompt, parseContactInfo } from './prompt';
 import { captureLeadTool, captureAccessRequestTool } from './tools';
 import { filterBlocksToLocale } from './localeFilter';
+import { findPageRouteMatch, formatPageAction } from './pageRouter';
+import { getPageActionTargets, withContactPageActionTarget } from '@/utils/pageActionTargets';
 
 export type RunSauleTurnParams = {
   supabaseAdmin: SupabaseClient;
@@ -23,6 +26,27 @@ export type RunSauleTurnParams = {
   newConversation: boolean;
   isPreview: boolean;
 };
+
+function createStaticTextResult(text: string) {
+  const id = 'static-text';
+  const stream = new ReadableStream<TextStreamPart<any>>({
+    start(controller) {
+      controller.enqueue({ type: 'start' });
+      controller.enqueue({ type: 'text-start', id });
+      controller.enqueue({ type: 'text-delta', id, text });
+      controller.enqueue({ type: 'text-end', id });
+      controller.enqueue({
+        type: 'finish',
+        finishReason: 'stop',
+        rawFinishReason: 'stop',
+        totalUsage: { inputTokens: 0, outputTokens: 0 } as any,
+      });
+      controller.close();
+    },
+  });
+
+  return { stream, text: Promise.resolve(text) };
+}
 
 export async function runSauleTurn({
   supabaseAdmin,
@@ -158,6 +182,33 @@ export async function runSauleTurn({
   const sauleSettings = business.saule_settings || {};
   // Faz 2.3 bağlam diyeti: bloklar sadece ziyaretçinin dilinde, kompakt olarak prompt'a girer.
   const localizedBlocks = filterBlocksToLocale(blocksRes.data || [], locale || 'tr');
+  const deterministicRoute =
+    channel === 'web'
+      ? findPageRouteMatch(
+          withContactPageActionTarget(getPageActionTargets(localizedBlocks, locale || 'tr'), business.contact_method, business.contact_value, locale || 'tr'),
+          userMessage,
+          locale
+        )
+      : null;
+
+  if (deterministicRoute) {
+    const text = formatPageAction(deterministicRoute);
+    const creditsToDeduct = !isPreview && willCreateNewConversation ? SAULE_CREDIT_COST : 0;
+    await persistAssistantMessage(text);
+    await recordUsageEvent(supabaseAdmin, {
+      businessId,
+      agent: 'saule',
+      channel,
+      model: 'page-router',
+      usage: { inputTokens: 0, outputTokens: 0 },
+      creditsCharged: creditsToDeduct,
+    });
+    if (creditsToDeduct > 0) {
+      await deductCredits(supabaseAdmin, businessId, creditsToDeduct);
+    }
+    return createStaticTextResult(text);
+  }
+
   const systemPrompt = buildSaulePrompt({ business, blocks: localizedBlocks, knowledge: knowledgeRes.data || [], locale, isDemoBusiness, directLinks, contactValues });
   // Faz 2.3 prompt caching: sistem prompt'u (sabit bloklar + kurallar) konuşma boyunca
   // aynı kalır — Anthropic ephemeral cache ile tekrar eden girdi ~10 kat ucuzlar.

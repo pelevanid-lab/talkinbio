@@ -158,6 +158,9 @@ export default async function HomePage({ params }: any) {
                 <br />
                 Start talking.
               </h1>
+              <h2 className="animate-fade-up delay-75 mt-5 text-3xl md:text-5xl font-[800] text-[var(--ink)] leading-[1.05]" style={{ fontFamily: 'var(--font-bricolage)' }}>
+                {t('heroTexts.title')}
+              </h2>
               <p 
                 className="sub animate-fade-up delay-100 text-xl md:text-2xl text-[var(--ink-soft)] mt-6 mb-8 leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: t.raw('heroTexts.subtitle') }}
