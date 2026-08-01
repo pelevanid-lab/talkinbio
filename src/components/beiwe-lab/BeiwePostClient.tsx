@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { AlertTriangle, Check, Download, ImageIcon, Loader2, Save, Undo2, Upload, Wand2, X } from 'lucide-react';
 import type { CharacterShot } from '@/config/characters';
 import type { OverlayLocale } from '@/config/characters';
@@ -43,7 +44,7 @@ type Props = {
   shots: CharacterShot[];
   /** Aynı kadronun Podcast/Motion'da ürettiği videolar — galeri artık foto+video karışık. */
   clips: CharacterClip[];
-  /** `character_studio_assets` — "Arka planı kaldır" ve "Stüdyo kütüphanesine kaydet"
+  /** `character_studio_assets` — "{t('postRemoveBgBtn')}" ve "{t('postSaveLibraryBtn')}"
    *  sonuçlarının düştüğü havuz (bkz. removeBackground/saveToLibrary). Bu ikisi olmadan
    *  üretilen görsel hiçbir yerde görünmüyordu — bkz. proje geçmişi, bulunan hata. */
   assets: StudioAsset[];
@@ -57,6 +58,7 @@ type Props = {
 export default function BeiwePostClient({ shots, clips, assets: initialAssets, characterId, hideCost = false }: Props) {
   // Sunucudan gelen ilk listeye "Arka planı kaldır"/"Stüdyo kütüphanesine kaydet" sonuçları
   // CANLI ekleniyor — sayfa yenilenmeden galeri güncel kalsın diye (bkz. removeBackground/saveToLibrary).
+  const t = useTranslations('BeiweLab');
   const [libraryAssets, setLibraryAssets] = useState<StudioAsset[]>(initialAssets);
   const [templateId, setTemplateId] = useState<PostTemplateId>('ekran');
   const [formatId, setFormatId] = useState(POST_FORMATS[0].id);
@@ -66,7 +68,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
   const [isVideo, setIsVideo] = useState(false);
   const [uploadedName, setUploadedName] = useState<string | null>(null);
   const [showGallery, setShowGallery] = useState(false);
-  // İnce ayarlar — şablonun kilidini bozmadan kullanıcının "obje büyült/küçült",
+  // {t('postTweakTitle')}lar — şablonun kilidini bozmadan kullanıcının "obje büyült/küçült",
   // "objenin/yazının konumu", "renk tonu" isteği (bkz. renderPost'taki PostAdjustments
   // yorumu). Şablon değişince sıfırlanır (aşağıdaki useEffect) — her şablon kendi
   // varsayılan yerleşimiyle başlasın diye.
@@ -90,7 +92,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
   const [animated, setAnimated] = useState(false);
 
   const [removingBackground, setRemovingBackground] = useState(false);
-  // Arka planı kaldırılmış görselin ÖNCESİNİ tutar — "Orijinali geri getir" bunu geri yükler.
+  // Arka planı kaldırılmış görselin ÖNCESİNİ tutar — "{t('postRestoreBtn')}" bunu geri yükler.
   // `imageUrl` bg-kaldırma sonrası fal'ın URL'ine geçtiği için orijinali ayrıca saklamak gerekiyor.
   const [previousImageUrl, setPreviousImageUrl] = useState<string | null>(null);
 
@@ -238,7 +240,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
         }
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Görsel/video yüklenemedi.');
+        if (!cancelled) setError(err instanceof Error ? err.message : t('postErrorLoadMedia'));
       });
     return () => {
       cancelled = true;
@@ -279,7 +281,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
         try {
           await paint(locale);
         } catch (err) {
-          if (!cancelled) setError(err instanceof Error ? err.message : 'Önizleme çizilemedi.');
+          if (!cancelled) setError(err instanceof Error ? err.message : t('postErrorRender'));
         }
       })();
     }
@@ -321,7 +323,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
     setShowGallery(false);
   };
 
-  /** Galeriden bir VİDEO seçer — Podcast/Motion çıktısı, `pickGalleryShot` ile AYNI akış,
+  /** Galeriden bir {t('postGalleryVideoLabel')} seçer — Podcast/Motion çıktısı, `pickGalleryShot` ile AYNI akış,
    * yalnızca `isVideo:true` ve kaynak `clip.video_url`. */
   const pickGalleryClip = (clip: CharacterClip) => {
     if (objectUrlRef.current) {
@@ -351,7 +353,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
     setShowGallery(false);
   };
 
-  /** Cihazdan yüklenen dosyayı (varsa) ya da galeriden seçilen gerçek URL'i fal'a gönderip
+  /** {t('postUploadBtn')}nen dosyayı (varsa) ya da galeriden seçilen gerçek URL'i fal'a gönderip
    * arka planını kaldırır — sunucu tarafı `remove-background` route'u iki girdiyi de kabul
    * ediyor (bkz. o route'un yorumu). */
   const removeBackground = async () => {
@@ -375,7 +377,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
         });
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Arka plan kaldırılamadı.');
+      if (!res.ok) throw new Error(data.error || t('postErrorRemoveBg'));
 
       setPreviousImageUrl(imageUrl);
       // Sonuç artık fal'ın DEĞİL, sunucunun Supabase'e re-host edip döndürdüğü kalıcı bir
@@ -538,7 +540,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
       const suffix = animated && !isVideo ? '-hareketli' : '';
       downloadBlob(blob, `talkinbio-${template.id}-${format.id}-${targetLocale}${suffix}.${ext}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'İndirilemedi.');
+      setError(err instanceof Error ? err.message : t('postErrorDownload'));
     } finally {
       setDownloading(false);
       if (targetLocale !== locale) await paint(locale).catch(() => {});
@@ -567,8 +569,8 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
         body: formData,
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Kaydedilemedi.');
-      setSavedMessage('Kaydedildi — Beiwe Studio’daki galeriden erişebilirsin.');
+      if (!res.ok) throw new Error(data.error || t('postErrorSave'));
+      setSavedMessage(t('postSavedMessage'));
       // Görselse Post'un KENDİ galerisine de canlı ekleniyor (video zaten `clips`ten geliyor,
       // burada tekrar eklenmiyor — o havuz character_clips, bu character_studio_assets, ikisi ayrı).
       if (kind === 'image' && data.asset) {
@@ -624,7 +626,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
         <div className="space-y-5">
           {/* Şablon */}
           <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <h2 className="text-sm font-semibold text-slate-900">Şablon</h2>
+            <h2 className="text-sm font-semibold text-slate-900">{t('postTemplateTitle')}</h2>
             <p className="text-xs text-slate-500 mb-3">
               Tipografi, konum ve renk şablonun içinde <strong>kilitli</strong> — ızgaranın marka
               gibi durmasını sağlayan şey bu. Sen yalnızca metni, görseli ve formatı seçiyorsun.
@@ -652,7 +654,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
 
           {/* Format */}
           <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <h2 className="text-sm font-semibold text-slate-900 mb-3">Format</h2>
+            <h2 className="text-sm font-semibold text-slate-900 mb-3">{t('postFormatTitle')}</h2>
             <div className="flex flex-wrap gap-2">
               {POST_FORMATS.map((f) => (
                 <button
@@ -678,7 +680,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
           <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-sm font-semibold text-slate-900">Hareket</h2>
+                <h2 className="text-sm font-semibold text-slate-900">{t('postMotionTitle')}</h2>
                 <p className="text-xs text-slate-500 mt-0.5 leading-snug max-w-md">
                   Başlık/alt satır kayarak belirir, görsel yavaşça yakınlaşır, zeminde hafif bir ışık
                   huzmesi gezer — ~4 saniyelik bir klibe dönüşür. Süre ve eğri şablon gibi kilitli.
@@ -700,13 +702,13 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
           {/* Görsel */}
           {needsImage && (
             <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-              <h2 className="text-sm font-semibold text-slate-900">Görsel</h2>
+              <h2 className="text-sm font-semibold text-slate-900">{t('postImageTitle')}</h2>
               <p className="text-xs text-slate-500 mb-3">
                 {template.imageMode === 'contain'
-                  ? 'Ekran kaydı/görüntüsü çerçevelenir, kırpılmaz — arayüzün tamamı görünür kalır.'
+                  ? t('postImageContain')
                   : template.imageMode === 'card'
-                    ? 'Kartın solunda küçük bir küçük resim olarak durur — opsiyonel, boş bırakılabilir.'
-                    : 'Görsel tam kanar ve formata göre kırpılır.'}
+                    ? t('postImageCard')
+                    : t('postImageCover')}
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 <button
@@ -722,13 +724,13 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
                   className="flex items-center gap-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg px-4 py-2 disabled:opacity-40"
                 >
                   <ImageIcon className="w-4 h-4" />
-                  Galeriden seç ({shots.length + clips.length + libraryAssets.length})
+                  {t('postGalleryBtn', { count: shots.length + clips.length + libraryAssets.length })}
                 </button>
                 {imageUrl && !isVideo && (
                   <button
                     onClick={removeBackground}
                     disabled={removingBackground}
-                    title="fal.ai ile görseldeki arka planı kaldırır — obje/kişi zeminden ayrılır."
+                    title={t('postRemoveBgTitle')}
                     className="flex items-center gap-2 text-sm font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg px-4 py-2 disabled:opacity-50"
                   >
                     {removingBackground ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
@@ -750,7 +752,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
                     className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-red-600"
                   >
                     <X className="w-3.5 h-3.5" />
-                    Kaldır
+                    {t('postClearBtn')}
                   </button>
                 )}
                 <input
@@ -769,8 +771,8 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
               {imageUrl && !isVideo && (
                 <p className="text-[11px] text-slate-400 mt-1.5">
                   {hideCost
-                    ? `Arka planı kaldırma maliyeti ≈${creditsForCost(ESTIMATED_BG_REMOVAL_COST_USD)} kredi.`
-                    : `Arka planı kaldırma maliyeti ~$${ESTIMATED_BG_REMOVAL_COST_USD.toFixed(4)}/görsel (doğrulandı, 2026-07-31) · ≈${creditsForCost(ESTIMATED_BG_REMOVAL_COST_USD)} kredi.`}
+                    ? t('postBgCostNotice', { cost: `≈${creditsForCost(ESTIMATED_BG_REMOVAL_COST_USD)} kredi` })
+                    : t('postBgCostNotice', { cost: `~${ESTIMATED_BG_REMOVAL_COST_USD.toFixed(4)}/image (verified, 2026-07-31) · ≈${creditsForCost(ESTIMATED_BG_REMOVAL_COST_USD)} kredi` })}
                 </p>
               )}
 
@@ -824,7 +826,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
           {/* Metin */}
           <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-slate-900">Metin</h2>
+              <h2 className="text-sm font-semibold text-slate-900">{t('postTextTitle')}</h2>
               <div className="flex gap-1">
                 {OVERLAY_LOCALES.map((l) => {
                   const filled = texts[l].headline.trim() || texts[l].subline.trim();
@@ -847,27 +849,27 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
               </div>
             </div>
 
-            <label className="block text-xs font-medium text-slate-600 mb-1">Başlık</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('postTextHeadline')}</label>
             <textarea
               value={texts[locale].headline}
               onChange={(e) => setText('headline', e.target.value)}
               rows={2}
               placeholder={
                 template.id === 'soz'
-                  ? 'Günde 15 kere aynı soruya cevap yazıyorsun.'
-                  : 'DM’e gelen “fiyat ne?” sorusu 3 saniyede kapanıyor.'
+                  ? t('postTextHeadlinePlaceholder1')
+                  : t('postTextHeadlinePlaceholder2')
               }
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
             <label className="block text-xs font-medium text-slate-600 mb-1 mt-3">
-              Alt satır <span className="font-normal text-slate-400">(opsiyonel)</span>
+              {t('postTextSubline')} <span className="font-normal text-slate-400">{t('postTextSublineOpt')}</span>
             </label>
             <textarea
               value={texts[locale].subline}
               onChange={(e) => setText('subline', e.target.value)}
               rows={2}
-              placeholder="Bio linkin artık cevap veriyor."
+              placeholder={t('postTextSublinePlaceholder')}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
@@ -878,7 +880,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
 
             {template.imageMode === 'list' && (
               <div className="mt-4 pt-4 border-t border-slate-100">
-                <h3 className="text-xs font-semibold text-slate-700 mb-1">İpucu kartları</h3>
+                <h3 className="text-xs font-semibold text-slate-700 mb-1">{t('postTipCardsTitle')}</h3>
                 <p className="text-[11px] text-slate-400 mb-3">
                   Başlığın altında 2x2 ızgara olarak dizilir — boş bırakılanlar atlanır.
                 </p>
@@ -888,14 +890,14 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
                       <input
                         value={item.title}
                         onChange={(e) => setItemField(i, 'title', e.target.value)}
-                        placeholder={`İpucu ${i + 1} başlığı`}
+                        placeholder={t('postTipTitlePlaceholder', { num: i + 1 })}
                         className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       <textarea
                         value={item.body}
                         onChange={(e) => setItemField(i, 'body', e.target.value)}
                         rows={2}
-                        placeholder="Kısa açıklama"
+                        placeholder={t('postTipBodyPlaceholder')}
                         className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
@@ -910,7 +912,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
         <div className="lg:sticky lg:top-4 space-y-3">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-slate-900">Önizleme</h2>
+              <h2 className="text-sm font-semibold text-slate-900">{t('postPreviewTitle')}</h2>
               {downloading && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
             </div>
             <div ref={previewWrapRef} className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
@@ -958,14 +960,14 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
                       }}
                       className="text-[11px] text-slate-400 hover:text-slate-700"
                     >
-                      Sıfırla
+                      {t('postTweakReset')}
                     </button>
                   )}
                 </div>
                 {needsImage && mediaObj && !isVideo && (
                   <label className="block text-xs text-slate-600">
                     <div className="flex items-center justify-between mb-1">
-                      <span>Obje boyutu</span>
+                      <span>{t('postTweakObjSize')}</span>
                       <span className="text-slate-400 tabular-nums">%{Math.round(imageScale * 100)}</span>
                     </div>
                     <input
@@ -981,7 +983,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
                 )}
                 <label className="block text-xs text-slate-600">
                   <div className="flex items-center justify-between mb-1">
-                    <span>Renk tonu</span>
+                    <span>{t('postTweakHue')}</span>
                     <span className="text-slate-400 tabular-nums">{hueShift > 0 ? `+${hueShift}` : hueShift}°</span>
                   </div>
                   <input
@@ -998,7 +1000,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
                   <>
                     <label className="block text-xs text-slate-600">
                       <div className="flex items-center justify-between mb-1">
-                        <span>Yazı boyutu</span>
+                        <span>{t('postTweakTextSize')}</span>
                         <span className="text-slate-400 tabular-nums">%{Math.round(textScale * 100)}</span>
                       </div>
                       <input
@@ -1012,7 +1014,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
                       />
                     </label>
                     <label className="flex items-center justify-between text-xs text-slate-600">
-                      <span>Yazı rengi</span>
+                      <span>{t('postTweakTextColor')}</span>
                       <span className="flex items-center gap-2">
                         <input
                           type="color"
@@ -1025,14 +1027,14 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
                             onClick={() => setTextColor(null)}
                             className="text-[11px] text-slate-400 hover:text-slate-700"
                           >
-                            şablona dön
+                            {t('postTweakTemplateReset')}
                           </button>
                         )}
                       </span>
                     </label>
                     {template.imageMode === 'contain' && needsImage && mediaObj && !isVideo && (
                       <label className="block text-xs text-slate-600">
-                        <span className="block mb-1">Üst üste gelince kim görünsün</span>
+                        <span className="block mb-1">{t('postTweakOverlapTitle')}</span>
                         <div className="inline-flex rounded-lg border border-slate-300 overflow-hidden">
                           <button
                             type="button"
@@ -1041,7 +1043,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
                               !textOnTop ? 'bg-purple-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
                             }`}
                           >
-                            Obje üstte
+                            {t('postTweakOverlapObj')}
                           </button>
                           <button
                             type="button"
@@ -1050,7 +1052,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
                               textOnTop ? 'bg-purple-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
                             }`}
                           >
-                            Yazı üstte
+                            {t('postTweakOverlapText')}
                           </button>
                         </div>
                       </label>
@@ -1071,12 +1073,12 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
               className="flex items-center justify-center gap-2 bg-slate-900 text-white rounded-lg px-4 py-2.5 text-sm font-semibold hover:bg-slate-800 disabled:opacity-50"
             >
               {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              {isVideo || animated ? 'Video indir' : 'PNG indir'} ({LOCALE_LABEL[locale]})
+              {isVideo || animated ? t('postDownloadVideo') : t('postDownloadPng')} ({LOCALE_LABEL[locale]})
             </button>
             <button
               onClick={() => saveToLibrary(locale)}
               disabled={saving}
-              title="Beiwe Studio'nun ortak galerisine kaydeder — Studio'yu açtığında sekans/cutaway/overlay seçicilerinde belirir."
+              title={t('postSaveLibraryTitle')}
               className="flex items-center justify-center gap-2 border border-blue-300 text-blue-700 bg-blue-50 rounded-lg px-4 py-2.5 text-sm font-semibold hover:bg-blue-100 disabled:opacity-50"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -1095,10 +1097,10 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
                   className="flex items-center justify-center gap-2 border border-slate-300 text-slate-700 rounded-lg px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50"
                 >
                   <Download className="w-4 h-4" />
-                  Dolu {filledLocales.length} dili birden indir
+                  {t('postDownloadAllBtn', { count: filledLocales.length })}
                 </button>
                 {(isVideo || animated) && (
-                  <p className="text-[11px] text-slate-400 -mt-1">Toplu indirme yalnız PNG kare üretir, video/hareketli değil.</p>
+                  <p className="text-[11px] text-slate-400 -mt-1">{t('postDownloadAllNotice')}</p>
                 )}
               </>
             )}

@@ -3,6 +3,7 @@ import BeiweTwinClient, { type TwinProfile } from '@/components/beiwe-lab/BeiweT
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { requireBusinessOwner } from '@/utils/businessAuth';
 import { getOrCreateBusinessTwin } from '@/utils/creativeStudioScope';
+import { getTranslations } from 'next-intl/server';
 import type { CharacterShot } from '@/config/characters';
 
 // admin/beiwe-lab/twin/page.tsx'in müşteri dashboard'undaki karşılığı — aynı
@@ -12,6 +13,7 @@ import type { CharacterShot } from '@/config/characters';
 export default async function CreativeStudioTwinPage() {
   const business = await requireBusinessOwner();
   const characterId = await getOrCreateBusinessTwin(business.id);
+  const t = await getTranslations('BeiweLab');
 
   const { data: profile } = await supabaseAdmin
     .from('character_profiles')
@@ -38,8 +40,8 @@ export default async function CreativeStudioTwinPage() {
     <DashboardShell business={business} active="creative-studio">
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-['Inter']">
         <div className="mb-6">
-          <h1 className="text-xl font-[800] tracking-[-0.02em] text-[#14231F]">Dijital İkiz</h1>
-          <p className="text-sm text-[#4B5A55]">Bir yüzü doğrulanmış bir AI ikize çeviren üretim hattı.</p>
+          <h1 className="text-xl font-[800] tracking-[-0.02em] text-[#14231F]">{t('twinTitle')}</h1>
+          <p className="text-sm text-[#4B5A55]">{t('twinDesc')}</p>
         </div>
         <BeiweTwinClient
           characterId={characterId}

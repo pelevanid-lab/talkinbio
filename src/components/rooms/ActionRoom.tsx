@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { AlertTriangle, CheckCircle2, Clapperboard, Loader2, Play, Trash2, Upload } from 'lucide-react';
 import type { CharacterShot } from '@/config/characters';
 import type { CharacterClip } from '@/config/clips';
@@ -47,6 +48,7 @@ function readMediaDuration(file: File): Promise<number | null> {
 }
 
 export default function ActionRoom({ characterId, shots, clips, castCharacters, onClipCreated, onClipDeleted, hideCost = false }: Props) {
+  const t = useTranslations('BeiweLab');
   const [styleId, setStyleId] = useState(DEFAULT_MOTION_STYLE_ID);
   const [identityMode, setIdentityMode] = useState<MotionIdentityMode>('twin');
   const [selectedShot, setSelectedShot] = useState<CharacterShot | null>(null);
@@ -87,23 +89,23 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
 
   const handleGenerate = async () => {
     if (identityMode === 'twin' && !selectedShot) {
-      setError('Lütfen Twin galerisinden bir kare seçin.');
+      setError(t('actionErrorSelectTwinShot'));
       return;
     }
     if (identityMode === 'cast' && !castCharacterId) {
-      setError('Lütfen bir yardımcı oyuncu seçin.');
+      setError(t('actionErrorSelectCast'));
       return;
     }
     if (identityMode === 'generic' && !personaDescription.trim()) {
-      setError('Lütfen jenerik karakter için bir persona tarifi yazın.');
+      setError(t('actionErrorWritePersona'));
       return;
     }
     if (!scenario.trim()) {
-      setError('Lütfen bir senaryo/detay metni yazın.');
+      setError(t('actionErrorWriteScenario'));
       return;
     }
     if (mode === 'reference' && !drivingFile) {
-      setError('Lütfen bir örnek/trend video yükleyin — ya da "Sadece senaryodan üret" moduna geçin.');
+      setError(t('actionErrorUploadVideoOrSwitch'));
       return;
     }
 
@@ -137,7 +139,7 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
         body: formData,
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Üretilemedi.');
+      if (!res.ok) throw new Error(data.error || t('actionErrorGenerateFailed'));
 
       onClipCreated(data.clip);
       setDrivingFile(null);
@@ -152,17 +154,17 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
   };
 
   const handleDelete = async (clipId: string) => {
-    if (!confirm('Bu klibi silmek istediğinize emin misiniz?')) return;
+    if (!confirm(t('actionDeleteConfirm'))) return;
     setDeletingId(clipId);
     try {
       const res = await fetch(`/api/admin/characters/${characterId}/clips/${clipId}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Silinirken bir hata oluştu.');
+        throw new Error(data.error || t('actionErrorDeleteFailed'));
       }
       onClipDeleted(clipId);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Silinemedi.');
+      alert(err instanceof Error ? err.message : t('actionErrorDelete'));
     } finally {
       setDeletingId(null);
     }
@@ -179,9 +181,9 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
         {/* Üretim Formu */}
         <div className="space-y-6">
           <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-1">1. Stil</h3>
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">{t('actionStep1Style')}</h3>
             <p className="text-xs text-slate-500 mb-3">
-              Kaynak görsel bu stille yeniden üretilir — hareket aynı kalır, görünüm değişir.
+              {t('actionStep1StyleDesc')}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {MOTION_STYLES.map((s) => (
@@ -200,7 +202,7 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-1">2. Kimlik</h3>
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">{t('actionStep2Identity')}</h3>
             <div className="flex gap-2 mb-3">
               {MOTION_IDENTITY_MODES.map((m) => (
                 <button
@@ -220,7 +222,7 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
               (() => {
                 const eligibleShots = shots.filter((shot) => shot.similarity_score === null || shot.similarity_score >= 7);
                 if (eligibleShots.length === 0) {
-                  return <p className="text-sm text-slate-500">Önce Beiwe Twin&apos;de uygun (7 puan ve üzeri) bir görsel üretmelisiniz.</p>;
+                  return <p className="text-sm text-slate-500">{t('actionIdentityTwinLocked')}</p>;
                 }
                 return (
                   <div className="grid grid-cols-3 gap-2 max-h-[220px] overflow-y-auto pr-2 pb-2">
@@ -247,7 +249,7 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
             ) : identityMode === 'cast' ? (
               castCharacters.length === 0 ? (
                 <p className="text-sm text-slate-500">
-                  Henüz yardımcı oyuncu yok — önce Yardımcı Oyuncular sekmesinden bir tane oluştur.
+                  {t('actionIdentityCastLocked')}
                 </p>
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -281,14 +283,14 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
                 onChange={(e) => setPersonaDescription(e.target.value)}
                 rows={2}
                 maxLength={500}
-                placeholder="ör. 30'larında, sokak modası, enerjik bir karakter"
+                placeholder={t('actionIdentityPersonaPlaceholder')}
                 className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm placeholder:text-slate-400 focus:border-blue-500 focus:outline-none"
               />
             )}
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-1">3. Hareket kaynağı</h3>
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">{t('actionStep3Source')}</h3>
             <div className="flex gap-2 mb-3">
               <button
                 onClick={() => setMode('reference')}
@@ -296,7 +298,7 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
                   mode === 'reference' ? 'border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-200' : 'border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
               >
-                Örnek/trend video yükle
+                {t('actionSourceModeReference')}
               </button>
               <button
                 onClick={() => setMode('scenario')}
@@ -304,8 +306,8 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
                   mode === 'scenario' ? 'border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-200' : 'border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
               >
-                Sadece senaryodan üret
-                <span className="ml-1.5 text-[10px] font-semibold text-amber-600 align-middle">deneysel</span>
+                {t('actionSourceModeScenario')}
+                <span className="ml-1.5 text-[10px] font-semibold text-amber-600 align-middle">{t('actionExperimentalBadge')}</span>
               </button>
             </div>
 
@@ -325,7 +327,7 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
                 >
                   <Upload className="w-5 h-5 text-slate-400" />
                   <span className="text-sm font-medium text-slate-600">
-                    {drivingFile ? drivingFile.name : 'Örnek/trend video seçin (veya sürükleyin)'}
+                    {drivingFile ? drivingFile.name : t('actionSourceVideoSelect')}
                   </span>
                 </label>
                 {drivingFile && (
@@ -338,7 +340,7 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
                 <div className="mt-3 space-y-1.5">
                   <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
                     <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                    <span>Podcast&apos;in yüz/mimik modelleri (wan-motion/DreamActor) burada KULLANILMIYOR — boydan/tüm gövde hareketine uygun ayrı bir model ailesi, henüz doğrulanmadı.</span>
+                    <span>{t('actionSourceModelWarning1')}</span>
                   </div>
                   {FULL_BODY_MOTION_MODELS.map((m) => (
                     <button
@@ -350,7 +352,7 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
                     >
                       <div className="flex items-baseline justify-between gap-2">
                         <span className="text-sm font-semibold text-slate-900">{m.label}</span>
-                        <span className="text-xs text-slate-500 whitespace-nowrap">{hideCost ? `≈${creditsForCost(m.costPerSecondUsd)} kredi/sn` : `~$${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn (tahmin) · ≈${creditsForCost(m.costPerSecondUsd)} kredi/sn`}</span>
+                        <span className="text-xs text-slate-500 whitespace-nowrap">{hideCost ? `≈${creditsForCost(m.costPerSecondUsd)} kredi/sn` : `~$${m.costPerSecondUsd.toFixed(4).replace(/0+$/, '')}/sn {t('actionCostEstimate')} · ≈${creditsForCost(m.costPerSecondUsd)} kredi/sn`}</span>
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">{m.hint}</p>
                     </button>
@@ -361,7 +363,7 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
               <div className="space-y-2">
                 <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
                   <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                  <span>Bu mod henüz gerçek bir üretimle doğrulanmadı — ilk denemede sonucu gözle değerlendir.</span>
+                  <span>{t('actionSourceModelWarning2')}</span>
                 </div>
                 {SCENE_VIDEO_MODELS.map((m) => (
                   <button
@@ -383,18 +385,18 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-1">4. Senaryo / detay</h3>
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">{t('actionStep4Scenario')}</h3>
             <p className="text-xs text-slate-500 mb-2">
               {mode === 'reference'
-                ? 'Yüklediğin videonun üzerine ne olmasını istediğini yaz — hareketi yönlendiren ek talimat.'
-                : 'Sürücü video yok, video doğrudan bu tarifle üretilecek — ne kadar somut yazarsan sonuç o kadar isabetli olur.'}
+                ? t('actionScenarioDescReference')
+                : t('actionScenarioDescScenario')}
             </p>
             <textarea
               value={scenario}
               onChange={(e) => setScenario(e.target.value)}
               rows={3}
               maxLength={800}
-              placeholder="ör. Karakter kameraya doğru yürüyüp gülümsüyor, arkasında şehir ışıkları."
+              placeholder={t('actionScenarioPlaceholder')}
               className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm placeholder:text-slate-400 focus:border-blue-500 focus:outline-none"
             />
           </div>
@@ -409,12 +411,12 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
             {generating ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Üretiliyor... (uzun sürebilir)
+                {t('actionBtnGenerating')}
               </>
             ) : (
               <>
                 <Play className="w-5 h-5 fill-current" />
-                Klip Üret
+                {t('actionBtnGenerate')}
               </>
             )}
           </button>
@@ -422,7 +424,7 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
             <p className="text-xs text-slate-500 -mt-3">
               {hideCost
                 ? `≈${creditsForCost(drivingSeconds * motionModel.costPerSecondUsd)} kredi · ${motionModel.label}, ${drivingSeconds.toFixed(1)} sn`
-                : `~$${(drivingSeconds * motionModel.costPerSecondUsd).toFixed(2)} (tahmin, doğrulanmadı) · ≈${creditsForCost(drivingSeconds * motionModel.costPerSecondUsd)} kredi · ${motionModel.label}, ${drivingSeconds.toFixed(1)} sn × $${motionModel.costPerSecondUsd}/sn`}
+                : `~$${(drivingSeconds * motionModel.costPerSecondUsd).toFixed(2)} {t('actionCostEstimateUnverified')} · ≈${creditsForCost(drivingSeconds * motionModel.costPerSecondUsd)} kredi · ${motionModel.label}, ${drivingSeconds.toFixed(1)} sn × $${motionModel.costPerSecondUsd}/sn`}
             </p>
           )}
         </div>
@@ -430,11 +432,11 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
         {/* Klip Galerisi */}
         <div>
           <h3 className="text-sm font-semibold text-slate-900 mb-3">
-            Üretilen Action Klipleri <span className="text-slate-400 font-normal">({actionClips.length})</span>
+            {t('actionGeneratedClipsTitle')} <span className="text-slate-400 font-normal">({actionClips.length})</span>
           </h3>
           {actionClips.length === 0 ? (
             <div className="flex items-center justify-center h-[200px] bg-slate-50 rounded-xl border border-slate-200 border-dashed">
-              <p className="text-sm text-slate-500">Henüz klip üretilmedi.</p>
+              <p className="text-sm text-slate-500">{t('actionNoClips')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4">
@@ -443,7 +445,7 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
                   <video src={clip.video_url} controls className="w-full max-h-[320px] object-contain bg-black" />
                   <div className="p-3 flex justify-between items-center gap-2">
                     <span className="text-xs text-slate-500">
-                      {clip.label ?? 'bilinmiyor'}
+                      {clip.label ?? t('actionClipUnknownLabel')}
                       {' · '}
                       {new Date(clip.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })}
                     </span>
@@ -461,7 +463,7 @@ export default function ActionRoom({ characterId, shots, clips, castCharacters, 
                         onClick={() => handleDelete(clip.id)}
                         disabled={deletingId === clip.id}
                         className="p-1.5 rounded-lg border border-slate-300 text-slate-400 hover:bg-red-50 hover:text-red-600 hover:border-red-200 disabled:opacity-50 transition-colors"
-                        title="Sil"
+                        title={t('actionClipDeleteBtn')}
                       >
                         {deletingId === clip.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                       </button>

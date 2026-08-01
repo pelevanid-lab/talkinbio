@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Loader2, Plus, X } from 'lucide-react';
 import { ESTIMATED_COST_PER_IMAGE_USD } from '@/config/characters';
@@ -38,6 +39,7 @@ export default function CastRoomTabs({
   showAdd?: boolean;
 }) {
   const pathname = usePathname();
+  const t = useTranslations('BeiweLab');
   const router = useRouter();
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -48,7 +50,7 @@ export default function CastRoomTabs({
 
   const createCharacter = async () => {
     if (!name.trim() || !persona.trim()) {
-      setError('İsim ve tarif gerekli.');
+      setError(t('castNameAndPersonaRequired'));
       return;
     }
     setCreating(true);
@@ -60,7 +62,7 @@ export default function CastRoomTabs({
         body: JSON.stringify({ name: name.trim(), persona: persona.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Karakter oluşturulamadı.');
+      if (!res.ok) throw new Error(data.error || t('castCreationFailed'));
 
       setShowAddModal(false);
       setName('');
@@ -110,7 +112,7 @@ export default function CastRoomTabs({
           {showAdd && (
             <button
               onClick={() => setShowAddModal(true)}
-              title="Yeni yardımcı oyuncu ekle"
+              title={t('castAddTitle')}
               className="flex items-center justify-center w-9 h-9 mb-1 rounded-full border border-dashed border-slate-300 text-slate-400 hover:border-blue-400 hover:text-blue-600 transition-colors"
             >
               <Plus className="w-4 h-4" />
@@ -124,9 +126,9 @@ export default function CastRoomTabs({
           <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl p-6 space-y-4">
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Yeni Yardımcı Oyuncu</h2>
+                <h2 className="text-lg font-bold text-slate-900">{t('castNewTitle')}</h2>
                 <p className="text-sm text-slate-500 mt-0.5">
-                  Sanal, kurgusal bir karakter — gerçek bir yüze kilitlenmez, yalnızca tarifle üretilir.
+                  {t('castNewDesc')}
                 </p>
               </div>
               <button
@@ -138,22 +140,22 @@ export default function CastRoomTabs({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">İsim</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('castNamePlaceholder').split('—')[0].trim()}</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="ör. Deniz"
+                placeholder={t('castNamePlaceholder').split('—')[1]?.trim() || t('castNamePlaceholder')}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Tarif (görünüş + kişilik)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('castPersonaPlaceholder').split('—')[0].trim()}</label>
               <textarea
                 value={persona}
                 onChange={(e) => setPersona(e.target.value)}
                 rows={4}
-                placeholder="ör. Otuzlu yaşlarda, kısa siyah saçlı, enerjik bir spor koçu. Sıcak ve motive edici bir tavrı var."
+                placeholder={t('castPersonaPlaceholder').split('—')[1]?.trim() || t('castPersonaPlaceholder')}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -166,7 +168,7 @@ export default function CastRoomTabs({
                 disabled={creating}
                 className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-50"
               >
-                Vazgeç
+                {t('castCancelBtn')}
               </button>
               <button
                 onClick={createCharacter}
@@ -174,7 +176,7 @@ export default function CastRoomTabs({
                 className="flex items-center gap-2 bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
               >
                 {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                {creating ? 'Üretiliyor… (~20sn)' : `Oluştur (≈${creditsForCost(ESTIMATED_COST_PER_IMAGE_USD)} kredi)`}
+                {creating ? t('castGenerating') : t('castCreateBtn', { cost: creditsForCost(ESTIMATED_COST_PER_IMAGE_USD), credit: t('voiceCreditLabel') })}
               </button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { LORA_MIN_SCORE, TWIN_VERIFIED_SCORE } from '@/config/beiweLab';
 
 // Not: Karakter Odası'nda da benzer bir puanlama widget'ı var (CharacterRoomClient
@@ -13,29 +14,32 @@ const defaultBarColor = (n: number) => {
   return 'bg-amber-400';
 };
 
-const defaultCaption = (display: number | null) => {
-  if (display === null) return 'Bu kare sana ne kadar benziyor?';
-  if (display >= TWIN_VERIFIED_SCORE) return `${display}/10 · twin doğrulandı`;
-  if (display >= LORA_MIN_SCORE) return `${display}/10 · eğitim setine girer`;
-  return `${display}/10 · eğitime alınmaz`;
+const defaultCaption = (display: number | null, t: any) => {
+  if (display === null) return t('simCaptionDefault');
+  if (display >= TWIN_VERIFIED_SCORE) return `${display}/10 · ${t('simCaptionVerified')}`;
+  if (display >= LORA_MIN_SCORE) return `${display}/10 · ${t('simCaptionLoraOK')}`;
+  return `${display}/10 · ${t('simCaptionLoraFail')}`;
 };
 
 export default function SimilarityRating({
   score,
   disabled,
   onChange,
-  getCaption = defaultCaption,
+  getCaption,
   getColor = defaultBarColor,
 }: {
   score: number | null;
   disabled?: boolean;
   onChange: (score: number) => void;
   /** Twin'in "benzerlik" metnini farklı bir bağlamda (ör. Podcast'in "beğenme") yeniden kullanmak için. */
-  getCaption?: (display: number | null) => string;
+  getCaption?: (display: number | null, t?: any) => string;
   getColor?: (n: number) => string;
 }) {
+  const t = useTranslations('BeiweLab');
   const [hovered, setHovered] = useState<number | null>(null);
   const display = hovered ?? score;
+
+  const captionText = getCaption ? getCaption(display, t) : defaultCaption(display, t);
 
   return (
     <div className="space-y-1">
@@ -54,7 +58,7 @@ export default function SimilarityRating({
           />
         ))}
       </div>
-      <p className="text-[10px] text-slate-400 text-center">{getCaption(display)}</p>
+      <p className="text-[10px] text-slate-400 text-center">{captionText}</p>
     </div>
   );
 }

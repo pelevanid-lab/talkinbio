@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { Link } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
 import { Users, Sparkles, Mic, Clapperboard, Film, Scissors, Type } from 'lucide-react';
 
 // ContinuousImprovementTabs ile aynı sekme deseni. Fark: Lab'ın katmanları sıralı bir
@@ -15,7 +16,7 @@ import { Users, Sparkles, Mic, Clapperboard, Film, Scissors, Type } from 'lucide
 // fantastic/trend videoları için (bkz. BeiweMotionClient, config/motionStyles.ts).
 const tabs = [
   { label: 'Beiwe Twin', href: '/admin/beiwe-lab/twin', icon: Sparkles, ready: true },
-  { label: 'Yardımcı Oyuncular', href: '/admin/beiwe-lab/cast', icon: Users, ready: true },
+  { label: 'Yardımcı Oyuncular', getLabel: (t: any) => t('labTabCast'), href: '/admin/beiwe-lab/cast', icon: Users, ready: true },
   { label: 'Beiwe Voice', href: '/admin/beiwe-lab/voice', icon: Mic, ready: true },
   { label: 'Beiwe Podcast', href: '/admin/beiwe-lab/podcast', icon: Clapperboard, ready: true },
   { label: 'Beiwe Motion', href: '/admin/beiwe-lab/motion', icon: Film, ready: true },
@@ -25,6 +26,7 @@ const tabs = [
 
 export default function BeiweLabTabs() {
   const pathname = usePathname();
+  const t = useTranslations('BeiweLab');
 
   return (
     <div className="border-b border-slate-200 mb-6">
@@ -37,11 +39,11 @@ export default function BeiweLabTabs() {
             return (
               <span
                 key={tab.href}
-                title="Bu katman henüz yazılmadı"
+                title={t('labTabNotReady')}
                 className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-300 cursor-not-allowed whitespace-nowrap"
               >
                 <Icon className="w-4 h-4" />
-                {tab.label}
+                {tab.getLabel ? tab.getLabel(t) : tab.label}
               </span>
             );
           }
@@ -57,7 +59,7 @@ export default function BeiweLabTabs() {
               }`}
             >
               <Icon className="w-4 h-4" />
-              {tab.label}
+              {tab.getLabel ? tab.getLabel(t) : tab.label}
             </Link>
           );
         })}

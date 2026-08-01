@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import DashboardShell from '@/components/dashboard/DashboardShell';
 import CastRoomTabs from '@/components/beiwe-lab/CastRoomTabs';
@@ -13,6 +14,7 @@ const VOICE_BASE_PATH = '/dashboard/creative-studio/voice';
 // kendi Yardımcı Oyuncular'ı (bkz. getBusinessCastRoster) arasında CastRoomTabs ile geçiş.
 export default async function CreativeStudioVoicePage({ params }: { params: Promise<{ characterId: string }> }) {
   const business = await requireBusinessOwner();
+  const t = await getTranslations('BeiweLab');
   const { characterId } = await params;
 
   const twinId = await getOrCreateBusinessTwin(business.id);
@@ -49,8 +51,8 @@ export default async function CreativeStudioVoicePage({ params }: { params: Prom
     <DashboardShell business={business} active="creative-studio">
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-['Inter']">
         <div className="mb-6">
-          <h1 className="text-xl font-[800] tracking-[-0.02em] text-[#14231F]">Ses Klonu</h1>
-          <p className="text-sm text-[#4B5A55]">Bir ses kaydını onaylanmış bir ses klonuna çeviren üretim hattı.</p>
+          <h1 className="text-xl font-[800] tracking-[-0.02em] text-[#14231F]">{t('voiceTitle')}</h1>
+          <p className="text-sm text-[#4B5A55]">{t('voiceDesc')}</p>
         </div>
         <CastRoomTabs characters={roster} basePath={VOICE_BASE_PATH} showAdd={false} />
         <BeiweVoiceClient

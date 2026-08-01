@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   AlertTriangle,
   ChevronDown,
@@ -71,6 +72,7 @@ function MotionModelPicker({
   onTurboChange: (v: boolean) => void;
   hideCost?: boolean;
 }) {
+  const t = useTranslations('BeiweLab');
   const model = findMotionModel(modelId) ?? MOTION_MODELS[0];
   const resolutionOptions = motionResolutions(model);
   const activeResolution = resolutionOptions.includes(resolution) ? resolution : resolutionOptions[0];
@@ -123,7 +125,7 @@ function MotionModelPicker({
                 onChange={(e) => onTurboChange(e.target.checked)}
                 className="rounded border-slate-300"
               />
-              Hızlı mod
+              {t('podcastMotionTurbo')}
             </label>
           )}
         </div>
@@ -144,10 +146,11 @@ function ShotPicker({
   selected: CharacterShot | null;
   onSelect: (shot: CharacterShot) => void;
 }) {
+  const t = useTranslations('BeiweLab');
   if (shots.length === 0) {
     return (
       <p className="text-sm text-slate-500">
-        Henüz beğenilen (≥{PODCAST_SCENE_LIKE_THRESHOLD} puan) bir sahne yok.
+        {t('podcastNoLikedShots', { score: PODCAST_SCENE_LIKE_THRESHOLD })}
       </p>
     );
   }
@@ -196,6 +199,7 @@ export default function BeiwePodcastClient({
   minimaxVoiceStatus,
   hideCost = false,
 }: Props) {
+  const t = useTranslations('BeiweLab');
   const [shots, setShots] = useState<CharacterShot[]>(initialShots);
   const [clips, setClips] = useState<CharacterClip[]>(initialClips);
   const [motions, setMotions] = useState<CharacterMotion[]>(initialMotions);
@@ -241,7 +245,7 @@ export default function BeiwePodcastClient({
 
   const generateScene = async () => {
     if (!intent.trim() && presetIds.length === 0) {
-      setError('En az bir şablon seç ya da sahneyi tarif et.');
+      setError(t('podcastErrorSelectPresetOrIntent'));
       return;
     }
     setGeneratingScene(true);
@@ -263,9 +267,9 @@ export default function BeiwePodcastClient({
       try {
         data = JSON.parse(text);
       } catch {
-        throw new Error(`Sunucu hatası (${res.status}): JSON beklenirken başka bir yanıt geldi.`);
+        throw new Error(t('podcastErrorJsonExpected', { status: res.status }));
       }
-      if (!res.ok) throw new Error(data.error || 'Üretilemedi.');
+      if (!res.ok) throw new Error(data.error || t('podcastErrorGenerateFailed'));
       setShots((prev) => [...(data.shots as CharacterShot[]), ...prev]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Üretilemedi.');
@@ -286,7 +290,7 @@ export default function BeiwePodcastClient({
       if (!res.ok) throw new Error();
     } catch {
       setShots((prev) => prev.map((s) => (s.id === shot.id ? { ...s, similarity_score: previous } : s)));
-      setError('Puan kaydedilemedi.');
+      setError(t('podcastErrorScoreFailed'));
     }
   };
 
@@ -295,16 +299,16 @@ export default function BeiwePodcastClient({
     // (özellikle hepsi silinirse) yeni sahne üretimi kimlik referansı bulamayıp
     // reddediyor (bkz. /generate route'undaki "kanon fotoğraf bulunamadı" hatası).
     const warning = shot.is_canon
-      ? 'Bu, Beiwe Twin\'in kimlik referanslarından biri — silmek yeni sahne/video üretimini etkileyebilir. '
+      ? t('podcastDeleteRefWarning')
       : '';
-    if (!confirm(`${warning}Bu kare kalıcı olarak silinsin mi?`)) return;
+    if (!confirm(`${warning}${t('podcastDeleteConfirm')}`)) return;
     setBusyShotId(shot.id);
     try {
       const res = await fetch(`/api/admin/characters/shots/${shot.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error();
       setShots((prev) => prev.filter((s) => s.id !== shot.id));
     } catch {
-      setError('Kare silinemedi.');
+      setError(t('podcastErrorDeleteFailed'));
     } finally {
       setBusyShotId(null);
     }
@@ -336,9 +340,9 @@ export default function BeiwePodcastClient({
   const voiceReady = Boolean(minimaxVoiceId) && minimaxVoiceStatus === 'active';
 
   const generateOmniTextVideo = async () => {
-    if (!omniTextShot) return setError('Önce bir sahne seç.');
-    if (!omniText.trim()) return setError('Seslendirilecek metni yaz.');
-    if (!voiceReady) return setError('Önce Beiwe Voice\'ta sesini klonla ve doğrula.');
+    if (!omniTextShot) return setError(t('podcastErrorSelectShot'));
+    if (!omniText.trim()) return setError(t('podcastErrorWriteText'));
+    if (!voiceReady) return setError(t('podcastErrorVerifyVoice'));
 
     setError(null);
     try {
@@ -349,7 +353,7 @@ export default function BeiwePodcastClient({
         body: JSON.stringify({ action: 'speak', text: omniText.trim() }),
       });
       const speakData = await speakRes.json();
-      if (!speakRes.ok) throw new Error(speakData.error || 'Ses üretilemedi.');
+      if (!speakRes.ok) throw new Error(speakData.error || t('podcastErrorVoiceFailed'));
 
       setGeneratingOmniText('motion');
       const formData = new FormData();
@@ -367,7 +371,7 @@ export default function BeiwePodcastClient({
         body: formData,
       });
       const motionData = await motionRes.json();
-      if (!motionRes.ok) throw new Error(motionData.error || 'Video üretilemedi.');
+      if (!motionRes.ok) throw new Error(motionData.error || t('podcastErrorVideoFailed'));
       setMotions((prev) => [motionData.motion as CharacterMotion, ...prev]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Üretilemedi.');
@@ -384,7 +388,7 @@ export default function BeiwePodcastClient({
 
   const generateOmniVoiceVideo = async () => {
     if (!omniVoiceShot) return setError('Önce bir sahne seç.');
-    if (!omniAudioFile) return setError('Bir ses dosyası yükle.');
+    if (!omniAudioFile) return setError(t('podcastErrorUploadAudio'));
 
     setError(null);
     setGeneratingOmniVoice(true);
@@ -415,13 +419,13 @@ export default function BeiwePodcastClient({
   };
 
   const deleteMotion = async (motion: CharacterMotion) => {
-    if (!confirm('Bu video kalıcı olarak silinsin mi?')) return;
+    if (!confirm(t('podcastDeleteVideoConfirm'))) return;
     try {
       const res = await fetch(`/api/admin/characters/${characterId}/motion/${motion.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error();
       setMotions((prev) => prev.filter((m) => m.id !== motion.id));
     } catch {
-      setError('Video silinemedi.');
+      setError(t('podcastErrorVideoDeleteFailed'));
     }
   };
 
@@ -448,7 +452,7 @@ export default function BeiwePodcastClient({
         <div>
           <p className="text-sm font-semibold text-slate-900">{character.name}</p>
           <p className="text-xs text-slate-500">
-            {sceneShots.length} sahne · {likedShots.length} beğenilen · {clips.length + motions.length} video
+            {t('podcastHeaderStats', { count: sceneShots.length, liked: likedShots.length, videos: clips.length + motions.length })}
           </p>
         </div>
       </div>
@@ -458,7 +462,7 @@ export default function BeiwePodcastClient({
           <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
           <span className="flex-1">{error}</span>
           <button onClick={() => setError(null)} className="text-red-400 hover:text-red-700 text-xs">
-            kapat
+            {t('podcastCloseBtn')}
           </button>
         </div>
       )}
@@ -466,10 +470,10 @@ export default function BeiwePodcastClient({
       {/* ─── Aşama 1: Sahne Üret & Beğen ─────────────────── */}
       <LabStage
         index={1}
-        title="Sahne Üret & Beğen"
-        question="Hangi sahneler videoya değer?"
+        title={t('podcastStage1Title')}
+        question={t('podcastStage1Question')}
         state={stage1State}
-        lockedMsg="Önce Beiwe Twin'de yüzünü tanıt"
+        lockedMsg={t('podcastStage1Locked')}
       >
         <div className="space-y-3">
           {PRESET_GROUPS.map((group) => (
@@ -506,12 +510,12 @@ export default function BeiwePodcastClient({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Sahneyi tarif et (Türkçe)</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">{t('podcastIntentLabel')}</label>
           <textarea
             value={intent}
             onChange={(e) => setIntent(e.target.value)}
             rows={2}
-            placeholder="Kafede laptopta çalışıyor, akşam ışığı, kameraya bakmıyor."
+            placeholder={t('podcastIntentPlaceholder')}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -522,25 +526,25 @@ export default function BeiwePodcastClient({
             className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-900"
           >
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
-            Gelişmiş seçenekler
+            {t('podcastAdvancedOptions')}
           </button>
           {showAdvanced && (
             <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">En-boy</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1">{t('podcastAspectRatio')}</label>
                 <select
                   value={aspectRatio}
                   onChange={(e) => setAspectRatio(e.target.value as AspectRatio | '')}
                   className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
                 >
-                  <option value="">Şablondan ({effectiveAspect})</option>
+                  <option value="">{t('podcastAspectFromPreset', { aspect: effectiveAspect })}</option>
                   {ASPECT_RATIOS.map((a) => (
                     <option key={a.value} value={a.value}>{a.label}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Çözünürlük</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1">{t('podcastResolution')}</label>
                 <select
                   value={resolution}
                   onChange={(e) => setResolution(e.target.value as Resolution)}
@@ -551,7 +555,7 @@ export default function BeiwePodcastClient({
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Adet</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1">{t('podcastCount')}</label>
                 <select
                   value={numImages}
                   onChange={(e) => setNumImages(Number(e.target.value))}
@@ -573,21 +577,21 @@ export default function BeiwePodcastClient({
             className="flex items-center gap-2 bg-blue-600 text-white rounded-lg px-5 py-2.5 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
           >
             {generatingScene ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {generatingScene ? 'Üretiliyor…' : 'Sahne Üret'}
+            {generatingScene ? t('podcastGenerating') : t('podcastGenerateBtn')}
           </button>
           <span className="text-xs text-slate-400">
             {hideCost
-              ? `≈${creditsForCost(ESTIMATED_COST_PER_IMAGE_USD * numImages)} kredi · 1-2 dk`
-              : `~$${(ESTIMATED_COST_PER_IMAGE_USD * numImages).toFixed(2)} · ≈${creditsForCost(ESTIMATED_COST_PER_IMAGE_USD * numImages)} kredi · 1-2 dk`}
+              ? `${`≈${creditsForCost(ESTIMATED_COST_PER_IMAGE_USD * numImages)}`} kredi · ${t('podcastTimeEstimate')}`
+              : `${`~${(ESTIMATED_COST_PER_IMAGE_USD * numImages).toFixed(2)}`} · ${`≈${creditsForCost(ESTIMATED_COST_PER_IMAGE_USD * numImages)}`} kredi · ${t('podcastTimeEstimate')}`}
           </span>
         </div>
 
         {sceneShots.length > 0 && (
           <div className="border-t border-slate-100 pt-5">
             <h3 className="text-sm font-semibold text-slate-800 mb-3">
-              Galeri{' '}
+              {t('podcastGalleryTitle')}{' '}
               <span className="text-slate-400 font-normal">
-                ({sceneShots.length} kare — {uploadedShots.length} referans fotoğraf dahil)
+                {t('podcastGalleryStats', { total: sceneShots.length, uploaded: uploadedShots.length })}
               </span>
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -603,7 +607,7 @@ export default function BeiwePodcastClient({
                   >
                     {isUpload && (
                       <span className="absolute top-2 left-2 z-10 bg-slate-900/80 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                        REFERANS
+                        {t('podcastReferenceTag')}
                       </span>
                     )}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -615,10 +619,10 @@ export default function BeiwePodcastClient({
                         getColor={(n) => (n >= PODCAST_SCENE_LIKE_THRESHOLD ? 'bg-emerald-500' : 'bg-slate-400')}
                         getCaption={(display) =>
                           display === null
-                            ? 'Bu sahneyi ne kadar beğendin?'
+                            ? t('podcastRateCaptionDefault')
                             : display >= PODCAST_SCENE_LIKE_THRESHOLD
-                              ? `${display}/10 · video için uygun`
-                              : `${display}/10 · video için önerilmez`
+                              ? `${display}/10 · ${t('podcastRateCaptionSuitable')}`
+                              : `${display}/10 · ${t('podcastRateCaptionNotSuitable')}`
                         }
                       />
                       <button
@@ -627,8 +631,7 @@ export default function BeiwePodcastClient({
                         className="w-full flex items-center justify-center gap-1 rounded-lg border border-slate-200 py-1.5 text-xs text-slate-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 disabled:opacity-50"
                       >
                         {busyShotId === shot.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                        Sil
-                      </button>
+                        {t('podcastDeleteBtn')}\n                      </button>
                     </div>
                   </div>
                 );
@@ -641,10 +644,10 @@ export default function BeiwePodcastClient({
       {/* ─── Aşama 2: Video Türü Seç ─────────────────────── */}
       <LabStage
         index={2}
-        title="Video Türü Seç"
-        question="Bu beğenilen sahneden nasıl video çıksın?"
+        title={t('podcastStage2Title')}
+        question={t('podcastStage2Question')}
         state={stage2State}
-        lockedMsg={`Önce en az bir sahneyi beğen (≥${PODCAST_SCENE_LIKE_THRESHOLD})`}
+        lockedMsg={t('podcastStage2Locked', { score: PODCAST_SCENE_LIKE_THRESHOLD })}
       >
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {PODCAST_VIDEO_MODES.map((mode) => (
@@ -689,30 +692,30 @@ export default function BeiwePodcastClient({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 border-t border-slate-100 pt-5">
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">1. Sahne seç</h3>
+                <h3 className="text-sm font-semibold text-slate-900 mb-2">{t('podcastStep1SelectScene')}</h3>
                 <ShotPicker shots={likedShots} selected={omniTextShot} onSelect={setOmniTextShot} />
               </div>
 
               {!voiceReady && (
                 <div className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-600">
                   <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-slate-400" />
-                  <span>Önce Beiwe Voice&apos;ta sesini klonla ve doğrula — bu metin, o klonla seslendirilecek.</span>
+                  <span>{t('podcastVoiceNotice')}</span>
                 </div>
               )}
 
               <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">2. Metin</h3>
+                <h3 className="text-sm font-semibold text-slate-900 mb-2">{t('podcastStep2Text')}</h3>
                 <textarea
                   value={omniText}
                   onChange={(e) => setOmniText(e.target.value)}
                   rows={3}
-                  placeholder="Karakterin videoda ne söylemesini istiyorsun?"
+                  placeholder={t('podcastStep2TextPlaceholder')}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">3. Model</h3>
+                <h3 className="text-sm font-semibold text-slate-900 mb-2">{t('podcastStep3Model')}</h3>
                 <MotionModelPicker
                   modelId={omniTextModelId}
                   onModelChange={setOmniTextModelId}
@@ -726,14 +729,14 @@ export default function BeiwePodcastClient({
 
               <div>
                 <h3 className="text-sm font-semibold text-slate-900 mb-2">
-                  4. Yönlendirme <span className="font-normal text-slate-500">(opsiyonel)</span>
+                  {t('podcastStep4Prompt')} <span className="font-normal text-slate-500">{t('podcastOptional')}</span>
                 </h3>
                 <textarea
                   value={omniTextPrompt}
                   onChange={(e) => setOmniTextPrompt(e.target.value)}
                   rows={2}
                   maxLength={600}
-                  placeholder="Sakin ve güven veren bir tonda kameraya konuşuyor."
+                  placeholder={t('podcastPromptTextPlaceholder')}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -745,20 +748,20 @@ export default function BeiwePodcastClient({
               >
                 {generatingOmniText ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                 {generatingOmniText === 'voice'
-                  ? 'Seslendiriliyor…'
+                  ? t('podcastBtnVoicing')
                   : generatingOmniText === 'motion'
-                    ? 'Video üretiliyor…'
-                    : 'Video Üret'}
+                    ? t('podcastBtnVideoGen')
+                    : t('podcastBtnGenerate')}
               </button>
             </div>
 
             <div>
               <h3 className="text-sm font-semibold text-slate-900 mb-3">
-                Üretilen videolar <span className="text-slate-400 font-normal">({textMotions.length})</span>
+                {t('podcastGeneratedVideosTitle')} <span className="text-slate-400 font-normal">({textMotions.length})</span>
               </h3>
               {textMotions.length === 0 ? (
                 <div className="flex items-center justify-center h-[200px] bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                  <p className="text-sm text-slate-500">Henüz video üretilmedi.</p>
+                  <p className="text-sm text-slate-500">{t('podcastNoVideos')}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
@@ -794,7 +797,7 @@ export default function BeiwePodcastClient({
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">2. Ses dosyası</h3>
+                <h3 className="text-sm font-semibold text-slate-900 mb-2">{t('podcastStep2Audio')}</h3>
                 <input
                   ref={omniAudioInputRef}
                   type="file"
@@ -809,14 +812,14 @@ export default function BeiwePodcastClient({
                 >
                   <Upload className="w-5 h-5 text-slate-400" />
                   <span className="text-sm font-medium text-slate-600">
-                    {omniAudioFile ? omniAudioFile.name : 'Ses dosyası seç (veya sürükle)'}
+                    {omniAudioFile ? omniAudioFile.name : t('podcastAudioSelect')}
                   </span>
                 </label>
                 {omniAudioFile && (
                   <p className="text-xs text-slate-500 mt-1">
                     {(omniAudioFile.size / 1024 / 1024).toFixed(2)} MB
                     {omniAudioSeconds !== null && <> · {omniAudioSeconds.toFixed(1)} sn</>}
-                    {' · '}otomatik pürüzsüzleştirilecek
+                    {' · '}{t('podcastAudioEnhanceNote')}
                   </p>
                 )}
                 {omniAudioFile && omniAudioSeconds !== null && (() => {
@@ -824,13 +827,13 @@ export default function BeiwePodcastClient({
                   const totalUsd = model.costPerSecondUsd * omniAudioSeconds + AUDIO_ENHANCE_COST_USD;
                   return (
                     <p className="text-xs text-slate-400 mt-0.5">
-                      {hideCost ? `≈${creditsForCost(totalUsd)} kredi` : `~$${totalUsd.toFixed(2)} · ≈${creditsForCost(totalUsd)} kredi`} (video + otomatik ses temizleme)
+                      {hideCost ? `≈${creditsForCost(totalUsd)} kredi` : `~$${totalUsd.toFixed(2)} · ≈${creditsForCost(totalUsd)} kredi`} {t('podcastVideoPlusAudioCost')}
                     </p>
                   );
                 })()}
                 {omniAudioFile && !motionAudioMime(omniAudioFile.name) && (
                   <p className="text-xs text-red-600 mt-1">
-                    Desteklenmiyor — kabul edilenler: {MOTION_AUDIO_EXTENSIONS.map((e) => e.toUpperCase()).join(', ')}.
+                    {t('podcastUnsupportedAudio', { exts: MOTION_AUDIO_EXTENSIONS.map((e) => e.toUpperCase()).join(', ') })}
                   </p>
                 )}
               </div>

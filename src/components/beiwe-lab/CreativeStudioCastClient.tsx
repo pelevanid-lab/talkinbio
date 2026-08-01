@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Loader2, Plus, Sparkles } from 'lucide-react';
 import { ESTIMATED_COST_PER_IMAGE_USD } from '@/config/characters';
 import { creditsForCost } from '@/config/pricing';
@@ -18,6 +19,7 @@ export type CastCharacterSummary = { id: string; name: string; role: string; ava
  * oluşturma/listeleme sağlıyor, diğer araçlara bağlanma sonraki bir tur.
  */
 export default function CreativeStudioCastClient({ initialCharacters }: { initialCharacters: CastCharacterSummary[] }) {
+  const t = useTranslations('BeiweLab');
   const [characters, setCharacters] = useState<CastCharacterSummary[]>(initialCharacters);
   const [name, setName] = useState('');
   const [persona, setPersona] = useState('');
@@ -26,7 +28,7 @@ export default function CreativeStudioCastClient({ initialCharacters }: { initia
 
   const createCharacter = async () => {
     if (!name.trim() || !persona.trim()) {
-      setError('İsim ve tarif gerekli.');
+      setError(t('castNameAndPersonaRequired'));
       return;
     }
     setCreating(true);
@@ -38,9 +40,9 @@ export default function CreativeStudioCastClient({ initialCharacters }: { initia
         body: JSON.stringify({ name: name.trim(), persona: persona.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Karakter oluşturulamadı.');
+      if (!res.ok) throw new Error(data.error || t('castCreationFailed'));
 
-      setCharacters((prev) => [{ id: data.id, name: data.name, role: 'Yardımcı oyuncu — sanal karakter' }, ...prev]);
+      setCharacters((prev) => [{ id: data.id, name: data.name, role: t('castVirtualRole') }, ...prev]);
       setName('');
       setPersona('');
     } catch (err) {
@@ -53,22 +55,22 @@ export default function CreativeStudioCastClient({ initialCharacters }: { initia
   return (
     <div className="space-y-6">
       <div className="bg-white border border-[rgba(20,35,31,0.10)] rounded-[20px] p-6">
-        <h2 className="text-sm font-[800] text-[#14231F] font-['Bricolage_Grotesque'] mb-1">Yeni Yardımcı Oyuncu</h2>
+        <h2 className="text-sm font-[800] text-[#14231F] font-['Bricolage_Grotesque'] mb-1">{t('castNewTitle')}</h2>
         <p className="text-sm text-[#4B5A55] mb-4">
-          Sanal, kurgusal bir karakter — gerçek bir yüze kilitlenmez, yalnızca tarifle üretilir.
+          {t('castNewDesc')}
         </p>
         <div className="space-y-3 max-w-lg">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="İsim — ör. Deniz"
+            placeholder={t('castNamePlaceholder')}
             className="w-full p-2.5 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F] bg-white"
           />
           <textarea
             value={persona}
             onChange={(e) => setPersona(e.target.value)}
             rows={3}
-            placeholder="Tarif (görünüş + kişilik) — ör. Otuzlu yaşlarda, kısa siyah saçlı, enerjik bir spor koçu. Sıcak ve motive edici bir tavrı var."
+            placeholder={t('castPersonaPlaceholder')}
             className="w-full p-2.5 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F] bg-white resize-none"
           />
           {error && <p className="text-sm text-red-600">{error}</p>}
@@ -78,19 +80,19 @@ export default function CreativeStudioCastClient({ initialCharacters }: { initia
             className="flex items-center gap-2 bg-[#FF6A5C] text-white rounded-full px-5 py-2.5 text-sm font-[700] hover:opacity-90 transition disabled:opacity-50"
           >
             {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            {creating ? 'Üretiliyor… (~20sn)' : `Oluştur (≈${creditsForCost(ESTIMATED_COST_PER_IMAGE_USD)} kredi)`}
+            {creating ? t('castGenerating') : t('castCreateBtn', { cost: creditsForCost(ESTIMATED_COST_PER_IMAGE_USD), credit: t('voiceCreditLabel') })}
           </button>
         </div>
       </div>
 
       <div>
         <h2 className="text-sm font-[800] text-[#14231F] font-['Bricolage_Grotesque'] mb-3">
-          Oyuncu Kadron {characters.length > 0 && <span className="font-normal text-[#8A8880]">({characters.length})</span>}
+          {t('castRosterTitle')} {characters.length > 0 && <span className="font-normal text-[#8A8880]">({characters.length})</span>}
         </h2>
         {characters.length === 0 ? (
           <div className="bg-white border border-[rgba(20,35,31,0.10)] rounded-[20px] p-8 text-center">
             <Sparkles className="w-8 h-8 text-[#8A8880] mx-auto mb-2" />
-            <p className="text-sm text-[#8A8880]">Henüz bir yardımcı oyuncu oluşturmadın.</p>
+            <p className="text-sm text-[#8A8880]">{t('castEmpty')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -108,15 +110,11 @@ export default function CreativeStudioCastClient({ initialCharacters }: { initia
                   <a
                     href={`/dashboard/creative-studio/voice/${c.id}`}
                     className="text-xs font-medium text-[#14231F] bg-[#F4F2ED] px-2.5 py-1 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition"
-                  >
-                    Ses
-                  </a>
+                  >\n                    {t('castVoiceBtn')}\n                  </a>
                   <a
                     href={`/dashboard/creative-studio/podcast/${c.id}`}
                     className="text-xs font-medium text-[#14231F] bg-[#F4F2ED] px-2.5 py-1 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition"
-                  >
-                    Video
-                  </a>
+                  >\n                    {t('castVideoBtn')}\n                  </a>
                 </div>
               </div>
             ))}

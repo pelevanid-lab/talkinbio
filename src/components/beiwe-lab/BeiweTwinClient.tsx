@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   AlertTriangle,
   Brain,
@@ -127,6 +128,7 @@ export default function BeiweTwinClient({
   allowInstagramImport = true,
 }: Props) {
   const router = useRouter();
+  const t = useTranslations('BeiweLab');
   const [profile, setProfile] = useState<TwinProfile>(initialProfile);
   const [shots, setShots] = useState<CharacterShot[]>(initialShots);
   const [error, setError] = useState<string | null>(null);
@@ -168,7 +170,7 @@ export default function BeiweTwinClient({
         formData.append('file', file);
         const res = await fetch('/api/admin/characters/scene-ref', { method: 'POST', body: formData });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Fotoğraf yüklenemedi.');
+        if (!res.ok) throw new Error(data.error || t('twinPhotoUploadFailed'));
         urls.push(data.url);
       }
 
@@ -178,7 +180,7 @@ export default function BeiweTwinClient({
         body: JSON.stringify({ characterId, imageUrls: urls }),
       });
       const analyzeData = await analyzeRes.json();
-      if (!analyzeRes.ok) throw new Error(analyzeData.error || 'Yüz analizi başarısız.');
+      if (!analyzeRes.ok) throw new Error(analyzeData.error || t('twinFaceAnalysisFailed'));
 
       const newShots: CharacterShot[] = [];
       for (const url of urls) {
@@ -198,7 +200,7 @@ export default function BeiweTwinClient({
         reference_image_url: urls[0],
       }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Yüz tanıtılamadı.');
+      setError(err instanceof Error ? err.message : t('twinFaceTeachingFailed'));
     } finally {
       setTeaching(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -222,7 +224,7 @@ export default function BeiweTwinClient({
       } catch {
         throw new Error(`Sunucu hatası (${res.status}): JSON beklenirken başka bir yanıt geldi.`);
       }
-      if (!res.ok) throw new Error(data.error || 'Twin üretilemedi.');
+      if (!res.ok) throw new Error(data.error || t('twinGenerationFailed'));
       setShots((prev) => [...(data.shots as CharacterShot[]), ...prev]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Twin üretilemedi.');
@@ -245,19 +247,19 @@ export default function BeiweTwinClient({
       setShots((prev) =>
         prev.map((s) => (s.id === shot.id ? { ...s, similarity_score: previous } : s)),
       );
-      setError('Puan kaydedilemedi.');
+      setError(t('twinRatingSaveFailed'));
     }
   }, []);
 
   const removeShot = async (shot: CharacterShot) => {
-    if (!confirm('Bu kare kalıcı olarak silinsin mi?')) return;
+    if (!confirm(t('twinDeleteShotConfirm'))) return;
     setBusyShotId(shot.id);
     try {
       const res = await fetch(`/api/admin/characters/shots/${shot.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error();
       setShots((prev) => prev.filter((s) => s.id !== shot.id));
     } catch {
-      setError('Kare silinemedi.');
+      setError(t('twinDeleteShotFailed'));
     } finally {
       setBusyShotId(null);
     }
@@ -280,7 +282,7 @@ export default function BeiweTwinClient({
         body: JSON.stringify({ photoUrls }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'LoRA eğitimi başlatılamadı.');
+      if (!res.ok) throw new Error(data.error || t('twinLoraTrainingStartFailed'));
       setProfile((prev) => ({
         ...prev,
         lora_status: 'queued',
@@ -307,7 +309,7 @@ export default function BeiweTwinClient({
         }));
       }
     } catch {
-      setError('LoRA durumu okunamadı.');
+      setError(t('twinLoraStatusCheckFailed'));
     } finally {
       setLoraChecking(false);
     }
@@ -404,7 +406,7 @@ export default function BeiweTwinClient({
             className="flex items-center gap-2 bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
           >
             {teaching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-            {teaching ? 'Analiz ediliyor…' : hasIdentity ? 'Yüzü yeniden tanıt' : 'Fotoğraf yükle'}
+            {teaching ? t('twinAnalyzing') : hasIdentity ? 'Yüzü yeniden tanıt' : 'Fotoğraf yükle'}
           </button>
           {allowInstagramImport && (
             <button
@@ -531,7 +533,7 @@ export default function BeiweTwinClient({
                       <img src={shot.image_url} alt="" className="w-full block" />
                       {verified && (
                         <span className="absolute top-2 right-2 bg-amber-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                          DOĞRULANDI
+                          {t('twinVerified')}
                         </span>
                       )}
                     </div>
@@ -575,7 +577,7 @@ export default function BeiweTwinClient({
         <div className="flex items-center gap-2 rounded-xl border border-purple-200 bg-purple-50 px-4 py-2.5 text-sm text-purple-800">
           <Coins className="w-4 h-4 shrink-0" />
           <span>
-            Bu işlemi başlatmak için hesabında en az <strong>{creditsForCost(LORA_TRAINING_COST_USD)} kredi</strong> olmalı.
+            <span dangerouslySetInnerHTML={{ __html: t('twinLoraMinCost', { cost: `<strong>${creditsForCost(LORA_TRAINING_COST_USD)}</strong>` }) }} />
           </span>
         </div>
 
@@ -616,7 +618,7 @@ export default function BeiweTwinClient({
               className="flex items-center gap-2 bg-purple-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loraSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
-              {loraSubmitting ? 'Arşiv hazırlanıyor…' : `LoRA Eğitimini Başlat (≈${creditsForCost(LORA_TRAINING_COST_USD)} kredi)`}
+              {loraSubmitting ? t('twinLoraSubmitting') : t('twinLoraTrainBtn', { cost: creditsForCost(LORA_TRAINING_COST_USD) })}
             </button>
           )}
           <button

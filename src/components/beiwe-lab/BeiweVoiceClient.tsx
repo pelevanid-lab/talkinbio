@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   AlertTriangle,
   Check,
@@ -70,6 +71,7 @@ export default function BeiweVoiceClient({
   voicePresets: initialVoicePresets,
   hideCost = false,
 }: Props) {
+  const t = useTranslations('BeiweLab');
   const [voicePresets, setVoicePresets] = useState<VoicePreset[]>(initialVoicePresets ?? []);
   const [presetLabel, setPresetLabel] = useState('');
   const [uploadingPreset, setUploadingPreset] = useState(false);
@@ -93,7 +95,7 @@ export default function BeiweVoiceClient({
 
   /** Admin: "$X (≈N kredi)". Müşteri (hideCost): sadece "≈N kredi" — ham maliyeti göstermiyoruz. */
   const costLabel = (usd: number) =>
-    hideCost ? `≈${creditsForCost(usd)} kredi` : `$${usd.toFixed(2)} (≈${creditsForCost(usd)} kredi)`;
+    hideCost ? `≈${creditsForCost(usd)} ${t('voiceCreditLabel')}` : `$${usd.toFixed(2)} (≈${creditsForCost(usd)} kredi)`;
 
   /* ---------------- aşama 1: referans ses ---------------- */
   // Kırpma bilinçli olarak YOK: F5-TTS'te referansı 15sn'ye kırpmak gerekiyordu
@@ -118,7 +120,7 @@ export default function BeiweVoiceClient({
         body: formData,
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Ses yüklenemedi.');
+      if (!res.ok) throw new Error(data.error || t('voiceUploadFailed'));
       setVoiceUrl(data.voice_url);
       // Yeni referans, eski klonu ve onayı geçersiz kılar (sunucu tarafında da sıfırlanıyor).
       setMinimaxVoiceId(null);
@@ -172,7 +174,7 @@ export default function BeiweVoiceClient({
       formData.append('label', presetLabel.trim());
       const res = await fetch('/api/admin/beiwe-lab/voice-presets', { method: 'POST', body: formData });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Hazır ses eklenemedi.');
+      if (!res.ok) throw new Error(data.error || t('voicePresetAddFailed'));
       setVoicePresets((prev) => [...prev, { id: data.preset.id, label: data.preset.label, audioUrl: data.preset.audio_url }]);
       setPresetLabel('');
     } catch (err) {
@@ -229,7 +231,7 @@ export default function BeiweVoiceClient({
         body: JSON.stringify({ action: 'speak', text: text.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Ses üretilemedi.');
+      if (!res.ok) throw new Error(data.error || t('voiceGenerationFailed'));
       // Başarılı bir üretim, klonu 7 günlük silinme riskinden çıkarır — durumu tazele.
       setMinimaxStatus('active');
       setTakes((prev) => [
@@ -359,11 +361,11 @@ export default function BeiweVoiceClient({
         </div>
       )}
 
-      {/* ─── Aşama 1: Referans Ses ─────────────────────────── */}
+      {/* ─── Aşama 1: {t('voiceStage1Title')} ─────────────────────────── */}
       <LabStage
         index={1}
         title="Referans Ses"
-        question="Bu klon kimin sesinden doğuyor?"
+        question={t('voiceStage1Question')}
         state={stage1State}
       >
         {initialVoicePresets !== undefined ? (
@@ -381,7 +383,7 @@ export default function BeiweVoiceClient({
 
         {initialVoicePresets !== undefined && (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-            <p className="text-xs font-semibold text-slate-500">Hazır Referans Sesler</p>
+            <p className="text-xs font-semibold text-slate-500">{t('voicePresetVoices')}</p>
 
             {voicePresets.length === 0 ? (
               <p className="text-xs text-slate-400">
@@ -476,7 +478,7 @@ export default function BeiweVoiceClient({
                 ))}
               </ul>
             ) : (
-              <p>Süre ve ses seviyesi makul görünüyor. Bu, klonun sana benzeyeceğini garanti etmez.</p>
+              <p>{t('voiceUploadSuccess')}</p>
             )}
           </div>
         )}
@@ -484,7 +486,7 @@ export default function BeiweVoiceClient({
         <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs text-blue-800">
           <Fingerprint className="w-4 h-4 shrink-0" />
           <span>
-            Ses dosyası yüklemek (otomatik deşifre çıkarma) {hideCost ? `≈${creditsForCost(STUDIO_TRANSCRIBE_COST_USD)} kredi` : `~$${STUDIO_TRANSCRIBE_COST_USD.toFixed(2)} · ≈${creditsForCost(STUDIO_TRANSCRIBE_COST_USD)} kredi`} tutar.
+            {t('voiceUploadCost', { cost: hideCost ? `≈${creditsForCost(STUDIO_TRANSCRIBE_COST_USD)} ${t('voiceCreditLabel')}` : `~$${STUDIO_TRANSCRIBE_COST_USD.toFixed(2)} · ≈${creditsForCost(STUDIO_TRANSCRIBE_COST_USD)} ${t('voiceCreditLabel')}` })}
           </span>
         </div>
 
@@ -525,18 +527,18 @@ export default function BeiweVoiceClient({
         </div>
       </LabStage>
 
-      {/* ─── Aşama 2: Sesi Klonla ───────────────────────────── */}
+      {/* ─── Aşama 2: {t('voiceStage2Title')} ───────────────────────────── */}
       <LabStage
         index={2}
         title="Sesi Klonla"
-        question="Bu ses kalıcı bir kimliğe dönüşsün mü?"
+        question={t('voiceStage2Question')}
         state={stage2State}
-        lockedMsg="Önce referans ses yükle"
+        lockedMsg={t('voiceStage2Locked')}
       >
         <p className="text-sm text-slate-600">
           Bu, Twin&apos;deki LoRA&apos;nın ses karşılığı: referans bir kez işlenip kalıcı bir
           klon kimliği (<code className="font-mono text-xs">custom_voice_id</code>) çıkıyor.
-          Sonraki her üretim ses dosyasını değil bu kimliği kullanıyor.
+          {t('voiceStage2Desc2')}
         </p>
 
         <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
@@ -599,13 +601,13 @@ export default function BeiweVoiceClient({
         </button>
       </LabStage>
 
-      {/* ─── Aşama 3: Klonu Doğrula ─────────────────────────── */}
+      {/* ─── Aşama 3: {t('voiceStage3Title')} ─────────────────────────── */}
       <LabStage
         index={3}
         title="Klonu Doğrula"
-        question="Bu ses gerçekten sana benziyor mu?"
+        question={t('voiceStage3Question')}
         state={stage3State}
-        lockedMsg="Önce sesi klonla"
+        lockedMsg={t('voiceStage3Locked')}
       >
         <p className="text-sm text-slate-600">
           Aşağıdaki cümleler ürünün gerçekten üreteceği cümleler — klonun işe yarayıp
@@ -634,7 +636,7 @@ export default function BeiweVoiceClient({
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-semibold text-slate-900">{script.label}</span>
-                  <span className="text-[10px] text-slate-400">{hideCost ? `≈${costCredits(script.text)} kredi` : `~$${cost(script.text)} · ≈${costCredits(script.text)} kredi`}</span>
+                  <span className="text-[10px] text-slate-400">{hideCost ? `≈${costCredits(script.text)} ${t('voiceCreditLabel')}` : `~${cost(script.text)} · ≈${costCredits(script.text)} ${t('voiceCreditLabel')}`}</span>
                 </div>
                 <p className="text-xs text-slate-500 leading-snug">{script.hint}</p>
                 <p className="text-xs text-slate-600 bg-slate-50 rounded-lg p-2 leading-relaxed line-clamp-3">
@@ -669,7 +671,7 @@ export default function BeiweVoiceClient({
             value={customText}
             onChange={(e) => setCustomText(e.target.value)}
             rows={2}
-            placeholder="Klonun zorlanmasını beklediğin bir cümle yaz."
+            placeholder={t('voiceCustomPlaceholder')}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <div className="flex items-center gap-3 mt-2">
@@ -687,7 +689,7 @@ export default function BeiweVoiceClient({
             </button>
             {customText.trim() && (
               <span className="text-xs text-slate-400">
-                {customText.length} karakter · {hideCost ? `≈${costCredits(customText)} kredi` : `~$${cost(customText)} · ≈${costCredits(customText)} kredi`}
+                {t('voiceCustomCharCount', { length: customText.length })} · {hideCost ? `≈${costCredits(customText)} ${t('voiceCreditLabel')}` : `~${cost(customText)} · ≈${costCredits(customText)} ${t('voiceCreditLabel')}`}
               </span>
             )}
           </div>
@@ -722,14 +724,14 @@ export default function BeiweVoiceClient({
             }`}
           >
             {approving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-            {approved ? 'Onayı geri al' : 'Bu klonu onayla'}
+            {approved ? t('voiceRevokeBtn') : t('voiceApproveBtn')}
           </button>
           <span className="text-xs text-slate-400">
             {takes.length === 0
               ? 'Onaylamadan önce en az bir deneme dinle.'
               : approved
-                ? 'Klon onaylandı — Beiwe Motion bu sesi kullanacak.'
-                : 'Onay, profile voice_status = ready olarak yazılır.'}
+                ? t('voiceApprovedNotice')
+                : 'Bu karakterin görsel twin\'i henüz doğrulanmadı. Ses katmanı bağımsız çalışır ancak üretim için ikisi de onaylanmalıdır.'}
           </span>
         </div>
       </LabStage>
