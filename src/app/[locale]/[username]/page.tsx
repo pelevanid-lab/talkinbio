@@ -8,6 +8,9 @@ import { DEFAULT_THEME, resolveThemeColors } from '@/config/archetypes';
 import { googleFontsHref } from '@/utils/googleFonts';
 import { isConversationActive } from '@/utils/conversationWindow';
 
+// Her ziyarette taze saule_settings (voiceEnabled dahil) çekilsin
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata({ params }: any) {
   const { username, locale } = await params;
 
