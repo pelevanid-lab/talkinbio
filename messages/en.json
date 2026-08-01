@@ -180,7 +180,7 @@
       }
     },
     "heroTexts": {
-      "subtitle": "Your bio link is talks now. It <strong className=\"text-[var(--ink)] font-semibold\">creates content</strong>, <strong className=\"text-[var(--ink)] font-semibold\">answers questions</strong>, takes requests, and <strong className=\"text-[var(--ink)] font-semibold\">closes sales</strong>.",
+      "subtitle": "Your bio link is talking now. It <strong className=\"text-[var(--ink)] font-semibold\">creates content</strong>, <strong className=\"text-[var(--ink)] font-semibold\">answers questions</strong>, takes requests, and <strong className=\"text-[var(--ink)] font-semibold\">closes sales</strong>.",
       "btnEarly": "Early access",
       "btnHow": "How it works?",
       "btnPricing": "Pricing"

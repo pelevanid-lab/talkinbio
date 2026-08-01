@@ -28,7 +28,6 @@ type LocalizedGreeting = Partial<Record<'tr' | 'en' | 'ru', string>>;
 // onun yerine kısa bir "şimdi yazıyorum" cümlesiyle değiştirilir.
 const INFO_MARKER_START = '§§INFO§§';
 const INFO_MARKER_END = '§§/INFO§§';
-const INFO_BLOCK_RE = /§§INFO§§([\s\S]*?)§§\/INFO§§/g;
 
 function stripInfoMarkers(text: string): string {
   return text.replace(new RegExp(INFO_MARKER_START, 'g'), '').replace(new RegExp(INFO_MARKER_END, 'g'), '');
@@ -38,10 +37,11 @@ function hasInfoBlock(text: string): boolean {
   return text.includes(INFO_MARKER_START);
 }
 
+// Panel yazıyla önemli bilgiyi gösterirken TTS aynı anda o mesajın geri kalanını da sesli
+// okumasın — biri yazıyı okuyorsa aynı anda konuşulmasını istemiyoruz. Bu yüzden işaretli bir
+// mesajda konuşulan tek şey kısa "şimdi yazıyorum" cümlesi; mesajın metni SADECE yazıyla kalır.
 function buildSpokenText(text: string, filler: string): string {
-  if (!hasInfoBlock(text)) return text;
-  const withoutBlocks = text.replace(INFO_BLOCK_RE, '').trim();
-  return `${withoutBlocks} ${filler}`.trim();
+  return hasInfoBlock(text) ? filler : text;
 }
 
 function MicButton({ isRecording, isTranscribing, disabled, onPressStart, onPressEnd, title }: {
