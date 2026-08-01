@@ -180,7 +180,7 @@
       }
     },
     "heroTexts": {
-      "subtitle": "Websiteniz artık sadece bir link değil. Sizin yerinize <strong className=\"text-[var(--ink)] font-semibold\">içerik üreten</strong>, müşterilerinize <strong className=\"text-[var(--ink)] font-semibold\">anında cevap veren</strong> ve <strong className=\"text-[var(--ink)] font-semibold\">satış kapatan</strong> yeni nesil konuşan websiteniz.",
+      "subtitle": "Websiteniz artık sadece bir link değil. O artık konuşuyor. <strong className=\"text-[var(--ink)] font-semibold\">İçerik üretiyor</strong>, <strong className=\"text-[var(--ink)] font-semibold\">soruları yanıtlıyor</strong>, talepleri alıp <strong className=\"text-[var(--ink)] font-semibold\">satışı kapatıyor</strong>.",
       "btnEarly": "Erken erişim",
       "btnHow": "Nasıl çalışır?",
       "btnPricing": "Fiyatlandırma"

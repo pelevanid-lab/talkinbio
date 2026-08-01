@@ -180,7 +180,7 @@
       }
     },
     "heroTexts": {
-      "subtitle": "Your website is no longer just a link. It's a next-generation talking website that <strong className=\"text-[var(--ink)] font-semibold\">creates content</strong>, <strong className=\"text-[var(--ink)] font-semibold\">answers instantly</strong>, and <strong className=\"text-[var(--ink)] font-semibold\">closes sales</strong> for you.",
+      "subtitle": "Your website is no longer just a link. It talks now. It <strong className=\"text-[var(--ink)] font-semibold\">creates content</strong>, <strong className=\"text-[var(--ink)] font-semibold\">answers questions</strong>, takes requests, and <strong className=\"text-[var(--ink)] font-semibold\">closes sales</strong>.",
       "btnEarly": "Early access",
       "btnHow": "How it works?",
       "btnPricing": "Pricing"

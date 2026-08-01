@@ -180,7 +180,7 @@
       }
     },
     "heroTexts": {
-      "subtitle": "Ваш веб-сайт — это больше не просто ссылка. Это говорящий веб-сайт нового поколения, который <strong className=\"text-[var(--ink)] font-semibold\">создает контент</strong>, <strong className=\"text-[var(--ink)] font-semibold\">отвечает мгновенно</strong> и <strong className=\"text-[var(--ink)] font-semibold\">закрывает продажи</strong> за вас.",
+      "subtitle": "Ваш веб-сайт — это больше не просто ссылка. Теперь он говорит. Он <strong className=\"text-[var(--ink)] font-semibold\">создает контент</strong>, <strong className=\"text-[var(--ink)] font-semibold\">отвечает на вопросы</strong>, принимает запросы и <strong className=\"text-[var(--ink)] font-semibold\">закрывает продажи</strong>.",
       "btnEarly": "Ранний доступ",
       "btnHow": "Как это работает?",
       "btnPricing": "Цены"
