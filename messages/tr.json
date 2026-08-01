@@ -281,7 +281,9 @@
     "accentGradient": "Gradyan",
     "accentSolidHint": "Tek vurgu rengi",
     "accentGradientFrom": "Gradyan başlangıç rengi",
+    "accentGradientMid": "Gradyan orta rengi",
     "accentGradientTo": "Gradyan bitiş rengi",
+    "accentGradientHue": "Renk tonu",
     "accentColorHint": "Blok kartlarındaki çizgi, butonlar ve odak vurguları seçtiğiniz vurgu görünümünden beslenir.",
     "shortcuts": "Kısayollar",
     "shortcutsHint": "Profil başlığının altında gösterilir. En fazla 4 bağlantı veya hizmet.",
@@ -619,7 +621,7 @@
     },
     "q6": {
       "title": "Gelir Modelimiz",
-      "content": "Gelir modelimiz kredi bazlı bir abonelik. Faturalandırma altyapısı yol haritamızda lansman kapısının bir parçası; şu an, ilk pilotlarda tahsilatı elle yapıyoruz. Üç paketimiz var.\n\nStarter ($9/ay, 200 kredi) günde 3-5 DM alan ve ilk kez bir asistan kuran bireysel satıcı için. Bu kademedeki kullanıcı Assistant Agent'ın ne olduğunu öğreniyor, sistemin değerini test ediyor.\n\nPro ($29/ay, 700 kredi) haftada 30'dan fazla DM alan, düzenli bir müşteri kitlesi olan ve Creative Agent analizini kullanan satıcı için — asıl gelir motorumuz burası.\n\nBusiness ($79/ay, 1.800 kredi) ise birden fazla hizmet hattı yürüten, yüksek hacimli DM trafiği yöneten ve otomasyon ihtiyacı olgunlaşmış satıcılar için.\n\nFiyatlarımız dolar üzerinden sabit; TL tahsilatını güncel kurdan yapıyoruz. Yıllık ödemede %20 indirim sunuyoruz — hem müşteriye tasarruf, hem bize kur riskine karşı bir tampon.\n\nRakamlara dökersek: efektif ARPU $15, LTV $300 (%5 churn varsayımıyla), hedeflediğimiz CAC ise $100'ün altı — viral imza döngümüz bunu organik tutacak."
+      "content": "Gelir modelimiz abonelik değil, kredi bazlı bakiye modeli. Shopier abonelik desteklemediği için kullanıcı süre sınırı olmayan kredi satın alır ve yalnızca gerçek işlem olduğunda kredi harcar.\n\nDeneme paketi $0 ve tek seferlik 20 kredi verir; ürünü az da olsa deneyimletmek içindir.\n\nStarter ($15, 200 kredi) sayfasını yayına almak ve ilk ziyaretçi sorularını karşılamak isteyen bireysel işletmeler için.\n\nPro ($40, 600 kredi) düzenli ziyaretçi trafiği olan ve sayfasını sık güncelleyen büyüyen işletmeler için.\n\nBusiness ($90, 1.500 kredi) birden fazla hizmet hattı, daha yoğun sayfa üretimi ve özel ses paketi isteyen ekipler için.\n\nEk kredi paketi $5 karşılığında 100 kredi verir. Fiyatlarımız dolar üzerinden sabit; TL tahsilatı gerektiğinde güncel kurdan yapılır. Birim iş başına düşen kredi miktarı sabit kaldığı için toplu paketlerde kullanıcı daha avantajlı kapasite alırken marjımız da korunur."
     },
     "q7": {
       "title": "Nereye Gidiyoruz",

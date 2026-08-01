@@ -45,8 +45,15 @@ function hasInfoBlock(text: string): boolean {
 
 function shouldOpenWrittenAnswer(text: string): boolean {
   const clean = stripInfoMarkers(text).trim();
-  if (!clean || parsePageAction(text)) return false;
+  if (!clean) return false;
+  const hasPageAction = !!parsePageAction(text);
   const lineCount = clean.split('\n').filter((line) => line.trim()).length;
+  if (hasPageAction) {
+    return (
+      clean.length > 90 ||
+      /bulam[Ä±i]yorum|g[Ã¶o]remiyorum|yok|ulasabilirsiniz|ula[ÅŸs]abilirsiniz|instead|couldn't find|does not list/i.test(clean)
+    );
+  }
   return (
     hasInfoBlock(text) ||
     clean.length > 140 ||
@@ -469,8 +476,9 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
     const actionKey = `${last.id}:${action.blockId}:${action.itemId || ''}`;
     if (handledActionRef.current === actionKey) return;
     handledActionRef.current = actionKey;
+    const rawText = getMessageText(last);
     const result = pageRuntime.openBlock(action.blockId, action.itemId);
-    if (result.ok) setIsExpanded(false);
+    if (result.ok) setIsExpanded(shouldOpenWrittenAnswer(rawText));
   }, [messages, pageRuntime]);
 
   useEffect(() => {

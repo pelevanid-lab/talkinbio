@@ -29,7 +29,9 @@ export interface Theme {
   accent?: {
     mode: 'solid' | 'gradient';
     gradientFrom: string;
+    gradientMid?: string;
     gradientTo: string;
+    hueShift?: number;
   };
 }
 
@@ -57,9 +59,72 @@ export function resolveThemeColors(theme: Theme): ThemeColors {
 export function resolveAccentFill(theme: Theme): string {
   const primary = theme.colors.primary;
   if (theme.accent?.mode !== 'gradient') return primary;
-  const from = /^#[0-9a-fA-F]{6}$/.test(theme.accent.gradientFrom || '') ? theme.accent.gradientFrom : primary;
-  const to = /^#[0-9a-fA-F]{6}$/.test(theme.accent.gradientTo || '') ? theme.accent.gradientTo : primary;
-  return `linear-gradient(135deg, ${from}, ${to})`;
+  const [from, mid, to] = resolveAccentGradientColors(theme);
+  return `linear-gradient(135deg, ${from} 0%, ${mid} 48%, ${to} 100%)`;
+}
+
+function clampHueShift(value: number | undefined): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+  return Math.max(-180, Math.min(180, Math.round(value)));
+}
+
+function isHexColor(value: string | undefined): value is string {
+  return /^#[0-9a-fA-F]{6}$/.test(value || '');
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const n = parseInt(hex.replace('#', ''), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  const rn = r / 255;
+  const gn = g / 255;
+  const bn = b / 255;
+  const max = Math.max(rn, gn, bn);
+  const min = Math.min(rn, gn, bn);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+  if (max === rn) h = ((gn - bn) / d + (gn < bn ? 6 : 0)) * 60;
+  else if (max === gn) h = ((bn - rn) / d + 2) * 60;
+  else h = ((rn - gn) / d + 4) * 60;
+  return [h, s, l];
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  if (h < 60) [r, g, b] = [c, x, 0];
+  else if (h < 120) [r, g, b] = [x, c, 0];
+  else if (h < 180) [r, g, b] = [0, c, x];
+  else if (h < 240) [r, g, b] = [0, x, c];
+  else if (h < 300) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
+  const toHex = (v: number) => Math.round((v + m) * 255).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function shiftColor(hex: string, deg: number): string {
+  if (!deg) return hex;
+  const [r, g, b] = hexToRgb(hex);
+  const [h, s, l] = rgbToHsl(r, g, b);
+  return hslToHex((h + deg + 360) % 360, s, l);
+}
+
+export function resolveAccentGradientColors(theme: Theme): [string, string, string] {
+  const primary = theme.colors.primary;
+  const from = isHexColor(theme.accent?.gradientFrom) ? theme.accent.gradientFrom : primary;
+  const mid = isHexColor(theme.accent?.gradientMid) ? theme.accent.gradientMid : '#7C3AED';
+  const to = isHexColor(theme.accent?.gradientTo) ? theme.accent.gradientTo : '#14B8A6';
+  const hueShift = clampHueShift(theme.accent?.hueShift);
+  return [shiftColor(from, hueShift), shiftColor(mid, hueShift), shiftColor(to, hueShift)];
 }
 
 export function resolvePageCanvases(theme: Theme): { pageCanvas: string; stickyCanvas: string } {
@@ -68,19 +133,11 @@ export function resolvePageCanvases(theme: Theme): { pageCanvas: string; stickyC
     return { pageCanvas: c.background, stickyCanvas: c.background };
   }
 
-  const accentFrom =
-    theme.accent?.mode === 'gradient' && /^#[0-9a-fA-F]{6}$/.test(theme.accent.gradientFrom || '')
-      ? theme.accent.gradientFrom
-      : c.primary;
-  const accentTo =
-    theme.accent?.mode === 'gradient' && /^#[0-9a-fA-F]{6}$/.test(theme.accent.gradientTo || '')
-      ? theme.accent.gradientTo
-      : c.primary;
-
   if (theme.accent?.mode === 'gradient') {
+    const [accentFrom, accentMid, accentTo] = resolveAccentGradientColors(theme);
     return {
-      pageCanvas: `linear-gradient(160deg, color-mix(in srgb, ${accentFrom} 12%, #ffffff) 0%, color-mix(in srgb, ${accentTo} 10%, #ffffff) 38%, color-mix(in srgb, ${accentFrom} 4%, ${c.background}) 68%, ${c.background} 100%)`,
-      stickyCanvas: `linear-gradient(160deg, color-mix(in srgb, ${accentFrom} 10%, ${c.background}) 0%, color-mix(in srgb, ${accentTo} 8%, ${c.background}) 100%)`,
+      pageCanvas: `radial-gradient(circle at 15% 12%, color-mix(in srgb, ${accentFrom} 18%, transparent) 0%, transparent 34%), radial-gradient(circle at 86% 18%, color-mix(in srgb, ${accentMid} 15%, transparent) 0%, transparent 32%), radial-gradient(circle at 60% 82%, color-mix(in srgb, ${accentTo} 14%, transparent) 0%, transparent 38%), linear-gradient(160deg, color-mix(in srgb, ${accentFrom} 8%, #ffffff) 0%, color-mix(in srgb, ${accentMid} 6%, ${c.background}) 48%, color-mix(in srgb, ${accentTo} 6%, ${c.background}) 100%)`,
+      stickyCanvas: `linear-gradient(150deg, color-mix(in srgb, ${accentFrom} 8%, ${c.background}) 0%, color-mix(in srgb, ${accentMid} 6%, ${c.background}) 50%, color-mix(in srgb, ${accentTo} 6%, ${c.background}) 100%)`,
     };
   }
 
@@ -107,6 +164,8 @@ export const DEFAULT_THEME: Theme = {
   accent: {
     mode: 'solid',
     gradientFrom: '#111827',
+    gradientMid: '#7C3AED',
     gradientTo: '#14B8A6',
+    hueShift: 0,
   },
 };

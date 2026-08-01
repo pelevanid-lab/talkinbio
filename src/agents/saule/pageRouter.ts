@@ -117,6 +117,16 @@ function localizedCue(locale: string | null | undefined): string {
   return 'İlgili yeri açıyorum.';
 }
 
+function localizedMissingContactCue(locale: string | null | undefined, requestedChannel: string, availableLabel: string): string {
+  if (locale === 'en') {
+    return `I couldn't find ${requestedChannel} on this page. You can reach them here instead: ${availableLabel}.`;
+  }
+  if (locale === 'ru') {
+    return `This page does not list ${requestedChannel}. You can use this contact instead: ${availableLabel}.`;
+  }
+  return `Bu sayfada ${requestedChannel} bilgisi yok. Bunun yerine buradan ulasabilirsiniz: ${availableLabel}.`;
+}
+
 function isNavigationQuestion(query: string): boolean {
   const normalizedQuery = normalize(query);
   return [
@@ -171,6 +181,18 @@ export function findPageRouteMatch(
   const query = normalize(userMessage);
   const queryTokens = tokens(userMessage);
   const requestedChannels = requestedContactChannels(query);
+  const contactTarget = targets.find((target) => target.type === 'contact');
+  if (requestedChannels.length > 0 && contactTarget?.items?.length) {
+    const requestedContactItem = contactTarget.items.find((item) => contactItemMatchesRequestedChannel(item, requestedChannels));
+    if (!requestedContactItem) {
+      const fallbackItem = contactTarget.items[0];
+      return {
+        blockId: contactTarget.blockId,
+        itemId: fallbackItem.itemId,
+        text: localizedMissingContactCue(locale, requestedChannels[0], fallbackItem.label),
+      };
+    }
+  }
   let bestScore = 0;
   let bestBlockId: string | null = null;
   let bestItemId: string | undefined;

@@ -281,7 +281,9 @@
     "accentGradient": "Gradient",
     "accentSolidHint": "Single accent color",
     "accentGradientFrom": "Gradient start color",
+    "accentGradientMid": "Gradient middle color",
     "accentGradientTo": "Gradient end color",
+    "accentGradientHue": "Color tone",
     "accentColorHint": "Block card lines, buttons, and focus highlights use the selected accent style.",
     "shortcuts": "Shortcuts",
     "shortcutsHint": "Shown under the profile header. Up to 4 links or services.",
@@ -619,7 +621,7 @@
     },
     "q6": {
       "title": "Our Revenue Model",
-      "content": "Our revenue model is a credit-based subscription. Billing infrastructure ships as part of our roadmap's launch gate; for now, we collect payment manually from early pilots. We have three tiers.\n\nStarter ($9/month, 200 credits) is for the individual seller getting 3-5 DMs a day, setting up an assistant for the first time. Users at this tier are learning what Assistant Agent does and testing whether it's worth it.\n\nPro ($29/month, 700 credits) is for sellers getting 30+ DMs a week, with a steady customer base, who use Creative Agent's analytics. This tier is our real revenue engine.\n\nBusiness ($79/month, 1,800 credits) is for sellers running multiple service lines, handling high DM volume, with automation needs that have outgrown the basics.\n\nPricing is dollar-fixed; we collect in lira at the current exchange rate. Annual billing comes with a 20% discount — savings for the customer, and a buffer against currency risk for us.\n\nIn numbers: effective ARPU is $15, LTV is $300 (assuming 5% churn), and we're targeting a CAC under $100 — our viral signature loop should keep that organic."
+      "content": "Our revenue model is not subscription-based; it is a credit wallet. Because Shopier does not support subscriptions, users buy credits that do not expire and credits are charged only when real work happens.\n\nThe Trial plan is $0 and grants a one-time 20 credits so new users can experience the product.\n\nStarter ($15, 200 credits) is for individual businesses launching their page and answering first visitor questions.\n\nPro ($40, 600 credits) is for growing businesses with steady visitor traffic and regular page updates.\n\nBusiness ($90, 1,500 credits) is for teams that need multiple service lines, heavier page production, and custom voice cues.\n\nThe Extra Credit Pack is $5 for 100 credits. Pricing is dollar-fixed; local collection can be converted at the current exchange rate. Operation credit costs stay fixed, so larger packs give customers more usable capacity while preserving margin."
     },
     "q7": {
       "title": "Where We're Headed",

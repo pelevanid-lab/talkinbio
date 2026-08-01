@@ -18,7 +18,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { RECOMMENDED_TYPES, hasRealContent, isRequiredSatisfied } from '@/config/blockTypes';
 import { extractLocaleText, isSyncableType, type SyncableBlockType, type BlockLocaleText } from '@/agents/beiwe/localeSync';
 import type { LocaleKey } from '@/config/localeTitles';
-import { DEFAULT_THEME, Theme, resolvePageCanvases, resolveThemeColors } from '@/config/archetypes';
+import { DEFAULT_THEME, Theme, resolveAccentFill, resolvePageCanvases, resolveThemeColors } from '@/config/archetypes';
 import { avatarFromBlocks } from '@/utils/avatarFromBlocks';
 import { collectShortcutCandidates, getShortcuts, resolveShortcuts, shortcutsEqual, type Shortcut } from '@/utils/shortcuts';
 import { iconForLinkUrl } from '@/utils/linkIcon';
@@ -636,7 +636,9 @@ export default function EditorClient({
       accent: {
         mode: 'solid',
         gradientFrom: primary,
+        gradientMid: theme.accent?.gradientMid || DEFAULT_THEME.accent?.gradientMid || '#7C3AED',
         gradientTo: theme.accent?.gradientTo || DEFAULT_THEME.accent?.gradientTo || primary,
+        hueShift: theme.accent?.hueShift || 0,
       },
     };
     setTheme(nextTheme);
@@ -648,14 +650,22 @@ export default function EditorClient({
   };
 
   const handleSetAccentMode = async (mode: 'solid' | 'gradient') => {
-    const current = theme.accent || { mode: 'solid', gradientFrom: theme.colors.primary, gradientTo: DEFAULT_THEME.accent?.gradientTo || theme.colors.primary };
+    const current = theme.accent || {
+      mode: 'solid',
+      gradientFrom: theme.colors.primary,
+      gradientMid: DEFAULT_THEME.accent?.gradientMid || '#7C3AED',
+      gradientTo: DEFAULT_THEME.accent?.gradientTo || theme.colors.primary,
+      hueShift: 0,
+    };
     if ((current.mode || 'solid') === mode) return;
     const gradientFrom = current.gradientFrom || theme.colors.primary;
+    const gradientMid = current.gradientMid || DEFAULT_THEME.accent?.gradientMid || '#7C3AED';
     const gradientTo = current.gradientTo || DEFAULT_THEME.accent?.gradientTo || theme.colors.primary;
+    const hueShift = current.hueShift || 0;
     const nextTheme: Theme = {
       ...theme,
       colors: { ...theme.colors, primary: mode === 'gradient' ? gradientFrom : theme.colors.primary },
-      accent: { mode, gradientFrom, gradientTo },
+      accent: { mode, gradientFrom, gradientMid, gradientTo, hueShift },
     };
     setTheme(nextTheme);
     const { error } = await supabase.from('businesses').update({ theme: nextTheme }).eq('id', business.id);
@@ -665,19 +675,39 @@ export default function EditorClient({
     }
   };
 
-  const handleSetGradientColor = async (key: 'gradientFrom' | 'gradientTo', value: string) => {
-    if (!/^#[0-9a-fA-F]{6}$/.test(value)) return;
-    const current = theme.accent || { mode: 'gradient', gradientFrom: theme.colors.primary, gradientTo: DEFAULT_THEME.accent?.gradientTo || theme.colors.primary };
+  const handleSetGradientAccent = async (patch: Partial<NonNullable<Theme['accent']>>) => {
+    const current = theme.accent || {
+      mode: 'gradient' as const,
+      gradientFrom: theme.colors.primary,
+      gradientMid: DEFAULT_THEME.accent?.gradientMid || '#7C3AED',
+      gradientTo: DEFAULT_THEME.accent?.gradientTo || theme.colors.primary,
+      hueShift: 0,
+    };
     const nextAccent = {
       mode: 'gradient' as const,
-      gradientFrom: key === 'gradientFrom' ? value : current.gradientFrom || theme.colors.primary,
-      gradientTo: key === 'gradientTo' ? value : current.gradientTo || DEFAULT_THEME.accent?.gradientTo || theme.colors.primary,
+      gradientFrom: patch.gradientFrom || current.gradientFrom || theme.colors.primary,
+      gradientMid: patch.gradientMid || current.gradientMid || DEFAULT_THEME.accent?.gradientMid || '#7C3AED',
+      gradientTo: patch.gradientTo || current.gradientTo || DEFAULT_THEME.accent?.gradientTo || theme.colors.primary,
+      hueShift: typeof patch.hueShift === 'number' ? patch.hueShift : current.hueShift || 0,
     };
-    const savedAccent = business.theme?.accent || { mode: 'solid', gradientFrom: business.theme?.colors?.primary || DEFAULT_THEME.colors.primary, gradientTo: DEFAULT_THEME.accent?.gradientTo || DEFAULT_THEME.colors.primary };
+    if (
+      !/^#[0-9a-fA-F]{6}$/.test(nextAccent.gradientFrom) ||
+      !/^#[0-9a-fA-F]{6}$/.test(nextAccent.gradientMid) ||
+      !/^#[0-9a-fA-F]{6}$/.test(nextAccent.gradientTo)
+    ) return;
+    const savedAccent = business.theme?.accent || {
+      mode: 'solid',
+      gradientFrom: business.theme?.colors?.primary || DEFAULT_THEME.colors.primary,
+      gradientMid: DEFAULT_THEME.accent?.gradientMid || '#7C3AED',
+      gradientTo: DEFAULT_THEME.accent?.gradientTo || DEFAULT_THEME.colors.primary,
+      hueShift: 0,
+    };
     if (
       savedAccent.mode === nextAccent.mode &&
       savedAccent.gradientFrom === nextAccent.gradientFrom &&
-      savedAccent.gradientTo === nextAccent.gradientTo
+      (savedAccent.gradientMid || DEFAULT_THEME.accent?.gradientMid || '#7C3AED') === nextAccent.gradientMid &&
+      savedAccent.gradientTo === nextAccent.gradientTo &&
+      (savedAccent.hueShift || 0) === nextAccent.hueShift
     ) return;
     const nextTheme: Theme = {
       ...theme,
@@ -690,6 +720,16 @@ export default function EditorClient({
       business.theme = nextTheme;
       await markNeedsRepublish();
     }
+  };
+
+  const handleSetGradientColor = async (key: 'gradientFrom' | 'gradientMid' | 'gradientTo', value: string) => {
+    if (!/^#[0-9a-fA-F]{6}$/.test(value)) return;
+    await handleSetGradientAccent({ [key]: value });
+  };
+
+  const handleSetGradientHue = async (value: number) => {
+    const hueShift = Math.max(-180, Math.min(180, Math.round(value)));
+    await handleSetGradientAccent({ hueShift });
   };
 
   // Faz 2.5: her işletme en fazla 3 (şu an sistemdeki tüm) dil arasından en az 1'ini aktif
@@ -753,7 +793,9 @@ export default function EditorClient({
   const accent = theme.accent || {
     mode: 'solid' as const,
     gradientFrom: theme.colors.primary,
+    gradientMid: DEFAULT_THEME.accent?.gradientMid || '#7C3AED',
     gradientTo: DEFAULT_THEME.accent?.gradientTo || theme.colors.primary,
+    hueShift: 0,
   };
   const previewCanvas = resolvePageCanvases(theme);
 
@@ -1190,26 +1232,47 @@ export default function EditorClient({
                   </div>
 
                   {accent.mode === 'gradient' ? (
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="h-9 flex-1 rounded-lg border border-slate-300" style={{ background: `linear-gradient(135deg, ${accent.gradientFrom}, ${accent.gradientTo})` }} />
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={accent.gradientFrom}
-                          onChange={(e) => setTheme({ ...theme, colors: { ...theme.colors, primary: e.target.value }, accent: { ...accent, mode: 'gradient', gradientFrom: e.target.value } })}
-                          onBlur={(e) => handleSetGradientColor('gradientFrom', e.target.value)}
-                          className="w-9 h-9 rounded-lg border border-slate-300 bg-white p-1 cursor-pointer"
-                          aria-label={t('accentGradientFrom')}
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div
+                          className="h-10 flex-1 rounded-lg border border-slate-300 shadow-inner"
+                          style={{ background: resolveAccentFill({ ...theme, accent }) }}
                         />
-                        <input
-                          type="color"
-                          value={accent.gradientTo}
-                          onChange={(e) => setTheme({ ...theme, accent: { ...accent, mode: 'gradient', gradientTo: e.target.value } })}
-                          onBlur={(e) => handleSetGradientColor('gradientTo', e.target.value)}
-                          className="w-9 h-9 rounded-lg border border-slate-300 bg-white p-1 cursor-pointer"
-                          aria-label={t('accentGradientTo')}
-                        />
+                        <div className="flex items-center gap-1.5">
+                          {(['gradientFrom', 'gradientMid', 'gradientTo'] as const).map((key) => (
+                            <input
+                              key={key}
+                              type="color"
+                              value={accent[key] || (key === 'gradientMid' ? DEFAULT_THEME.accent?.gradientMid || '#7C3AED' : theme.colors.primary)}
+                              onChange={(e) => setTheme({
+                                ...theme,
+                                colors: { ...theme.colors, primary: key === 'gradientFrom' ? e.target.value : theme.colors.primary },
+                                accent: { ...accent, mode: 'gradient', [key]: e.target.value },
+                              })}
+                              onBlur={(e) => handleSetGradientColor(key, e.target.value)}
+                              className="w-8 h-8 rounded-lg border border-slate-300 bg-white p-1 cursor-pointer"
+                              aria-label={key === 'gradientFrom' ? t('accentGradientFrom') : key === 'gradientMid' ? t('accentGradientMid') : t('accentGradientTo')}
+                            />
+                          ))}
+                        </div>
                       </div>
+                      <label className="block text-xs text-slate-500">
+                        <div className="flex items-center justify-between mb-1">
+                          <span>{t('accentGradientHue')}</span>
+                          <span className="text-slate-400 tabular-nums">{(accent.hueShift || 0) > 0 ? `+${accent.hueShift}` : accent.hueShift || 0}°</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={-180}
+                          max={180}
+                          step={1}
+                          value={accent.hueShift || 0}
+                          onChange={(e) => setTheme({ ...theme, accent: { ...accent, mode: 'gradient', hueShift: Number(e.target.value) } })}
+                          onPointerUp={(e) => handleSetGradientHue(Number((e.target as HTMLInputElement).value))}
+                          onBlur={(e) => handleSetGradientHue(Number(e.target.value))}
+                          className="w-full accent-purple-600"
+                        />
+                      </label>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between gap-3">

@@ -76,7 +76,7 @@ describe('pageRouter', () => {
     expect(match).toBeNull();
   });
 
-  it('does not route a missing contact channel to another available contact method', () => {
+  it('routes a missing requested contact channel to the available contact method with an explanatory cue', () => {
     const match = findPageRouteMatch(
       [
         {
@@ -90,6 +90,10 @@ describe('pageRouter', () => {
       'tr'
     );
 
-    expect(match).toBeNull();
+    expect(match).toEqual({
+      blockId: '__contact__',
+      itemId: 'email',
+      text: 'Bu sayfada whatsapp bilgisi yok. Bunun yerine buradan ulasabilirsiniz: email info@talkinbio.com.',
+    });
   });
 });
