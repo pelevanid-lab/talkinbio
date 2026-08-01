@@ -36,7 +36,21 @@ function getMessageText(m: UIMessage): string {
   return m.parts.filter((p) => p.type === 'text').map((p) => (p as { text: string }).text).join('');
 }
 
-export default function EditorClient({ business, initialBlocks, initialChatMessages, initialSessions }: { business: any, initialBlocks: any[], initialChatMessages?: any[], initialSessions?: any[] }) {
+export default function EditorClient({ 
+  business, 
+  initialBlocks, 
+  initialChatMessages, 
+  initialSessions,
+  updateCreditCost = 6,
+  installCreditCost = 10
+}: { 
+  business: any, 
+  initialBlocks: any[], 
+  initialChatMessages?: any[], 
+  initialSessions?: any[],
+  updateCreditCost?: number,
+  installCreditCost?: number
+}) {
   const [blocks, setBlocks] = useState(initialBlocks);
   const [sessions, setSessions] = useState<any[]>(initialSessions || []);
   const [activeSessionId, setActiveSessionId] = useState(() => {
@@ -826,7 +840,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                           disabled={isChatLoading}
                           className="w-full mt-1 py-2 px-4 bg-[var(--coral)] text-white text-xs font-bold rounded-full hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                         >
-                          <span>✦</span> {t('pageStatus.continueBtn')}
+                          <span>✦</span> {t('pageStatus.continueBtn')} (Maks. ≈{installCreditCost} kredi)
                         </button>
                       ) : (
                         <p className="text-xs text-green-700 font-medium text-center">
@@ -908,7 +922,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                         }
                       }}
                       rows={1}
-                      placeholder={t('agentInputPlaceholder')}
+                      placeholder={`${t('agentInputPlaceholder')} (İşlem başı maks. ≈${installCreditCost} kredi)`}
                       className="w-full bg-white border border-slate-300 rounded-3xl pl-12 pr-12 py-3 text-sm focus:outline-none focus:border-[var(--coral)] focus:ring-1 focus:ring-[var(--coral)] shadow-sm resize-none overflow-hidden min-h-[46px] max-h-[150px]"
                       style={{ maxHeight: '150px' }}
                     />
@@ -952,7 +966,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                   disabled={!bulkText.trim() || isChatLoading}
                   className="mt-4 w-full py-3 bg-[var(--coral)] text-white rounded-lg font-bold hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center justify-center"
                 >
-                  {isChatLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : t('bulkSubmitBtn')}
+                  {isChatLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : `${t('bulkSubmitBtn')} (Maks. ≈${installCreditCost} kredi)`}
                 </button>
               </div>
             </div>
@@ -1462,7 +1476,7 @@ export default function EditorClient({ business, initialBlocks, initialChatMessa
                 className="px-5 py-2 bg-[var(--coral)] text-white font-medium rounded-lg hover:bg-orange-600 shadow-sm transition disabled:opacity-50 flex items-center gap-2"
               >
                 {isSyncing && <Loader2 className="w-4 h-4 animate-spin" />}
-                {isSyncing ? t('sync.syncing') : t('sync.confirm')}
+                {isSyncing ? t('sync.syncing') : `${t('sync.confirm')} (≈${updateCreditCost} kredi)`}
               </button>
             </div>
           </div>
