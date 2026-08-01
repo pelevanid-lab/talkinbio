@@ -59,7 +59,8 @@ export default function LoginPage() {
       // Panel (leads/conversations) is the daily-use landing; the editor is a
       // secondary action reached via the nav link, except on first-time setup
       // (invite/password-reset flows, which intentionally land on the editor).
-      window.location.href = '/dashboard/leads';
+      const nextPath = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('next') || '/dashboard/leads' : '/dashboard/leads';
+      window.location.href = nextPath;
     } catch (err: any) {
       setError(err.message === 'Invalid login credentials' ? t('invalidCredentials') : err.message);
     } finally {
@@ -144,7 +145,7 @@ export default function LoginPage() {
                   const { error } = await supabase.auth.signInWithOAuth({
                     provider: 'google',
                     options: {
-                      redirectTo: `${window.location.origin}/api/auth/callback`,
+                      redirectTo: `${window.location.origin}/api/auth/callback?next=${typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('next') || '/dashboard/leads' : '/dashboard/leads'}`,
                     },
                   });
                   if (error) setError(error.message);
@@ -238,7 +239,7 @@ export default function LoginPage() {
 
           {mode === 'login' && (
             <a
-              href="/register"
+              href={`/register${typeof window !== 'undefined' && window.location.search ? window.location.search : ''}`}
               className="block text-center w-full text-slate-500 hover:text-[var(--coral)] text-sm font-medium mt-4 transition"
             >
               {t('registerLink')}

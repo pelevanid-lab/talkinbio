@@ -155,7 +155,7 @@ export default function RegisterPage() {
           </button>
 
           <a
-            href="/login"
+            href={`/login?next=${nextPath}`}
             className="block text-center w-full text-slate-500 hover:text-[var(--coral)] text-sm font-medium mt-4 transition"
           >
             {t('loginLink')}

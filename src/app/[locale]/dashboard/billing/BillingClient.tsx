@@ -6,6 +6,7 @@ import { format, type Locale } from 'date-fns';
 import { tr, enUS, ru } from 'date-fns/locale';
 import { Coins, MessageCircle, Wrench, BarChart3 } from 'lucide-react';
 import { PLANS, EXTRA_PACK, TEST_PACK } from '@/config/plans';
+import { SAULE_CREDIT_COST, BEIWE_UPDATE_CREDIT_COST } from '@/agents/shared/credits';
 import DashboardShell from '@/components/dashboard/DashboardShell';
 
 const DATE_FNS_LOCALES: Record<string, Locale> = { tr, en: enUS, ru };
@@ -41,6 +42,7 @@ type Business = {
 
 export default function BillingClient({ business, transactions, ownerEmail }: { business: Business; transactions: Transaction[]; ownerEmail: string }) {
   const t = useTranslations('Billing');
+  const tPricing = useTranslations('Pricing');
   const locale = useLocale();
   const dateLocale = DATE_FNS_LOCALES[locale] || tr;
   const numberLocale = NUMBER_LOCALES[locale] || NUMBER_LOCALES.tr;
@@ -145,68 +147,44 @@ export default function BillingClient({ business, transactions, ownerEmail }: { 
           </div>
         </div>
 
-        {/* Usage history */}
-        <div className="bg-white rounded-[20px] border border-[rgba(20,35,31,0.10)] p-6">
-          <h2 className="text-lg font-[800] text-[#14231F] font-['Bricolage_Grotesque'] mb-4">İşlem & Kullanım Geçmişi</h2>
-          {transactions.length === 0 ? (
-            <p className="text-sm text-[#8A8880]">{t('usageEmpty')}</p>
-          ) : (
-            <div className="space-y-1">
-              {transactions.map((event) => {
-                const isReload = event.type === 'reload';
-                const Icon = isReload ? Coins : (AGENT_ICON[event.agent || ''] || MessageCircle);
-                const title = isReload ? `Kredi Yükleme (${event.planName})` : t(AGENT_LABEL_KEY[event.agent || ''] || 'agent.saule');
-                
-                return (
-                  <div key={event.id} className="flex items-center justify-between py-2.5 border-b border-[rgba(20,35,31,0.06)] last:border-0">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isReload ? 'bg-[#E6F9F3] text-[#14231F]' : 'bg-[#F4F2ED] text-[#4B5A55]'}`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-[#14231F] truncate">{title}</p>
-                        <p className="text-xs text-[#8A8880] font-mono">{format(new Date(event.created_at), 'd MMM yyyy, HH:mm', { locale: dateLocale })}</p>
-                      </div>
-                    </div>
-                    <span className={`text-sm font-semibold shrink-0 ml-3 ${isReload ? 'text-[#059669]' : 'text-[#14231F]'}`}>
-                      {isReload ? `+${event.amount.toLocaleString(numberLocale)}` : (event.amount !== 0 ? event.amount.toLocaleString(numberLocale) : t('freeLabel'))}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
         {/* Top-up / plan request */}
         <div className="bg-white rounded-[20px] border border-[rgba(20,35,31,0.10)] p-6">
           <h2 className="text-lg font-[800] text-[#14231F] font-['Bricolage_Grotesque'] mb-1">{t('topUpTitle')}</h2>
           <p className="text-sm text-[#4B5A55] mb-5">{t('topUpSubtitle')}</p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
-            {PLANS.map((plan) => (
-              <button
-                key={plan.id}
-                onClick={() => handleTopUpCta(plan.id)}
-                className={`text-left border rounded-xl p-3 transition ${selectedPlan === plan.id ? 'border-[#FF6A5C] bg-[#FFEDE9]' : 'border-[rgba(20,35,31,0.10)] hover:border-[rgba(20,35,31,0.25)]'}`}
-              >
-                <p className="text-sm font-[800] text-[#14231F]">{plan.name}</p>
-                <p className="text-xs text-[#8A8880]">${plan.price}{t('perMonth')} · {t('credits', { count: plan.credits })}</p>
-              </button>
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            {PLANS.map((plan) => {
+              const sauleChats = Math.floor(plan.credits / SAULE_CREDIT_COST);
+              const beiweUpdates = Math.floor(plan.credits / BEIWE_UPDATE_CREDIT_COST);
+              return (
+                <button
+                  key={plan.id}
+                  onClick={() => handleTopUpCta(plan.id)}
+                  className={`text-left border rounded-xl p-5 transition flex flex-col gap-3 ${selectedPlan === plan.id ? 'border-[#FF6A5C] bg-[#FFEDE9]' : 'border-[rgba(20,35,31,0.10)] hover:border-[rgba(20,35,31,0.25)]'}`}
+                >
+                  <p className="text-lg font-[800] text-[#14231F]">{plan.name}</p>
+                  <p className="text-2xl font-[800] text-[#14231F] font-['Bricolage_Grotesque']">${plan.price}</p>
+                  <p className="text-sm font-[700] text-[#059669]">{tPricing('credits', { count: plan.credits })}</p>
+                  <p className="text-xs text-[#4B5A55] leading-relaxed min-h-[2.5rem]">
+                    {tPricing('capacityExample', { saule: sauleChats, beiwe: beiweUpdates })}
+                  </p>
+                  <p className="text-xs font-medium text-[#4B5A55] leading-relaxed">
+                    {tPricing(`idealFor_${plan.id}` as any)}
+                  </p>
+                </button>
+              );
+            })}
+            
             <button
               onClick={() => handleTopUpCta('extra')}
-              className={`text-left border rounded-xl p-3 transition ${selectedPlan === 'extra' ? 'border-[#FF6A5C] bg-[#FFEDE9]' : 'border-dashed border-[rgba(20,35,31,0.25)] hover:border-[rgba(20,35,31,0.4)]'}`}
+              className={`text-left border rounded-xl p-5 transition flex flex-col gap-3 ${selectedPlan === 'extra' ? 'border-[#FF6A5C] bg-[#FFEDE9]' : 'border-dashed border-[rgba(20,35,31,0.25)] hover:border-[rgba(20,35,31,0.4)]'}`}
             >
-              <p className="text-sm font-[800] text-[#14231F]">{t('extraPackName')}</p>
-              <p className="text-xs text-[#8A8880]">${EXTRA_PACK.price} · {t('credits', { count: EXTRA_PACK.credits })}</p>
-            </button>
-            <button
-              onClick={() => handleTopUpCta('test')}
-              className={`text-left border rounded-xl p-3 transition ${selectedPlan === 'test' ? 'border-[#FF6A5C] bg-[#FFEDE9]' : 'border-dashed border-[rgba(20,35,31,0.25)] hover:border-[rgba(20,35,31,0.4)]'}`}
-            >
-              <p className="text-sm font-[800] text-[#14231F]">Test Paketi</p>
-              <p className="text-xs text-[#8A8880]">${TEST_PACK.price} · {t('credits', { count: TEST_PACK.credits })}</p>
+              <p className="text-lg font-[800] text-[#14231F]">{tPricing('extraPackName')}</p>
+              <p className="text-2xl font-[800] text-[#14231F] font-['Bricolage_Grotesque']">${EXTRA_PACK.price}</p>
+              <p className="text-sm font-[700] text-[#059669]">{tPricing('credits', { count: EXTRA_PACK.credits })}</p>
+              <p className="text-xs text-[#8A8880] leading-relaxed">
+                {tPricing('extraPackNote')}
+              </p>
             </button>
           </div>
 
@@ -248,6 +226,39 @@ export default function BillingClient({ business, transactions, ownerEmail }: { 
                 </button>
               </div>
             </form>
+          )}
+        </div>
+
+        {/* Usage history */}
+        <div className="bg-white rounded-[20px] border border-[rgba(20,35,31,0.10)] p-6">
+          <h2 className="text-lg font-[800] text-[#14231F] font-['Bricolage_Grotesque'] mb-4">İşlem & Kullanım Geçmişi</h2>
+          {transactions.length === 0 ? (
+            <p className="text-sm text-[#8A8880]">{t('usageEmpty')}</p>
+          ) : (
+            <div className="space-y-1">
+              {transactions.map((event) => {
+                const isReload = event.type === 'reload';
+                const Icon = isReload ? Coins : (AGENT_ICON[event.agent || ''] || MessageCircle);
+                const title = isReload ? `Kredi Yükleme (${event.planName})` : t(AGENT_LABEL_KEY[event.agent || ''] || 'agent.saule');
+                
+                return (
+                  <div key={event.id} className="flex items-center justify-between py-2.5 border-b border-[rgba(20,35,31,0.06)] last:border-0">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isReload ? 'bg-[#E6F9F3] text-[#14231F]' : 'bg-[#F4F2ED] text-[#4B5A55]'}`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-[#14231F] truncate">{title}</p>
+                        <p className="text-xs text-[#8A8880] font-mono">{format(new Date(event.created_at), 'd MMM yyyy, HH:mm', { locale: dateLocale })}</p>
+                      </div>
+                    </div>
+                    <span className={`text-sm font-semibold shrink-0 ml-3 ${isReload ? 'text-[#059669]' : 'text-[#14231F]'}`}>
+                      {isReload ? `+${event.amount.toLocaleString(numberLocale)}` : (event.amount !== 0 ? event.amount.toLocaleString(numberLocale) : t('freeLabel'))}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </main>
