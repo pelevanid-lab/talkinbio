@@ -180,7 +180,7 @@
       }
     },
     "heroTexts": {
-      "subtitle": "Websiteniz artık sadece bir link değil. O artık konuşuyor. <strong className=\"text-[var(--ink)] font-semibold\">İçerik üretiyor</strong>, <strong className=\"text-[var(--ink)] font-semibold\">soruları yanıtlıyor</strong>, talepleri alıp <strong className=\"text-[var(--ink)] font-semibold\">satışı kapatıyor</strong>.",
+      "subtitle": "Biodaki link artık konuşuyor. <strong className=\"text-[var(--ink)] font-semibold\">İçerik üretiyor</strong>, <strong className=\"text-[var(--ink)] font-semibold\">soruları yanıtlıyor</strong>, talepleri alıp <strong className=\"text-[var(--ink)] font-semibold\">satışı kapatıyor</strong>.",
       "btnEarly": "Erken erişim",
       "btnHow": "Nasıl çalışır?",
       "btnPricing": "Fiyatlandırma"
@@ -544,7 +544,8 @@
     "formErrorGeneric": "Gönderilirken bir hata oluştu, lütfen tekrar deneyin.",
     "micHold": "Mikrofona basılı tutarak konuşun",
     "listening": "Dinleniyor...",
-    "transcribing": "Ses işleniyor..."
+    "transcribing": "Ses işleniyor...",
+    "voiceInfoFiller": "Şimdi size yazıyorum."
   },
   "Pricing": {
     "eyebrow": "Planlar",
@@ -751,7 +752,7 @@
     "unpublishedBanner": "Profiliniz henüz ziyaretçilere kapalı. Yayınlamak için eksikleri tamamlayın."
   },
   "Metadata": {
-    "title": "Talkinbio | Yeni Nesil Konuşan Websayfanız",
+    "title": "talkinbio | Yeni Nesil Konuşan bio linkiniz",
     "description": "Sosyal medya takipçilerinizle kendi dilinde görüşen, otomatik randevu ve talep toplayan yapay zeka asistanı Talkinbio ile tanışın."
   },
   "ContentStudio": {

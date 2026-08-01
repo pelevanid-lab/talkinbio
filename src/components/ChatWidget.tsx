@@ -22,6 +22,66 @@ function getMessageText(m: UIMessage): string {
 
 type LocalizedGreeting = Partial<Record<'tr' | 'en' | 'ru', string>>;
 
+// Saule, sohbeti sesli okurken sözleşme/randevu/iletişim gibi kritik bilgileri metinden
+// ayırabilsin diye bu iki işaretin arasına sarıyor (bkz. agents/saule/prompt.ts). Görünürde
+// metinden çıkarılır (visitor bunları normal yazı olarak görür), ama TTS'e hiç gönderilmez —
+// onun yerine kısa bir "şimdi yazıyorum" cümlesiyle değiştirilir.
+const INFO_MARKER_START = '§§INFO§§';
+const INFO_MARKER_END = '§§/INFO§§';
+const INFO_BLOCK_RE = /§§INFO§§([\s\S]*?)§§\/INFO§§/g;
+
+function stripInfoMarkers(text: string): string {
+  return text.replace(new RegExp(INFO_MARKER_START, 'g'), '').replace(new RegExp(INFO_MARKER_END, 'g'), '');
+}
+
+function hasInfoBlock(text: string): boolean {
+  return text.includes(INFO_MARKER_START);
+}
+
+function buildSpokenText(text: string, filler: string): string {
+  if (!hasInfoBlock(text)) return text;
+  const withoutBlocks = text.replace(INFO_BLOCK_RE, '').trim();
+  return `${withoutBlocks} ${filler}`.trim();
+}
+
+function MicButton({ isRecording, isTranscribing, disabled, onPressStart, onPressEnd, title }: {
+  isRecording: boolean;
+  isTranscribing: boolean;
+  disabled?: boolean;
+  onPressStart: () => void;
+  onPressEnd: () => void;
+  title: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => { e.stopPropagation(); onPressStart(); }}
+      onPointerUp={(e) => { e.stopPropagation(); onPressEnd(); }}
+      onPointerLeave={(e) => { e.stopPropagation(); onPressEnd(); }}
+      onPointerCancel={(e) => { e.stopPropagation(); onPressEnd(); }}
+      onContextMenu={(e) => e.preventDefault()}
+      disabled={isTranscribing || disabled}
+      title={title}
+      className={`touch-none w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all shadow-sm ${
+        isRecording
+          ? 'bg-red-500 text-white animate-pulse ring-4 ring-red-200'
+          : isTranscribing
+          ? 'bg-amber-100 text-amber-600'
+          : 'bg-[var(--paper)] text-[var(--ink-soft)] hover:bg-[var(--coral-tint)] hover:text-[var(--coral)]'
+      }`}
+    >
+      {isTranscribing ? (
+        <Loader2 className="w-5 h-5 animate-spin" />
+      ) : isRecording ? (
+        <Square className="w-4 h-4 fill-white" />
+      ) : (
+        <Mic className="w-5 h-5" />
+      )}
+    </button>
+  );
+}
+
 export default function ChatWidget({ businessId, businessName, locale, initialMessages = [], customGreeting, sauleSettings, variant = 'sheet', preview = false, initialCreditsExhausted = false }: { businessId: string, businessName: string, locale: string, initialMessages?: LegacyMessage[], customGreeting?: LocalizedGreeting | null, sauleSettings?: any, variant?: 'sheet' | 'inline', preview?: boolean, initialCreditsExhausted?: boolean }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [input, setInput] = useState('');
@@ -36,7 +96,21 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
-  const voiceGreetingPlayedRef = useRef(false);
+  // Basılı tutma jesti (mousedown/pointerdown -> ... -> pointerup) ile mikrofon izni istemi
+  // arasında yarış var: izin ilk kez isteniyorsa tarayıcının native izin kutusu senkron
+  // JS akışını durdurur, ziyaretçi "İzin Ver"e tıklarken parmağı/mouse'u zaten düğmeden
+  // kalkmış olur. pressActiveRef, getUserMedia çözüldüğünde basmanın hâlâ sürüp sürmediğini
+  // kontrol etmemizi sağlıyor — sürmüyorsa kaydı hemen durduruyoruz (bkz. startRecording).
+  const pressActiveRef = useRef(false);
+  // Karşılama + her yeni asistan cevabı, sohbet paneli AÇILMADAN sesli okunsun isteniyor —
+  // ama tarayıcılar kullanıcı jesti olmadan sesli audio.play()'e izin vermiyor. Sayfadaki
+  // İLK dokunuşta (chat ile ilgili olması gerekmiyor) kilidi açıyoruz; o ana kadar okunacak
+  // metni burada bekletiyoruz.
+  const audioUnlockedRef = useRef(false);
+  const pendingSpeechTextRef = useRef<string | null>(null);
+  const spokenMessageIdRef = useRef<string | null>(
+    initialMessages.length > 0 ? initialMessages[initialMessages.length - 1].id : null
+  );
 
   // Play audio response from TTS API
   const speakText = async (text: string) => {
@@ -113,6 +187,12 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
 
       mediaRecorder.start();
       setIsRecording(true);
+      // Basma ilk mikrofon izni istemi sırasında (yukarıdaki await) zaten bırakılmışsa
+      // pressActiveRef false'tur — kaydı hemen durdur, yoksa parmak/mouse kalktığı halde
+      // kayıt süresiz sürer (bkz. pressActiveRef tanımı).
+      if (!pressActiveRef.current) {
+        stopRecording();
+      }
     } catch (err) {
       console.error('Mic access denied or error:', err);
       alert('Mikrofon erişimi izni gerekli.');
@@ -124,6 +204,16 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
+  };
+
+  const handleMicPressStart = () => {
+    pressActiveRef.current = true;
+    startRecording();
+  };
+
+  const handleMicPressEnd = () => {
+    pressActiveRef.current = false;
+    stopRecording();
   };
 
   // Mobil klavye düzeltmesi: bazı tarayıcılarda (örn. Instagram in-app WebView)
@@ -257,18 +347,56 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
     }
   }, [messages, isExpanded]);
 
-  // Ses karşılaması: chat ilk açıldığında bir kez çal
+  // Tarayıcılar kullanıcı jesti olmadan sesli audio.play()'e izin vermiyor. Sohbet paneli
+  // hiç açılmadan (bkz. aşağıdaki karşılama/cevap efekti) sesin çalabilmesi için sayfadaki
+  // İLK dokunuşta (Saule ile ilgisi olması gerekmiyor — herhangi bir tıklama/dokunuş) kilidi
+  // açıyoruz; o ana kadar bekleyen bir metin varsa hemen ardından okunuyor.
   useEffect(() => {
-    if (isExpanded && isVoiceEnabled && !voiceGreetingPlayedRef.current) {
-      voiceGreetingPlayedRef.current = true;
-      const greetingText =
+    if (!isVoiceEnabled) return;
+    const unlock = () => {
+      audioUnlockedRef.current = true;
+      if (pendingSpeechTextRef.current) {
+        const pending = pendingSpeechTextRef.current;
+        pendingSpeechTextRef.current = null;
+        speakText(pending);
+      }
+    };
+    document.addEventListener('pointerdown', unlock, { once: true });
+    return () => document.removeEventListener('pointerdown', unlock);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isVoiceEnabled]);
+
+  // Karşılama + her yeni asistan cevabı sesli okunur — panel açık olsun olmasın (ziyaretçi
+  // sohbet penceresine hiç tıklamadan sesli konuşabilsin diye). Panel yalnızca cevap "önemli
+  // bilgi" (§§INFO§§ işaretli — bkz. agents/saule/prompt.ts) içeriyorsa otomatik açılır; o
+  // bilgi hiçbir zaman sesli okunmaz, yerine kısa bir "şimdi yazıyorum" cümlesi söylenir.
+  useEffect(() => {
+    if (!isVoiceEnabled || isLoading) return;
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== 'assistant' || last.id === spokenMessageIdRef.current) return;
+    spokenMessageIdRef.current = last.id;
+
+    const isWelcome = last.id.startsWith('welcome-');
+    let spoken: string;
+    if (isWelcome) {
+      spoken =
         sauleSettings?.voiceWelcomeMessage?.[locale as 'tr' | 'en' | 'ru'] ||
         customGreeting?.[locale as 'tr' | 'en' | 'ru'] ||
         t('welcome', { name: businessName });
-      speakText(greetingText);
+    } else {
+      const rawText = getMessageText(last);
+      if (hasInfoBlock(rawText)) queueMicrotask(() => setIsExpanded(true));
+      spoken = buildSpokenText(rawText, t('voiceInfoFiller'));
+    }
+    if (!spoken) return;
+
+    if (audioUnlockedRef.current) {
+      speakText(spoken);
+    } else {
+      pendingSpeechTextRef.current = spoken;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isExpanded]);
+  }, [messages, isLoading, isVoiceEnabled]);
 
   useEffect(() => {
     const handleSendToChat = (e: any) => {
@@ -393,7 +521,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
                       </div>
                       <div className={`px-4 py-3 rounded-2xl text-sm ${m.role === 'user' ? 'bg-[var(--ink)] text-white rounded-br-sm' : 'bg-white border border-[var(--border-light)] text-[var(--ink)] shadow-sm rounded-bl-sm'}`}>
                         {m.role === 'user' ? getMessageText(m) : (
-                          <AgentMarkdown>{getMessageText(m)}</AgentMarkdown>
+                          <AgentMarkdown>{stripInfoMarkers(getMessageText(m))}</AgentMarkdown>
                         )}
                       </div>
                     </div>
@@ -422,30 +550,14 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
                 <form onSubmit={onFormSubmit} className="flex relative items-end gap-2">
                   {/* Left Side Microphone Button (when voice enabled) */}
                   {isVoiceEnabled && (
-                    <button
-                      type="button"
-                      onMouseDown={startRecording}
-                      onMouseUp={stopRecording}
-                      onTouchStart={startRecording}
-                      onTouchEnd={stopRecording}
-                      disabled={isLoading || isTranscribing}
+                    <MicButton
+                      isRecording={isRecording}
+                      isTranscribing={isTranscribing}
+                      disabled={isLoading}
+                      onPressStart={handleMicPressStart}
+                      onPressEnd={handleMicPressEnd}
                       title={t('micHold')}
-                      className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all shadow-sm ${
-                        isRecording
-                          ? 'bg-red-500 text-white animate-pulse ring-4 ring-red-200'
-                          : isTranscribing
-                          ? 'bg-amber-100 text-amber-600'
-                          : 'bg-[var(--paper)] text-[var(--ink-soft)] hover:bg-[var(--coral-tint)] hover:text-[var(--coral)]'
-                      }`}
-                    >
-                      {isTranscribing ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : isRecording ? (
-                        <Square className="w-4 h-4 fill-white" />
-                      ) : (
-                        <Mic className="w-5 h-5" />
-                      )}
-                    </button>
+                    />
                   )}
 
                   <div className="relative flex-1">
@@ -511,27 +623,41 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
               </div>
               <div className="truncate">
                 <p className="text-sm text-[var(--ink)] truncate">
-                  {(messages.length > 0 ? getMessageText(messages[messages.length - 1]) : '').substring(0, 40) || t('defaultPreview')}...
+                  {(messages.length > 0 ? stripInfoMarkers(getMessageText(messages[messages.length - 1])) : '').substring(0, 40) || t('defaultPreview')}...
                 </p>
               </div>
             </div>
-            <div className="w-8 h-8 rounded-full bg-[var(--paper)] flex items-center justify-center flex-shrink-0 text-[var(--ink-soft)] group-hover:bg-[var(--coral-tint)] group-hover:text-[var(--coral)] transition">
-              <MessageCircle className="w-4 h-4" />
+            <div className={`w-8 h-8 rounded-full bg-[var(--paper)] flex items-center justify-center flex-shrink-0 transition ${isPlayingAudio ? 'text-[var(--coral)]' : 'text-[var(--ink-soft)] group-hover:bg-[var(--coral-tint)] group-hover:text-[var(--coral)]'}`}>
+              {isPlayingAudio ? <Volume2 className="w-4 h-4 animate-pulse" /> : <MessageCircle className="w-4 h-4" />}
             </div>
           </div>
 
-          <form onSubmit={(e) => { e.preventDefault(); toggleExpand(); }} className="flex relative items-center pointer-events-none">
-            <input
-              placeholder={t('placeholder')}
-              className="w-full pl-4 pr-12 py-3.5 bg-[var(--paper)] border border-[var(--border-light)] rounded-full text-sm placeholder-[var(--muted)]"
-              readOnly
-            />
-            <button
-              type="button"
-              className="absolute right-1.5 w-10 h-10 bg-[var(--coral)] text-white rounded-full flex items-center justify-center"
-            >
-              <Send className="w-4 h-4 ml-0.5" />
-            </button>
+          <form onSubmit={(e) => { e.preventDefault(); toggleExpand(); }} className="flex relative items-center gap-2">
+            {/* Sesli konuşma: sohbet panelini hiç açmadan basılı tut ve konuş — bkz. yukarıdaki
+                karşılama/cevap efekti, panel sadece "önemli bilgi" varsa kendiliğinden açılıyor. */}
+            {isVoiceEnabled && (
+              <MicButton
+                isRecording={isRecording}
+                isTranscribing={isTranscribing}
+                disabled={isLoading}
+                onPressStart={handleMicPressStart}
+                onPressEnd={handleMicPressEnd}
+                title={t('micHold')}
+              />
+            )}
+            <div className="relative flex-1 pointer-events-none">
+              <input
+                placeholder={isRecording ? t('listening') : t('placeholder')}
+                className="w-full pl-4 pr-12 py-3.5 bg-[var(--paper)] border border-[var(--border-light)] rounded-full text-sm placeholder-[var(--muted)]"
+                readOnly
+              />
+              <button
+                type="button"
+                className="absolute right-1.5 w-10 h-10 bg-[var(--coral)] text-white rounded-full flex items-center justify-center"
+              >
+                <Send className="w-4 h-4 ml-0.5" />
+              </button>
+            </div>
           </form>
         </div>
       )}

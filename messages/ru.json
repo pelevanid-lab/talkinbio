@@ -180,7 +180,7 @@
       }
     },
     "heroTexts": {
-      "subtitle": "Ваш веб-сайт — это больше не просто ссылка. Теперь он говорит. Он <strong className=\"text-[var(--ink)] font-semibold\">создает контент</strong>, <strong className=\"text-[var(--ink)] font-semibold\">отвечает на вопросы</strong>, принимает запросы и <strong className=\"text-[var(--ink)] font-semibold\">закрывает продажи</strong>.",
+      "subtitle": "вашу биографию — это больше не просто ссылка. Теперь он говорит. Он <strong className=\"text-[var(--ink)] font-semibold\">создает контент</strong>, <strong className=\"text-[var(--ink)] font-semibold\">отвечает на вопросы</strong>, принимает запросы и <strong className=\"text-[var(--ink)] font-semibold\">закрывает продажи</strong>.",
       "btnEarly": "Ранний доступ",
       "btnHow": "Как это работает?",
       "btnPricing": "Цены"
@@ -544,7 +544,11 @@
     "formSubmit": "Отправить",
     "formSubmitting": "Отправка...",
     "formSuccess": "Ваше сообщение отправлено. Владелец бизнеса свяжется с вами в ближайшее время.",
-    "formErrorGeneric": "При отправке произошла ошибка, попробуйте ещё раз."
+    "formErrorGeneric": "При отправке произошла ошибка, попробуйте ещё раз.",
+    "micHold": "Удерживайте микрофон, чтобы говорить",
+    "listening": "Слушаю...",
+    "transcribing": "Обработка звука...",
+    "voiceInfoFiller": "Сейчас я вам напишу."
   },
   "Pricing": {
     "eyebrow": "Тарифы",
@@ -751,7 +755,7 @@
     "unpublishedBanner": "Ваша страница пока закрыта для посетителей. Заполните недостающие данные, чтобы опубликовать её."
   },
   "Metadata": {
-    "title": "Talkinbio | Ваш говорящий веб-сайт нового поколения",
+    "title": "Talkinbio | Ссылка на биографию вашего следующего поколения",
     "description": "Познакомьтесь с Talkinbio — ИИ-ассистентом, который общается с подписчиками в соцсетях на их языке, автоматически собирает лиды и записывает на приём."
   },
   "ContentStudio": {
