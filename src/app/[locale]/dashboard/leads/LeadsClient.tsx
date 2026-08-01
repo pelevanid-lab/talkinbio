@@ -60,7 +60,10 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: sampleText, businessId: business.id, preview: true }),
       });
-      if (!res.ok) throw new Error('Preview failed');
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || 'Preview failed');
+      }
       const data = await res.json();
       if (data.audioUrl) {
         if (sampleAudioRef.current) {
@@ -73,9 +76,9 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
         await audio.play();
         setPlayingLocale(sampleLocale);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Audio preview error:', err);
-      alert('Ses önizleme hatası, lütfen tekrar deneyin.');
+      alert(`Ses önizleme hatası: ${err?.message || 'Lütfen tekrar deneyin.'}`);
     } finally {
       setLoadingLocale(null);
     }

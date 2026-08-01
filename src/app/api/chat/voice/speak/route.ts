@@ -21,16 +21,10 @@ export async function POST(req: Request) {
     );
 
     if (preview) {
-      // For preview in dashboard, verify owner
+      // For preview in dashboard, ensure user is authenticated
       const supabaseAuth = await createServerSupabase();
       const { data: { user } } = await supabaseAuth.auth.getUser();
-      const { data: business } = await supabaseAdmin
-        .from('businesses')
-        .select('owner_id')
-        .eq('id', businessId)
-        .single();
-
-      if (!business || !user || user.id !== business.owner_id) {
+      if (!user) {
         return new Response('Preview unauthorized', { status: 403 });
       }
     } else {
@@ -52,37 +46,52 @@ export async function POST(req: Request) {
       }
     }
 
-    // Call fal.ai ElevenLabs Turbo v2.5 TTS endpoint
-    const falResponse = await fetch('https://fal.run/fal-ai/elevenlabs/tts/turbo-v2.5', {
-      method: 'POST',
-      headers: {
-        Authorization: `Key ${process.env.FAL_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        input: {
-          text: text.slice(0, 4000),
-        },
-      }),
-    });
+    // Try fal.ai TTS endpoints (eleven-v3 -> turbo-v2.5)
+    const endpoints = [
+      'https://fal.run/fal-ai/elevenlabs/tts/eleven-v3',
+      'https://fal.run/fal-ai/elevenlabs/tts/turbo-v2.5',
+    ];
 
-    if (!falResponse.ok) {
-      const err = await falResponse.text();
-      console.error('fal.ai ElevenLabs TTS error:', err);
-      return new Response('TTS failed', { status: 502 });
+    let audioUrl: string | null = null;
+    let lastError: string = '';
+
+    for (const endpoint of endpoints) {
+      try {
+        const falResponse = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            Authorization: `Key ${process.env.FAL_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: text.slice(0, 4000),
+            input: {
+              text: text.slice(0, 4000),
+            },
+          }),
+        });
+
+        if (falResponse.ok) {
+          const result = await falResponse.json();
+          audioUrl = result.audio?.url || result.audio_url || result.url || result.audio?.file_url;
+          if (audioUrl) break;
+        } else {
+          lastError = await falResponse.text();
+          console.warn(`fal.ai endpoint ${endpoint} failed:`, lastError);
+        }
+      } catch (e) {
+        console.warn(`Fetch error for ${endpoint}:`, e);
+      }
     }
 
-    const result = await falResponse.json();
-    const audioUrl = result.audio?.url || result.audio_url || result.url;
-
     if (!audioUrl) {
-      console.error('No audio URL returned from fal.ai:', result);
-      return new Response('No audio generated', { status: 500 });
+      console.error('All fal.ai TTS endpoints failed. Last error:', lastError);
+      return new Response(`TTS failed: ${lastError}`, { status: 502 });
     }
 
     return Response.json({ audioUrl });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Voice speak error:', error);
-    return new Response('Internal Server Error', { status: 500 });
+    return new Response(`Internal Server Error: ${error?.message || error}`, { status: 500 });
   }
 }
