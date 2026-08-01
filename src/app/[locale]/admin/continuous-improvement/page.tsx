@@ -18,7 +18,7 @@ import ContinuousImprovementTabs from '@/components/ContinuousImprovementTabs';
 
 const canvas = {
   problem: [
-    'Küçük işletmeler ve serbest çalışanlar bio linklerine trafik alıyor ama trafik ölü: Linktree tarzı sayfalar statik bir link listesi — ziyaretçi ne aradığını bulmak için sayfada dolaşmak zorunda, sayfa ona göre açılmıyor.',
+    'İşletmeler ve serbest çalışanlar bio linklerine trafik alıyor ama trafik ölü: Linktree tarzı sayfalar statik bir link listesi — ziyaretçi ne aradığını bulmak için sayfada dolaşmak zorunda, sayfa ona göre açılmıyor.',
     'Ziyaretçi soruları (fiyat, uygunluk, süre, "online mı yüz yüze mi?") DM\'yi dolduruyor; işletme sahibi mesajlara yetişemiyor, geç cevap müşteri kaybettiriyor.',
     'Formlar yüksek terk oranıyla çalışıyor; ziyaretçi form doldurmak değil, sorusuna karşılığında somut bir sayfa (süreç, fiyat, randevu) görmek istiyor.',
   ],

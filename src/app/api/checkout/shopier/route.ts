@@ -11,6 +11,9 @@ export async function POST(req: Request) {
     if (!planId || !businessId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+    if (planId === 'free') {
+      return NextResponse.json({ error: 'Free trial credits are granted during registration and cannot be purchased.' }, { status: 400 });
+    }
 
     // Verify auth and ownership
     const supabaseAuth = await createServerSupabase();
@@ -38,7 +41,7 @@ export async function POST(req: Request) {
     const isTurkey = req.headers.get('x-vercel-ip-country') === 'TR';
     
     let currency: 'USD' | 'TRY' = 'USD';
-    let finalPrice = plan.price;
+    let finalPrice: number = plan.price;
 
     // Currency conversion for Turkey
     if (isTurkey) {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { AlertTriangle, CheckCircle2, Loader2, Pencil, Plus, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Loader2, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 type KnowledgeRow = {
@@ -60,6 +60,18 @@ export default function KnowledgeBasePanel({ businessId, initialKnowledge }: { b
     if (error) {
       console.error(error);
       setNotes(notes.map(n => n.id === note.id ? { ...n, is_active: note.is_active } : n));
+    }
+  };
+
+  const handleDelete = async (note: KnowledgeRow) => {
+    if (!window.confirm(t('knowledgeBase.deleteConfirm'))) return;
+    const previousNotes = notes;
+    setNotes(notes.filter(n => n.id !== note.id));
+    const { error } = await supabase.from('saule_knowledge').delete().eq('id', note.id);
+    if (error) {
+      console.error(error);
+      setNotes(previousNotes);
+      alert(t('knowledgeBase.deleteError'));
     }
   };
 
@@ -175,6 +187,13 @@ export default function KnowledgeBasePanel({ businessId, initialKnowledge }: { b
                       className="w-8 h-8 rounded-full flex items-center justify-center text-[#8A8880] hover:bg-[#F4F2ED] hover:text-[#14231F] transition"
                     >
                       {note.is_active ? <X className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(note)}
+                      title={t('knowledgeBase.deleteTooltip')}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-[#8A8880] hover:bg-red-50 hover:text-red-600 transition"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>

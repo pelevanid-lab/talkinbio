@@ -25,7 +25,7 @@ export default function LandingHeroTabs({
           <div className="flex-shrink-0">
             <SauleIcon size={32} />
           </div>
-          Assistant Agent
+          Sayfanız
         </button>
         <button
           className={`hero-tab ${activeTab === 'beiwe' ? 'active' : ''}`}
@@ -34,7 +34,7 @@ export default function LandingHeroTabs({
           <div className="flex-shrink-0">
             <BeiweIcon size={32} />
           </div>
-          Creative Agent
+          Kolay Kurulum
         </button>
       </div>
 
@@ -55,7 +55,7 @@ export default function LandingHeroTabs({
                 <BeiweIcon size={100} className="drop-shadow-2xl" />
               </div>
               <h3 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--ink)', textAlign: 'center', marginBottom: '12px', letterSpacing: '-0.02em', fontFamily: 'var(--font-bricolage)' }}>
-                Sihirli Kurulum
+                Kolay Kurulum
               </h3>
               <p style={{ textAlign: 'center', fontSize: '0.95rem', color: 'var(--ink-soft)', marginBottom: '32px', padding: '0 16px', lineHeight: '1.5' }}>
                 Instagram profilinizi veya web sitenizi verin, sayfanızı <strong className="text-[var(--ink)] font-semibold">saniyeler içinde</strong> kuralım.

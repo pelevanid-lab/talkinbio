@@ -26,6 +26,11 @@ export interface Theme {
   // Varsayılan 'light'; AI paletleri her zaman açık mod için üretilir, koyu mod resolveThemeColors
   // ile türetilir (marka vurgusu korunur, nötrler sabit koyu bir zemine çevrilir).
   mode?: 'light' | 'dark';
+  accent?: {
+    mode: 'solid' | 'gradient';
+    gradientFrom: string;
+    gradientTo: string;
+  };
 }
 
 // Sabit koyu nötr zemin — koyu modda AI paletinin nötr renkleri yerine kullanılır. Marka
@@ -49,6 +54,42 @@ export function resolveThemeColors(theme: Theme): ThemeColors {
   };
 }
 
+export function resolveAccentFill(theme: Theme): string {
+  const primary = theme.colors.primary;
+  if (theme.accent?.mode !== 'gradient') return primary;
+  const from = /^#[0-9a-fA-F]{6}$/.test(theme.accent.gradientFrom || '') ? theme.accent.gradientFrom : primary;
+  const to = /^#[0-9a-fA-F]{6}$/.test(theme.accent.gradientTo || '') ? theme.accent.gradientTo : primary;
+  return `linear-gradient(135deg, ${from}, ${to})`;
+}
+
+export function resolvePageCanvases(theme: Theme): { pageCanvas: string; stickyCanvas: string } {
+  const c = resolveThemeColors(theme);
+  if (theme.mode === 'dark') {
+    return { pageCanvas: c.background, stickyCanvas: c.background };
+  }
+
+  const accentFrom =
+    theme.accent?.mode === 'gradient' && /^#[0-9a-fA-F]{6}$/.test(theme.accent.gradientFrom || '')
+      ? theme.accent.gradientFrom
+      : c.primary;
+  const accentTo =
+    theme.accent?.mode === 'gradient' && /^#[0-9a-fA-F]{6}$/.test(theme.accent.gradientTo || '')
+      ? theme.accent.gradientTo
+      : c.primary;
+
+  if (theme.accent?.mode === 'gradient') {
+    return {
+      pageCanvas: `linear-gradient(160deg, color-mix(in srgb, ${accentFrom} 12%, #ffffff) 0%, color-mix(in srgb, ${accentTo} 10%, #ffffff) 38%, color-mix(in srgb, ${accentFrom} 4%, ${c.background}) 68%, ${c.background} 100%)`,
+      stickyCanvas: `linear-gradient(160deg, color-mix(in srgb, ${accentFrom} 10%, ${c.background}) 0%, color-mix(in srgb, ${accentTo} 8%, ${c.background}) 100%)`,
+    };
+  }
+
+  return {
+    pageCanvas: `linear-gradient(180deg, color-mix(in srgb, ${c.primary} 9%, #ffffff) 0%, color-mix(in srgb, ${c.primary} 4%, ${c.background}) 44%, ${c.background} 100%)`,
+    stickyCanvas: `color-mix(in srgb, ${c.primary} 6%, ${c.background})`,
+  };
+}
+
 export const DEFAULT_THEME: Theme = {
   colors: {
     background: '#FAFAFA',
@@ -63,4 +104,9 @@ export const DEFAULT_THEME: Theme = {
   mediaProfile: 'service-focused',
   layoutStyle: 'compact',
   borderRadius: 'xl',
+  accent: {
+    mode: 'solid',
+    gradientFrom: '#111827',
+    gradientTo: '#14B8A6',
+  },
 };

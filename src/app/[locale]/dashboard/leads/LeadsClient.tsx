@@ -41,6 +41,17 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
   
   const [metaSuccess, setMetaSuccess] = useState<string | null>(null);
   const [metaError, setMetaError] = useState<string | null>(null);
+  const [copiedProfileLink, setCopiedProfileLink] = useState(false);
+  const profileUrl = `talkinbio.com/${business.username}`;
+  const handleCopyProfileLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`https://${profileUrl}`);
+      setCopiedProfileLink(true);
+      setTimeout(() => setCopiedProfileLink(false), 2000);
+    } catch (err) {
+      console.error('Copy failed:', err);
+    }
+  };
 
   // Audio preview state
   const [playingLocale, setPlayingLocale] = useState<string | null>(null);
@@ -413,39 +424,73 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
               <div className="py-4 border-t border-[rgba(20,35,31,0.10)]">
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <h3 className="text-base font-semibold text-[#14231F]">Instagram Entegrasyonu (Beta)</h3>
-                    <p className="text-sm text-[#4B5A55]">İşletme hesabınızı bağlayarak gelen DM'leri asistanınıza otomatik yönettirin.</p>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h3 className="text-base font-semibold text-[#14231F]">{t('instagramIntegration.title')}</h3>
+                      {metaSuccess !== 'connected' && (
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-wide bg-[#FFF1EE] text-[#FF6A5C] border border-[#FFB9A9] px-2 py-0.5 rounded-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#FF6A5C]" />
+                          {t('instagramIntegration.comingSoonBadge')}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-[#4B5A55]">{t('instagramIntegration.description')}</p>
                   </div>
                 </div>
                 <div className="mt-3">
                   {metaSuccess === 'connected' ? (
                     <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-50 border border-green-200 text-green-700 font-medium text-sm rounded-lg shadow-sm">
                       <CheckCircle2 className="w-5 h-5" />
-                      Başarıyla Bağlandı! Asistanınız mesajları yanıtlamaya hazır.
+                      {t('instagramIntegration.connectedMsg')}
                     </div>
                   ) : (
-                    <>
-                      {metaError === 'no_instagram_found' && (
-                        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-                          <p className="font-bold mb-1">Bağlantı Kurulamadı</p>
-                          <p>Seçtiğiniz Facebook sayfasına bağlı bir <b>Profesyonel/İşletme Instagram Hesabı</b> bulunamadı. Lütfen Instagram ayarlarınızdan hesabınızın Profesyonel olduğundan ve doğru Facebook sayfasına bağlı olduğundan emin olup tekrar deneyin.</p>
-                        </div>
-                      )}
-                      {metaError && metaError !== 'no_instagram_found' && (
-                        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-                          <p className="font-bold mb-1">Bağlantı Hatası</p>
-                          <p>Beklenmeyen bir hata oluştu: {metaError}. Lütfen tekrar deneyin.</p>
-                        </div>
-                      )}
-                      <a href="/api/auth/meta/login" className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium text-sm rounded-lg hover:opacity-90 transition-opacity shadow-sm">
-                        Instagram'ı Bağla
-                      </a>
-                      <p className="text-xs text-[#8A8880] mt-2">
-                        Not: Yalnızca Profesyonel/İşletme hesapları desteklenmektedir.
-                      </p>
-                    </>
+                    <button
+                      type="button"
+                      disabled
+                      title={t('instagramIntegration.comingSoonBadge')}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#F4F2ED] text-[#8A8880] font-medium text-sm rounded-lg cursor-not-allowed"
+                    >
+                      {t('instagramIntegration.connectBtn')}
+                    </button>
                   )}
                 </div>
+
+                {metaSuccess !== 'connected' && (
+                  <>
+                    <div className="mt-4 flex items-center justify-between gap-4 flex-wrap bg-[#F4F2ED] border border-[rgba(20,35,31,0.10)] rounded-xl p-4">
+                      <div>
+                        <p className="text-sm font-semibold text-[#14231F]">{t('instagramIntegration.workaroundTitle')}</p>
+                        <p className="text-xs text-[#4B5A55] mt-0.5">{t('instagramIntegration.workaroundDesc')}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyProfileLink}
+                        className="flex items-center gap-2 text-sm font-medium text-[#14231F] bg-white border border-[rgba(20,35,31,0.10)] px-3 py-1.5 rounded-lg hover:border-[#FF6A5C] hover:text-[#FF6A5C] transition shrink-0"
+                      >
+                        <span className="font-mono text-xs text-[#4B5A55]">{profileUrl}</span>
+                        {copiedProfileLink ? t('instagramIntegration.copiedBtn') : t('instagramIntegration.copyLinkBtn')}
+                      </button>
+                    </div>
+
+                    <div className="mt-4">
+                      <p className="text-sm font-semibold text-[#14231F] mb-1.5">{t('instagramIntegration.guideHeading')}</p>
+                      <p className="text-xs text-[#4B5A55] mb-2">{t('instagramIntegration.guideIntro')}</p>
+                      <ol className="space-y-1.5">
+                        {[
+                          t('instagramIntegration.guideStep1'),
+                          t('instagramIntegration.guideStep2'),
+                          t('instagramIntegration.guideStep3', { link: profileUrl }),
+                          t('instagramIntegration.guideStep4'),
+                        ].map((step, i) => (
+                          <li key={i} className="flex items-start gap-2 text-xs text-[#4B5A55]">
+                            <span className="shrink-0 w-4 h-4 rounded-full bg-[#FFF1EE] text-[#FF6A5C] text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                            {step}
+                          </li>
+                        ))}
+                      </ol>
+                      <p className="text-xs text-[#8A8880] mt-2">{t('instagramIntegration.guideNote')}</p>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Lead Capture */}

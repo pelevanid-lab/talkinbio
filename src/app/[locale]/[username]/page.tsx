@@ -6,7 +6,7 @@ import ChatWidget from '@/components/ChatWidget';
 import ProfilePageBody from '@/components/ProfilePageBody';
 import { PublicPageRuntimeProvider } from '@/components/PublicPageRuntime';
 import { createClient } from '@/utils/supabase/server';
-import { DEFAULT_THEME, resolveThemeColors } from '@/config/archetypes';
+import { DEFAULT_THEME, resolvePageCanvases, resolveThemeColors } from '@/config/archetypes';
 import { googleFontsHref } from '@/utils/googleFonts';
 import { isConversationActive } from '@/utils/conversationWindow';
 import { getPageActionTargets, withContactPageActionTarget } from '@/utils/pageActionTargets';
@@ -186,14 +186,7 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
   // Koyu modda tüm viewport (header satırı dahil) koyu zemine uyar — ArchetypeRenderer'ın kendi
   // renkli div'i yalnızca blok alanını kaplıyor, profil başlığı ve boşluklar bunun dışında.
   const resolvedColors = resolveThemeColors(theme);
-  const pageCanvas =
-    theme.mode === 'dark'
-      ? resolvedColors.background
-      : `linear-gradient(180deg, color-mix(in srgb, ${resolvedColors.primary} 9%, #ffffff) 0%, color-mix(in srgb, ${resolvedColors.primary} 4%, ${resolvedColors.background}) 44%, ${resolvedColors.background} 100%)`;
-  const stickyCanvas =
-    theme.mode === 'dark'
-      ? resolvedColors.background
-      : `color-mix(in srgb, ${resolvedColors.primary} 6%, ${resolvedColors.background})`;
+  const { pageCanvas, stickyCanvas } = resolvePageCanvases(theme);
   const pageStyle = {
     background: pageCanvas,
     color: resolvedColors.text,

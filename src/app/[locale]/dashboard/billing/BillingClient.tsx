@@ -6,7 +6,7 @@ import { format, type Locale } from 'date-fns';
 import { tr, enUS, ru } from 'date-fns/locale';
 import { Coins, MessageCircle, Wrench, BarChart3 } from 'lucide-react';
 import { PLANS, EXTRA_PACK } from '@/config/plans';
-import { SAULE_CREDIT_COST, BEIWE_UPDATE_CREDIT_COST } from '@/agents/shared/credits';
+import { SAULE_CREDIT_COST, BEIWE_UPDATE_CREDIT_COST, CREDIT_COST_MENU } from '@/agents/shared/credits';
 import DashboardShell from '@/components/dashboard/DashboardShell';
 
 const DATE_FNS_LOCALES: Record<string, Locale> = { tr, en: enUS, ru };
@@ -147,6 +147,20 @@ export default function BillingClient({ business, transactions, ownerEmail }: { 
           </div>
         </div>
 
+        {/* Credit cost menu */}
+        <div className="bg-white rounded-[20px] border border-[rgba(20,35,31,0.10)] p-6">
+          <h2 className="text-lg font-[800] text-[#14231F] font-['Bricolage_Grotesque'] mb-1">{tPricing('operationCostsTitle')}</h2>
+          <p className="text-sm text-[#4B5A55] mb-4">{tPricing('operationCostsSubtitle')}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {CREDIT_COST_MENU.map((item) => (
+              <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-[rgba(20,35,31,0.08)] bg-[#FBFAF7] px-4 py-3">
+                <span className="text-sm font-medium text-[#14231F]">{item.label[(locale as keyof typeof item.label) || 'tr'] || item.label.tr}</span>
+                <span className="text-sm font-[800] text-[#059669] whitespace-nowrap">{t('credits', { count: item.credits })}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Top-up / plan request */}
         <div className="bg-white rounded-[20px] border border-[rgba(20,35,31,0.10)] p-6">
           <h2 className="text-lg font-[800] text-[#14231F] font-['Bricolage_Grotesque'] mb-1">{t('topUpTitle')}</h2>
@@ -170,7 +184,7 @@ export default function BillingClient({ business, transactions, ownerEmail }: { 
                         : 'border-[rgba(20,35,31,0.10)] hover:border-[rgba(20,35,31,0.25)] transition'
                   }`}
                 >
-                  <p className="text-lg font-[800] text-[#14231F]">{plan.name}</p>
+                  <p className="text-lg font-[800] text-[#14231F]">{tPricing(`plan_${plan.id}` as any)}</p>
                   <p className="text-2xl font-[800] text-[#14231F] font-['Bricolage_Grotesque']">${plan.price}</p>
                   <p className="text-sm font-[700] text-[#059669]">{tPricing('credits', { count: plan.credits })}</p>
                   <p className="text-xs text-[#4B5A55] leading-relaxed min-h-[2.5rem]">

@@ -18,7 +18,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { RECOMMENDED_TYPES, hasRealContent, isRequiredSatisfied } from '@/config/blockTypes';
 import { extractLocaleText, isSyncableType, type SyncableBlockType, type BlockLocaleText } from '@/agents/beiwe/localeSync';
 import type { LocaleKey } from '@/config/localeTitles';
-import { DEFAULT_THEME, Theme, resolveThemeColors } from '@/config/archetypes';
+import { DEFAULT_THEME, Theme, resolvePageCanvases, resolveThemeColors } from '@/config/archetypes';
 import { avatarFromBlocks } from '@/utils/avatarFromBlocks';
 import { collectShortcutCandidates, getShortcuts, resolveShortcuts, shortcutsEqual, type Shortcut } from '@/utils/shortcuts';
 import { iconForLinkUrl } from '@/utils/linkIcon';
@@ -626,8 +626,64 @@ export default function EditorClient({
   };
 
   const handleSetPrimaryColor = async (primary: string) => {
-    if (!/^#[0-9a-fA-F]{6}$/.test(primary) || theme.colors.primary === primary) return;
-    const nextTheme: Theme = { ...theme, colors: { ...theme.colors, primary } };
+    if (!/^#[0-9a-fA-F]{6}$/.test(primary)) return;
+    const savedPrimary = business.theme?.colors?.primary || DEFAULT_THEME.colors.primary;
+    const savedMode = business.theme?.accent?.mode || 'solid';
+    if (savedPrimary === primary && savedMode === 'solid') return;
+    const nextTheme: Theme = {
+      ...theme,
+      colors: { ...theme.colors, primary },
+      accent: {
+        mode: 'solid',
+        gradientFrom: primary,
+        gradientTo: theme.accent?.gradientTo || DEFAULT_THEME.accent?.gradientTo || primary,
+      },
+    };
+    setTheme(nextTheme);
+    const { error } = await supabase.from('businesses').update({ theme: nextTheme }).eq('id', business.id);
+    if (!error) {
+      business.theme = nextTheme;
+      await markNeedsRepublish();
+    }
+  };
+
+  const handleSetAccentMode = async (mode: 'solid' | 'gradient') => {
+    const current = theme.accent || { mode: 'solid', gradientFrom: theme.colors.primary, gradientTo: DEFAULT_THEME.accent?.gradientTo || theme.colors.primary };
+    if ((current.mode || 'solid') === mode) return;
+    const gradientFrom = current.gradientFrom || theme.colors.primary;
+    const gradientTo = current.gradientTo || DEFAULT_THEME.accent?.gradientTo || theme.colors.primary;
+    const nextTheme: Theme = {
+      ...theme,
+      colors: { ...theme.colors, primary: mode === 'gradient' ? gradientFrom : theme.colors.primary },
+      accent: { mode, gradientFrom, gradientTo },
+    };
+    setTheme(nextTheme);
+    const { error } = await supabase.from('businesses').update({ theme: nextTheme }).eq('id', business.id);
+    if (!error) {
+      business.theme = nextTheme;
+      await markNeedsRepublish();
+    }
+  };
+
+  const handleSetGradientColor = async (key: 'gradientFrom' | 'gradientTo', value: string) => {
+    if (!/^#[0-9a-fA-F]{6}$/.test(value)) return;
+    const current = theme.accent || { mode: 'gradient', gradientFrom: theme.colors.primary, gradientTo: DEFAULT_THEME.accent?.gradientTo || theme.colors.primary };
+    const nextAccent = {
+      mode: 'gradient' as const,
+      gradientFrom: key === 'gradientFrom' ? value : current.gradientFrom || theme.colors.primary,
+      gradientTo: key === 'gradientTo' ? value : current.gradientTo || DEFAULT_THEME.accent?.gradientTo || theme.colors.primary,
+    };
+    const savedAccent = business.theme?.accent || { mode: 'solid', gradientFrom: business.theme?.colors?.primary || DEFAULT_THEME.colors.primary, gradientTo: DEFAULT_THEME.accent?.gradientTo || DEFAULT_THEME.colors.primary };
+    if (
+      savedAccent.mode === nextAccent.mode &&
+      savedAccent.gradientFrom === nextAccent.gradientFrom &&
+      savedAccent.gradientTo === nextAccent.gradientTo
+    ) return;
+    const nextTheme: Theme = {
+      ...theme,
+      colors: { ...theme.colors, primary: nextAccent.gradientFrom },
+      accent: nextAccent,
+    };
     setTheme(nextTheme);
     const { error } = await supabase.from('businesses').update({ theme: nextTheme }).eq('id', business.id);
     if (!error) {
@@ -693,6 +749,13 @@ export default function EditorClient({
     setBulkText('');
     setViewMode('chat');
   };
+
+  const accent = theme.accent || {
+    mode: 'solid' as const,
+    gradientFrom: theme.colors.primary,
+    gradientTo: DEFAULT_THEME.accent?.gradientTo || theme.colors.primary,
+  };
+  const previewCanvas = resolvePageCanvases(theme);
 
   return (
     <div className="flex h-[100dvh]">
@@ -1110,8 +1173,47 @@ export default function EditorClient({
                   })}
                 </div>
                 <div className="mt-3 pt-3 border-t border-slate-200">
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center justify-between gap-3 mb-2">
                     <span className="text-xs font-medium text-slate-500">{t('accentColor')}</span>
+                    <div className="flex rounded-lg border border-slate-200 bg-white p-0.5">
+                      {(['solid', 'gradient'] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() => handleSetAccentMode(mode)}
+                          className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition ${accent.mode === mode ? 'bg-[var(--ink)] text-white' : 'text-slate-500 hover:text-[var(--ink)]'}`}
+                        >
+                          {mode === 'solid' ? t('accentSolid') : t('accentGradient')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {accent.mode === 'gradient' ? (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="h-9 flex-1 rounded-lg border border-slate-300" style={{ background: `linear-gradient(135deg, ${accent.gradientFrom}, ${accent.gradientTo})` }} />
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={accent.gradientFrom}
+                          onChange={(e) => setTheme({ ...theme, colors: { ...theme.colors, primary: e.target.value }, accent: { ...accent, mode: 'gradient', gradientFrom: e.target.value } })}
+                          onBlur={(e) => handleSetGradientColor('gradientFrom', e.target.value)}
+                          className="w-9 h-9 rounded-lg border border-slate-300 bg-white p-1 cursor-pointer"
+                          aria-label={t('accentGradientFrom')}
+                        />
+                        <input
+                          type="color"
+                          value={accent.gradientTo}
+                          onChange={(e) => setTheme({ ...theme, accent: { ...accent, mode: 'gradient', gradientTo: e.target.value } })}
+                          onBlur={(e) => handleSetGradientColor('gradientTo', e.target.value)}
+                          className="w-9 h-9 rounded-lg border border-slate-300 bg-white p-1 cursor-pointer"
+                          aria-label={t('accentGradientTo')}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[11px] text-slate-400">{t('accentSolidHint')}</span>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
@@ -1129,6 +1231,7 @@ export default function EditorClient({
                       />
                     </div>
                   </div>
+                  )}
                   <p className="text-[10px] text-slate-400 mt-1">{t('accentColorHint')}</p>
                 </div>
               </div>
@@ -1424,7 +1527,14 @@ export default function EditorClient({
 
           {/* Top 70% Content Area — background follows the resolved theme so dark mode covers the
               whole preview (header included), matching the live page. */}
-          <div className="flex-1 flex flex-col relative overflow-hidden" style={{ backgroundColor: resolveThemeColors(theme).background }}>
+          <div
+            className="flex-1 flex flex-col relative overflow-hidden"
+            style={{
+              background: previewCanvas.pageCanvas,
+              '--tb-page-bg': previewCanvas.pageCanvas,
+              '--tb-page-bg-sticky': previewCanvas.stickyCanvas,
+            } as React.CSSProperties}
+          >
             {/* Compact profile header — same ProfileHeader component the live page uses, so the
                 editor preview matches it 1:1. Avatar comes from the About block's photo. */}
             <div className="w-full pt-12 pb-2 px-4 z-10 relative shrink-0">

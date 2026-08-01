@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { ChevronLeft } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
-import { SAULE_CREDIT_COST, BEIWE_UPDATE_CREDIT_COST } from '@/agents/shared/credits';
+import { SAULE_CREDIT_COST, BEIWE_UPDATE_CREDIT_COST, CREDIT_COST_MENU } from '@/agents/shared/credits';
 import { PLANS, EXTRA_PACK } from '@/config/plans';
 import '../landing.css';
 
@@ -41,6 +41,7 @@ const inputStyle: React.CSSProperties = {
 export default function PricingPage() {
   const t = useTranslations('Pricing');
   const tNav = useTranslations('Landing.nav');
+  const locale = useLocale() as 'tr' | 'en' | 'ru';
 
   const [selectedPlan, setSelectedPlan] = useState<string>('');
 
@@ -140,7 +141,7 @@ export default function PricingPage() {
                 gap: '0.75rem',
               }}>
                 <h2 style={{ fontFamily: 'var(--font-bricolage)', fontWeight: 800, fontSize: '1.3rem', color: 'var(--ink)', margin: 0 }}>
-                  {plan.name}
+                  {t(`plan_${plan.id}` as any)}
                 </h2>
                 <p style={{ margin: 0 }}>
                   <span style={{ fontFamily: 'var(--font-bricolage)', fontSize: '2rem', fontWeight: 800, color: 'var(--ink)' }}>${plan.price}</span>
@@ -184,6 +185,38 @@ export default function PricingPage() {
             </p>
           </div>
         </div>
+
+        <section style={{
+          marginTop: '2rem',
+          border: '1px solid rgba(20,35,31,0.10)',
+          borderRadius: '20px',
+          padding: '1.5rem',
+          background: '#fff',
+        }}>
+          <h2 style={{ fontFamily: 'var(--font-bricolage)', fontWeight: 800, fontSize: '1.25rem', color: 'var(--ink)', margin: '0 0 0.4rem' }}>
+            {t('operationCostsTitle')}
+          </h2>
+          <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: 'var(--ink-soft)', lineHeight: 1.6 }}>
+            {t('operationCostsSubtitle')}
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+            {CREDIT_COST_MENU.map((item) => (
+              <div key={item.id} style={{
+                border: '1px solid rgba(20,35,31,0.08)',
+                borderRadius: '14px',
+                padding: '0.85rem 1rem',
+                background: '#FBFAF7',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1rem',
+              }}>
+                <span style={{ fontSize: '0.88rem', color: 'var(--ink)', fontWeight: 600 }}>{item.label[locale] || item.label.tr}</span>
+                <span style={{ fontSize: '0.88rem', color: 'var(--teal)', fontWeight: 800, whiteSpace: 'nowrap' }}>{t('credits', { count: item.credits })}</span>
+              </div>
+            ))}
+          </div>
+        </section>
 
 
       </main>

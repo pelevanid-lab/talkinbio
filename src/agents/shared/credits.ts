@@ -8,6 +8,71 @@ export const SAULE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE) || 1;
 export const SAULE_VOICE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_VOICE) || 5;
 export const BEIWE_UPDATE_CREDIT_COST = Number(process.env.CREDIT_COST_BEIWE_UPDATE) || 6;
 export const BEIWE_INSTALL_CREDIT_COST = Number(process.env.CREDIT_COST_BEIWE_INSTALL) || 10;
+export const CUE_PACK_STANDARD_CREDIT_COST = Number(process.env.CREDIT_COST_CUE_PACK_STANDARD) || 2;
+export const CUE_PACK_CUSTOM_CREDIT_COST = Number(process.env.CREDIT_COST_CUE_PACK_CUSTOM) || 6;
+
+export const CREDIT_COST_MENU = [
+  {
+    id: 'saule_session',
+    agent: 'saule',
+    credits: SAULE_CREDIT_COST,
+    label: {
+      tr: 'Assistant Agent oturumu (50 mesaja kadar)',
+      en: 'Assistant Agent session (up to 50 messages)',
+      ru: 'Сессия Assistant Agent (до 50 сообщений)',
+    },
+  },
+  {
+    id: 'saule_voice_input_session',
+    agent: 'saule',
+    credits: SAULE_VOICE_CREDIT_COST,
+    label: {
+      tr: 'Mikrofonla soru oturumu (STT dahil, 50 mesaja kadar)',
+      en: 'Voice-input session (STT included, up to 50 messages)',
+      ru: 'Сессия с голосовым вводом (STT включен, до 50 сообщений)',
+    },
+  },
+  {
+    id: 'beiwe_update',
+    agent: 'beiwe',
+    credits: BEIWE_UPDATE_CREDIT_COST,
+    label: {
+      tr: 'Tek alanı AI ile güncelleme',
+      en: 'Update one field with AI',
+      ru: 'Обновление одного поля с AI',
+    },
+  },
+  {
+    id: 'beiwe_install',
+    agent: 'beiwe',
+    credits: BEIWE_INSTALL_CREDIT_COST,
+    label: {
+      tr: 'Çok bölümlü sayfa kurulumu',
+      en: 'Build a multi-section page',
+      ru: 'Создание многораздельной страницы',
+    },
+  },
+  {
+    id: 'cue_standard',
+    agent: 'voice',
+    credits: CUE_PACK_STANDARD_CREDIT_COST,
+    label: {
+      tr: 'Standart hazır ses cue paketi',
+      en: 'Standard ready-made voice cue pack',
+      ru: 'Стандартный пакет голосовых подсказок',
+    },
+  },
+  {
+    id: 'cue_custom',
+    agent: 'voice',
+    credits: CUE_PACK_CUSTOM_CREDIT_COST,
+    label: {
+      tr: 'Özel/markaya uyarlanmış ses cue paketi',
+      en: 'Custom/brand-adapted voice cue pack',
+      ru: 'Индивидуальный голосовой пакет под бренд',
+    },
+  },
+] as const;
 
 /**
  * O turda çağrılan Beiwe araç sayısına göre kredi maliyeti: tek alan

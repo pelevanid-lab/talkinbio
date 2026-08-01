@@ -1,6 +1,6 @@
 'use client';
 
-import { DEFAULT_THEME, Theme, resolveThemeColors } from '@/config/archetypes';
+import { DEFAULT_THEME, Theme, resolveAccentFill, resolveThemeColors } from '@/config/archetypes';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, Mail, MessageCircle, Link as LinkIcon, AtSign } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -422,7 +422,7 @@ function renderServices(block: any, ctx: RenderCtx) {
                   )}
                   {item.price && (
                     <span className="flex items-center gap-3 flex-wrap">
-                      <span className="font-mono px-3 py-1 rounded-full text-sm inline-block" style={{ backgroundColor: 'var(--primary)', color: '#fff' }}>
+                      <span className="font-mono px-3 py-1 rounded-full text-sm inline-block" style={{ background: 'var(--primary-fill)', color: '#fff' }}>
                         {item.price}
                       </span>
                       <OrderButton title={itemLoc.title || item.title} />
@@ -506,7 +506,7 @@ function renderServices(block: any, ctx: RenderCtx) {
                     <div className={`flex items-center gap-3 flex-wrap ${layoutVariant === 'list' ? 'mt-3 sm:mt-0 sm:ml-auto shrink-0' : 'shrink-0'}`}>
                       <span
                         className="font-mono font-medium px-3 py-1 rounded-full text-sm whitespace-nowrap inline-block"
-                        style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
+                        style={{ background: 'var(--primary-fill)', color: '#fff' }}
                       >
                         {item.price}
                       </span>
@@ -547,7 +547,7 @@ function renderHours(block: any, ctx: RenderCtx) {
                 title={data?.isOpen ? `${data.openTime} - ${data.closeTime}` : labels.closed}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border ${data?.isOpen ? '' : 'opacity-50'}`}
                 style={{
-                  backgroundColor: data?.isOpen ? 'var(--primary)' : 'var(--surface)',
+                  background: data?.isOpen ? 'var(--primary-fill)' : 'var(--surface)',
                   color: data?.isOpen ? '#fff' : 'var(--text-muted)',
                   borderColor: 'var(--border)',
                 }}
@@ -1147,6 +1147,7 @@ export default function ArchetypeRenderer({
       '--bg': c.background,
       '--surface': c.surface,
       '--primary': c.primary,
+      '--primary-fill': resolveAccentFill(theme),
       '--text': c.text,
       '--text-muted': c.textMuted,
       '--border': c.border,
@@ -1211,7 +1212,7 @@ export default function ArchetypeRenderer({
           position: absolute;
           inset: 0 auto 0 0;
           width: 4px;
-          background: var(--primary);
+          background: var(--primary-fill);
           opacity: 0.9;
         }
         .tb-linktree-tile::after {

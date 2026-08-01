@@ -35,11 +35,13 @@ export async function POST(req: Request) {
       .eq('id', businessId)
       .single();
 
-    if (!business?.saule_settings?.voiceEnabled) {
+    if (!business?.saule_settings?.voiceEnabled || !business?.saule_settings?.dynamicVoiceEnabled) {
       return new Response('Voice not enabled for this business', { status: 403 });
     }
 
-    // Check conversation voice status & deduct extra 4 credits if first voice message in session
+    // Check conversation voice status. Voice input costs more than a text session because STT runs
+    // before the normal chat turn. If there is no conversation yet, the following chat turn will
+    // create one and charge the base SAULE_CREDIT_COST, so this route charges only the voice extra.
     const { data: conversation } = await supabaseAdmin
       .from('conversations')
       .select('id, has_voice_interaction')
@@ -49,16 +51,15 @@ export async function POST(req: Request) {
       .limit(1)
       .single();
 
-    if (conversation && !conversation.has_voice_interaction) {
-      // Mark session as containing voice interaction
-      await supabaseAdmin
-        .from('conversations')
-        .update({ has_voice_interaction: true })
-        .eq('id', conversation.id);
+    const extraCreditsToDeduct = Math.max(0, SAULE_VOICE_CREDIT_COST - SAULE_CREDIT_COST);
+    const requiredCreditsBeforeTranscribe = !conversation
+      ? SAULE_VOICE_CREDIT_COST
+      : conversation.has_voice_interaction
+      ? 0
+      : extraCreditsToDeduct;
 
-      // Deduct the difference between voice credit cost (5) and normal text cost (1) = 4 credits
-      const extraCreditsToDeduct = SAULE_VOICE_CREDIT_COST - SAULE_CREDIT_COST;
-      await deductCredits(supabaseAdmin, businessId, extraCreditsToDeduct);
+    if (requiredCreditsBeforeTranscribe > 0 && (business.credit_balance ?? 0) < requiredCreditsBeforeTranscribe) {
+      return new Response('Insufficient credits for voice input', { status: 402 });
     }
 
     // fal.ai Wizper multipart/form-data DOSYA YÜKLEMESİ KABUL ETMİYOR — JSON body içinde
@@ -91,6 +92,16 @@ export async function POST(req: Request) {
 
     const result = await falResponse.json();
     const text = result.text as string;
+
+    if (extraCreditsToDeduct > 0 && (!conversation || !conversation.has_voice_interaction)) {
+      if (conversation) {
+        await supabaseAdmin
+          .from('conversations')
+          .update({ has_voice_interaction: true })
+          .eq('id', conversation.id);
+      }
+      await deductCredits(supabaseAdmin, businessId, extraCreditsToDeduct);
+    }
 
     if (!text?.trim()) {
       return Response.json({ text: '' });

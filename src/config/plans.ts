@@ -1,10 +1,11 @@
-// Faz 4.3: ödeme sağlayıcı Faz H.1'i bekliyor — bu sabitler roadmap'in kredi
-// tablosunu şeffaf göstermek için /pricing ve /dashboard/billing arasında paylaşılır.
+// Shopier abonelik desteklemedigi icin Talkinbio ekonomisi "suresi bitmeyen kredi bakiyesi"
+// uzerine kurulu. 100 kredi = $5 (CREDIT_VALUE_USD = $0.05) kabulunu koruyoruz; ucretli
+// paketlerde kredi basi fiyat bu degerin altina dusmez ki creditsForCost() marj hesabi bozulmasin.
 export const PLANS = [
-  { id: 'free', name: 'Free', price: 0, credits: 20 },
-  { id: 'starter', name: 'Starter', price: 20, credits: 400 },
-  { id: 'pro', name: 'Pro', price: 90, credits: 2000 },
-  { id: 'business', name: 'Business', price: 400, credits: 10000 },
+  { id: 'free', name: 'Deneme', price: 0, credits: 20, trialGrant: true },
+  { id: 'starter', name: 'Starter', price: 15, credits: 200 },
+  { id: 'pro', name: 'Pro', price: 40, credits: 600 },
+  { id: 'business', name: 'Business', price: 90, credits: 1500 },
 ] as const;
 
-export const EXTRA_PACK = { price: 5, credits: 100 };
+export const EXTRA_PACK = { id: 'extra', name: 'Ek Kredi', price: 5, credits: 100 } as const;
