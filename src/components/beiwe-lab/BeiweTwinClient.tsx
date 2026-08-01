@@ -7,6 +7,7 @@ import {
   Brain,
   Check,
   ChevronDown,
+  Coins,
   Loader2,
   RefreshCw,
   Sparkles,
@@ -562,6 +563,13 @@ export default function BeiweTwinClient({
           {LORA_TRAINING_THRESHOLD} kareye ulaşınca kişiye özel bir LoRA modeli eğitilebilir —
           ondan sonra her üretim referans görsele değil, modelin kendisine dayanır.
         </p>
+
+        <div className="flex items-center gap-2 rounded-xl border border-purple-200 bg-purple-50 px-4 py-2.5 text-sm text-purple-800">
+          <Coins className="w-4 h-4 shrink-0" />
+          <span>
+            Bu işlemi başlatmak için hesabında en az <strong>{creditsForCost(LORA_TRAINING_COST_USD)} kredi</strong> olmalı.
+          </span>
+        </div>
 
         <div>
           <div className="flex items-center justify-between mb-1.5 text-xs">
