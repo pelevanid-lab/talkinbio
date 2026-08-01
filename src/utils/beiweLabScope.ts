@@ -17,7 +17,8 @@ export async function getAllBeiweLabCharacterIds(): Promise<string[]> {
   const { data: castRows } = await supabaseAdmin
     .from('character_profiles')
     .select('id')
-    .eq('is_cast', true);
+    .eq('is_cast', true)
+    .is('business_id', null); // yalnız admin'in global cast'i — işletmelerin kendi cast'i ayrı, bkz. creativeStudioScope.ts
 
   return [TWIN_CHARACTER_ID, ...CAST_CHARACTER_IDS, ...(castRows || []).map((row) => row.id as string)];
 }

@@ -679,6 +679,7 @@
     "backToLogin": "Giriş ekranına dön",
     "invalidCredentials": "E-posta veya şifre hatalı",
     "resetLinkSent": "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Lütfen kutunuzu kontrol edin.",
+    "registerLink": "Hesabınız yok mu? Kayıt olun",
     "genericError": "Bir hata oluştu"
   },
   "AuthCallback": {
@@ -881,7 +882,7 @@
     "comingSoonBadge": "Yakında",
     "liveBadge": "Kullanıma açık",
     "heroTitle": "İşletmen için içerik üreten stüdyon burada",
-    "heroDesc": "Dijital ikizinle başla — fotoğraflarınla eğitilen görsel kimliğin, sonraki tüm sahne/video üretiminin temeli. Ses klonlama ve video içerik yakında ekleniyor.",
+    "heroDesc": "Dijital ikizinle başla — fotoğraflarınla eğitilen görsel kimliğin, aşağıdaki tüm araçların temeli.",
     "twinCta": "Dijital İkizini Oluştur",
     "feature1Title": "Dijital İkiz",
     "feature1Desc": "Fotoğraflarınla eğitilen, seni temsil eden bir görsel kimlik.",
@@ -889,6 +890,14 @@
     "feature2Desc": "Kendi sesinle, yazdığın herhangi bir metni seslendir.",
     "feature3Title": "Video İçerik",
     "feature3Desc": "Konuşan, tanıtan, ürününü anlatan kısa videolar üret.",
+    "feature4Title": "Yardımcı Oyuncular",
+    "feature4Desc": "Tarifle üretilen, gerçek bir yüze kilitlenmeyen sanal karakterler.",
+    "feature5Title": "Marka Gönderisi",
+    "feature5Desc": "Ekran kaydını ya da kareyi marka şablonlu bir gönderiye çevir.",
+    "feature6Title": "Post-Prodüksiyon",
+    "feature6Desc": "Videolarına cutaway, overlay ve müzik ekleyip formatlı export üret.",
+    "feature7Title": "Motion",
+    "feature7Desc": "AI aktör, anime, cinematic ve trend videoları — boydan hareket.",
     "notifyHint": "Erken erişim açıldığında sana haber vereceğiz."
   },
   "MediaUploader": {

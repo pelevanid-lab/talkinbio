@@ -28,6 +28,7 @@ export default async function BeiweLabCastPage({ params }: { params: Promise<{ c
     .from('character_profiles')
     .select('id, name, role, identity_prompt, reference_image_url, voice_url')
     .eq('is_cast', true)
+    .is('business_id', null)
     .order('created_at', { ascending: true });
 
   const dynamicCharacters = castRows || [];

@@ -34,6 +34,7 @@ export default async function BeiwePodcastPage({ params }: { params: Promise<{ c
     .from('character_profiles')
     .select('id, name, role, reference_image_url')
     .eq('is_cast', true)
+    .is('business_id', null)
     .order('created_at', { ascending: true });
 
   const dynamicCharacters = castRows || [];

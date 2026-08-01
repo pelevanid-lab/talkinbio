@@ -23,6 +23,7 @@ export default async function BeiweMotionPage() {
     .from('character_profiles')
     .select('id, name, reference_image_url')
     .eq('is_cast', true)
+    .is('business_id', null)
     .order('created_at', { ascending: true });
 
   const castCharacters: CastCharacterOption[] = [

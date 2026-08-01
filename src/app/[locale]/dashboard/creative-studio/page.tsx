@@ -1,13 +1,14 @@
 import { createClient as createServerClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { Sparkles, UserRound, Mic, Clapperboard, ArrowRight } from 'lucide-react';
+import { Sparkles, UserRound, Mic, Clapperboard, ArrowRight, Users, Image as ImageIcon, Film, Video } from 'lucide-react';
 import DashboardShell from '@/components/dashboard/DashboardShell';
 
-// Beiwe Lab'ın (bkz. src/config/beiweLab.ts) müşteriye açık, çok-kiracılı hâli — Twin
-// (Dijital İkiz) burada gerçek işlevle bağlı (/dashboard/creative-studio/twin, bkz.
-// oradaki page.tsx ve src/utils/creativeStudioScope.ts). Voice/Podcast/Post/Studio/
-// Motion/Cast henüz taşınmadı — kendi backend turlarını bekliyor, "yakında" kalıyor.
+// Beiwe Lab'ın (bkz. src/config/beiweLab.ts) müşteriye açık, çok-kiracılı hâli — Twin,
+// Cast, Voice, Podcast, Post, Studio ve Motion'ın hepsi artık gerçek işlevle bağlı
+// (bkz. src/utils/creativeStudioScope.ts + her aracın /dashboard/creative-studio/*
+// sayfası). Voice/Podcast/Motion sayfalarında henüz Cast karakter seçici yok — her araç
+// şimdilik yalnız işletmenin kendi Twin'i üzerinde çalışıyor.
 export default async function CreativeStudioPage() {
   const supabase = await createServerClient();
   const { data: userData, error: authError } = await supabase.auth.getUser();
@@ -37,8 +38,12 @@ export default async function CreativeStudioPage() {
 
   const features = [
     { icon: UserRound, title: t('feature1Title'), desc: t('feature1Desc'), href: '/dashboard/creative-studio/twin', live: true },
-    { icon: Mic, title: t('feature2Title'), desc: t('feature2Desc'), live: false },
-    { icon: Clapperboard, title: t('feature3Title'), desc: t('feature3Desc'), live: false },
+    { icon: Mic, title: t('feature2Title'), desc: t('feature2Desc'), href: '/dashboard/creative-studio/voice', live: true },
+    { icon: Clapperboard, title: t('feature3Title'), desc: t('feature3Desc'), href: '/dashboard/creative-studio/podcast', live: true },
+    { icon: Users, title: t('feature4Title'), desc: t('feature4Desc'), href: '/dashboard/creative-studio/cast', live: true },
+    { icon: ImageIcon, title: t('feature5Title'), desc: t('feature5Desc'), href: '/dashboard/creative-studio/post', live: true },
+    { icon: Film, title: t('feature6Title'), desc: t('feature6Desc'), href: '/dashboard/creative-studio/studio', live: true },
+    { icon: Video, title: t('feature7Title'), desc: t('feature7Desc'), href: '/dashboard/creative-studio/motion', live: true },
   ];
 
   return (

@@ -882,7 +882,7 @@
     "comingSoonBadge": "Coming soon",
     "liveBadge": "Live now",
     "heroTitle": "Your content studio is here",
-    "heroDesc": "Start with your digital twin — a visual identity trained on your own photos, the foundation for every scene/video you'll generate next. Voice cloning and video content are coming soon.",
+    "heroDesc": "Start with your digital twin — a visual identity trained on your own photos, the foundation for every tool below.",
     "twinCta": "Create Your Digital Twin",
     "feature1Title": "Digital Twin",
     "feature1Desc": "A visual identity trained on your own photos, representing you.",
@@ -890,6 +890,14 @@
     "feature2Desc": "Narrate any text you write in your own voice.",
     "feature3Title": "Video Content",
     "feature3Desc": "Generate short videos of yourself talking about and showcasing your business.",
+    "feature4Title": "Cast",
+    "feature4Desc": "Virtual characters generated from a description — no real face required.",
+    "feature5Title": "Brand Post",
+    "feature5Desc": "Turn a screen recording or a frame into an on-brand templated post.",
+    "feature6Title": "Post-Production",
+    "feature6Desc": "Add cutaways, overlays, and music to your videos and export in format.",
+    "feature7Title": "Motion",
+    "feature7Desc": "AI actor, anime, cinematic and trending videos — full-body motion.",
     "notifyHint": "We'll let you know when early access opens up."
   },
   "MediaUploader": {

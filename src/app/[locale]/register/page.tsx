@@ -26,7 +26,7 @@ export default function RegisterPage() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${nextPath}`,
+          emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${nextPath}`,
         }
       });
 
@@ -78,7 +78,7 @@ export default function RegisterPage() {
             const { error } = await supabase.auth.signInWithOAuth({
               provider: 'google',
               options: {
-                redirectTo: `${window.location.origin}/auth/callback?next=${nextPath}`,
+                redirectTo: `${window.location.origin}/api/auth/callback?next=${nextPath}`,
               },
             });
             if (error) setError(error.message);
