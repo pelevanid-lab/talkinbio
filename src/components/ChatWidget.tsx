@@ -36,6 +36,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const voiceGreetingPlayedRef = useRef(false);
 
   // Play audio response from TTS API
   const speakText = async (text: string) => {
@@ -255,6 +256,19 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
       scrollToBottom();
     }
   }, [messages, isExpanded]);
+
+  // Ses karşılaması: chat ilk açıldığında bir kez çal
+  useEffect(() => {
+    if (isExpanded && isVoiceEnabled && !voiceGreetingPlayedRef.current) {
+      voiceGreetingPlayedRef.current = true;
+      const greetingText =
+        sauleSettings?.voiceWelcomeMessage?.[locale as 'tr' | 'en' | 'ru'] ||
+        customGreeting?.[locale as 'tr' | 'en' | 'ru'] ||
+        t('welcome', { name: businessName });
+      speakText(greetingText);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isExpanded]);
 
   useEffect(() => {
     const handleSendToChat = (e: any) => {
