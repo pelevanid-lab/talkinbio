@@ -4,19 +4,12 @@ import { createClient as createServerSupabase } from '@/utils/supabase/server';
 
 export const maxDuration = 30;
 
-// Female voice mappings based on personality tone
-const FEMALE_VOICE_TONES: Record<string, { voice: string; stability: number; similarity_boost: number }> = {
-  friendly: { voice: 'Rachel', stability: 0.45, similarity_boost: 0.75 },  // Sıcak & Samimi
-  formal: { voice: 'Domino', stability: 0.75, similarity_boost: 0.85 },    // Resmi & Profesyonel
-  energetic: { voice: 'Bella', stability: 0.35, similarity_boost: 0.65 },  // Enerjik
-};
-
 // POST /api/chat/voice/speak
-// Body: JSON { text: string, businessId: string, preview?: boolean, tone?: string }
+// Body: JSON { text: string, businessId: string, preview?: boolean }
 // Returns: JSON { audioUrl: string }
 export async function POST(req: Request) {
   try {
-    const { text, businessId, preview, tone: requestTone } = await req.json();
+    const { text, businessId, preview } = await req.json();
 
     if (!text || !businessId) {
       return new Response('Missing text or businessId', { status: 400 });
@@ -27,42 +20,31 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    let activeTone = requestTone || 'friendly';
-
     if (preview) {
-      // For preview in dashboard, ensure user is authenticated
+      // Dashboard preview: only authenticated users
       const supabaseAuth = await createServerSupabase();
       const { data: { user } } = await supabaseAuth.auth.getUser();
       if (!user) {
         return new Response('Preview unauthorized', { status: 403 });
       }
     } else {
-      // For visitors, check visitor_session_id and voiceEnabled setting
+      // Visitor: must have session cookie + business voice enabled
       const cookieStore = await cookies();
       const visitorSessionId = cookieStore.get('visitor_session_id')?.value;
       if (!visitorSessionId) {
         return new Response('Missing visitor_session_id', { status: 401 });
       }
-
       const { data: business } = await supabaseAdmin
         .from('businesses')
         .select('saule_settings')
         .eq('id', businessId)
         .single();
-
       if (!business?.saule_settings?.voiceEnabled) {
         return new Response('Voice not enabled for this business', { status: 403 });
       }
-
-      if (business?.saule_settings?.personalityTone) {
-        activeTone = business.saule_settings.personalityTone;
-      }
     }
 
-    // Get female voice configuration based on KİŞİLİK & TON selection
-    const voiceConfig = FEMALE_VOICE_TONES[activeTone] || FEMALE_VOICE_TONES.friendly;
-
-    // Try fal.ai TTS endpoints (eleven-v3 -> turbo-v2.5)
+    // Call fal.ai ElevenLabs TTS — no voice name to avoid "Voice not found" errors
     const endpoints = [
       'https://fal.run/fal-ai/elevenlabs/tts/eleven-v3',
       'https://fal.run/fal-ai/elevenlabs/tts/turbo-v2.5',
@@ -79,18 +61,7 @@ export async function POST(req: Request) {
             Authorization: `Key ${process.env.FAL_KEY}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            text: text.slice(0, 4000),
-            voice: voiceConfig.voice,
-            stability: voiceConfig.stability,
-            similarity_boost: voiceConfig.similarity_boost,
-            input: {
-              text: text.slice(0, 4000),
-              voice: voiceConfig.voice,
-              stability: voiceConfig.stability,
-              similarity_boost: voiceConfig.similarity_boost,
-            },
-          }),
+          body: JSON.stringify({ text: text.slice(0, 4000) }),
         });
 
         if (falResponse.ok) {
@@ -99,7 +70,7 @@ export async function POST(req: Request) {
           if (audioUrl) break;
         } else {
           lastError = await falResponse.text();
-          console.warn(`fal.ai endpoint ${endpoint} failed:`, lastError);
+          console.warn(`fal.ai TTS endpoint ${endpoint} failed:`, lastError);
         }
       } catch (e) {
         console.warn(`Fetch error for ${endpoint}:`, e);
