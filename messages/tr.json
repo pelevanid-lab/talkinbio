@@ -180,7 +180,7 @@
       }
     },
     "heroTexts": {
-      "subtitle": "Biodaki link artık konuşuyor. <strong className=\"text-[var(--ink)] font-semibold\">İçerik üretiyor</strong>, <strong className=\"text-[var(--ink)] font-semibold\">soruları yanıtlıyor</strong>, talepleri alıp <strong className=\"text-[var(--ink)] font-semibold\">satışı kapatıyor</strong>.",
+      "subtitle": "Bio linkin artık konuşuyor. <strong className=\"text-[var(--ink)] font-semibold\">İçerik üretiyor</strong>, <strong className=\"text-[var(--ink)] font-semibold\">soruları yanıtlıyor</strong>, talepleri alıp <strong className=\"text-[var(--ink)] font-semibold\">satışı kapatıyor</strong>.",
       "btnEarly": "Erken erişim",
       "btnHow": "Nasıl çalışır?",
       "btnPricing": "Fiyatlandırma"
