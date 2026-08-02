@@ -90,10 +90,7 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
   const shortcuts = resolveShortcuts(blocks);
   const c = resolveThemeColors(resolvedTheme);
 
-  // Yeni profil-başlığı özellikleri yalnız blog (linktree liste) görünümünde. Web sitesi modunda
-  // veya bir blok açık (detay) iken minimal başlık gösterilir.
-  const layoutMode = blocks.find((b) => b?.type === 'settings')?.content?.layoutMode || 'linktree';
-  const minimalHeader = layoutMode === 'website' || activeBlockId != null;
+  const minimalHeader = activeBlockId != null;
 
   return (
     <>

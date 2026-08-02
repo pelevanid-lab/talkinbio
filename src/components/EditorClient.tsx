@@ -559,33 +559,6 @@ export default function EditorClient({
     }
   };
 
-  const handleLayoutModeChange = async (mode: 'website' | 'linktree') => {
-    const settingsBlock = blocks.find(b => b.type === 'settings');
-    try {
-      // 'settings' isn't one of the singleton-key block types (00008_fix_blocks_singleton_constraint.sql),
-      // so there's no unique constraint an upsert's onConflict can target — select-then-write instead.
-      const { data, error } = settingsBlock
-        ? await supabase.from('blocks').update({
-            content: { ...settingsBlock.content, layoutMode: mode },
-          }).eq('id', settingsBlock.id).select().single()
-        : await supabase.from('blocks').insert({
-            business_id: business.id,
-            type: 'settings',
-            title: 'Settings',
-            content: { layoutMode: mode },
-            order: 99,
-            is_visible: false,
-          }).select().single();
-      if (error) throw error;
-      setBlocks(settingsBlock ? blocks.map(b => b.id === settingsBlock.id ? data : b) : [...blocks, data]);
-      await markNeedsRepublish();
-      await archiveCurrentAndNewSession();
-    } catch (err) {
-      console.error(err);
-      alert(t('layoutSaveError'));
-    }
-  };
-
   const handlePageTitleSave = async () => {
     const trimmed = pageTitle.trim();
     const { error } = await supabase.from('businesses').update({ page_title: trimmed || null }).eq('id', business.id);
@@ -1620,27 +1593,6 @@ export default function EditorClient({
                 )}
               </div>
 
-              <div className="mb-6 p-4 bg-white rounded-xl shadow-sm border border-slate-200">
-                <h3 className="text-sm font-bold text-[var(--ink)] mb-3">{t('pageLayout')}</h3>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleLayoutModeChange('website')}
-                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border ${blocks.find(b => b.type === 'settings')?.content?.layoutMode === 'website' ? 'bg-[var(--coral)] text-white border-[var(--coral)]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
-                  >
-                    {t('layoutWebsite')}
-                  </button>
-                  <button
-                    onClick={() => handleLayoutModeChange('linktree')}
-                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border ${blocks.find(b => b.type === 'settings')?.content?.layoutMode !== 'website' ? 'bg-[var(--coral)] text-white border-[var(--coral)]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
-                  >
-                    {t('layoutLinktree')}
-                  </button>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-2">
-                  {t('layoutDescription')}
-                </p>
-              </div>
-
               <h3 className="font-medium text-[var(--ink)]">{t('manualTitle')}</h3>
               <p className="text-xs text-slate-500 mb-4">{t('manualDesc')}</p>
               
@@ -1740,7 +1692,7 @@ export default function EditorClient({
                 topRight={<div className="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center text-[10px] text-slate-500 font-medium bg-white/50 backdrop-blur-sm shadow-sm uppercase shrink-0">{locale}</div>}
                 shortcuts={resolveShortcuts(blocks)}
                 onShortcutSelect={setPreviewActiveBlockId}
-                minimal={(blocks.find(b => b.type === 'settings')?.content?.layoutMode === 'website') || previewActiveBlockId != null}
+                minimal={previewActiveBlockId != null}
               />
             </div>
 

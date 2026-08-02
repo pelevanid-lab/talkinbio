@@ -1097,11 +1097,6 @@ export default function ArchetypeRenderer({
 
   const theme = themeProp || DEFAULT_THEME;
 
-  const layoutMode = useMemo(() => {
-    const settingsBlock = blocks.find(b => b.type === 'settings');
-    return settingsBlock?.content?.layoutMode || 'linktree';
-  }, [blocks]);
-
   const radiusClass = useMemo(() => {
     switch (theme.borderRadius) {
       case 'none': return 'rounded-none';
@@ -1247,7 +1242,7 @@ export default function ArchetypeRenderer({
       `}</style>
 
       <div className="flex flex-col gap-10">
-        {layoutMode === 'linktree' && !activeBlockId && (
+        {!activeBlockId && (
           <div className="flex flex-col gap-3 mt-2">
             {visibleBlocks.map(block => {
               const blockTitle = blockTitleOf(block, locale);
@@ -1288,7 +1283,7 @@ export default function ArchetypeRenderer({
           </div>
         )}
 
-        {(layoutMode === 'website' || activeBlockId) && (
+        {activeBlockId && (
           <div className={`flex flex-col ${sectionGapClass}`}>
             {visibleBlocks.map(block => (
               <div
