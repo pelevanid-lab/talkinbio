@@ -42,24 +42,6 @@ export default function InstagramDMSection({ copy }: any) {
 
             <p className="text-xs text-[var(--muted)]">{copy.note}</p>
           </div>
-
-          <div className="bg-[var(--paper)] border border-[var(--border)] rounded-[32px] p-5 md:p-8 shadow-sm">
-            <div className="bg-white rounded-[24px] border border-[var(--border)] p-5 mb-5">
-              <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-2">Instagram DM</p>
-              <p className="text-lg font-bold text-[var(--ink)]">{copy.exampleQuestion}</p>
-            </div>
-            <div className="bg-[#EAF8F4] rounded-[24px] border border-[#BFE9DD] p-5 mb-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-[var(--teal-deep)] mb-2">{copy.readyLabel}</p>
-              <p className="text-[var(--ink-soft)]">{copy.exampleReply}</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
-              {copy.steps.map((step: string) => (
-                <div key={step} className="rounded-2xl bg-white border border-[var(--border)] p-3 text-center text-xs font-bold text-[var(--ink)]">
-                  {step}
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </section>
