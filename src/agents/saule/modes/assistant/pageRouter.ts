@@ -1,5 +1,5 @@
 import type { PageActionBlockTarget } from '@/utils/pageActionTargets';
-import { formatSauleCueMarker, type SauleCueKey } from './core';
+import { formatSauleCueMarker, type SauleCueKey } from '@/agents/saule/core';
 
 export type PageRouteMatch = {
   blockId: string;

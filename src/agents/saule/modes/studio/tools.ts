@@ -5,7 +5,7 @@ import { LOCALE_TITLES, type LocaleKey } from '@/config/localeTitles';
 import { mergeLocaleTranslations, type BlockLocaleText, type SyncableBlockType } from './localeSync';
 import { scrapeUrlTool } from './scrapeUrl';
 
-export type BeiweToolParams = {
+export type SauleStudioToolParams = {
   supabase: SupabaseClient;
   businessId: string;
   locale: string;
@@ -58,7 +58,7 @@ function titleForLocale(titles: SectionTitles, locale: string): string {
 
 const SECTION_TITLE_DESC = "Kullanıcı bu bölüm için varsayılan yerine özel bir başlık istediyse, o başlığın ÜÇ DİLDEKİ karşılıklarını ver — her dile çevir (ör. {tr: 'Merhaba', en: 'Hello', ru: 'Привет'}); kullanıcı açıkça aynı kelimeyi her dilde istiyorsa üçüne de aynı kelimeyi yaz. Belirtilmezse mevcut başlıklar dil bazında aynen korunur.";
 
-export function setThemeTool({ supabase, businessId }: BeiweToolParams) {
+export function setThemeTool({ supabase, businessId }: SauleStudioToolParams) {
   return tool({
     description: "İşletmeye özgün bir renk paleti + Google Font çifti tasarlar. 11 sabit temadan biri DEĞİL, senin o işletmeye özel ürettiğin bir kombinasyon.",
     inputSchema: z.object({
@@ -86,7 +86,7 @@ export function setThemeTool({ supabase, businessId }: BeiweToolParams) {
   });
 }
 
-export function updateAboutTool({ supabase, businessId, locale }: BeiweToolParams) {
+export function updateAboutTool({ supabase, businessId, locale }: SauleStudioToolParams) {
   return tool({
     description: 'Hakkında (About) bloğunu günceller veya oluşturur. Metinleri 3 dilde sağlamalısın.',
     inputSchema: z.object({
@@ -133,7 +133,7 @@ export function updateAboutTool({ supabase, businessId, locale }: BeiweToolParam
   });
 }
 
-export function addServicesTool({ supabase, businessId, locale }: BeiweToolParams) {
+export function addServicesTool({ supabase, businessId, locale }: SauleStudioToolParams) {
   return tool({
     description: 'Yeni hizmetleri (services) ekler. Metinleri 3 dilde sağlamalısın.',
     inputSchema: z.object({
@@ -179,7 +179,7 @@ export function addServicesTool({ supabase, businessId, locale }: BeiweToolParam
   });
 }
 
-export function addLinksTool({ supabase, businessId, locale }: BeiweToolParams) {
+export function addLinksTool({ supabase, businessId, locale }: SauleStudioToolParams) {
   return tool({
     description: "İşletmenin sosyal medya veya iletişim linklerini ekler.",
     inputSchema: z.object({
@@ -217,7 +217,7 @@ export function addLinksTool({ supabase, businessId, locale }: BeiweToolParams) 
   });
 }
 
-export function addGalleryTool({ supabase, businessId }: BeiweToolParams) {
+export function addGalleryTool({ supabase, businessId }: SauleStudioToolParams) {
   return tool({
     description: "Galeriyi oluşturur. Altyazıları (caption) 3 dilde yazmalısın.",
     inputSchema: z.object({
@@ -257,7 +257,7 @@ export function addGalleryTool({ supabase, businessId }: BeiweToolParams) {
   });
 }
 
-export function addTestimonialsTool({ supabase, businessId }: BeiweToolParams) {
+export function addTestimonialsTool({ supabase, businessId }: SauleStudioToolParams) {
   return tool({
     description: "Müşteri yorumlarını (Testimonials) ekler. Yorumları 3 dilde sağlamalısın.",
     inputSchema: z.object({
@@ -306,7 +306,7 @@ export function addTestimonialsTool({ supabase, businessId }: BeiweToolParams) {
   });
 }
 
-export function addHoursTool({ supabase, businessId, locale }: BeiweToolParams) {
+export function addHoursTool({ supabase, businessId, locale }: SauleStudioToolParams) {
   return tool({
     description: "İşletmenin haftalık çalışma saatlerini oluşturur veya günceller.",
     inputSchema: z.object({
@@ -346,7 +346,7 @@ export function addHoursTool({ supabase, businessId, locale }: BeiweToolParams) 
   });
 }
 
-export function addFAQTool({ supabase, businessId, locale }: BeiweToolParams) {
+export function addFAQTool({ supabase, businessId, locale }: SauleStudioToolParams) {
   return tool({
     description: "Sıkça sorulan soruları (FAQ) ekler. Soru ve cevapları 3 dilde sağlamalısın.",
     inputSchema: z.object({
@@ -396,7 +396,7 @@ export function addFAQTool({ supabase, businessId, locale }: BeiweToolParams) {
 // kısıtı — 00007/00008 migration'ları). Bu araç bunlardan biri DEĞİL: kullanıcı mevcut bir bölümü
 // değiştirmek yerine tamamen YENİ, ek bir bölüm istediğinde (ör. "Yaklaşım ve Deneyim", "Misyonumuz")
 // çağrılır — 'custom' tipinde, singleton kısıtı olmayan, birden fazlası olabilen yeni bir satır ekler.
-export function addSectionTool({ supabase, businessId, locale }: BeiweToolParams) {
+export function addSectionTool({ supabase, businessId, locale }: SauleStudioToolParams) {
   const INSERT_AFTER_TYPES = ['about', 'services', 'hours', 'links', 'gallery', 'testimonials', 'faq'] as const;
   return tool({
     description: "Sayfaya TAMAMEN YENİ, ayrı bir bölüm ekler (ör. 'Yaklaşım ve Deneyim', 'Misyonumuz', 'Sertifikalar'). SADECE kullanıcı mevcut sabit bölümlerden (Hakkımda/Hizmetler/Çalışma Saatleri/Bağlantılar/Galeri/Yorumlar/SSS) hiçbirine uymayan, gerçekten yeni ve ayrı bir bölüm istediğinde kullan. Kullanıcı var olan bir bölümü DÜZENLEMEK/GENİŞLETMEK isterse bu aracı KULLANMA — o bölümün kendi aracını (updateAbout, addServices, vb.) çağır; aksi halde o bölümün mevcut içeriğini SİLERSİN.",
@@ -463,7 +463,7 @@ export function addSectionTool({ supabase, businessId, locale }: BeiweToolParams
 // add* araçlarından farkı: onlar item EKLER (kopya oluşturur); bu araç mevcut içeriği YERİNDE
 // günceller — sadece hedef dillerin metnini yazar, kaynak dili ve metin-dışı alanları (fiyat,
 // görsel, yazar, schedule, layoutVariant) olduğu gibi korur (bkz. localeSync.mergeLocaleTranslations).
-export function syncBlockLanguagesTool({ supabase, businessId, locale }: BeiweToolParams) {
+export function syncBlockLanguagesTool({ supabase, businessId, locale }: SauleStudioToolParams) {
   return tool({
     description: "Var olan bir bölümün metinlerini diller arasında EŞİTLER. Kullanıcı bir bölümü tek dilde (editörde elle) düzenleyip 'şu bölümü şu dilde güncelledim, diğer dillere de eşitle/çevir' dediğinde bunu kullan. Kaynak dili aynen korur, SADECE istenen hedef dilleri günceller — item eklemez, kopya oluşturmaz. Yeni içerik EKLEMEK için bu aracı KULLANMA; o zaman ilgili add/update aracını kullan.",
     inputSchema: z.object({
@@ -509,7 +509,7 @@ export function syncBlockLanguagesTool({ supabase, businessId, locale }: BeiweTo
   });
 }
 
-export function updateContactTool({ supabase, businessId }: BeiweToolParams) {
+export function updateContactTool({ supabase, businessId }: SauleStudioToolParams) {
   return tool({
     description: "İşletmenin iletişim yöntemlerini (WhatsApp/Telefon, Instagram, e-posta, Telegram) günceller. Bu bir blok değil, işletmenin genel ayarıdır.",
     inputSchema: z.object({
@@ -538,7 +538,7 @@ export function updateContactTool({ supabase, businessId }: BeiweToolParams) {
   });
 }
 
-export function createBeiweTools(params: BeiweToolParams) {
+export function createSauleStudioTools(params: SauleStudioToolParams) {
   return {
     setTheme: setThemeTool(params),
     updateAbout: updateAboutTool(params),

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { runSauleTurn } from '@/agents/saule/run';
+import { runSauleTurn } from '@/agents/saule/modes/assistant/assistantRun';
 
 // 1. Meta'nın Webhook'u doğrulama (Verification) işlemi
 export async function GET(request: Request) {

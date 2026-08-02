@@ -6,8 +6,11 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 // kod değişikliği gerekmeden kalibre edilebilsin diye.
 export const SAULE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE) || 1;
 export const SAULE_VOICE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_VOICE) || 5;
-export const BEIWE_UPDATE_CREDIT_COST = Number(process.env.CREDIT_COST_BEIWE_UPDATE) || 6;
-export const BEIWE_INSTALL_CREDIT_COST = Number(process.env.CREDIT_COST_BEIWE_INSTALL) || 10;
+export const SAULE_STUDIO_UPDATE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_STUDIO_UPDATE) || 6;
+export const SAULE_STUDIO_INSTALL_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_STUDIO_INSTALL) || 10;
+// Deprecated: use SAULE_STUDIO_* instead
+export const BEIWE_UPDATE_CREDIT_COST = SAULE_STUDIO_UPDATE_CREDIT_COST;
+export const BEIWE_INSTALL_CREDIT_COST = SAULE_STUDIO_INSTALL_CREDIT_COST;
 export const CUE_PACK_STANDARD_CREDIT_COST = Number(process.env.CREDIT_COST_CUE_PACK_STANDARD) || 2;
 export const CUE_PACK_CUSTOM_CREDIT_COST = Number(process.env.CREDIT_COST_CUE_PACK_CUSTOM) || 6;
 
@@ -33,9 +36,9 @@ export const CREDIT_COST_MENU = [
     },
   },
   {
-    id: 'beiwe_update',
-    agent: 'beiwe',
-    credits: BEIWE_UPDATE_CREDIT_COST,
+    id: 'saule_studio_update',
+    agent: 'saule',
+    credits: SAULE_STUDIO_UPDATE_CREDIT_COST,
     label: {
       tr: 'Tek alanı AI ile güncelleme',
       en: 'Update one field with AI',
@@ -43,9 +46,9 @@ export const CREDIT_COST_MENU = [
     },
   },
   {
-    id: 'beiwe_install',
-    agent: 'beiwe',
-    credits: BEIWE_INSTALL_CREDIT_COST,
+    id: 'saule_studio_install',
+    agent: 'saule',
+    credits: SAULE_STUDIO_INSTALL_CREDIT_COST,
     label: {
       tr: 'Çok bölümlü sayfa kurulumu',
       en: 'Build a multi-section page',
@@ -75,14 +78,17 @@ export const CREDIT_COST_MENU = [
 ] as const;
 
 /**
- * O turda çağrılan Beiwe araç sayısına göre kredi maliyeti: tek alan
+ * O turda çağrılan Saule (Studio mode) araç sayısına göre kredi maliyeti: tek alan
  * güncellemesi (1 araç) vs. çoklu/bulk kurulum (2+ araç). Değişiklik
  * yoksa (0 araç, salt sohbet) ücretsiz.
  */
-export function beiweCreditCost(toolCallCount: number): number {
+export function sauleCreditCost(toolCallCount: number): number {
   if (toolCallCount <= 0) return 0;
-  return toolCallCount === 1 ? BEIWE_UPDATE_CREDIT_COST : BEIWE_INSTALL_CREDIT_COST;
+  return toolCallCount === 1 ? SAULE_STUDIO_UPDATE_CREDIT_COST : SAULE_STUDIO_INSTALL_CREDIT_COST;
 }
+
+// Deprecated: use sauleCreditCost instead
+export const beiweCreditCost = sauleCreditCost;
 
 export function hasCredits(business: { credit_balance: number }): boolean {
   return business.credit_balance > 0;

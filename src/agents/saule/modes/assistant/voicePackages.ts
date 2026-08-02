@@ -1,4 +1,4 @@
-import { SAULE_CUE_KEYS, type SauleCueKey } from './core';
+import { SAULE_CUE_KEYS, type SauleCueKey } from '@/agents/saule/core';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 
 export type SauleCueManifest = Partial<Record<SauleCueKey, Partial<Record<'tr' | 'en' | 'ru', string>>>>;

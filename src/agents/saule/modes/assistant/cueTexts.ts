@@ -1,4 +1,4 @@
-import type { SauleCueKey } from './core';
+import type { SauleCueKey } from '@/agents/saule/core';
 
 export const SAULE_CUE_TEXTS: Record<SauleCueKey, Record<'tr' | 'en' | 'ru', string>> = {
   welcome: {

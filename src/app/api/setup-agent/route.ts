@@ -1,12 +1,12 @@
 import { streamText, isStepCount, convertToModelMessages, createUIMessageStreamResponse, toUIMessageStream } from 'ai';
 import { createClient } from '@supabase/supabase-js';
 import { getModel } from '@/utils/ai';
-import { buildBeiweStaticPrompt, buildBeiweDynamicContext, buildReadinessSummary } from '@/agents/beiwe/prompt';
-import { createBeiweTools } from '@/agents/beiwe/tools';
+import { buildSauleStudioStaticPrompt, buildSauleStudioDynamicContext, buildReadinessSummary } from '@/agents/saule/modes/studio/prompt';
+import { createSauleStudioTools } from '@/agents/saule/modes/studio/tools';
 import { getUIMessageText } from '@/agents/shared/uiMessages';
-import { BEIWE_MAX_INPUT_CHARS, BEIWE_HISTORY_WINDOW } from '@/agents/shared/limits';
+import { SAULE_STUDIO_MAX_INPUT_CHARS, SAULE_HISTORY_WINDOW } from '@/agents/shared/limits';
 import { recordUsageEvent } from '@/agents/shared/usage';
-import { beiweCreditCost, deductCredits } from '@/agents/shared/credits';
+import { sauleCreditCost, deductCredits } from '@/agents/shared/credits';
 
 // Large pastes (e.g. a business owner dropping in several long service descriptions at once,
 // each needing translation into 3 languages) can take the model well past a minute to finish
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     // Persist the conversation so returning to this tab (or reloading the page) doesn't lose context.
     const lastUserMessage = messages[messages.length - 1];
     const lastUserText = getUIMessageText(lastUserMessage);
-    if (lastUserMessage && lastUserMessage.role === 'user' && lastUserText.length > BEIWE_MAX_INPUT_CHARS) {
+    if (lastUserMessage && lastUserMessage.role === 'user' && lastUserText.length > SAULE_STUDIO_MAX_INPUT_CHARS) {
       return new Response('Message too long', { status: 400 });
     }
     if (lastUserMessage && lastUserMessage.role === 'user') {
@@ -83,8 +83,8 @@ export async function POST(req: Request) {
     // sabit) ayrı bir cache'lenmiş system mesajı; mevcut bloklar/tema/yayına hazırlık durumu
     // (hemen her turda değişir) ayrı, cache'siz bir kuyruk mesajı — ikisi TEK bir metinde
     // birleştirilirse blok değişikliği her turda ~18-19K token'lık tüm cache'i bozuyordu.
-    const staticPrompt = buildBeiweStaticPrompt({ business: business || null, locale: currentLocale });
-    const dynamicContext = buildBeiweDynamicContext({ business: business || null, blocks: blockList, readinessSummary });
+    const staticPrompt = buildSauleStudioStaticPrompt({ business: business || null, locale: currentLocale });
+    const dynamicContext = buildSauleStudioDynamicContext({ business: business || null, blocks: blockList, readinessSummary });
 
     // Unlike Saule (DB-side HISTORY_WINDOW, shared/history.ts), Beiwe had no cap at all —
     // the client's full session transcript was resent, in full, on every single turn, so a
@@ -92,7 +92,7 @@ export async function POST(req: Request) {
     // UIMessage here is one self-contained role turn (a tool call + its result live together
     // as parts of the SAME assistant message, not as separate array entries), so slicing by
     // count can't split a tool call from its result.
-    const recentMessages = messages.length > BEIWE_HISTORY_WINDOW ? messages.slice(-BEIWE_HISTORY_WINDOW) : messages;
+    const recentMessages = messages.length > SAULE_HISTORY_WINDOW ? messages.slice(-SAULE_HISTORY_WINDOW) : messages;
 
     const modelMessages = [
       { role: 'system' as const, content: staticPrompt, providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' as const } } } },
@@ -101,7 +101,7 @@ export async function POST(req: Request) {
     ];
 
     const result = await streamText({
-      model: getModel('beiwe'),
+      model: getModel('saule'),
       stopWhen: isStepCount(20),
       // Faz: A single tool call (e.g. addSection with a long product description + full
       // ingredient list, repeated across tr/en/ru) can run well past 8192 output tokens on
@@ -110,10 +110,10 @@ export async function POST(req: Request) {
       maxOutputTokens: 32000,
       allowSystemInMessages: true,
       messages: modelMessages,
-      tools: createBeiweTools({ supabase, businessId, locale: currentLocale }),
+      tools: createSauleStudioTools({ supabase, businessId, locale: currentLocale }),
       onFinish: async ({ text, toolCalls, usage, model }) => {
-        const creditsCharged = beiweCreditCost(toolCalls.length);
-        await recordUsageEvent(supabase, { businessId, agent: 'beiwe', channel: 'web', model: model.modelId, usage, creditsCharged });
+        const creditsCharged = sauleCreditCost(toolCalls.length);
+        await recordUsageEvent(supabase, { businessId, agent: 'saule', channel: 'web', model: model.modelId, usage, creditsCharged });
         await deductCredits(supabase, businessId, creditsCharged);
         if (text) {
           await supabase.from('setup_sessions').upsert({

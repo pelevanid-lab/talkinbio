@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createUIMessageStreamResponse, toUIMessageStream } from 'ai';
 import { cookies } from 'next/headers';
 import { createClient as createServerSupabase } from '@/utils/supabase/server';
-import { runSauleTurn } from '@/agents/saule/run';
+import { runSauleTurn } from '@/agents/saule/modes/assistant/assistantRun';
 import { AgentTurnError } from '@/agents/shared/errors';
 import { getUIMessageText } from '@/agents/shared/uiMessages';
 import { SAULE_MAX_INPUT_CHARS } from '@/agents/shared/limits';

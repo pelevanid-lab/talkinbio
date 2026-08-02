@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { isSauleCueKey } from '@/agents/saule/core';
-import { getSauleCueText } from '@/agents/saule/cueTexts';
+import { getSauleCueText } from '@/agents/saule/modes/assistant/cueTexts';
 
 const LOCALES = new Set(['tr', 'en', 'ru']);
 

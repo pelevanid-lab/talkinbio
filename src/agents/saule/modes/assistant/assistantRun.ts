@@ -10,13 +10,13 @@ import { checkShortTermFlood, checkSessionOpenRateLimit, checkBusinessDailyCap, 
 import { recordUsageEvent } from '@/agents/shared/usage';
 import { notifyAdmin } from '@/agents/shared/notifyAdmin';
 import { hasCredits, deductCredits, creditsExhaustedPayload, SAULE_CREDIT_COST } from '@/agents/shared/credits';
-import { buildSaulePrompt, parseContactInfo } from './prompt';
-import { captureLeadTool, captureAccessRequestTool } from './tools';
+import { buildSaulePrompt, parseContactInfo } from './assistantPrompt';
+import { captureLeadTool, captureAccessRequestTool } from './assistantTools';
 import { filterBlocksToLocale } from './localeFilter';
 import { findPageRouteMatch, formatPageAction } from './pageRouter';
 import { getPageActionTargets, withContactPageActionTarget } from '@/utils/pageActionTargets';
 import { isEditorSystemBlock, resolvePublishedRuntimeData } from '@/utils/publishedSnapshot';
-import { buildSauleRuntimeProfile, createSauleStaticTurn } from './core';
+import { buildSauleRuntimeProfile, createSauleStaticTurn } from '@/agents/saule/core';
 
 type SaulePromptBlock = { id?: string; title: string; type: string; content: unknown; is_visible?: boolean };
 

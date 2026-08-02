@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
-import { parseContactInfo } from '@/agents/saule/prompt';
-import { insertLeadAndNotify } from '@/agents/saule/tools';
+import { parseContactInfo } from '@/agents/saule/modes/assistant/assistantPrompt';
+import { insertLeadAndNotify } from '@/agents/saule/modes/assistant/assistantTools';
 
 // Faz 4.3: kredi bitince ChatWidget'ın düştüğü "fiili ücretsiz katman" —
 // LLM çağırmadan doğrudan bir lead bırakma formu. Kredi/hız limiti kontrolü

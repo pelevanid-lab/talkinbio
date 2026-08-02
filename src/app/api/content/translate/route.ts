@@ -9,10 +9,10 @@ import {
   mergeLocaleTranslations,
   isSyncableType,
   type BlockLocaleText,
-} from '@/agents/beiwe/localeSync';
+} from '@/agents/saule/modes/studio/localeSync';
 import { LOCALE_KEYS, type LocaleKey } from '@/config/localeTitles';
 import { recordUsageEvent } from '@/agents/shared/usage';
-import { deductCredits, BEIWE_UPDATE_CREDIT_COST } from '@/agents/shared/credits';
+import { deductCredits, SAULE_STUDIO_UPDATE_CREDIT_COST } from '@/agents/shared/credits';
 
 // A translation of several list items into 2 languages can run past the default budget; give it room.
 export const maxDuration = 60;
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
   const { system, prompt } = buildTranslatePrompt({ type, sourceLocale, targetLocales: targets, source });
 
   try {
-    const { text, usage, model } = await generateOnce({ task: 'beiwe', system, prompt });
+    const { text, usage, model } = await generateOnce({ task: 'saule', system, prompt });
     const parsed = parseJsonResult<Record<string, BlockLocaleText>>(text);
 
     const byLocale: Partial<Record<LocaleKey, BlockLocaleText>> = {};
@@ -69,8 +69,8 @@ export async function POST(req: Request) {
 
     const merged = mergeLocaleTranslations(type, content, byLocale);
 
-    await recordUsageEvent(supabaseAdmin, { businessId, agent: 'beiwe', channel: 'web', model, usage, creditsCharged: BEIWE_UPDATE_CREDIT_COST });
-    await deductCredits(supabaseAdmin, businessId, BEIWE_UPDATE_CREDIT_COST);
+    await recordUsageEvent(supabaseAdmin, { businessId, agent: 'saule', channel: 'web', model, usage, creditsCharged: SAULE_STUDIO_UPDATE_CREDIT_COST });
+    await deductCredits(supabaseAdmin, businessId, SAULE_STUDIO_UPDATE_CREDIT_COST);
 
     return NextResponse.json({ content: merged, syncedLocales: Object.keys(byLocale) });
   } catch (err) {

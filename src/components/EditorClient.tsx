@@ -17,7 +17,7 @@ import { useChat, UIMessage } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useTranslations, useLocale } from 'next-intl';
 import { RECOMMENDED_TYPES, hasRealContent, isRequiredSatisfied } from '@/config/blockTypes';
-import { extractLocaleText, isSyncableType, type SyncableBlockType, type BlockLocaleText } from '@/agents/beiwe/localeSync';
+import { extractLocaleText, isSyncableType, type SyncableBlockType, type BlockLocaleText } from '@/agents/saule/modes/studio/localeSync';
 import type { LocaleKey } from '@/config/localeTitles';
 import { DEFAULT_THEME, Theme, resolveAccentFill, resolvePageCanvases, resolveThemeColors } from '@/config/archetypes';
 import { avatarFromBlocks } from '@/utils/avatarFromBlocks';

@@ -3,7 +3,7 @@ import { createClient as createServerSupabase } from '@/utils/supabase/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { generateOnce } from '@/agents/shared/generateOnce';
 import { parseJsonResult } from '@/agents/shared/parseJsonResult';
-import { buildContentPrompt, type ContentFormat, type ContentSource } from '@/agents/beiwe/contentPrompt';
+import { buildContentPrompt, type ContentFormat, type ContentSource } from '@/agents/saule/modes/studio/contentPrompt';
 
 const VALID_FORMATS: ContentFormat[] = ['instagram_post', 'instagram_story', 'whatsapp_status'];
 const VALID_SOURCE_TYPES = ['service', 'gallery', 'testimonial', 'general'];
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
   });
 
   try {
-    const { text } = await generateOnce({ task: 'beiwe', system, prompt });
+    const { text } = await generateOnce({ task: 'saule', system, prompt });
     const result = parseJsonResult<ContentResult>(text);
     if (!result?.tr?.caption || !result?.en?.caption || !result?.ru?.caption) {
       return NextResponse.json({ error: 'İçerik üretilemedi, lütfen tekrar deneyin.' }, { status: 502 });

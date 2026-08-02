@@ -11,7 +11,7 @@ import { googleFontsHref } from '@/utils/googleFonts';
 import { isConversationActive } from '@/utils/conversationWindow';
 import { getPageActionTargets, withContactPageActionTarget } from '@/utils/pageActionTargets';
 import { resolvePublishedRuntimeData } from '@/utils/publishedSnapshot';
-import { getActiveSauleCueManifest } from '@/agents/saule/voicePackages';
+import { getActiveSauleCueManifest } from '@/agents/saule/modes/assistant/voicePackages';
 
 // Her ziyarette taze saule_settings (voiceEnabled dahil) çekilsin
 export const dynamic = 'force-dynamic';

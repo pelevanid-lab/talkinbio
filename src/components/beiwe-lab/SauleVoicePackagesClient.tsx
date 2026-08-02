@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { CheckCircle2, Circle, Upload, Volume2 } from 'lucide-react';
 import { SAULE_CUE_KEYS, type SauleCueKey } from '@/agents/saule/core';
-import { getSauleCueText } from '@/agents/saule/cueTexts';
+import { getSauleCueText } from '@/agents/saule/modes/assistant/cueTexts';
 
 type CueRow = {
   id: string;

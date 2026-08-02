@@ -3,17 +3,21 @@
 // cömert tutulur; asıl amaç kötü niyetli 3. tarafları LLM çağırmadan durdurmak.
 
 export const SAULE_MAX_INPUT_CHARS = 2000;
-export const BEIWE_MAX_INPUT_CHARS = 50000;
+export const SAULE_STUDIO_MAX_INPUT_CHARS = 50000;
+// Deprecated: use SAULE_STUDIO_MAX_INPUT_CHARS
+export const BEIWE_MAX_INPUT_CHARS = SAULE_STUDIO_MAX_INPUT_CHARS;
 
 // Oturum içi mesaj tavanı (soft) — dolunca sert blokaj değil, "yeni sohbet" daveti.
 export const SESSION_MESSAGE_CAP = 50;
 export const SAULE_VOICE_MAX_SECONDS = 8 * 60;
 
-// Beiwe modele giden geçmişin penceresi — Saule'nin HISTORY_WINDOW'uyla aynı fikir
-// (bkz. shared/history.ts), ama Beiwe DB'den değil doğrudan istemcinin gönderdiği
+// Saule (Studio mode) modele giden geçmişin penceresi — Saule visitor HISTORY_WINDOW'uyla aynı fikir
+// (bkz. shared/history.ts), ama Studio DB'den değil doğrudan istemcinin gönderdiği
 // UIMessage dizisinden kırpıyor: sınır olmadan her tur o session'ın TÜM geçmişi
 // yeniden modele gönderiliyordu, konuşma uzadıkça tur başına maliyet sürekli artıyordu.
-export const BEIWE_HISTORY_WINDOW = 30;
+export const SAULE_HISTORY_WINDOW = 30;
+// Deprecated: use SAULE_HISTORY_WINDOW
+export const BEIWE_HISTORY_WINDOW = SAULE_HISTORY_WINDOW;
 
 // Oturum açma hızı sınırı (asıl kalkan) — ziyaretçi başına saatte kaç yeni oturum.
 export const SESSION_OPEN_RATE_LIMIT = 4;

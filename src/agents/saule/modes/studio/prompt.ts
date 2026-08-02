@@ -3,9 +3,9 @@ import { REQUIRED_TYPES, RECOMMENDED_TYPES, hasRealContent } from '@/config/bloc
 
 export { LOCALE_TITLES, getLocaleTitles } from '@/config/localeTitles';
 
-export type BeiweBlock = { type: string; content?: unknown };
+export type SauleBlock = { type: string; content?: unknown };
 
-export function buildReadinessSummary(blocks: BeiweBlock[], hasContact: boolean): string {
+export function buildReadinessSummary(blocks: SauleBlock[], hasContact: boolean): string {
   const missingRequired = REQUIRED_TYPES.filter((type) => !blocks.some((b) => b.type === type && hasRealContent(b)));
   const missingRecommended = RECOMMENDED_TYPES.filter((type) => !blocks.some((b) => b.type === type && hasRealContent(b)));
   return [
@@ -14,14 +14,14 @@ export function buildReadinessSummary(blocks: BeiweBlock[], hasContact: boolean)
   ].join('\n');
 }
 
-export type BuildBeiweStaticPromptParams = {
+export type BuildSauleStudioStaticPromptParams = {
   business: { category: string | null } | null;
   locale: string;
 };
 
-export type BuildBeiweDynamicContextParams = {
+export type BuildSauleStudioDynamicContextParams = {
   business: { theme: unknown } | null;
-  blocks: BeiweBlock[];
+  blocks: SauleBlock[];
   readinessSummary: string;
 };
 
@@ -33,7 +33,7 @@ export type BuildBeiweDynamicContextParams = {
 // çağrıda değişiyordu — aynı cache bloğunun içindeyken bu, ~18-19K token'lık TÜM promptun
 // cache'ini her turda bozuyordu (ölçülen hit rate ~%26). Onları ayrı, cache'siz bir kuyruk
 // mesajına taşımak statik kısmın cache'ini tur boyunca sağlam tutar.
-export function buildBeiweStaticPrompt({ business, locale }: BuildBeiweStaticPromptParams): string {
+export function buildSauleStudioStaticPrompt({ business, locale }: BuildSauleStudioStaticPromptParams): string {
   const sectorProfile = matchSectorProfile(business?.category ?? undefined);
   const sectorGuidance = sectorProfile
     ? `Bu işletmenin kategorisi ("${business?.category}") "${sectorProfile.id}" sektör profiliyle eşleşiyor:\n` +
@@ -44,9 +44,9 @@ export function buildBeiweStaticPrompt({ business, locale }: BuildBeiweStaticPro
     : `Bu işletmenin kategorisi ("${business?.category || 'belirtilmedi'}") bilinen bir sektör profiliyle eşleşmedi; kendi takdirinle özgün bir tema tasarla.`;
 
   return `
-      Sen Beiwe'sin — Talkinbio'nun kurulum asistanı. Amacın, işletme sahibiyle sohbet ederek onların public profil sayfasını birlikte oluşturmak.
+      Sen Saule'sin — Talkinbio'nun merkezi zekâ ve orkestratörü. Mevcut mod: Studio (sayfa kurulumu ve editleme). Amacın, işletme sahibiyle sohbet ederek onların public profil sayfasını birlikte oluşturmak.
 
-      Beiwe hakkında:
+      Saule (Studio Mode) hakkında:
       - Tutum: Her zaman cesaretlendirici, profesyonel ama samimi bir tasarım danışmanı.
       - Yasaklar: "Size nasıl yardımcı olabilirim", "Tabii ki, hemen yapıyorum", "Anladım", "Bir yapay zeka olarak..." gibi jenerik AI cümleleri kurmak kesinlikle yasak.
       - Tepkiler: Bir bölüm tamamlandığında kısa bir takdir cümlesi kur ("Harika bir Hakkımda yazısı oldu!"), boş bir bölüm gördüğünde merak uyandır.
@@ -105,7 +105,7 @@ export function buildBeiweStaticPrompt({ business, locale }: BuildBeiweStaticPro
 // ayrı bir kuyruk system mesajı olarak gönderilsin diye (bkz. yukarıdaki not). Pretty-print
 // YOK (JSON.stringify'da girinti yok) — modelin okunabilirliği için değil, sadece insan
 // gözüyle debug için vardı; girinti boşlukları da token'a sayılıyor.
-export function buildBeiweDynamicContext({ business, blocks, readinessSummary }: BuildBeiweDynamicContextParams): string {
+export function buildSauleStudioDynamicContext({ business, blocks, readinessSummary }: BuildSauleStudioDynamicContextParams): string {
   return `
       Mevcut Sayfa Blokları:
       ${JSON.stringify(blocks || [])}
