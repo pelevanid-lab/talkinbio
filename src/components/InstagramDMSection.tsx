@@ -15,6 +15,9 @@ export default function InstagramDMSection({ copy }: any) {
     <section className="py-20 md:py-28 bg-white border-t border-[var(--border)]">
       <div className="wrap">
         <div className="max-w-2xl mx-auto">
+          <h2 className="text-3xl md:text-5xl font-bold text-[var(--ink)] mb-4 text-center">{copy.title}</h2>
+          <p className="text-lg text-[var(--ink-soft)] leading-relaxed text-center mb-12">Şimdi sayfa linkinizi Instagram\'da bir hazır cevap olarak ekleyin; DM\'leriniz ile Talkinbio ilgilensin.</p>
+
           <div className="bg-[#FFF7F0] border border-[#FFEAE0] rounded-[32px] p-7 md:p-9 mb-10">
             <p className="text-sm font-bold text-[var(--muted)] mb-3">{copy.kicker}</p>
             <div className="bg-white border border-[var(--border)] rounded-[24px] p-4 md:p-5 mb-6 flex items-center justify-between gap-4">
@@ -39,9 +42,6 @@ export default function InstagramDMSection({ copy }: any) {
 
             <p className="text-xs text-[var(--muted)]">{copy.note}</p>
           </div>
-
-          <h2 className="text-3xl md:text-5xl font-bold text-[var(--ink)] mb-8 text-center">{copy.title}</h2>
-          <p className="text-lg text-[var(--ink-soft)] leading-relaxed text-center mb-10">{copy.body}</p>
 
           <div className="bg-[var(--paper)] border border-[var(--border)] rounded-[32px] p-5 md:p-8 shadow-sm">
             <div className="bg-white rounded-[24px] border border-[var(--border)] p-5 mb-5">
