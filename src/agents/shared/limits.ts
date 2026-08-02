@@ -7,6 +7,7 @@ export const BEIWE_MAX_INPUT_CHARS = 50000;
 
 // Oturum içi mesaj tavanı (soft) — dolunca sert blokaj değil, "yeni sohbet" daveti.
 export const SESSION_MESSAGE_CAP = 50;
+export const SAULE_VOICE_MAX_SECONDS = 8 * 60;
 
 // Beiwe modele giden geçmişin penceresi — Saule'nin HISTORY_WINDOW'uyla aynı fikir
 // (bkz. shared/history.ts), ama Beiwe DB'den değil doğrudan istemcinin gönderdiği

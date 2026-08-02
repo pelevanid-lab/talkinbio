@@ -1,138 +1,65 @@
 'use client';
 
-import React, { useState } from 'react';
-import Image from 'next/image';
+type Locale = 'tr' | 'en' | 'ru';
 
-import { useTranslations } from 'next-intl';
-
-export default function ShowcaseSection() {
-  const t = useTranslations('Landing.showcase');
-  const [activeTab, setActiveTab] = useState<'saule' | 'beiwe'>('saule');
-  
-  const showcases = {
-    saule: [
-      {
-        title: t('saule.kuafor.title'),
-        icon: '✂️',
-        desc: t('saule.kuafor.desc'),
-        image: '/showcase/saule_salon_1785185434647.png',
-        size: 'md:col-span-4 md:row-span-2'
-      },
-      {
-        title: t('saule.spa.title'),
-        icon: '💆‍♀️',
-        desc: t('saule.spa.desc'),
-        image: '/showcase/saule_spa_1785185442109.png',
-        size: 'md:col-span-4 md:row-span-1'
-      },
-      {
-        title: t('saule.tattoo.title'),
-        icon: '🎨',
-        desc: t('saule.tattoo.desc'),
-        image: '/showcase/saule_tattoo.png',
-        size: 'md:col-span-4 md:row-span-1'
-      },
-      {
-        title: t('saule.antrenor.title'),
-        icon: '🏋️‍♂️',
-        desc: t('saule.antrenor.desc'),
-        image: '/showcase/saule_trainer_1785185450565.png',
-        size: 'md:col-span-4 md:row-span-1'
-      },
-      {
-        title: t('saule.diyet.title'),
-        icon: '🥑',
-        desc: t('saule.diyet.desc'),
-        image: '/showcase/saule_clinic_1785185459260.png',
-        size: 'md:col-span-4 md:row-span-1'
-      }
+const copy = {
+  tr: {
+    title: 'Her sektörde aynı mantık: soru gelir, doğru bölüm açılır.',
+    sectionLabel: 'Açılan bölüm',
+    items: [
+      { sector: 'Güzellik merkezi', question: 'Paketleriniz neler?', opens: 'Paketler', note: 'Fiyatlar ve hizmet seçenekleri öne çıkar.' },
+      { sector: 'Diyetisyen', question: 'Online danışmanlık nasıl işliyor?', opens: 'Hizmet detayı', note: 'Süreç, kapsam ve başvuru adımı açılır.' },
+      { sector: 'Danışman', question: 'Randevu alabilir miyim?', opens: 'İletişim', note: 'Lead açıksa talep alınır, kapalıysa seçili kanala gidilir.' },
+      { sector: 'Atölye / kurs', question: 'Program nerede?', opens: 'Program', note: 'Ziyaretçi takvim veya açıklama bölümüne iner.' },
     ],
-    beiwe: [
-      {
-        title: t('beiwe.store.title'),
-        icon: '🛍️',
-        desc: t('beiwe.store.desc'),
-        image: '/showcase/beiwe_store_1785185466900.png',
-        size: 'md:col-span-8 md:row-span-1'
-      },
-      {
-        title: t('beiwe.portfolio.title'),
-        icon: '💻',
-        desc: t('beiwe.portfolio.desc'),
-        image: '/showcase/beiwe_portfolio_1785185474713.png',
-        size: 'md:col-span-4 md:row-span-2'
-      },
-      {
-        title: t('beiwe.booking.title'),
-        icon: '📅',
-        desc: t('beiwe.booking.desc'),
-        image: '/showcase/beiwe_booking_1785185482959.png',
-        size: 'md:col-span-4 md:row-span-1'
-      },
-      {
-        title: t('beiwe.gallery.title'),
-        icon: '📸',
-        desc: t('beiwe.gallery.desc'),
-        image: '/showcase/beiwe_gallery_1785185491840.png',
-        size: 'md:col-span-4 md:row-span-1'
-      }
-    ]
-  };
+  },
+  en: {
+    title: 'Same logic across every category: a question arrives, the right section opens.',
+    sectionLabel: 'Opened section',
+    items: [
+      { sector: 'Beauty studio', question: 'What are your packages?', opens: 'Packages', note: 'Prices and service options move into focus.' },
+      { sector: 'Dietitian', question: 'How does online consulting work?', opens: 'Service detail', note: 'Process, scope and request step open together.' },
+      { sector: 'Consultant', question: 'Can I book a call?', opens: 'Contact', note: 'Collect a lead or route to the selected channel.' },
+      { sector: 'Workshop / course', question: 'Where is the program?', opens: 'Program', note: 'The visitor lands on schedule or explanation details.' },
+    ],
+  },
+  ru: {
+    title: 'Во всех сферах один принцип: вопрос приходит, нужный раздел открывается.',
+    sectionLabel: 'Открытый раздел',
+    items: [
+      { sector: 'Студия красоты', question: 'Какие есть пакеты?', opens: 'Пакеты', note: 'Цены и варианты услуг выходят на первый план.' },
+      { sector: 'Диетолог', question: 'Как проходит онлайн-консультация?', opens: 'Детали услуги', note: 'Открываются процесс, состав услуги и заявка.' },
+      { sector: 'Консультант', question: 'Можно записаться?', opens: 'Контакт', note: 'Собирается заявка или открывается выбранный канал.' },
+      { sector: 'Курс / мастерская', question: 'Где программа?', opens: 'Программа', note: 'Посетитель попадает к расписанию или описанию.' },
+    ],
+  },
+} satisfies Record<Locale, any>;
 
-  const currentShowcase = showcases[activeTab];
+export default function ShowcaseSection({ locale }: { locale: string }) {
+  const texts = copy[(locale === 'en' || locale === 'ru' ? locale : 'tr') as Locale];
 
   return (
-    <section className="py-24 bg-white relative z-10">
+    <section className="py-20 md:py-28 bg-white border-t border-[var(--border)]">
       <div className="wrap">
-        <div className="text-center mb-12">
-          <h2 
-            className="text-4xl md:text-[52px] font-bold text-[var(--ink)] mb-8 tracking-tight" 
-            style={{ fontFamily: 'var(--font-bricolage)', letterSpacing: '-0.02em', lineHeight: '1.1' }}
-            dangerouslySetInnerHTML={{ __html: t.raw('title') }}
-          />
-          
-          <div className="inline-flex bg-[var(--paper)] rounded-full p-1.5 border border-[var(--border)] shadow-inner">
-            <button
-              onClick={() => setActiveTab('saule')}
-              className={`px-6 py-2.5 rounded-full text-[15px] font-semibold transition-all duration-300 ${
-                activeTab === 'saule'
-                  ? 'bg-white shadow-sm text-[var(--ink)]'
-                  : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
-              }`}
-            >
-              {t('sauleTab')}
-            </button>
-            <button
-              onClick={() => setActiveTab('beiwe')}
-              className={`px-6 py-2.5 rounded-full text-[15px] font-semibold transition-all duration-300 ${
-                activeTab === 'beiwe'
-                  ? 'bg-white shadow-sm text-[var(--ink)]'
-                  : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
-              }`}
-            >
-              {t('beiweTab')}
-            </button>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[300px]">
-          {currentShowcase.map((item, idx) => (
-            <div key={item.title + activeTab} className={`${item.size} relative rounded-[32px] overflow-hidden group animate-fade-up bg-[var(--ink)]`} style={{ animationDelay: `${idx * 100}ms` }}>
-              <Image 
-                src={item.image} 
-                alt={item.title}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="object-cover transition-transform duration-1000 group-hover:scale-110 opacity-90"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-              <div className="absolute inset-0 p-8 flex flex-col justify-end">
-                <div className="text-white font-bold text-2xl mb-3 flex items-center gap-3 drop-shadow-md">
-                  {item.title}
+        <h2 className="text-3xl md:text-5xl font-bold text-[var(--ink)] mb-10 max-w-4xl">{texts.title}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {texts.items.map((item: any) => (
+            <div key={item.sector} className="rounded-[30px] border border-[var(--border)] bg-[var(--paper)] p-5 md:p-6 shadow-sm">
+              <div className="bg-white border border-[var(--border)] rounded-[24px] p-5 mb-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-2">{item.sector}</p>
+                <p className="text-xl font-bold text-[var(--ink)]">“{item.question}”</p>
+              </div>
+              <div className="rounded-[24px] bg-[linear-gradient(135deg,#ffffff_0%,#eaf8f4_100%)] border border-[#BFE9DD] p-5">
+                <p className="text-xs font-bold uppercase tracking-wider text-[var(--teal-deep)] mb-2">{texts.sectionLabel}</p>
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-2xl font-[800] text-[var(--ink)]">{item.opens}</p>
+                    <p className="text-sm text-[var(--ink-soft)] mt-2">{item.note}</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-white border border-[var(--border)] flex items-center justify-center text-[var(--teal-deep)] font-bold shrink-0">
+                    →
+                  </div>
                 </div>
-                <p className="text-white/80 text-[15px] font-medium leading-relaxed drop-shadow-sm max-w-md">
-                  {item.desc}
-                </p>
               </div>
             </div>
           ))}

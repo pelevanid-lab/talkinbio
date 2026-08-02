@@ -17,9 +17,9 @@ export const CREDIT_COST_MENU = [
     agent: 'saule',
     credits: SAULE_CREDIT_COST,
     label: {
-      tr: 'Assistant Agent oturumu (50 mesaja kadar)',
-      en: 'Assistant Agent session (up to 50 messages)',
-      ru: 'Сессия Assistant Agent (до 50 сообщений)',
+      tr: 'Saule oturumu (50 mesaja kadar)',
+      en: 'Saule session (up to 50 messages)',
+      ru: 'Saule session (up to 50 messages)',
     },
   },
   {

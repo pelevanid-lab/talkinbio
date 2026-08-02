@@ -43,6 +43,7 @@ export default function BlockEditorModal({
   onClose,
   onDelete,
   locale,
+  languageUpdate,
 }: {
   block: any;
   onSave: (data: any) => void;
@@ -52,8 +53,10 @@ export default function BlockEditorModal({
   // should open on this language's content tab, not always default to Turkish regardless of
   // what's selected.
   locale?: string;
+  languageUpdate?: { sourceLocale: LocaleKey; targetLocales: LocaleKey[] };
 }) {
   const t = useTranslations('BlockEditor');
+  const editorT = useTranslations('Editor');
   const [titles, setTitles] = useState<Record<'tr' | 'en' | 'ru', string>>({ tr: '', en: '', ru: '' });
   const [content, setContent] = useState<any>(block?.content || {});
   const [activeLang, setActiveLang] = useState<LocaleKey>(
@@ -110,15 +113,20 @@ export default function BlockEditorModal({
 
   const LangTabs = () => (
     <div className="flex border-b border-slate-200 mb-4">
-      {['tr', 'en', 'ru'].map(l => (
-        <button 
-          key={l}
-          onClick={() => setActiveLang(l as any)}
-          className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeLang === l ? 'border-[var(--coral)] text-[var(--coral)]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-        >
-          {l.toUpperCase()}
-        </button>
-      ))}
+      {LOCALE_KEYS.map((l) => {
+        const needsUpdate = languageUpdate?.targetLocales.includes(l);
+        return (
+          <button
+            key={l}
+            onClick={() => setActiveLang(l)}
+            title={needsUpdate ? editorT('sync.needsUpdate') : undefined}
+            className={`relative px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeLang === l ? 'border-[var(--coral)] text-[var(--coral)]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+          >
+            {l.toUpperCase()}
+            {needsUpdate && <span className="absolute top-1.5 right-1 w-1.5 h-1.5 rounded-full bg-[var(--coral)]" />}
+          </button>
+        );
+      })}
     </div>
   );
 
@@ -647,6 +655,14 @@ export default function BlockEditorModal({
         </div>
         
         <div className="p-5 overflow-y-auto flex-1">
+          {languageUpdate && (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              {editorT('sync.editorNotice', {
+                source: languageUpdate.sourceLocale.toUpperCase(),
+                targets: languageUpdate.targetLocales.map((l) => l.toUpperCase()).join(', '),
+              })}
+            </div>
+          )}
           <LangTabs />
           <div className="mb-5">
             <label className="block text-sm font-medium mb-1 text-[var(--ink)]">{t('blockTitleLabel', { lang: activeLang.toUpperCase() })}</label>

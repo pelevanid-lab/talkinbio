@@ -1,45 +1,64 @@
 'use client';
 
 import { useState } from 'react';
-import { Link } from '@/i18n/routing';
 import LandingMockup from './LandingMockup';
-import { SauleIcon, BeiweIcon } from './AgentIcons';
+import { SauleIcon } from './AgentIcons';
+
+const setupCopy = {
+  tr: {
+    title: 'Kolay Kurulum',
+    body: 'Instagram profilinizi veya hazır metninizi verin, ilk sayfa taslağını çıkaralım.',
+    placeholder: 'instagram.com/kullaniciadi',
+    button: 'Başla',
+    note: 'Kurulumdan sonra İnce Ayar sekmesinden eksikleri tamamlarsınız.',
+  },
+  en: {
+    title: 'Easy Setup',
+    body: 'Give us your Instagram profile or prepared text, and we will draft the first version of your page.',
+    placeholder: 'instagram.com/username',
+    button: 'Start',
+    note: 'After setup, complete missing details from Fine Tune.',
+  },
+  ru: {
+    title: 'Быстрый запуск',
+    body: 'Укажите Instagram профиль или готовый текст, и мы подготовим первый черновик страницы.',
+    placeholder: 'instagram.com/username',
+    button: 'Начать',
+    note: 'После настройки дополните детали во вкладке Fine Tune.',
+  },
+} as const;
 
 export default function LandingHeroTabs({
-  texts,
+  copy,
   demoBusinessId,
   locale,
   demoInitialMessages,
   demoBlocks,
   demoTheme,
+  setupHref,
 }: any) {
-  const [activeTab, setActiveTab] = useState<'beiwe' | 'saule'>('saule');
+  const [activeTab, setActiveTab] = useState<'page' | 'setup'>('page');
+  const texts = setupCopy[(locale === 'en' || locale === 'ru' ? locale : 'tr') as keyof typeof setupCopy];
 
   return (
-    <div className="hero-demo-container bg-white rounded-[40px] md:rounded-[48px] p-4 md:p-8 border border-[var(--border)] shadow-[0_20px_40px_-15px_rgba(20,35,31,0.05)] mt-12">
-      <div className="hero-tabs-nav mb-8 md:mb-12">
-        <button
-          className={`hero-tab ${activeTab === 'saule' ? 'active' : ''}`}
-          onClick={() => setActiveTab('saule')}
-        >
+    <div className="hero-demo-container bg-white rounded-[32px] md:rounded-[44px] p-4 md:p-8 border border-[var(--border)] shadow-[0_20px_40px_-15px_rgba(20,35,31,0.08)] mt-12">
+      <div className="hero-tabs-nav mb-8 md:mb-10">
+        <button className={`hero-tab ${activeTab === 'page' ? 'active' : ''}`} onClick={() => setActiveTab('page')}>
           <div className="flex-shrink-0">
             <SauleIcon size={32} />
           </div>
-          Sayfanız
+          {copy.pageTab}
         </button>
-        <button
-          className={`hero-tab ${activeTab === 'beiwe' ? 'active' : ''}`}
-          onClick={() => setActiveTab('beiwe')}
-        >
+        <button className={`hero-tab ${activeTab === 'setup' ? 'active' : ''}`} onClick={() => setActiveTab('setup')}>
           <div className="flex-shrink-0">
-            <BeiweIcon size={32} />
+            <SauleIcon size={32} />
           </div>
-          Kolay Kurulum
+          {copy.setupTab}
         </button>
       </div>
 
       <div className="hero-demo-content relative w-full max-w-[1000px] mx-auto">
-        {activeTab === 'saule' ? (
+        {activeTab === 'page' ? (
           <LandingMockup
             businessId={demoBusinessId}
             businessName="Talkinbio"
@@ -49,28 +68,30 @@ export default function LandingHeroTabs({
             theme={demoTheme}
           />
         ) : (
-          <div className="beiwe-demo-box py-12 md:py-24">
-            <div className="beiwe-demo-inner group mx-auto">
-              <div style={{ width: '100px', height: '100px', margin: '0 auto 28px', transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }} className="group-hover:scale-110 group-hover:-translate-y-2">
-                <BeiweIcon size={100} className="drop-shadow-2xl" />
+          <div className="py-10 md:py-20">
+            <div className="mx-auto max-w-[460px] rounded-[32px] border border-[var(--border)] bg-[linear-gradient(135deg,#ffffff_0%,#f4fbf8_50%,#fff1ee_100%)] p-7 md:p-9 shadow-sm">
+              <div className="w-20 h-20 rounded-full bg-white border border-[var(--border)] flex items-center justify-center mx-auto mb-6 shadow-sm">
+                <SauleIcon size={46} />
               </div>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--ink)', textAlign: 'center', marginBottom: '12px', letterSpacing: '-0.02em', fontFamily: 'var(--font-bricolage)' }}>
-                Kolay Kurulum
-              </h3>
-              <p style={{ textAlign: 'center', fontSize: '0.95rem', color: 'var(--ink-soft)', marginBottom: '32px', padding: '0 16px', lineHeight: '1.5' }}>
-                Instagram profilinizi veya web sitenizi verin, sayfanızı <strong className="text-[var(--ink)] font-semibold">saniyeler içinde</strong> kuralım.
-              </p>
-              <form onSubmit={(e) => { e.preventDefault(); window.location.href = '/request-access'; }} style={{ display: 'flex', gap: '6px', padding: '6px', backgroundColor: '#fff', border: '1px solid var(--border)', borderRadius: '9999px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), inset 0 2px 4px rgba(0,0,0,0.02)' }} className="focus-within:ring-2 focus-within:ring-[var(--teal)]/50 focus-within:border-[var(--teal)] transition-all max-w-[400px] mx-auto">
+              <h3 className="text-2xl font-[800] text-[var(--ink)] text-center mb-3 font-bricolage">{texts.title}</h3>
+              <p className="text-center text-[var(--ink-soft)] leading-relaxed mb-7">{texts.body}</p>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  window.location.href = setupHref || '/login';
+                }}
+                className="flex gap-2 p-1.5 bg-white border border-[var(--border)] rounded-full shadow-sm focus-within:ring-2 focus-within:ring-[var(--teal)]/30 transition-all"
+              >
                 <input
                   type="text"
-                  placeholder="instagram.com/kullaniciadi"
-                  style={{ width: '100%', padding: '10px 18px', backgroundColor: 'transparent', fontSize: '0.9rem', outline: 'none', border: 'none', color: 'var(--ink)' }}
-                  className="placeholder:text-[var(--muted)] font-medium"
+                  placeholder={texts.placeholder}
+                  className="w-full px-4 py-3 bg-transparent text-sm outline-none border-0 text-[var(--ink)] placeholder:text-[var(--muted)]"
                 />
-                <button type="submit" style={{ backgroundColor: 'var(--ink)', color: 'white', padding: '10px 24px', borderRadius: '9999px', fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', border: 'none', transition: 'all 0.2s' }} className="hover:opacity-90 hover:shadow-lg active:scale-95">
-                  Hemen Kur
+                <button type="submit" className="bg-[var(--ink)] text-white px-6 py-3 rounded-full text-sm font-bold whitespace-nowrap hover:opacity-90 active:scale-95 transition">
+                  {texts.button}
                 </button>
               </form>
+              <p className="text-xs text-center text-[var(--muted)] mt-4">{texts.note}</p>
             </div>
           </div>
         )}

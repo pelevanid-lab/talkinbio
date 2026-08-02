@@ -1,9 +1,11 @@
 import type { PageActionBlockTarget } from '@/utils/pageActionTargets';
+import { formatSauleCueMarker, type SauleCueKey } from './core';
 
 export type PageRouteMatch = {
   blockId: string;
   itemId?: string;
   text: string;
+  cueKey?: SauleCueKey;
 };
 
 const ACTION_MARKER_START = '§§ACTION§§';
@@ -168,7 +170,8 @@ export function formatPageAction(match: PageRouteMatch): string {
     blockId: match.blockId,
     ...(match.itemId ? { itemId: match.itemId } : {}),
   });
-  return `${ACTION_MARKER_START}${payload}${ACTION_MARKER_END}${match.text}`;
+  const cueKey = match.cueKey || (match.itemId ? 'showing_item' : match.blockId === '__contact__' ? 'showing_contact' : 'opening_section');
+  return `${formatSauleCueMarker(cueKey)}${ACTION_MARKER_START}${payload}${ACTION_MARKER_END}${match.text}`;
 }
 
 export function findPageRouteMatch(
@@ -190,6 +193,7 @@ export function findPageRouteMatch(
         blockId: contactTarget.blockId,
         itemId: fallbackItem.itemId,
         text: localizedMissingContactCue(locale, requestedChannels[0], fallbackItem.label),
+        cueKey: 'showing_contact',
       };
     }
   }
@@ -234,5 +238,10 @@ export function findPageRouteMatch(
   }
 
   if (!bestBlockId) return null;
-  return { blockId: bestBlockId, itemId: bestItemId, text: localizedCue(locale) };
+  return {
+    blockId: bestBlockId,
+    itemId: bestItemId,
+    text: localizedCue(locale),
+    cueKey: bestBlockId === '__contact__' ? 'showing_contact' : bestItemId ? 'showing_item' : 'opening_section',
+  };
 }

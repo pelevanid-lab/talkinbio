@@ -107,7 +107,7 @@ describe('runSauleTurn', () => {
     });
 
     await expect(result.text).resolves.toBe(
-      '§§ACTION§§{"type":"open_block","blockId":"services-block","itemId":"consulting"}§§/ACTION§§İlgili yeri açıyorum.'
+      '[[SAULE_CUE:showing_item]]§§ACTION§§{"type":"open_block","blockId":"services-block","itemId":"consulting"}§§/ACTION§§İlgili yeri açıyorum.'
     );
     expect(streamText).not.toHaveBeenCalled();
   });

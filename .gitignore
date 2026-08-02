@@ -46,3 +46,7 @@ lean-canvas-data.json
 # Supabase CLI'ın `db push`/`link` sırasında yazdığı yerel bağlantı meta verisi
 # (project-ref, pooler-url vb.) — makineye özgü, repoya girmemeli.
 supabase/.temp/
+
+# Local scratch files with potential secrets
+scratch/
+tmp/

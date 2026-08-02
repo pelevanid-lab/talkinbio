@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { Link, routing } from '@/i18n/routing';
-import { LayoutDashboard, Inbox, BarChart3, CreditCard, TrendingUp, Sparkles, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Inbox, BarChart3, CreditCard, TrendingUp, Sparkles, Volume2, Type, Film, Users, type LucideIcon } from 'lucide-react';
 
 type NavItem = {
   label: string;
@@ -13,7 +13,7 @@ type NavItem = {
   exact?: boolean;
   /** Birden çok namespace'e yayılan bölümler için ek eşleşme kökleri. */
   matchPrefixes?: string[];
-  children?: { label: string; href: string }[];
+  children?: { label: string; href: string; icon?: LucideIcon }[];
 };
 
 const LOCALE_PREFIX = new RegExp(`^/(${routing.locales.join('|')})(?=/|$)`);
@@ -31,22 +31,21 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { label: 'Talepler', href: '/admin/requests', icon: Inbox },
     { label: 'Analitik', href: '/admin/analytics', icon: BarChart3 },
     { label: 'Abonelikler', href: '/admin/subscriptions', icon: CreditCard },
-    { label: 'Sürekli Gelişim', href: '/admin/continuous-improvement', icon: TrendingUp },
     {
-      label: 'Beiwe Lab',
-      href: '/admin/characters',
+      label: 'Talkinbio Lab',
+      href: '/admin/beiwe-lab/saule-voice-packages',
       icon: Sparkles,
       // Lab iki namespace'e yayılıyor: eski oda `/admin/characters`, yeni katmanlar
       // `/admin/beiwe-lab`. Grup, ikisinde de vurgulu kalsın.
-      matchPrefixes: ['/admin/characters', '/admin/beiwe-lab'],
+      matchPrefixes: ['/admin/characters', '/admin/beiwe-lab', '/admin/talkinbio-lab'],
       children: [
-        { label: 'Beiwe Twin', href: '/admin/beiwe-lab/twin' },
-        { label: 'Yardımcı Oyuncular', href: '/admin/beiwe-lab/cast' },
-        { label: 'Beiwe Voice', href: '/admin/beiwe-lab/voice' },
-        { label: 'Beiwe Podcast', href: '/admin/beiwe-lab/podcast' },
-        { label: 'Beiwe Post', href: '/admin/beiwe-lab/post' },
+        { label: 'Saule Ses Paketleri', href: '/admin/beiwe-lab/saule-voice-packages', icon: Volume2 },
+        { label: 'Post', href: '/admin/beiwe-lab/post', icon: Type },
+        { label: 'Motion', href: '/admin/beiwe-lab/motion', icon: Film },
+        { label: 'Yardımcı Oyuncular', href: '/admin/beiwe-lab/cast', icon: Users },
       ],
     },
+    { label: 'Sürekli Gelişim', href: '/admin/continuous-improvement', icon: TrendingUp },
   ];
 
   return (
@@ -90,7 +89,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                                   : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                               }`}
                             >
-                              {child.label}
+                              <span className="inline-flex items-center gap-2">
+                                {child.icon && <child.icon className="w-3.5 h-3.5" />}
+                                {child.label}
+                              </span>
                             </Link>
                           </li>
                         );

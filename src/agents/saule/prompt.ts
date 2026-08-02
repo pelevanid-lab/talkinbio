@@ -132,7 +132,7 @@ export function buildSaulePrompt({ business, blocks, knowledge, locale, isDemoBu
   // işaretle sarmalıyoruz — widget bunu görünce paneli otomatik açıp yazıyla gösteriyor ve
   // sesli olarak sadece kısa bir "şimdi yazıyorum" cümlesi söylüyor (bkz. ChatWidget.tsx).
   const voiceGuidance = sauleSettings.voiceEnabled
-    ? `\n- SESLİ MOD AÇIK: Telefon numarası, e-posta, adres, kullanıcı adı, randevu tarihi/saati gibi harfi harfine/rakamı rakamına doğru aktarılması gereken bilgileri yazarken bunları §§INFO§§ ve §§/INFO§§ işaretleri arasına al (ör. "Elbette, §§INFO§§0555 123 45 67§§/INFO§§ numaramızdan ulaşabilirsiniz."). Bu işaretleri SADECE gerçekten kritik/tam doğru aktarılması gereken bilgiler için kullan, normal cümlelerde kullanma.`
+    ? `\n- SESLİ MOD AÇIK: Telefon numarası, e-posta, adres, kullanıcı adı, randevu tarihi/saati gibi harfi harfine/rakamı rakamına doğru aktarılması gereken bilgileri yazarken bunları §§INFO§§ ve §§/INFO§§ işaretleri arasına al (ör. "Elbette, §§INFO§§0555 123 45 67§§/INFO§§ numaramızdan ulaşabilirsiniz."). Bu işaretleri SADECE gerçekten kritik/tam doğru aktarılması gereken bilgiler için kullan, normal cümlelerde kullanma.\n- Hazır ses sistemi için cevabın en başına uygun bir cue etiketi ekle. Bilgi yazıyla veriliyorsa [[SAULE_CUE:showing_written_answer]], ulaşılamayan bilgi varsa [[SAULE_CUE:information_unavailable]], lead formuna yönlendiriyorsan [[SAULE_CUE:opening_lead_form]], teşekkür/lead kaydı sonrasında [[SAULE_CUE:thank_you]] kullan. Bu etiket ziyaretçiye gösterilmez; metni seslendirmek için kullanılmaz.`
     : '';
 
   const demoGuidance = isDemoBusiness

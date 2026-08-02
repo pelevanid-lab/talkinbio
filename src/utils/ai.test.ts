@@ -28,23 +28,23 @@ describe('getModel', () => {
   it('falls back to the default model when no env vars are set', async () => {
     const { getModel } = await import('./ai');
     const model = getModel('saule') as unknown as FakeModel;
-    expect(model.modelName).toBe('claude-sonnet-4-5-20250929');
-    expect(model.provider).toBe('anthropic');
+    expect(model.modelName).toBe('gemini-2.5-flash-lite');
+    expect(model.provider).toBe('google');
   });
 
-  it('uses AI_MODEL as a shared fallback', async () => {
+  it('does not use AI_MODEL as a shared fallback', async () => {
     process.env.AI_MODEL = 'claude-shared-test';
     const { getModel } = await import('./ai');
-    expect((getModel('beiwe') as unknown as FakeModel).modelName).toBe('claude-shared-test');
-    expect((getModel('analysis') as unknown as FakeModel).modelName).toBe('claude-shared-test');
+    expect((getModel('beiwe') as unknown as FakeModel).modelName).toBe('gemini-2.5-flash-lite');
+    expect((getModel('analysis') as unknown as FakeModel).modelName).toBe('gemini-2.5-flash-lite');
   });
 
-  it('prefers the task-specific env var over the shared fallback', async () => {
+  it('prefers the task-specific env var over the default', async () => {
     process.env.AI_MODEL = 'claude-shared-test';
     process.env.AI_MODEL_BEIWE = 'claude-beiwe-specific';
     const { getModel } = await import('./ai');
     expect((getModel('beiwe') as unknown as FakeModel).modelName).toBe('claude-beiwe-specific');
-    expect((getModel('saule') as unknown as FakeModel).modelName).toBe('claude-shared-test');
+    expect((getModel('saule') as unknown as FakeModel).modelName).toBe('gemini-2.5-flash-lite');
   });
 
   it('routes gemini model names to the google provider', async () => {

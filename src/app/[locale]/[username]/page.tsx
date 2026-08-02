@@ -10,6 +10,8 @@ import { DEFAULT_THEME, resolvePageCanvases, resolveThemeColors } from '@/config
 import { googleFontsHref } from '@/utils/googleFonts';
 import { isConversationActive } from '@/utils/conversationWindow';
 import { getPageActionTargets, withContactPageActionTarget } from '@/utils/pageActionTargets';
+import { resolvePublishedRuntimeData } from '@/utils/publishedSnapshot';
+import { getActiveSauleCueManifest } from '@/agents/saule/voicePackages';
 
 // Her ziyarette taze saule_settings (voiceEnabled dahil) çekilsin
 export const dynamic = 'force-dynamic';
@@ -23,13 +25,20 @@ export async function generateMetadata({ params }: any) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
-  const { data: business } = await supabase.from('businesses').select('name, category').eq('username', username).single();
+  const { data: business } = await supabase.from('businesses').select('*').eq('username', username).single();
 
   if (!business) return { title: 'Not Found' };
 
+  const { data: blocks } = await supabase
+    .from('blocks')
+    .select('*')
+    .eq('business_id', business.id)
+    .order('order', { ascending: true });
+  const { business: pageBusiness } = resolvePublishedRuntimeData(business, blocks || [], false);
+
   const path = `/${username}`;
-  const title = `${business.name} | Talkinbio`;
-  const description = business.category || 'Sohbet et, randevu al, bilgi al.';
+  const title = `${pageBusiness.page_title || pageBusiness.name} | Talkinbio`;
+  const description = pageBusiness.category || 'Sohbet et, randevu al, bilgi al.';
 
   return {
     title,
@@ -129,15 +138,20 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
     .eq('business_id', business.id)
     .order('order', { ascending: true });
 
-  const theme = business.theme || DEFAULT_THEME;
-  const sauleSettings = business.saule_settings || {};
+  const { business: pageBusiness, blocks: pageBlocks } = resolvePublishedRuntimeData(business, blocks || [], isOwner);
+  const theme = pageBusiness.theme || DEFAULT_THEME;
+  const sauleSettings = pageBusiness.saule_settings || {};
+  const voiceCueManifest = sauleSettings.voiceEnabled ? await getActiveSauleCueManifest('standard') : null;
+  const chatSauleSettings = voiceCueManifest
+    ? { ...sauleSettings, voiceCuePackage: 'standard', voiceCueManifest }
+    : sauleSettings;
   const customGreeting = sauleSettings.customGreetingEnabled && sauleSettings.customGreeting
     ? sauleSettings.customGreeting
     : null;
   const pageActionTargets = withContactPageActionTarget(
-    getPageActionTargets(blocks || [], locale),
-    business.contact_method,
-    business.contact_value,
+    getPageActionTargets(pageBlocks || [], locale),
+    pageBusiness.contact_method,
+    pageBusiness.contact_value,
     locale
   );
 
@@ -179,7 +193,7 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
     '@type': 'LocalBusiness',
     name: business.name,
     url: `https://www.talkinbio.com/${locale}/${business.username}`,
-    description: business.category,
+    description: pageBusiness.category,
     '@id': `https://www.talkinbio.com/${locale}/${business.username}#localbusiness`
   };
 
@@ -217,15 +231,15 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
         <div className="max-w-md mx-auto w-full px-4 pt-4 pb-8">
 
           <ProfilePageBody
-            blocks={blocks || []}
+            blocks={pageBlocks || []}
             theme={theme}
-            businessName={business.name}
-            pageTitle={business.page_title || business.name}
-            tagline={business.tagline}
-            category={business.category}
-            contactMethod={business.contact_method}
-            contactValue={business.contact_value}
-            orderNowBehavior={business.saule_settings?.orderNowBehavior}
+            businessName={pageBusiness.name}
+            pageTitle={pageBusiness.page_title || pageBusiness.name}
+            tagline={pageBusiness.tagline}
+            category={pageBusiness.category}
+            contactMethod={pageBusiness.contact_method}
+            contactValue={pageBusiness.contact_value}
+            orderNowBehavior={pageBusiness.saule_settings?.orderNowBehavior}
           />
 
         </div>
@@ -236,7 +250,7 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
           The expanded chat sheet still opens as a fixed 85dvh overlay from inside ChatWidget. */}
       <div className="shrink-0 relative z-50" style={{ background: 'var(--tb-page-bg-sticky)' }}>
         <div className="max-w-md mx-auto w-full relative">
-          <ChatWidget businessId={business.id} businessName={business.name} locale={locale} initialMessages={initialMessages} customGreeting={customGreeting} sauleSettings={business.saule_settings} preview={isOwner} initialCreditsExhausted={(business.credit_balance ?? 0) <= 0} />
+          <ChatWidget businessId={business.id} businessName={pageBusiness.name} locale={locale} initialMessages={initialMessages} customGreeting={customGreeting} sauleSettings={chatSauleSettings} preview={isOwner} initialCreditsExhausted={(business.credit_balance ?? 0) <= 0} />
         </div>
       </div>
       </PublicPageRuntimeProvider>

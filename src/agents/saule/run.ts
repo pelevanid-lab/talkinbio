@@ -15,6 +15,10 @@ import { captureLeadTool, captureAccessRequestTool } from './tools';
 import { filterBlocksToLocale } from './localeFilter';
 import { findPageRouteMatch, formatPageAction } from './pageRouter';
 import { getPageActionTargets, withContactPageActionTarget } from '@/utils/pageActionTargets';
+import { isEditorSystemBlock, resolvePublishedRuntimeData } from '@/utils/publishedSnapshot';
+import { buildSauleRuntimeProfile, createSauleStaticTurn } from './core';
+
+type SaulePromptBlock = { id?: string; title: string; type: string; content: unknown; is_visible?: boolean };
 
 export type RunSauleTurnParams = {
   supabaseAdmin: SupabaseClient;
@@ -60,14 +64,15 @@ export async function runSauleTurn({
 }: RunSauleTurnParams) {
   const [businessRes, blocksRes, knowledgeRes] = await Promise.all([
     supabaseAdmin.from('businesses').select('*').eq('id', businessId).single(),
-    supabaseAdmin.from('blocks').select('*').eq('business_id', businessId).eq('is_visible', true).order('order', { ascending: true }),
-    supabaseAdmin.from('saule_knowledge').select('title, content').eq('business_id', businessId).eq('is_active', true),
+    supabaseAdmin.from('blocks').select('*').eq('business_id', businessId).order('order', { ascending: true }),
+    supabaseAdmin.from('saule_knowledge').select('id, title, content').eq('business_id', businessId).eq('is_active', true),
   ]);
 
   if (!businessRes.data) {
     throw new AgentTurnError('Business not found', 404);
   }
-  const business = businessRes.data;
+  const draftBusiness = businessRes.data;
+  const { business, blocks: runtimeBlocks } = resolvePublishedRuntimeData(draftBusiness, blocksRes.data || [], isPreview);
 
   const isDemoBusiness = !!process.env.TALKINBIO_BUSINESS_ID && businessId === process.env.TALKINBIO_BUSINESS_ID;
   const { contactValues, directLinks } = parseContactInfo(business.contact_value);
@@ -161,31 +166,54 @@ export async function runSauleTurn({
     const { count } = await supabaseAdmin
       .from('messages')
       .select('id', { count: 'exact', head: true })
-      .eq('conversation_id', conversationId);
+      .eq('conversation_id', conversationId)
+      .eq('role', 'user');
     if ((count || 0) > SESSION_MESSAGE_CAP) {
-      return streamText({
-        model: getModel('saule'),
-        system: 'Kullanıcıya kibarca bu sohbette mesaj sınırına ulaşıldığını söyle; "Yeni sohbet" butonuyla temiz bir oturum başlatabileceğini veya erken erişim talebinde bulunmak isterse isim/e-posta bırakabileceğini belirt. Kısa ve sıcak yaz, ziyaretçinin yazdığı dilde yanıtla.',
-        messages: [{ role: 'user' as const, content: userMessage }],
-        onFinish: async ({ text, usage, model }) => {
-          const creditsToDeduct = willCreateNewConversation ? SAULE_CREDIT_COST : 0;
-          await persistAssistantMessage(text);
-          await recordUsageEvent(supabaseAdmin, { businessId, agent: 'saule', channel, model: model.modelId, usage, creditsCharged: creditsToDeduct });
-          if (creditsToDeduct > 0) {
-            await deductCredits(supabaseAdmin, businessId, creditsToDeduct);
-          }
-        },
+      const localeKey = locale === 'en' || locale === 'ru' ? locale : 'tr';
+      const text = {
+        tr: 'Bu sohbet 50 mesaj sınırına ulaştı. Yeni sohbet başlatırsanız Saule temiz bir oturumdan devam eder.',
+        en: 'This chat has reached the 50-message limit. Start a new chat and Saule will continue from a fresh session.',
+        ru: 'Этот чат достиг лимита 50 сообщений. Начните новый чат, и Saule продолжит с чистой сессии.',
+      }[localeKey];
+      const sessionLimitTurn = createSauleStaticTurn(text, 'session_limit_reached');
+      const creditsToDeduct = willCreateNewConversation ? SAULE_CREDIT_COST : 0;
+      await persistAssistantMessage(sessionLimitTurn.text);
+      await recordUsageEvent(supabaseAdmin, {
+        businessId,
+        agent: 'saule',
+        channel,
+        model: 'session-limit',
+        usage: { inputTokens: 0, outputTokens: 0 },
+        creditsCharged: creditsToDeduct,
       });
+      if (creditsToDeduct > 0) {
+        await deductCredits(supabaseAdmin, businessId, creditsToDeduct);
+      }
+      return createStaticTextResult(sessionLimitTurn.text);
     }
   }
 
   const sauleSettings = business.saule_settings || {};
   // Faz 2.3 bağlam diyeti: bloklar sadece ziyaretçinin dilinde, kompakt olarak prompt'a girer.
-  const localizedBlocks = filterBlocksToLocale(blocksRes.data || [], locale || 'tr');
+  const assistantBlocks = runtimeBlocks.filter((block: any) => !isEditorSystemBlock(block) && block?.is_visible !== false) as SaulePromptBlock[];
+  const localizedBlocks = filterBlocksToLocale<SaulePromptBlock>(assistantBlocks, locale || 'tr');
+  const runtimeProfile = buildSauleRuntimeProfile({
+    business: {
+      id: business.id,
+      name: business.name,
+      category: business.category,
+      contact_method: business.contact_method,
+      contact_value: business.contact_value,
+      saule_settings: business.saule_settings || null,
+    },
+    blocks: localizedBlocks,
+    knowledge: knowledgeRes.data || [],
+    locale,
+  });
   const deterministicRoute =
     channel === 'web'
       ? findPageRouteMatch(
-          withContactPageActionTarget(getPageActionTargets(localizedBlocks, locale || 'tr'), business.contact_method, business.contact_value, locale || 'tr'),
+          withContactPageActionTarget(getPageActionTargets(runtimeProfile.blocks, locale || 'tr'), business.contact_method, business.contact_value, locale || 'tr'),
           userMessage,
           locale
         )
@@ -209,7 +237,15 @@ export async function runSauleTurn({
     return createStaticTextResult(text);
   }
 
-  const systemPrompt = buildSaulePrompt({ business, blocks: localizedBlocks, knowledge: knowledgeRes.data || [], locale, isDemoBusiness, directLinks, contactValues });
+  const systemPrompt = buildSaulePrompt({
+    business: runtimeProfile.business,
+    blocks: runtimeProfile.blocks,
+    knowledge: runtimeProfile.knowledge.filter((item) => item.visibility === 'runtime'),
+    locale: runtimeProfile.locale,
+    isDemoBusiness,
+    directLinks,
+    contactValues,
+  });
   // Faz 2.3 prompt caching: sistem prompt'u (sabit bloklar + kurallar) konuşma boyunca
   // aynı kalır — Anthropic ephemeral cache ile tekrar eden girdi ~10 kat ucuzlar.
   const modelMessages = [

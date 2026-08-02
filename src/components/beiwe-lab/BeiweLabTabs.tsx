@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
-import { Users, Sparkles, Mic, Clapperboard, Film, Scissors, Type } from 'lucide-react';
+import { Users, Sparkles, Mic, Clapperboard, Film, Scissors, Type, Volume2 } from 'lucide-react';
 
 // ContinuousImprovementTabs ile aynı sekme deseni. Fark: Lab'ın katmanları sıralı bir
 // üretim hattı, o yüzden henüz yazılmamış olanlar da görünür ama tıklanamaz — hattın
@@ -15,13 +15,14 @@ import { Users, Sparkles, Mic, Clapperboard, Film, Scissors, Type } from 'lucide
 // değil (Twin ya da jenerik/rastgele karakter) — AI aktör/anime/çizgi film/cinematic/
 // fantastic/trend videoları için (bkz. BeiweMotionClient, config/motionStyles.ts).
 const tabs = [
-  { label: 'Beiwe Twin', href: '/admin/beiwe-lab/twin', icon: Sparkles, ready: true },
+  { label: 'Twin', href: '/admin/beiwe-lab/twin', icon: Sparkles, ready: true },
   { label: 'Yardımcı Oyuncular', getLabel: (t: any) => t('labTabCast'), href: '/admin/beiwe-lab/cast', icon: Users, ready: true },
-  { label: 'Beiwe Voice', href: '/admin/beiwe-lab/voice', icon: Mic, ready: true },
-  { label: 'Beiwe Podcast', href: '/admin/beiwe-lab/podcast', icon: Clapperboard, ready: true },
-  { label: 'Beiwe Motion', href: '/admin/beiwe-lab/motion', icon: Film, ready: true },
-  { label: 'Beiwe Studio', href: '/admin/beiwe-lab/studio', icon: Scissors, ready: true },
-  { label: 'Beiwe Post', href: '/admin/beiwe-lab/post', icon: Type, ready: true },
+  { label: 'Voice', href: '/admin/beiwe-lab/voice', icon: Mic, ready: true },
+  { label: 'Podcast', href: '/admin/beiwe-lab/podcast', icon: Clapperboard, ready: true },
+  { label: 'Motion', href: '/admin/beiwe-lab/motion', icon: Film, ready: true },
+  { label: 'Studio', href: '/admin/beiwe-lab/studio', icon: Scissors, ready: true },
+  { label: 'Post', href: '/admin/beiwe-lab/post', icon: Type, ready: true },
+  { label: 'Saule Ses Paketleri', href: '/admin/beiwe-lab/saule-voice-packages', icon: Volume2, ready: true },
 ];
 
 export default function BeiweLabTabs() {

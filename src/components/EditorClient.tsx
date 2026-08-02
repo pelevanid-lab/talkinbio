@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Inbox, Coins, Tag, BarChart3 } from 'lucide-react';
 import ArchetypeRenderer from './ArchetypeRenderer';
@@ -25,6 +26,7 @@ import { iconForLinkUrl } from '@/utils/linkIcon';
 import { ColoredTextField, renderColoredSegments } from '@/utils/coloredText';
 import { googleFontsHref } from '@/utils/googleFonts';
 import { compressImageIfNeeded } from '@/utils/imageCompression';
+import { PUBLISHED_SNAPSHOT_BLOCK_TYPE, createPublishedSnapshot, isEditorSystemBlock, stripPublishedSnapshotBlock } from '@/utils/publishedSnapshot';
 
 type LegacyMessage = { id: string; role: string; content: string };
 
@@ -41,17 +43,15 @@ export default function EditorClient({
   initialBlocks, 
   initialChatMessages, 
   initialSessions,
-  updateCreditCost = 6,
   installCreditCost = 10
 }: { 
   business: any, 
   initialBlocks: any[], 
   initialChatMessages?: any[], 
   initialSessions?: any[],
-  updateCreditCost?: number,
   installCreditCost?: number
 }) {
-  const [blocks, setBlocks] = useState(initialBlocks);
+  const [blocks, setBlocks] = useState(() => stripPublishedSnapshotBlock(initialBlocks));
   const [sessions, setSessions] = useState<any[]>(initialSessions || []);
   const [activeSessionId, setActiveSessionId] = useState(() => {
     const activeSession = (initialSessions || []).find((s) => !s.is_archived);
@@ -62,9 +62,10 @@ export default function EditorClient({
   const [editingBlock, setEditingBlock] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
-  const [viewMode, setViewMode] = useState<'chat' | 'manual' | 'bulk'>('chat');
+  const [viewMode, setViewMode] = useState<'instagram' | 'manual' | 'bulk' | 'visual' | 'activity'>('instagram');
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [bulkText, setBulkText] = useState('');
+  const [instagramSource, setInstagramSource] = useState('');
   const [username, setUsername] = useState(business.username);
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [usernameError, setUsernameError] = useState('');
@@ -79,9 +80,9 @@ export default function EditorClient({
   const [isTogglingPublish, setIsTogglingPublish] = useState(false);
   const [needsRepublish, setNeedsRepublish] = useState<boolean>(business.needs_republish || false);
   const [previewActiveBlockId, setPreviewActiveBlockId] = useState<string | null>(null);
-  // Feature 2: after a single-locale manual block edit, offer to auto-translate the stale locales.
+  // After a single-locale edit, offer to open the stale locale fields for manual review.
+  // Nothing is translated or copied automatically: the owner remains the source of truth.
   const [syncPrompt, setSyncPrompt] = useState<null | { blockId: string; type: SyncableBlockType; content: unknown; sourceLocale: LocaleKey; targetLocales: LocaleKey[] }>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [contactValue, setContactValue] = useState<string | null>(business.contact_value || null);
   const [contactMethod, setContactMethod] = useState<string | null>(business.contact_method || null);
   const [isEditingContact, setIsEditingContact] = useState(false);
@@ -266,7 +267,7 @@ export default function EditorClient({
 
   // Polling to refresh blocks if they change via AI tool calls
   useEffect(() => {
-    if (viewMode !== 'chat') return; // only poll if in chat
+    if (viewMode === 'manual') return;
     const interval = setInterval(async () => {
       const { data } = await supabase
         .from('blocks')
@@ -274,7 +275,7 @@ export default function EditorClient({
         .eq('business_id', business.id)
         .order('order', { ascending: true });
       if (data) {
-        setBlocks(data);
+        setBlocks(stripPublishedSnapshotBlock(data));
       }
       
       // Also refresh business to get theme/contact/needs_republish updates made by the AI agent
@@ -297,10 +298,49 @@ export default function EditorClient({
     return () => clearInterval(interval);
   }, [business.id, supabase, viewMode, contactValue, contactMethod, theme]);
 
+  const savePublishedSnapshot = async () => {
+    const content = createPublishedSnapshot(business, blocks);
+    const { data: existing, error: findError } = await supabase
+      .from('blocks')
+      .select('id')
+      .eq('business_id', business.id)
+      .eq('type', PUBLISHED_SNAPSHOT_BLOCK_TYPE)
+      .limit(1)
+      .maybeSingle();
+    if (findError) throw findError;
+
+    if (existing?.id) {
+      const { error } = await supabase
+        .from('blocks')
+        .update({
+          title: 'Published Snapshot',
+          content,
+          order: 10000,
+          is_visible: false,
+        })
+        .eq('id', existing.id);
+      if (error) throw error;
+      return;
+    }
+
+    const { error } = await supabase.from('blocks').insert({
+      business_id: business.id,
+      type: PUBLISHED_SNAPSHOT_BLOCK_TYPE,
+      title: 'Published Snapshot',
+      content,
+      order: 10000,
+      is_visible: false,
+    });
+    if (error) throw error;
+  };
+
   const handleTogglePublish = async () => {
     const next = !isPublished;
     setIsTogglingPublish(true);
     try {
+      if (next) {
+        await savePublishedSnapshot();
+      }
       const { error } = await supabase.from('businesses').update({ is_published: next, needs_republish: false }).eq('id', business.id);
       if (error) throw error;
       setIsPublished(next);
@@ -317,6 +357,7 @@ export default function EditorClient({
   const handleAcknowledgeChanges = async () => {
     setIsTogglingPublish(true);
     try {
+      await savePublishedSnapshot();
       const { error } = await supabase.from('businesses').update({ needs_republish: false }).eq('id', business.id);
       if (error) throw error;
       setNeedsRepublish(false);
@@ -365,6 +406,7 @@ export default function EditorClient({
     setIsSaving(true);
     const blockType = editingBlock.type;
     const isNew = editingBlock.isNew;
+    const isManualLanguageUpdate = Boolean(editingBlock.languageUpdate);
     const originalContent = isNew ? {} : (editingBlock.content || {});
     try {
       let updatedBlocks;
@@ -397,7 +439,9 @@ export default function EditorClient({
       }
       await markNeedsRepublish();
       await archiveCurrentAndNewSession();
-      maybeOfferLanguageSync(savedBlockId, blockType, originalContent, data.content);
+      if (!isManualLanguageUpdate) {
+        maybeOfferLanguageSync(savedBlockId, blockType, originalContent, data.content);
+      }
     } catch (err) {
       console.error(err);
       alert(t('saveBlockError'));
@@ -407,38 +451,22 @@ export default function EditorClient({
     }
   };
 
-  // Confirmed the auto-translate prompt: translate the source locale into the stale ones and persist.
-  const handleConfirmSync = async () => {
+  // Open the same block on the first stale locale. The remaining stale language tabs are marked
+  // in BlockEditorModal, so the owner can update all of them without an LLM call.
+  const handleConfirmSync = () => {
     if (!syncPrompt) return;
-    setIsSyncing(true);
-    try {
-      const res = await fetch('/api/content/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          businessId: business.id,
-          type: syncPrompt.type,
-          content: syncPrompt.content,
+    const block = blocks.find((item) => item.id === syncPrompt.blockId);
+    if (block) {
+      setEditingBlock({
+        ...block,
+        isNew: false,
+        languageUpdate: {
           sourceLocale: syncPrompt.sourceLocale,
           targetLocales: syncPrompt.targetLocales,
-        }),
+        },
       });
-      if (!res.ok) {
-        alert(res.status === 402 ? t('sync.creditsExhausted') : t('sync.error'));
-        return;
-      }
-      const { content: merged } = await res.json();
-      const { error } = await supabase.from('blocks').update({ content: merged }).eq('id', syncPrompt.blockId);
-      if (error) throw error;
-      setBlocks((prev) => prev.map((b) => b.id === syncPrompt.blockId ? { ...b, content: merged } : b));
-      await markNeedsRepublish();
-    } catch (err) {
-      console.error(err);
-      alert(t('sync.error'));
-    } finally {
-      setIsSyncing(false);
-      setSyncPrompt(null);
     }
+    setSyncPrompt(null);
   };
 
   const handleDeleteBlock = async () => {
@@ -479,8 +507,8 @@ export default function EditorClient({
     setDraggedBlockId(null);
     if (!fromId || fromId === overId) return;
 
-    const visible = blocks.filter(b => b.type !== 'settings' && b.type !== 'contact');
-    const others = blocks.filter(b => b.type === 'settings' || b.type === 'contact');
+    const visible = blocks.filter(b => !isEditorSystemBlock(b));
+    const others = blocks.filter(isEditorSystemBlock);
     const fromIdx = visible.findIndex(b => b.id === fromId);
     const toIdx = visible.findIndex(b => b.id === overId);
     if (fromIdx === -1 || toIdx === -1) return;
@@ -746,6 +774,7 @@ export default function EditorClient({
     setActiveLocales(next);
     await supabase.from('businesses').update({ active_locales: next }).eq('id', business.id);
     business.active_locales = next;
+    await markNeedsRepublish();
   };
 
   // Reads the current business.contact_method/contact_value into the checkbox+input form shape,
@@ -787,7 +816,15 @@ export default function EditorClient({
     const bulkLabels = `${t('blocks.about')}, ${t('blocks.services')} ${t('etcAbbr')}`;
     sendUserText(t('bulkPromptTemplate', { labels: bulkLabels, text: bulkText }));
     setBulkText('');
-    setViewMode('chat');
+    setViewMode('activity');
+  };
+
+  const handleInstagramSubmit = () => {
+    const source = instagramSource.trim();
+    if (!source) return;
+    sendUserText(t('instagramPromptTemplate', { source }));
+    setInstagramSource('');
+    setViewMode('activity');
   };
 
   const accent = theme.accent || {
@@ -846,31 +883,50 @@ export default function EditorClient({
             <span className="font-semibold">{(business.credit_balance ?? 0).toLocaleString('tr-TR')}</span>
           </a>
 
-          {/* Mode Switcher — along with the panel title/language switcher above, this is the only
-              thing always visible across all tabs; profile link, page title, contact, and publish
-              status now live inside the "İnce Ayar" tab so Kurulum Ajanı/Toplu aren't buried under
-              fixed chrome. */}
-            <div className="flex justify-between items-center bg-white p-2 rounded-xl shadow-sm border border-slate-200 gap-1">
+          {/* Mode Switcher: setup, editing and visual work are separated so the editor is scannable. */}
+          <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-200 space-y-3">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 px-1">{t('editorMenuSetup')}</div>
+              <div className="grid grid-cols-2 gap-1">
+                <button
+                  onClick={() => setViewMode('instagram')}
+                  className={`py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'instagram' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  {t('tabInstagram')}
+                </button>
+                <button 
+                  onClick={() => setViewMode('bulk')}
+                  className={`py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'bulk' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  {t('tabBulk')}
+                </button>
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 px-1">{t('editorMenuEdit')}</div>
+              <div className="grid grid-cols-[1fr_1fr_44px] gap-1">
               <button
-                onClick={() => setViewMode('chat')}
-                className={`flex-1 py-1.5 rounded-lg text-sm font-medium leading-tight transition-all ${viewMode === 'chat' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                <span className="block">Creative Agent</span>
-                <span className="block text-[10px] font-normal opacity-60">{t('tabAgent')}</span>
-              </button>
-              <button 
-                onClick={() => setViewMode('bulk')}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'bulk' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                {t('tabBulk')}
-              </button>
-              <button 
                 onClick={() => setViewMode('manual')}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'manual' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'manual' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 {t('tabManual')}
               </button>
+              <button 
+                onClick={() => setViewMode('visual')}
+                className={`py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'visual' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                {t('tabVisual')}
+              </button>
+              <button
+                onClick={() => setViewMode('activity')}
+                className={`h-9 rounded-lg text-sm font-medium transition-all ${viewMode === 'activity' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                title={t('activityTitle')}
+              >
+                <MessageSquare className="w-4 h-4 mx-auto" />
+              </button>
             </div>
+            </div>
+          </div>
         </div>
 
         {/* Main Left Content */}
@@ -906,7 +962,47 @@ export default function EditorClient({
               </div>
             </div>
           )}
-          {viewMode === 'chat' ? (
+          {viewMode === 'instagram' ? (
+            <div className="p-4 md:p-6 space-y-4 pb-20 overflow-y-auto">
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h3 className="text-sm font-bold text-[var(--ink)] mb-2">{t('instagramTitle')}</h3>
+                <p className="text-xs text-slate-500 mb-4">{t('instagramDesc')}</p>
+                <input
+                  value={instagramSource}
+                  onChange={(e) => setInstagramSource(e.target.value)}
+                  placeholder={t('instagramPlaceholder')}
+                  className="w-full p-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[var(--coral)]"
+                />
+                <button
+                  onClick={handleInstagramSubmit}
+                  disabled={!instagramSource.trim() || isChatLoading}
+                  className="mt-4 w-full py-3 bg-[var(--coral)] text-white rounded-lg font-bold hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center justify-center"
+                >
+                  {isChatLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : `${t('instagramSubmitBtn')} (Maks. ≈${installCreditCost} kredi)`}
+                </button>
+              </div>
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h3 className="text-sm font-bold text-[var(--ink)] mb-2">{t('pageStatus.title')}</h3>
+                <p className="text-xs text-slate-500 mb-3">{t('instagramStatusHint')}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { type: 'about', label: t('blocks.about') },
+                    { type: 'services', label: t('blocks.services') },
+                    { type: 'pricing', label: t('blocks.pricing') },
+                    { type: 'faq', label: t('blocks.faq') },
+                  ].map(({ type, label }) => {
+                    const done = !!blocks.find(b => b.type === type && hasRealContent(b));
+                    return (
+                      <span key={type} className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-2 rounded-lg border ${done ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-[var(--ink-soft)] border-[rgba(20,35,31,0.15)]'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${done ? 'bg-green-500' : 'bg-slate-300'}`} />
+                        {label}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ) : viewMode === 'activity' ? (
             <div className="flex flex-col h-full relative">
               <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ paddingBottom: chatInputBarHeight + 16 }}>
                 {/* Sayfa Durumu Kartı — sadece chat boşsa gösterilir */}
@@ -1062,6 +1158,39 @@ export default function EditorClient({
                     <MessageSquarePlus className="w-5 h-5" />
                   </button>
                 </form>
+              </div>
+            </div>
+          ) : viewMode === 'visual' ? (
+            <div className="p-4 md:p-6 space-y-4 pb-20 overflow-y-auto">
+              <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <h3 className="text-sm font-bold text-[var(--ink)] mb-2">{t('studioToolsTitle')}</h3>
+                <p className="text-xs text-slate-500 mb-4">{t('studioToolsDesc')}</p>
+                <div className="grid grid-cols-1 gap-3">
+                  <Link
+                    href="/dashboard/creative-studio/post"
+                    className="p-4 rounded-xl border border-slate-200 hover:border-[var(--coral)] hover:bg-[var(--coral-tint)] transition-colors flex items-start gap-3"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-[var(--coral-tint)] text-[var(--coral)] flex items-center justify-center shrink-0">
+                      <Tag className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="block text-sm font-bold text-[var(--ink)]">{t('studioPostTitle')}</span>
+                      <span className="block text-xs text-slate-500 mt-1">{t('studioPostDesc')}</span>
+                    </div>
+                  </Link>
+                  <Link
+                    href="/dashboard/creative-studio/motion"
+                    className="p-4 rounded-xl border border-slate-200 hover:border-[var(--coral)] hover:bg-[var(--coral-tint)] transition-colors flex items-start gap-3"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-[var(--coral-tint)] text-[var(--coral)] flex items-center justify-center shrink-0">
+                      <Smartphone className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="block text-sm font-bold text-[var(--ink)]">{t('studioMotionTitle')}</span>
+                      <span className="block text-xs text-slate-500 mt-1">{t('studioMotionDesc')}</span>
+                    </div>
+                  </Link>
+                </div>
               </div>
             </div>
           ) : viewMode === 'bulk' ? (
@@ -1515,8 +1644,8 @@ export default function EditorClient({
               <h3 className="font-medium text-[var(--ink)]">{t('manualTitle')}</h3>
               <p className="text-xs text-slate-500 mb-4">{t('manualDesc')}</p>
               
-              {blocks.filter(b => b.type !== 'settings' && b.type !== 'contact').length === 0 && <p className="text-sm text-slate-500">{t('noContent')}</p>}
-              {blocks.filter(b => b.type !== 'settings' && b.type !== 'contact').map(b => (
+              {blocks.filter(b => !isEditorSystemBlock(b)).length === 0 && <p className="text-sm text-slate-500">{t('noContent')}</p>}
+              {blocks.filter(b => !isEditorSystemBlock(b)).map(b => (
                 <div
                   key={b.id}
                   draggable
@@ -1656,7 +1785,8 @@ export default function EditorClient({
           onClose={() => setEditingBlock(null)}
           onSave={handleSaveBlock}
           onDelete={handleDeleteBlock}
-          locale={locale}
+          locale={editingBlock.languageUpdate?.targetLocales?.[0] || locale}
+          languageUpdate={editingBlock.languageUpdate}
         />
       )}
       {syncPrompt && (
@@ -1672,18 +1802,15 @@ export default function EditorClient({
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setSyncPrompt(null)}
-                disabled={isSyncing}
-                className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition disabled:opacity-50"
+                className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition"
               >
                 {t('sync.cancel')}
               </button>
               <button
                 onClick={handleConfirmSync}
-                disabled={isSyncing}
-                className="px-5 py-2 bg-[var(--coral)] text-white font-medium rounded-lg hover:bg-orange-600 shadow-sm transition disabled:opacity-50 flex items-center gap-2"
+                className="px-5 py-2 bg-[var(--coral)] text-white font-medium rounded-lg hover:bg-orange-600 shadow-sm transition flex items-center gap-2"
               >
-                {isSyncing && <Loader2 className="w-4 h-4 animate-spin" />}
-                {isSyncing ? t('sync.syncing') : `${t('sync.confirm')} (≈${updateCreditCost} kredi)`}
+                {t('sync.confirm')}
               </button>
             </div>
           </div>

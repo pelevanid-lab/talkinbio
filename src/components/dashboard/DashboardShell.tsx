@@ -7,13 +7,11 @@ import {
   Inbox,
   BarChart3,
   Coins,
-  Sparkles,
   Pencil,
   ExternalLink,
   LogOut,
   Menu,
   X,
-  Home,
   type LucideIcon,
 } from 'lucide-react';
 import CreditBadge from '@/components/CreditBadge';
@@ -44,10 +42,10 @@ export default function DashboardShell({ business, active, children }: { busines
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const navItems: NavItem[] = [
+    { key: 'creative-studio', label: t('navCreativeStudio'), href: '/dashboard/editor', icon: Pencil },
     { key: 'leads', label: t('headerTitle'), href: '/dashboard/leads', icon: Inbox },
     { key: 'analytics', label: t('navAnalytics'), href: '/dashboard/analytics', icon: BarChart3 },
     { key: 'billing', label: t('navBilling'), href: '/dashboard/billing', icon: Coins },
-    { key: 'creative-studio', label: t('navCreativeStudio'), href: '/dashboard/creative-studio', icon: Sparkles },
   ];
 
   const handleLogout = async () => {
@@ -58,19 +56,12 @@ export default function DashboardShell({ business, active, children }: { busines
 
   const SidebarContent = () => (
     <>
-      <div className="px-5 pt-6 pb-5">
+      <a href="/" className="px-5 pt-6 pb-5 block hover:opacity-80 transition-opacity">
         <p className="text-lg font-[800] tracking-[-0.02em] text-[#14231F] font-['Bricolage_Grotesque'] truncate">{business.name}</p>
         <p className="text-xs text-[#8A8880] font-mono mt-0.5">talkinbio.com/{business.username}</p>
-      </div>
+      </a>
 
       <nav className="flex-1 px-3 space-y-1">
-        <a
-          href="/"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#4B5A55] hover:bg-[#F4F2ED] transition-colors"
-        >
-          <Home className="w-4 h-4 shrink-0" />
-          {t('navHome')}
-        </a>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = active === item.key;
@@ -87,13 +78,6 @@ export default function DashboardShell({ business, active, children }: { busines
             </a>
           );
         })}
-        <a
-          href="/dashboard/editor"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#4B5A55] hover:bg-[#F4F2ED] transition-colors"
-        >
-          <Pencil className="w-4 h-4 shrink-0" />
-          {t('navEditor')}
-        </a>
         <div className="pt-6 px-3 text-[#8A8880]">
           <LanguageSwitcher />
         </div>

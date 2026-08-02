@@ -1,7 +1,7 @@
 import { anthropic } from '@ai-sdk/anthropic';
 import { google } from '@ai-sdk/google';
 
-const DEFAULT_MODEL = 'claude-sonnet-4-5-20250929';
+const DEFAULT_MODEL = 'gemini-2.5-flash-lite';
 
 const TASK_ENV_KEYS = {
   beiwe: 'AI_MODEL_BEIWE',
@@ -15,7 +15,7 @@ const TASK_ENV_KEYS = {
 export type AgentTask = keyof typeof TASK_ENV_KEYS;
 
 function resolveModelName(task: AgentTask): string {
-  return process.env[TASK_ENV_KEYS[task]] || process.env.AI_MODEL || DEFAULT_MODEL;
+  return process.env[TASK_ENV_KEYS[task]] || DEFAULT_MODEL;
 }
 
 export function getModel(task: AgentTask) {

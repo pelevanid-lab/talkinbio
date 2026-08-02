@@ -13,7 +13,7 @@ export const SauleIcon = ({ className = '', size = 32 }: AgentIconProps) => (
     height={size} 
     className={className}
     role="img" 
-    aria-label="Assistant Agent"
+    aria-label="Saule"
   >
     <defs>
       <style>
@@ -49,7 +49,7 @@ export const BeiweIcon = ({ className = '', size = 32 }: AgentIconProps) => (
     height={size} 
     className={className}
     role="img" 
-    aria-label="Creative Agent"
+    aria-label="Sayfa Stüdyosu"
   >
     <defs>
       <style>

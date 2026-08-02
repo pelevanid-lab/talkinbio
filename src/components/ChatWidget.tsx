@@ -10,6 +10,7 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import AgentMarkdown from './AgentMarkdown';
 import { useOptionalPublicPageRuntime } from './PublicPageRuntime';
+import { parseSauleCueKey, stripSauleCueMarkers, type SauleCueKey } from '@/agents/saule/core';
 
 type LegacyMessage = { id: string; role: string; content: string };
 
@@ -33,7 +34,7 @@ const ACTION_MARKER_START = '§§ACTION§§';
 const ACTION_MARKER_END = '§§/ACTION§§';
 
 function stripInfoMarkers(text: string): string {
-  return text
+  return stripSauleCueMarkers(text)
     .replace(new RegExp(INFO_MARKER_START, 'g'), '')
     .replace(new RegExp(INFO_MARKER_END, 'g'), '')
     .replace(new RegExp(`${ACTION_MARKER_START}[\\s\\S]*?${ACTION_MARKER_END}`, 'g'), '');
@@ -65,8 +66,34 @@ function shouldOpenWrittenAnswer(text: string): boolean {
 // Panel yazıyla önemli bilgiyi gösterirken TTS aynı anda o mesajın geri kalanını da sesli
 // okumasın — biri yazıyı okuyorsa aynı anda konuşulmasını istemiyoruz. Bu yüzden işaretli bir
 // mesajda konuşulan tek şey kısa "şimdi yazıyorum" cümlesi; mesajın metni SADECE yazıyla kalır.
-function buildSpokenText(text: string, filler: string): string {
-  return hasInfoBlock(text) ? filler : text;
+function inferSauleCueKey(text: string, isWelcome: boolean): SauleCueKey {
+  if (isWelcome) return 'welcome';
+  const parsed = parseSauleCueKey(text);
+  if (parsed) return parsed;
+  const action = parsePageAction(text);
+  if (action?.blockId === '__contact__') return 'showing_contact';
+  if (action?.itemId) return 'showing_item';
+  if (action) return 'opening_section';
+  if (hasInfoBlock(text) || shouldOpenWrittenAnswer(text)) return 'showing_written_answer';
+  return 'showing_written_answer';
+}
+
+function resolveCueAudioUrl(settings: any, locale: string, cueKey: SauleCueKey): string | null {
+  const safeLocale = locale === 'en' || locale === 'ru' ? locale : 'tr';
+  const manifest = settings?.voiceCueManifest || settings?.cueManifest || settings?.voiceCues;
+  if (manifest && typeof manifest === 'object') {
+    const direct = manifest[cueKey];
+    if (typeof direct === 'string') return direct;
+    if (direct && typeof direct === 'object' && typeof direct[safeLocale] === 'string') return direct[safeLocale];
+    const localeGroup = manifest[safeLocale];
+    if (localeGroup && typeof localeGroup === 'object' && typeof localeGroup[cueKey] === 'string') {
+      return localeGroup[cueKey];
+    }
+  }
+  const baseUrl = typeof settings?.voiceCueBaseUrl === 'string' ? settings.voiceCueBaseUrl.replace(/\/+$/, '') : null;
+  if (!baseUrl) return null;
+  const packageId = typeof settings?.voiceCuePackage === 'string' ? settings.voiceCuePackage : 'standard';
+  return `${baseUrl}/${packageId}/v1/${safeLocale}/${cueKey}.mp3`;
 }
 
 function parsePageAction(text: string): { type: 'open_block'; blockId: string; itemId?: string | null } | null {
@@ -134,17 +161,20 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
   const t = useTranslations('ChatWidget');
   const pageRuntime = useOptionalPublicPageRuntime();
 
-  // Voice messaging state
-  // The old voiceEnabled flag used live STT + per-answer TTS. The new product direction keeps
-  // voice as cached cue packs, so dynamic visitor voice stays off unless a separate emergency flag
-  // is deliberately enabled while the cue system is being built.
-  const isVoiceEnabled = !!sauleSettings?.voiceEnabled && !!sauleSettings?.dynamicVoiceEnabled;
+  // Voice input can stay enabled, but spoken replies are no longer generated with dynamic TTS.
+  // Phase 6.1 will map Saule cue keys to approved audio files instead.
+  const isVoiceInputEnabled = !!sauleSettings?.voiceEnabled;
+  const isCuePlaybackEnabled = !!(
+    isVoiceInputEnabled &&
+    (sauleSettings?.voiceCueManifest || sauleSettings?.cueManifest || sauleSettings?.voiceCues || sauleSettings?.voiceCueBaseUrl)
+  );
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const recordingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Basılı tutma jesti (mousedown/pointerdown -> ... -> pointerup) ile mikrofon izni istemi
   // arasında yarış var: izin ilk kez isteniyorsa tarayıcının native izin kutusu senkron
   // JS akışını durdurur, ziyaretçi "İzin Ver"e tıklarken parmağı/mouse'u zaten düğmeden
@@ -156,37 +186,26 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
   // İLK dokunuşta (chat ile ilgili olması gerekmiyor) kilidi açıyoruz; o ana kadar okunacak
   // metni burada bekletiyoruz.
   const audioUnlockedRef = useRef(false);
-  const pendingSpeechTextRef = useRef<string | null>(null);
+  const pendingCueKeyRef = useRef<SauleCueKey | null>(null);
   const spokenMessageIdRef = useRef<string | null>(
     initialMessages.length > 0 ? initialMessages[initialMessages.length - 1].id : null
   );
   const handledActionRef = useRef<string | null>(null);
   const handledWrittenAnswerRef = useRef<string | null>(null);
 
-  // Play audio response from TTS API
-  const speakText = async (text: string) => {
-    if (!isVoiceEnabled || !text) return;
+  const playCue = async (cueKey: SauleCueKey) => {
+    const audioUrl = resolveCueAudioUrl(sauleSettings, locale, cueKey);
+    if (!isCuePlaybackEnabled || !audioUrl) return;
     try {
       setIsPlayingAudio(true);
-      const res = await fetch('/api/chat/voice/speak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, businessId }),
-      });
-      if (!res.ok) throw new Error('Speech failed');
-      const data = await res.json();
-      if (data.audioUrl) {
-        if (currentAudioRef.current) {
-          currentAudioRef.current.pause();
-        }
-        const audio = new Audio(data.audioUrl);
-        currentAudioRef.current = audio;
-        audio.onended = () => setIsPlayingAudio(false);
-        audio.onerror = () => setIsPlayingAudio(false);
-        await audio.play();
-      } else {
-        setIsPlayingAudio(false);
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
       }
+      const audio = new Audio(audioUrl);
+      currentAudioRef.current = audio;
+      audio.onended = () => setIsPlayingAudio(false);
+      audio.onerror = () => setIsPlayingAudio(false);
+      await audio.play();
     } catch (err) {
       console.error('Audio play error:', err);
       setIsPlayingAudio(false);
@@ -246,6 +265,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
       };
 
       mediaRecorder.start();
+      recordingTimeoutRef.current = setTimeout(() => stopRecording(), 8 * 60 * 1000);
       setIsRecording(true);
       // Basma ilk mikrofon izni istemi sırasında (yukarıdaki await) zaten bırakılmışsa
       // pressActiveRef false'tur — kaydı hemen durdur, yoksa parmak/mouse kalktığı halde
@@ -263,6 +283,10 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
+    }
+    if (recordingTimeoutRef.current) {
+      clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
     }
   };
 
@@ -412,51 +436,41 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
   // İLK dokunuşta (Saule ile ilgisi olması gerekmiyor — herhangi bir tıklama/dokunuş) kilidi
   // açıyoruz; o ana kadar bekleyen bir metin varsa hemen ardından okunuyor.
   useEffect(() => {
-    if (!isVoiceEnabled) return;
+    if (!isCuePlaybackEnabled) return;
     const unlock = () => {
       audioUnlockedRef.current = true;
-      if (pendingSpeechTextRef.current) {
-        const pending = pendingSpeechTextRef.current;
-        pendingSpeechTextRef.current = null;
-        speakText(pending);
+      if (pendingCueKeyRef.current) {
+        const pending = pendingCueKeyRef.current;
+        pendingCueKeyRef.current = null;
+        playCue(pending);
       }
     };
     document.addEventListener('pointerdown', unlock, { once: true });
     return () => document.removeEventListener('pointerdown', unlock);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isVoiceEnabled]);
+  }, [isCuePlaybackEnabled]);
 
   // Karşılama + her yeni asistan cevabı sesli okunur — panel açık olsun olmasın (ziyaretçi
   // sohbet penceresine hiç tıklamadan sesli konuşabilsin diye). Panel yalnızca cevap "önemli
   // bilgi" (§§INFO§§ işaretli — bkz. agents/saule/prompt.ts) içeriyorsa otomatik açılır; o
   // bilgi hiçbir zaman sesli okunmaz, yerine kısa bir "şimdi yazıyorum" cümlesi söylenir.
   useEffect(() => {
-    if (!isVoiceEnabled || isLoading) return;
+    if (!isCuePlaybackEnabled || isLoading) return;
     const last = messages[messages.length - 1];
     if (!last || last.role !== 'assistant' || last.id === spokenMessageIdRef.current) return;
     spokenMessageIdRef.current = last.id;
 
-    const isWelcome = last.id.startsWith('welcome-');
-    let spoken: string;
-    if (isWelcome) {
-      spoken =
-        sauleSettings?.voiceWelcomeMessage?.[locale as 'tr' | 'en' | 'ru'] ||
-        customGreeting?.[locale as 'tr' | 'en' | 'ru'] ||
-        t('welcome', { name: businessName });
-    } else {
-      const rawText = getMessageText(last);
-      if (hasInfoBlock(rawText)) queueMicrotask(() => setIsExpanded(true));
-      spoken = buildSpokenText(rawText, t('voiceInfoFiller'));
-    }
-    if (!spoken) return;
+    const rawText = getMessageText(last);
+    const cueKey = inferSauleCueKey(rawText, last.id.startsWith('welcome-'));
+    if (hasInfoBlock(rawText)) queueMicrotask(() => setIsExpanded(true));
 
     if (audioUnlockedRef.current) {
-      speakText(spoken);
+      playCue(cueKey);
     } else {
-      pendingSpeechTextRef.current = spoken;
+      pendingCueKeyRef.current = cueKey;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages, isLoading, isVoiceEnabled]);
+  }, [messages, isLoading, isCuePlaybackEnabled]);
 
   useEffect(() => {
     const handleSendToChat = (e: any) => {
@@ -532,7 +546,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
                     <SauleIcon size={34} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-[var(--ink)] font-bricolage">Assistant Agent</h3>
+                    <h3 className="font-semibold text-[var(--ink)] font-bricolage">Saule</h3>
                     <p className="text-xs text-[var(--teal)] font-medium flex items-center">
                       <span className="w-2 h-2 rounded-full bg-[var(--teal)] mr-1"></span> {t('online')}
                     </p>
@@ -633,7 +647,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
                 {!creditsExhausted && (
                 <form onSubmit={onFormSubmit} className="flex relative items-end gap-2">
                   {/* Left Side Microphone Button (when voice enabled) */}
-                  {isVoiceEnabled && (
+                  {isVoiceInputEnabled && (
                     <MicButton
                       isRecording={isRecording}
                       isTranscribing={isTranscribing}
@@ -730,7 +744,7 @@ export default function ChatWidget({ businessId, businessName, locale, initialMe
           >
             {/* Sesli konuşma: sohbet panelini hiç açmadan basılı tut ve konuş — bkz. yukarıdaki
                 karşılama/cevap efekti, panel sadece "önemli bilgi" varsa kendiliğinden açılıyor. */}
-            {isVoiceEnabled && (
+            {isVoiceInputEnabled && (
               <MicButton
                 isRecording={isRecording}
                 isTranscribing={isTranscribing}
