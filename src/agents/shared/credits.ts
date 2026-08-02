@@ -8,9 +8,6 @@ export const SAULE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE) || 1;
 export const SAULE_VOICE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_VOICE) || 5;
 export const SAULE_STUDIO_UPDATE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_STUDIO_UPDATE) || 6;
 export const SAULE_STUDIO_INSTALL_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_STUDIO_INSTALL) || 10;
-// Deprecated: use SAULE_STUDIO_* instead
-export const BEIWE_UPDATE_CREDIT_COST = SAULE_STUDIO_UPDATE_CREDIT_COST;
-export const BEIWE_INSTALL_CREDIT_COST = SAULE_STUDIO_INSTALL_CREDIT_COST;
 export const CUE_PACK_STANDARD_CREDIT_COST = Number(process.env.CREDIT_COST_CUE_PACK_STANDARD) || 2;
 export const CUE_PACK_CUSTOM_CREDIT_COST = Number(process.env.CREDIT_COST_CUE_PACK_CUSTOM) || 6;
 
@@ -86,9 +83,6 @@ export function sauleCreditCost(toolCallCount: number): number {
   if (toolCallCount <= 0) return 0;
   return toolCallCount === 1 ? SAULE_STUDIO_UPDATE_CREDIT_COST : SAULE_STUDIO_INSTALL_CREDIT_COST;
 }
-
-// Deprecated: use sauleCreditCost instead
-export const beiweCreditCost = sauleCreditCost;
 
 export function hasCredits(business: { credit_balance: number }): boolean {
   return business.credit_balance > 0;

@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       supabase.from('businesses').select('contact_method, contact_value, category, theme, is_published, credit_balance').eq('id', businessId).single(),
     ]);
 
-    // Faz 4.3: kredi bitince Beiwe (sahip-yüzlü dashboard aracı) düz bir yükseltme
+    // Faz 4.3: kredi bitince Saule Studio (sahip-yüzlü dashboard aracı) düz bir yükseltme
     // mesajıyla durur — Saule'nin ziyaretçi-yüzlü "fiili ücretsiz katman"ı burada geçerli değil.
     if (business && business.credit_balance <= 0) {
       return new Response('Krediniz tükendi. Devam etmek için planınızı yükseltin.', { status: 402 });
@@ -86,7 +86,7 @@ export async function POST(req: Request) {
     const staticPrompt = buildSauleStudioStaticPrompt({ business: business || null, locale: currentLocale });
     const dynamicContext = buildSauleStudioDynamicContext({ business: business || null, blocks: blockList, readinessSummary });
 
-    // Unlike Saule (DB-side HISTORY_WINDOW, shared/history.ts), Beiwe had no cap at all —
+    // Unlike Saule Assistant (DB-side HISTORY_WINDOW, shared/history.ts), Saule Studio had no cap at all —
     // the client's full session transcript was resent, in full, on every single turn, so a
     // long setup conversation made every subsequent turn more expensive than the last. Each
     // UIMessage here is one self-contained role turn (a tool call + its result live together

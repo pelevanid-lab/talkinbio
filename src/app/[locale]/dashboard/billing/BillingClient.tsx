@@ -6,7 +6,7 @@ import { format, type Locale } from 'date-fns';
 import { tr, enUS, ru } from 'date-fns/locale';
 import { Coins, MessageCircle, Wrench, BarChart3 } from 'lucide-react';
 import { PLANS, EXTRA_PACK } from '@/config/plans';
-import { SAULE_CREDIT_COST, BEIWE_UPDATE_CREDIT_COST, CREDIT_COST_MENU } from '@/agents/shared/credits';
+import { SAULE_CREDIT_COST, SAULE_STUDIO_UPDATE_CREDIT_COST, CREDIT_COST_MENU } from '@/agents/shared/credits';
 import DashboardShell from '@/components/dashboard/DashboardShell';
 
 const DATE_FNS_LOCALES: Record<string, Locale> = { tr, en: enUS, ru };
@@ -14,7 +14,6 @@ const NUMBER_LOCALES: Record<string, string> = { tr: 'tr-TR', en: 'en-US', ru: '
 
 const AGENT_ICON: Record<string, typeof MessageCircle> = {
   saule: MessageCircle,
-  beiwe: Wrench,
   analysis: BarChart3,
 };
 
@@ -169,7 +168,7 @@ export default function BillingClient({ business, transactions, ownerEmail }: { 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             {PLANS.map((plan) => {
               const sauleChats = Math.floor(plan.credits / SAULE_CREDIT_COST);
-              const beiweUpdates = Math.floor(plan.credits / BEIWE_UPDATE_CREDIT_COST);
+              const studioUpdates = Math.floor(plan.credits / SAULE_STUDIO_UPDATE_CREDIT_COST);
               const isFree = plan.id === 'free';
               return (
                 <button
@@ -188,7 +187,7 @@ export default function BillingClient({ business, transactions, ownerEmail }: { 
                   <p className="text-2xl font-[800] text-[#14231F] font-['Bricolage_Grotesque']">${plan.price}</p>
                   <p className="text-sm font-[700] text-[#059669]">{tPricing('credits', { count: plan.credits })}</p>
                   <p className="text-xs text-[#4B5A55] leading-relaxed min-h-[2.5rem]">
-                    {tPricing('capacityExample', { saule: sauleChats, beiwe: beiweUpdates })}
+                    {tPricing('capacityExample', { saule: sauleChats, studio: studioUpdates })}
                   </p>
                   <p className="text-xs font-medium text-[#4B5A55] leading-relaxed">
                     {tPricing(`idealFor_${plan.id}` as any)}

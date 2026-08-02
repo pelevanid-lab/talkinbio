@@ -15,7 +15,7 @@ export interface Suggestion {
 const VISUAL_SECTORS = ['beauty_salon', 'photographer', 'tattoo_artist', 'architect', 'restaurant'];
 const TRUST_SECTORS = ['consultant', 'lawyer', 'therapist', 'real_estate', 'financial_advisor', 'health'];
 
-export function useBeiweSuggestions(
+export function useSauleSuggestions(
   blocks: any[],
   businessCategory: string | null,
   contactValue: string | null,

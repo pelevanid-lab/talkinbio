@@ -6,7 +6,7 @@ import { Link } from '@/i18n/routing';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { ChevronLeft } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
-import { SAULE_CREDIT_COST, BEIWE_UPDATE_CREDIT_COST, CREDIT_COST_MENU } from '@/agents/shared/credits';
+import { SAULE_CREDIT_COST, SAULE_STUDIO_UPDATE_CREDIT_COST, CREDIT_COST_MENU } from '@/agents/shared/credits';
 import { PLANS, EXTRA_PACK } from '@/config/plans';
 import '../landing.css';
 
@@ -129,7 +129,7 @@ export default function PricingPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
           {PLANS.map((plan) => {
             const sauleChats = Math.floor(plan.credits / SAULE_CREDIT_COST);
-            const beiweUpdates = Math.floor(plan.credits / BEIWE_UPDATE_CREDIT_COST);
+            const studioUpdates = Math.floor(plan.credits / SAULE_STUDIO_UPDATE_CREDIT_COST);
             return (
               <div key={plan.id} style={{
                 border: '1px solid rgba(20,35,31,0.10)',
@@ -148,7 +148,7 @@ export default function PricingPage() {
                 </p>
                 <p style={{ margin: 0, fontWeight: 700, color: 'var(--teal)', fontSize: '0.95rem' }}>{t('credits', { count: plan.credits })}</p>
                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--ink-soft)', lineHeight: 1.5, minHeight: '2.5rem' }}>
-                  {t('capacityExample', { saule: sauleChats, beiwe: beiweUpdates })}
+                  {t('capacityExample', { saule: sauleChats, studio: studioUpdates })}
                 </p>
                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--ink-soft)', lineHeight: 1.5, fontWeight: 500 }}>
                   {t(`idealFor_${plan.id}` as any)}

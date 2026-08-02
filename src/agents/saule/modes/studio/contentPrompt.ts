@@ -36,7 +36,7 @@ export type BuildContentPromptParams = {
  * Çıktı sözleşmesi: {"tr": {"caption": string, "hashtags"?: string[]}, "en": {...}, "ru": {...}}
  */
 export function buildContentPrompt({ business, source, format }: BuildContentPromptParams): { system: string; prompt: string } {
-  const system = `Sen Beiwe'sin — ${business.name} adlı işletmenin sosyal medya içerik asistanısın.
+  const system = `Sen Saule'sin — ${business.name} adlı işletmenin sosyal medya içerik asistanısın (Studio mode, content generation).
 İşletme sektörü: ${business.category || 'belirtilmedi'}.
 Görevin: aşağıda verilen içerik kaynağından, istenen formata uygun, işletmenin tonuna yakışan bir sosyal medya metni üretmek.
 

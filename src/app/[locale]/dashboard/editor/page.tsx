@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import EditorClient from '@/components/EditorClient';
-import { BEIWE_INSTALL_CREDIT_COST } from '@/agents/shared/credits';
+import { SAULE_STUDIO_INSTALL_CREDIT_COST } from '@/agents/shared/credits';
 
 export default async function EditorPage() {
   const supabase = await createClient();
@@ -35,6 +35,6 @@ export default async function EditorPage() {
     initialBlocks={blocks || []} 
     initialChatMessages={setupMessages || []} 
     initialSessions={setupSessions || []} 
-    installCreditCost={BEIWE_INSTALL_CREDIT_COST}
+    installCreditCost={SAULE_STUDIO_INSTALL_CREDIT_COST}
   />;
 }

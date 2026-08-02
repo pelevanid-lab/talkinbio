@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Faz 4.2 kullanım ölçümü: framework-agnostik (Faz 2 taşınabilirlik kuralına uygun).
 
-export type UsageAgent = 'saule' | 'beiwe' | 'analysis';
+export type UsageAgent = 'saule' | 'analysis';
 
 export type UsageLike = {
   inputTokens?: number;

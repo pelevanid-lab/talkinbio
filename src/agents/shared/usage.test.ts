@@ -81,7 +81,7 @@ describe('recordUsageEvent', () => {
     await expect(
       recordUsageEvent(supabaseAdmin, {
         businessId: 'biz-1',
-        agent: 'beiwe',
+        agent: 'saule',
         channel: 'web',
         model: 'claude-sonnet-4-5-20250929',
         usage: { inputTokens: 1, outputTokens: 1 },
