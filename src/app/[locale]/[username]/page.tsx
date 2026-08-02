@@ -37,7 +37,12 @@ export async function generateMetadata({ params }: any) {
   const { business: pageBusiness } = resolvePublishedRuntimeData(business, blocks || [], false);
 
   const path = `/${username}`;
-  const title = `${pageBusiness.page_title || pageBusiness.name} | Talkinbio`;
+  // Strip color markup [[text|#RRGGBB]] → text for metadata
+  const stripColorMarkup = (text: string): string => {
+    return text.replace(/\[\[(.*?)\|#[0-9A-Fa-f]{6}\]\]/g, '$1');
+  };
+  const displayTitle = pageBusiness.page_title || pageBusiness.name;
+  const title = `${stripColorMarkup(displayTitle)} | Talkinbio`;
   const description = pageBusiness.category || 'Sohbet et, randevu al, bilgi al.';
 
   return {
