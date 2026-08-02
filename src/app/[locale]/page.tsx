@@ -412,7 +412,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {copy.nav.pricing}
             </Link>
             {isLoggedIn ? (
-              <Link href="/dashboard/editor" className="btn btn-primary nav-cta">
+              <Link href="/dashboard" className="btn btn-primary nav-cta">
                 {copy.hero.dashboard}
               </Link>
             ) : (
@@ -454,7 +454,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 demoInitialMessages={demoInitialMessages}
                 demoBlocks={demoBlocks}
                 demoTheme={demoTheme}
-                setupHref={isLoggedIn ? '/dashboard/editor?mode=instagram' : '/login'}
+                setupHref={isLoggedIn ? '/dashboard?mode=instagram' : '/login'}
               />
             </div>
           </div>
@@ -613,7 +613,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <div className="wrap text-center max-w-4xl">
             <h2 className="text-4xl md:text-6xl font-bold mb-5">{copy.final.title}</h2>
             <p className="text-white/70 text-xl mb-8">{copy.final.body}</p>
-            <Link href={isLoggedIn ? '/dashboard/editor' : '/login'} className="btn" style={{ background: '#fff', color: 'var(--ink)', padding: '14px 28px' }}>
+            <Link href={isLoggedIn ? '/dashboard' : '/login'} className="btn" style={{ background: '#fff', color: 'var(--ink)', padding: '14px 28px' }}>
               {copy.final.cta}
             </Link>
           </div>
