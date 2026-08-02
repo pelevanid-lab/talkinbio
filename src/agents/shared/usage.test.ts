@@ -19,7 +19,7 @@ describe('recordUsageEvent', () => {
       businessId: 'biz-1',
       agent: 'saule',
       channel: 'web',
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'gemini-2.5-flash-lite',
       usage: {
         inputTokens: 8139,
         outputTokens: 136,
@@ -32,7 +32,7 @@ describe('recordUsageEvent', () => {
       business_id: 'biz-1',
       agent: 'saule',
       channel: 'web',
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'gemini-2.5-flash-lite',
       input_tokens: 8139,
       output_tokens: 136,
       cache_read_tokens: 7000,
@@ -48,7 +48,7 @@ describe('recordUsageEvent', () => {
       businessId: 'biz-1',
       agent: 'saule',
       channel: 'web',
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'gemini-2.5-flash-lite',
       usage: { inputTokens: 10, outputTokens: 5 },
       creditsCharged: 1,
     });
@@ -65,7 +65,7 @@ describe('recordUsageEvent', () => {
       businessId: 'biz-1',
       agent: 'analysis',
       channel: 'cron',
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'gemini-2.5-flash-lite',
       usage: { inputTokens: 120, outputTokens: 40 },
     });
 
@@ -83,7 +83,7 @@ describe('recordUsageEvent', () => {
         businessId: 'biz-1',
         agent: 'saule',
         channel: 'web',
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'gemini-2.5-flash-lite',
         usage: { inputTokens: 1, outputTokens: 1 },
       })
     ).resolves.toBeUndefined();

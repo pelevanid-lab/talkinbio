@@ -28,7 +28,7 @@ describe('generateOnce', () => {
 
     expect(result.text).toBe('mocked completion');
     expect(result.usage).toEqual({ inputTokens: 120, outputTokens: 40 });
-    expect(result.model).toBe('claude-sonnet-4-5-20250929');
+    expect(result.model).toBe('gemini-2.5-flash-lite');
     expect(generateText).toHaveBeenCalledWith(
       expect.objectContaining({
         system: 'You summarize weekly conversation trends.',

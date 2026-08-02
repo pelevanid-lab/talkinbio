@@ -10,7 +10,7 @@ type PricingPerMTok = {
 };
 
 const PRICING: Record<string, PricingPerMTok> = {
-  'claude-sonnet-4-5-20250929': { input: 3, output: 15, cacheWriteMultiplier: 1.25, cacheReadMultiplier: 0.1 },
+  'gemini-2.5-flash-lite': { input: 0.075, output: 0.3, cacheWriteMultiplier: 0, cacheReadMultiplier: 0 },
 };
 
 export type UsageTokens = {
