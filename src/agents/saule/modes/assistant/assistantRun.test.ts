@@ -129,7 +129,7 @@ describe('runSauleTurn', () => {
     })) as any;
 
     const fakeUsage = { inputTokens: 100, outputTokens: 20 };
-    const fakeModel = { provider: 'google', modelId: 'gemini-2.5-flash-lite' };
+    const fakeModel = { provider: 'google', modelId: 'gemini-2.5-flash' };
 
     await result.opts.onFinish({ text: 'Bilgilerinizi kaydettim, teşekkürler!', toolCalls: [], usage: fakeUsage, model: fakeModel });
     expect(warnSpy).toHaveBeenCalledWith(
@@ -237,7 +237,7 @@ describe('runSauleTurn', () => {
       text: 'Merhaba!',
       toolCalls: [],
       usage: { inputTokens: 10, outputTokens: 5 },
-      model: { provider: 'google', modelId: 'gemini-2.5-flash-lite' },
+      model: { provider: 'google', modelId: 'gemini-2.5-flash' },
     });
 
     expect(supabaseAdmin.rpc).toHaveBeenCalledWith('deduct_credits', { p_business_id: 'biz-1', p_amount: SAULE_CREDIT_COST });

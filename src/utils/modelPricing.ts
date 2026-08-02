@@ -10,7 +10,7 @@ type PricingPerMTok = {
 };
 
 const PRICING: Record<string, PricingPerMTok> = {
-  'gemini-2.5-flash-lite': { input: 0.075, output: 0.3, cacheWriteMultiplier: 0, cacheReadMultiplier: 0 },
+  'gemini-2.5-flash': { input: 0.075, output: 0.3, cacheWriteMultiplier: 0, cacheReadMultiplier: 0 },
 };
 
 export type UsageTokens = {

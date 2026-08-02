@@ -1,7 +1,7 @@
 import { anthropic } from '@ai-sdk/anthropic';
 import { google } from '@ai-sdk/google';
 
-const DEFAULT_MODEL = 'gemini-2.5-flash-lite';
+const DEFAULT_MODEL = 'gemini-2.5-flash';
 
 const TASK_ENV_KEYS = {
   beiwe: 'AI_MODEL_BEIWE',

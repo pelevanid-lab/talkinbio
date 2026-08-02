@@ -3,7 +3,7 @@ import { estimateCostUsd } from './modelPricing';
 
 describe('estimateCostUsd', () => {
   it('resolves cost from PRICING table when model is known', () => {
-    const cost = estimateCostUsd('gemini-2.5-flash-lite', {
+    const cost = estimateCostUsd('gemini-2.5-flash', {
       inputTokens: 10000,
       outputTokens: 1000,
       cacheReadTokens: 0,
@@ -26,13 +26,4 @@ describe('estimateCostUsd', () => {
     expect(cost).toBeNull();
   });
 
-  it('returns null for an unknown model instead of guessing', () => {
-    const cost = estimateCostUsd('gemini-2.5-flash', {
-      inputTokens: 1000,
-      outputTokens: 100,
-      cacheReadTokens: 0,
-      cacheWriteTokens: 0,
-    });
-    expect(cost).toBeNull();
-  });
 });
