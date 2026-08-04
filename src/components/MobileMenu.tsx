@@ -7,8 +7,9 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 interface MobileMenuProps {
   isLoggedIn: boolean;
   texts: {
-    pricing: string;
+    pricing?: string;
     login: string;
+    dashboard?: string;
   };
 }
 
@@ -44,13 +45,15 @@ export default function MobileMenu({ isLoggedIn, texts }: MobileMenuProps) {
           </div>
           <div className="h-[1px] bg-[var(--border)] w-full"></div>
           
-          <Link 
-            href="/pricing" 
-            className="text-[var(--ink)] font-medium text-lg px-2 py-1"
-            onClick={() => setIsOpen(false)}
-          >
-            {texts.pricing}
-          </Link>
+          {texts.pricing && (
+            <Link 
+              href="/pricing" 
+              className="text-[var(--ink)] font-medium text-lg px-2 py-1"
+              onClick={() => setIsOpen(false)}
+            >
+              {texts.pricing}
+            </Link>
+          )}
           
           {isLoggedIn ? (
             <Link 
@@ -58,7 +61,7 @@ export default function MobileMenu({ isLoggedIn, texts }: MobileMenuProps) {
               className="btn btn-primary w-full text-center mt-2"
               onClick={() => setIsOpen(false)}
             >
-              Dashboard
+              {texts.dashboard || 'Dashboard'}
             </Link>
           ) : (
             <div className="flex flex-col gap-3 mt-2">

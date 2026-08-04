@@ -143,13 +143,22 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
     .eq('business_id', business.id)
     .order('order', { ascending: true });
 
+  const { data: knowledge } = await supabase
+    .from('saule_knowledge')
+    .select('id, title, content, is_active, behavior, localized_data')
+    .eq('business_id', business.id)
+    .eq('is_active', true);
+
   const { business: pageBusiness, blocks: pageBlocks } = resolvePublishedRuntimeData(business, blocks || [], isOwner);
   const theme = pageBusiness.theme || DEFAULT_THEME;
   const sauleSettings = pageBusiness.saule_settings || {};
-  const voiceCueManifest = sauleSettings.voiceEnabled ? await getActiveSauleCueManifest('standard') : null;
+  const creditBalance = business.credit_balance ?? 0;
+  const isFrontDeskActive = (sauleSettings.frontDeskEnabled !== false) && (creditBalance >= 20);
+  const isVoiceEnabled = !!sauleSettings.voiceEnabled && (creditBalance >= 200);
+  const voiceCueManifest = isVoiceEnabled ? await getActiveSauleCueManifest('standard') : null;
   const chatSauleSettings = voiceCueManifest
-    ? { ...sauleSettings, voiceCuePackage: 'standard', voiceCueManifest }
-    : sauleSettings;
+    ? { ...sauleSettings, voiceEnabled: true, voiceCuePackage: 'standard', voiceCueManifest }
+    : { ...sauleSettings, voiceEnabled: false };
   const customGreeting = sauleSettings.customGreetingEnabled && sauleSettings.customGreeting
     ? sauleSettings.customGreeting
     : null;
@@ -213,6 +222,23 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
     '--tb-page-bg-sticky': stickyCanvas,
   } as CSSProperties;
 
+  // Resolve the contact method & value based on lead capture settings fallback
+  let resolvedContactMethod = pageBusiness.contact_method;
+  let resolvedContactValue = pageBusiness.contact_value;
+
+  if (pageBusiness.saule_settings?.leadCaptureEnabled === false && pageBusiness.saule_settings?.preferredContactMethod) {
+    const preferredMethod = pageBusiness.saule_settings.preferredContactMethod;
+    try {
+      const contactValues = pageBusiness.contact_value ? JSON.parse(pageBusiness.contact_value) : {};
+      if (contactValues[preferredMethod]) {
+        resolvedContactMethod = preferredMethod;
+        resolvedContactValue = contactValues[preferredMethod];
+      }
+    } catch (e) {
+      console.error('Failed to parse contact_value JSON:', e);
+    }
+  }
+
   return (
     <div className="flex flex-col h-[100dvh] relative" style={pageStyle}>
       <script
@@ -228,7 +254,17 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
         </div>
       )}
       
-      <PublicPageRuntimeProvider targets={pageActionTargets}>
+      <PublicPageRuntimeProvider
+        targets={pageActionTargets}
+        businessId={business.id}
+        blocks={pageBlocks || []}
+        knowledge={knowledge || []}
+        businessName={pageBusiness.name}
+        contactMethod={resolvedContactMethod}
+        contactValue={resolvedContactValue}
+        leadCaptureEnabled={pageBusiness.saule_settings?.leadCaptureEnabled !== false}
+        customGreeting={customGreeting}
+      >
       {/* Scrollable content — flex-1 min-h-0 so it fills only the space ABOVE the in-flow Saule
           dock below. Blocks scroll within here; the last block ends above Saule and can never
           slide under it (no magic pb-[…] needed). */}
@@ -245,6 +281,7 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
             contactMethod={pageBusiness.contact_method}
             contactValue={pageBusiness.contact_value}
             orderNowBehavior={pageBusiness.saule_settings?.orderNowBehavior}
+            locale={locale}
           />
 
         </div>
@@ -253,11 +290,13 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
       {/* Saule dock — an in-flow flex child (NOT fixed), so it reserves its own vertical space and
           the block area above shrinks to fit. Overlap with blocks is structurally impossible.
           The expanded chat sheet still opens as a fixed 85dvh overlay from inside ChatWidget. */}
-      <div className="shrink-0 relative z-50" style={{ background: 'var(--tb-page-bg-sticky)' }}>
-        <div className="max-w-md mx-auto w-full relative">
-          <ChatWidget businessId={business.id} businessName={pageBusiness.name} locale={locale} initialMessages={initialMessages} customGreeting={customGreeting} sauleSettings={chatSauleSettings} preview={isOwner} initialCreditsExhausted={(business.credit_balance ?? 0) <= 0} />
+      {isFrontDeskActive && (
+        <div className="shrink-0 relative z-50" style={{ background: 'var(--tb-page-bg-sticky)' }}>
+          <div className="max-w-md mx-auto w-full relative">
+            <ChatWidget businessId={business.id} businessName={pageBusiness.name} locale={locale} initialMessages={initialMessages} customGreeting={customGreeting} sauleSettings={chatSauleSettings} preview={isOwner} initialCreditsExhausted={(business.credit_balance ?? 0) <= 0} />
+          </div>
         </div>
-      </div>
+      )}
       </PublicPageRuntimeProvider>
     </div>
   );

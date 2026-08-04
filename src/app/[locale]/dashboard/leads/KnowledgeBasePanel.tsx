@@ -33,6 +33,22 @@ export default function KnowledgeBasePanel({ businessId, initialKnowledge }: { b
   const estimatedTokens = Math.round(activeCharCount / CHARS_PER_TOKEN);
   const isOverBudget = estimatedTokens > WARN_TOKEN_THRESHOLD;
 
+  const triggerReindex = async () => {
+    // Reindex draft in background
+    fetch(`/api/admin/businesses/${businessId}/reindex-semantic`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ publishVersion: 'draft' })
+    }).catch(err => console.error('Draft semantic re-indexing failed:', err));
+
+    // Reindex published in background so live visitors get instant sync since leads has no independent publish flow
+    fetch(`/api/admin/businesses/${businessId}/reindex-semantic`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ publishVersion: 'published' })
+    }).catch(err => console.error('Published semantic re-indexing failed:', err));
+  };
+
   const handleAdd = async () => {
     if (!newContent.trim()) return;
     setIsSaving(true);
@@ -40,6 +56,7 @@ export default function KnowledgeBasePanel({ businessId, initialKnowledge }: { b
       business_id: businessId,
       title: newTitle.trim() || null,
       content: newContent.trim(),
+      is_active: true,
     }).select('*').single();
     setIsSaving(false);
     if (error) {
@@ -51,6 +68,7 @@ export default function KnowledgeBasePanel({ businessId, initialKnowledge }: { b
     setNewTitle('');
     setNewContent('');
     setIsAdding(false);
+    triggerReindex();
   };
 
   const handleToggleActive = async (note: KnowledgeRow) => {
@@ -60,6 +78,8 @@ export default function KnowledgeBasePanel({ businessId, initialKnowledge }: { b
     if (error) {
       console.error(error);
       setNotes(notes.map(n => n.id === note.id ? { ...n, is_active: note.is_active } : n));
+    } else {
+      triggerReindex();
     }
   };
 
@@ -72,6 +92,8 @@ export default function KnowledgeBasePanel({ businessId, initialKnowledge }: { b
       console.error(error);
       setNotes(previousNotes);
       alert(t('knowledgeBase.deleteError'));
+    } else {
+      triggerReindex();
     }
   };
 
@@ -96,6 +118,7 @@ export default function KnowledgeBasePanel({ businessId, initialKnowledge }: { b
     }
     setNotes(notes.map(n => n.id === id ? { ...n, title: editTitle.trim() || null, content: editContent.trim() } : n));
     setEditingId(null);
+    triggerReindex();
   };
 
   return (

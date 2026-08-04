@@ -1,6 +1,6 @@
-// Kredi ↔ dolar dönüşümü — kurucu onayı: 100 kredi = $5 (bkz. `EXTRA_PACK` içinde
-// `src/config/plans.ts`), yani 1 kredi = $0.05.
-export const CREDIT_VALUE_USD = 0.05;
+// Kredi ↔ dolar dönüşümü — kurucu onayı: 1000 kredi = $5 (bkz. `EXTRA_PACK` içinde
+// `src/config/plans.ts`), yani 1 kredi = $0.005.
+export const CREDIT_VALUE_USD = 0.005;
 
 /**
  * Bir AI işleminin ham dolar maliyetini, en az %100 kâr marjıyla (fiyat ≥ 2×maliyet)

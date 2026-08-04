@@ -264,7 +264,10 @@
     }
   },
   "Editor": {
-    "panelTitle": "Sayfanız",
+    "panelTitle": "Editör",
+    "openPreview": "Önizlemeyi Aç",
+    "costEstimation": "(Maks. ≈{cost} kredi)",
+    "placeholderCost": "(İşlem başı maks. ≈{cost} kredi)",
     "previewBtn": "Önizleme",
     "tabAgent": "Kurulum Ajanı",
     "tabBulk": "Toplu Metin",
@@ -338,7 +341,9 @@
       "gallery": "Galeri",
       "testimonials": "Yorumlar",
       "links": "Bağlantılar",
-      "extra_services": "Özel (Ek Hizmetler)"
+      "extra_services": "Özel (Ek Hizmetler)",
+      "draft_semantic_index": "Taslak Arama İndeksi",
+      "published_semantic_index": "Yayınlanmış Arama İndeksi"
     },
     "previewEmpty": "Instagram’dan alarak veya toplu metinle başlayın.",
     "assistantSuffix": "Asistanı",
@@ -451,7 +456,8 @@
     "studioPostTitle": "Post",
     "studioPostDesc": "Sayfanızdaki görsel dili sosyal postlara taşıyın.",
     "studioMotionTitle": "Motion",
-    "studioMotionDesc": "Mevcut medya üzerinde kısa hareketli çıktılar hazırlayın."
+    "studioMotionDesc": "Mevcut medya üzerinde kısa hareketli çıktılar hazırlayın.",
+    "studioOpenBtn": "Stüdyoyu Aç"
   },
   "BlockEditor": {
     "title": "Bloğu Düzenle",
@@ -578,14 +584,14 @@
     "eyebrow": "Planlar",
     "title": "Şeffaf kapasite, şeffaf fiyat.",
     "intro": "Kredi tabanlı esnek fiyatlandırma. Krediniz bitmediği sürece her ay yenileme yapmak veya aylık sabit ücret ödemek zorunda değilsiniz; sadece kullandığınız kadar harcarsınız.",
-    "plan_free": "Deneme",
+    "plan_free": "Sign up free",
     "plan_starter": "Starter",
     "plan_pro": "Pro",
     "plan_business": "Business",
     "perMonth": "/ay",
     "credits": "{count} kredi",
     "capacityExample": "≈ {saule} Saule sohbeti VEYA {beiwe} sayfa güncellemesi",
-    "idealFor_free": "Her yeni kayıt olan kullanıcıya bir kereye mahsus 20 kredi hediye edilir.",
+    "idealFor_free": "Her yeni kayıt olan kullanıcıya bir kereye mahsus 200 kredi hediye edilir.",
     "idealFor_starter": "Sayfasını yayına almak ve ilk ziyaretçi sorularını karşılamak isteyen bireysel işletmeler için.",
     "idealFor_pro": "Düzenli ziyaretçi trafiği olan ve sayfasını sık güncelleyen büyüyen işletmeler için.",
     "idealFor_business": "Birden fazla hizmet hattı, daha yoğun sayfa üretimi ve özel ses paketi isteyen ekipler için.",
@@ -637,7 +643,7 @@
     },
     "q6": {
       "title": "Gelir Modelimiz",
-      "content": "Gelir modelimiz abonelik değil, kredi bazlı bakiye modeli. Shopier abonelik desteklemediği için kullanıcı süre sınırı olmayan kredi satın alır ve yalnızca gerçek işlem olduğunda kredi harcar.\n\nDeneme paketi $0 ve tek seferlik 20 kredi verir; ürünü az da olsa deneyimletmek içindir.\n\nStarter ($15, 200 kredi) sayfasını yayına almak ve ilk ziyaretçi sorularını karşılamak isteyen bireysel işletmeler için.\n\nPro ($40, 600 kredi) düzenli ziyaretçi trafiği olan ve sayfasını sık güncelleyen büyüyen işletmeler için.\n\nBusiness ($90, 1.500 kredi) birden fazla hizmet hattı, daha yoğun sayfa üretimi ve özel ses paketi isteyen ekipler için.\n\nEk kredi paketi $8 karşılığında 100 kredi verir. Fiyatlarımız dolar üzerinden sabit; TL tahsilatı gerektiğinde güncel kurdan yapılır. Birim iş başına düşen kredi miktarı sabit kaldığı için toplu paketlerde kullanıcı daha avantajlı kapasite alırken marjımız da korunur."
+      "content": "Gelir modelimiz abonelik değil, kredi bazlı bakiye modeli. Shopier abonelik desteklemediği için kullanıcı süre sınırı olmayan kredi satın alır ve yalnızca gerçek işlem olduğunda kredi harcar.\n\nDeneme paketi $0 ve tek seferlik 200 kredi verir; ürünü az da olsa deneyimletmek içindir.\n\nStarter ($15, 2.000 kredi) sayfasını yayına almak ve ilk ziyaretçi sorularını karşılamak isteyen bireysel işletmeler için.\n\nPro ($40, 6.000 kredi) düzenli ziyaretçi trafiği olan ve sayfasını sık güncelleyen büyüyen işletmeler için.\n\nBusiness ($90, 15.000 kredi) birden fazla hizmet hattı, daha yoğun sayfa üretimi ve özel ses paketi isteyen ekipler için.\n\nEk kredi paketi $8 karşılığında 1.000 kredi verir. Fiyatlarımız dolar üzerinden sabit; TL tahsilatı gerektiğinde güncel kurdan yapılır. Birim iş başına düşen kredi miktarı sabit kaldığı için toplu paketlerde kullanıcı daha avantajlı kapasite alırken marjımız da korunur."
     },
     "q7": {
       "title": "Nereye Gidiyoruz",
@@ -855,6 +861,14 @@
     "settingsSavedToast": "Ayarlar kaydedildi",
     "saveSettingsBtn": "Ayarları Kaydet",
     "sauleSubtitle": "Dijital Ön Masa Asistanınız",
+    "frontDeskToggleTitle": "Dijital Ön Masa Asistanı",
+    "frontDeskToggleHint": "Masanın aktif olması için minimum 20 krediniz olmalı. (20 kredinin altına düştüğünde asistan otomatik olarak kapatılır). Her 20 soruluk paket ya da her bir kullanıcı oturumu için 1 kredi düşülür.",
+    "frontDeskStatusActive": "Aktif",
+    "frontDeskStatusOff": "Kapalı",
+    "frontDeskStatusLowCredits": "Kredi Yetersiz",
+    "frontDeskCurrentCredits": "Mevcut Krediniz:",
+    "frontDeskTopUpBtn": "Kredi Yükle",
+    "frontDeskCreditUnit": "Kredi",
     "toneSectionTitle": "Kişilik & Ton",
     "toneFriendlyLabel": "Sıcak & Samimi",
     "toneFormalLabel": "Resmi & Profesyonel",
@@ -884,7 +898,7 @@
     "greetingDesc": "İlk mesajı siz belirleyin.",
     "greetingHint": "Ziyaretçinin sayfayı görüntülediği dile göre gösterilir; boş bıraktığınız dilde Saule'nin varsayılan karşılaması kullanılır.",
     "voiceTitle": "Sesli İletişim (Beta)",
-    "voiceDesc": "Ziyaretçileriniz mikrofonla soru sorabilsin; Saule yanıtı hazır kısa ses cue'ları ve yazılı/sayfa yönlendirmesiyle verir.",
+    "voiceDesc": "Ziyaretçileriniz mikrofonla soru sorabilsin; asistan yanıtı hazır kısa ses cue'ları ve yazılı/sayfa yönlendirmesiyle verir. Açıldığında her bir kullanıcı oturumu için ek 50 kredi düşer.\n\nBakiyeniz 200 kredi altına düştüğünde kendiliğinden kapanır.",
     "voiceToggleLabel": "Sesli İletişimi Etkinleştir",
     "voiceModelLabel": "Asistan Sesi",
     "voiceWelcomeLabel": "Hazır Saule Ses Cue'ları",
@@ -951,14 +965,16 @@
     },
     "navAnalytics": "Analiz",
     "navBilling": "Krediler",
-    "navCreativeStudio": "Sayfanız"
+    "navSetup": "Kurulum",
+    "navCreativeStudio": "Görsel Stüdyo",
+    "navFrontDesk": "Front Desk Ayarları"
   },
   "CreativeStudio": {
     "pageTitle": "Sayfa Stüdyosu",
     "comingSoonBadge": "Yakında",
     "liveBadge": "Kullanıma açık",
     "heroTitle": "Sayfanızı zenginleştiren üretim alanı",
-    "heroDesc": "Post ve görsel düzenleme araçları sayfanızın görsel kalitesini artırmak için burada. Ana kurulum Sayfanız ekranında kalır.",
+    "heroDesc": "Post ve görsel düzenleme araçları sayfanızın görsel kalitesini artırmak için burada. Ana kurulum Editör ekranında kalır.",
     "twinCta": "Dijital İkizini Oluştur",
     "feature1Title": "Kaldırıldı",
     "feature1Desc": "Fotoğraflarınla eğitilen, seni temsil eden bir görsel kimlik.",

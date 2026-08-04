@@ -187,7 +187,7 @@ export default function BillingClient({ business, transactions, ownerEmail }: { 
                   <p className="text-2xl font-[800] text-[#14231F] font-['Bricolage_Grotesque']">${plan.price}</p>
                   <p className="text-sm font-[700] text-[#059669]">{tPricing('credits', { count: plan.credits })}</p>
                   <p className="text-xs text-[#4B5A55] leading-relaxed min-h-[2.5rem]">
-                    {tPricing('capacityExample', { saule: sauleChats, studio: studioUpdates })}
+                    {tPricing('capacityExample', { saule: sauleChats, beiwe: studioUpdates })}
                   </p>
                   <p className="text-xs font-medium text-[#4B5A55] leading-relaxed">
                     {tPricing(`idealFor_${plan.id}` as any)}

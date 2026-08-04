@@ -1,13 +1,12 @@
-﻿'use client';
+'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { formatDistanceToNow, type Locale } from 'date-fns';
 import { tr, enUS, ru } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
-import { CheckCircle2, Clock, Phone, User as UserIcon, Settings, Inbox, Loader2, Send, MessageCircle, Archive, ArchiveRestore, Trash2, StickyNote, Mail, Plus, Mic, Volume2 } from 'lucide-react';
+import { Clock, User as UserIcon, Inbox, MessageCircle, Archive, ArchiveRestore, Trash2, StickyNote, Mail, Plus, CheckCircle2, Send, Phone } from 'lucide-react';
 import ConversationsPanel from './ConversationsPanel';
-import KnowledgeBasePanel from './KnowledgeBasePanel';
 import DashboardShell from '@/components/dashboard/DashboardShell';
 
 const DATE_FNS_LOCALES: Record<string, Locale> = { tr, en: enUS, ru };
@@ -20,75 +19,105 @@ const ORDER_NOW_METHOD_LABELS: Record<string, Record<string, string>> = {
   email: { tr: 'E-posta', en: 'Email', ru: 'Email' },
 };
 
-export default function LeadsClient({ business, initialLeads, initialConversations, initialKnowledge }: { business: any, initialLeads: any[], initialConversations: any[], initialKnowledge: any[] }) {
+export default function LeadsClient({ business, initialLeads, initialConversations }: { business: any, initialLeads: any[], initialConversations: any[] }) {
   const supabase = createClient();
   const t = useTranslations('Leads');
   const tEditor = useTranslations('Editor');
   const locale = useLocale();
   const dateLocale = DATE_FNS_LOCALES[locale] || tr;
-  const [activeTab, setActiveTab] = useState<'leads' | 'conversations' | 'settings'>('leads');
-  const [settingsSection, setSettingsSection] = useState<'behavior' | 'capture' | 'voice' | 'knowledge'>('behavior');
+  const [activeTab, setActiveTab] = useState<'leads' | 'conversations'>('leads');
   const [leads, setLeads] = useState(initialLeads);
-  const [conversations] = useState(initialConversations);
+  const [conversations, setConversations] = useState(initialConversations);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [showArchivedLeads, setShowArchivedLeads] = useState(false);
-  // Not alanÄ± boÅŸken varsayÄ±lan kapalÄ± â€” kart baÅŸÄ±na gereksiz boÅŸ kutu gÃ¶stermemek iÃ§in.
+
+  // Supabase Realtime Subscriptions for Leads and Conversations
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Realtime channel for conversations
+    const convChannel = supabase
+      .channel('realtime-dashboard-conversations')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversations',
+          filter: `business_id=eq.${business.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newConv = payload.new as any;
+            setConversations((prev) => {
+              if (prev.some((c) => c.id === newConv.id)) return prev;
+              // Prepend new conversations and order by last_message_at desc
+              const updated = [newConv, ...prev];
+              return updated.sort((a, b) => {
+                const aTime = new Date(a.last_message_at || a.created_at).getTime();
+                const bTime = new Date(b.last_message_at || b.created_at).getTime();
+                return bTime - aTime;
+              });
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedConv = payload.new as any;
+            setConversations((prev) => {
+              const updated = prev.map((c) => (c.id === updatedConv.id ? { ...c, ...updatedConv } : c));
+              return updated.sort((a, b) => {
+                const aTime = new Date(a.last_message_at || a.created_at).getTime();
+                const bTime = new Date(b.last_message_at || b.created_at).getTime();
+                return bTime - aTime;
+              });
+            });
+          } else if (payload.eventType === 'DELETE') {
+            const deletedConv = payload.old as any;
+            setConversations((prev) => prev.filter((c) => c.id !== deletedConv.id));
+          }
+        }
+      )
+      .subscribe();
+
+    // Realtime channel for leads
+    const leadsChannel = supabase
+      .channel('realtime-dashboard-leads')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'leads',
+          filter: `business_id=eq.${business.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newLead = payload.new as any;
+            setLeads((prev) => {
+              if (prev.some((l) => l.id === newLead.id)) return prev;
+              return [newLead, ...prev];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedLead = payload.new as any;
+            setLeads((prev) => prev.map((l) => (l.id === updatedLead.id ? { ...l, ...updatedLead } : l)));
+          } else if (payload.eventType === 'DELETE') {
+            const deletedLead = payload.old as any;
+            setLeads((prev) => prev.filter((l) => l.id !== deletedLead.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(convChannel);
+      supabase.removeChannel(leadsChannel);
+    };
+  }, [business.id, supabase]);
+
   const [openNoteIds, setOpenNoteIds] = useState<Set<string>>(() => new Set(initialLeads.filter((l: any) => l.notes).map((l: any) => l.id)));
-
-  // Settings state
-  const [settings, setSettings] = useState(business.saule_settings || {});
-  const [isSaving, setIsSaving] = useState(false);
-  const [showToast, setShowToast] = useState(false);
   
-  const [metaSuccess, setMetaSuccess] = useState<string | null>(null);
-  const [metaError, setMetaError] = useState<string | null>(null);
-  const [copiedProfileLink, setCopiedProfileLink] = useState(false);
   const profileUrl = `talkinbio.com/${business.username}`;
-  const handleCopyProfileLink = async () => {
-    try {
-      await navigator.clipboard.writeText(`https://${profileUrl}`);
-      setCopiedProfileLink(true);
-      setTimeout(() => setCopiedProfileLink(false), 2000);
-    } catch (err) {
-      console.error('Copy failed:', err);
-    }
-  };
 
   
-  // URL parametresinden baÅŸarÄ±/hata durumunu kontrol et
-  if (typeof window !== 'undefined' && !metaSuccess && !metaError) {
-    const searchParams = new URLSearchParams(window.location.search);
-    const success = searchParams.get('meta_success');
-    const error = searchParams.get('meta_error');
-    if (success === 'connected') {
-      setMetaSuccess(success);
-    }
-    if (error) {
-      setMetaError(error);
-    }
-  }
 
-  // Order Now button behavior â€” always offers "open Saule", plus one option per contact method
-  // that already has a value filled in the editor's Ä°letiÅŸim section (disabled otherwise, so the
-  // owner isn't offered a target that would silently do nothing).
-  let orderNowContactValues: Record<string, string> = {};
-  try { orderNowContactValues = business.contact_value ? JSON.parse(business.contact_value) : {}; } catch { orderNowContactValues = {}; }
-  const orderNowOptions = [
-    { key: 'saule', label: t('orderNowSaule'), disabled: false },
-    ...(['whatsapp', 'instagram', 'telegram', 'email'] as const).map((key) => ({
-      key,
-      label: ORDER_NOW_METHOD_LABELS[key][locale] || key,
-      disabled: !orderNowContactValues[key]?.trim(),
-    })),
-  ];
-
-  // "Tercih Edilen Ä°letiÅŸim KanalÄ±" seÃ§eneÄŸi yalnÄ±zca iÅŸletmenin EditÃ¶r'de zaten
-  // doldurduÄŸu kanallarÄ± listeler â€” boÅŸ bir kanalÄ± "tercih" olarak seÃ§tirmenin anlamÄ± yok.
-  const contactValues: Record<string, string> = (() => {
-    try { return business.contact_value ? JSON.parse(business.contact_value) : {}; } catch { return {}; }
-  })();
-  const CONTACT_METHOD_ORDER = ['whatsapp', 'instagram', 'telegram', 'email'] as const;
-  const availableContactMethods = CONTACT_METHOD_ORDER.filter((m) => contactValues[m]?.trim());
 
   const handleMarkSeen = async (leadId: string) => {
     // Optimistic update
@@ -131,20 +160,7 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
     setLeads(leads.filter(l => l.id !== leadId));
   };
 
-  const handleSaveSettings = async () => {
-    setIsSaving(true);
-    try {
-      const { error } = await supabase.from('businesses').update({ saule_settings: settings }).eq('id', business.id);
-      if (error) throw error;
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-    } catch (err) {
-      console.error(err);
-      alert(t('settingsSaveError'));
-    } finally {
-      setIsSaving(false);
-    }
-  };
+
 
   return (
     <DashboardShell business={business} active="leads">
@@ -162,12 +178,6 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
             className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'conversations' ? 'bg-[#14231F] text-white' : 'text-[#8A8880] hover:text-[#4B5A55]'}`}
           >
             <MessageCircle className="w-4 h-4" /> {t('tabConversations')}
-          </button>
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${activeTab === 'settings' ? 'bg-[#14231F] text-white' : 'text-[#8A8880] hover:text-[#4B5A55]'}`}
-          >
-            <Settings className="w-4 h-4" /> {t('tabSettings')}
           </button>
         </div>
       </div>
@@ -313,377 +323,13 @@ export default function LeadsClient({ business, initialLeads, initialConversatio
           )}
           </>
           );
-        })() : activeTab === 'conversations' ? (
+        })() : (
           <ConversationsPanel
             conversations={conversations}
             leads={leads}
             selectedConversationId={selectedConversationId}
             onSelectConversation={(id) => setSelectedConversationId(id)}
           />
-        ) : (
-          <div className="bg-white border border-[rgba(20,35,31,0.10)] rounded-[20px] p-6 shadow-sm">
-            <div className="flex items-center gap-4 mb-8 pb-6 border-b border-[rgba(20,35,31,0.10)]">
-              <div className="w-16 h-16 bg-[#FFEDE9] text-[#FF6A5C] rounded-full flex items-center justify-center font-bold text-2xl shrink-0">
-                S
-              </div>
-              <div>
-                <h2 className="text-xl font-[800] text-[#14231F] font-['Bricolage_Grotesque']">Saule</h2>
-                <p className="text-sm text-[#4B5A55]">{t('sauleSubtitle')}</p>
-              </div>
-            </div>
-
-            <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-2 bg-[#F4F2ED] p-2 rounded-2xl">
-              {([
-                ['behavior', t('settingsSectionBehavior')],
-                ['capture', t('settingsSectionCapture')],
-                ['voice', t('settingsSectionVoice')],
-                ['knowledge', t('settingsSectionKnowledge')],
-              ] as const).map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setSettingsSection(key)}
-                  className={`px-3 py-2 rounded-xl text-sm font-semibold transition ${
-                    settingsSection === key
-                      ? 'bg-white text-[#14231F] shadow-sm'
-                      : 'text-[#4B5A55] hover:text-[#14231F]'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            <div className="space-y-8">
-              {settingsSection === 'behavior' && (
-              <>
-              {/* Tone */}
-              <div>
-                <h3 className="text-sm font-bold text-[#14231F] mb-3 uppercase tracking-wider font-mono">{t('toneSectionTitle')}</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {(['friendly', 'formal', 'energetic'] as const).map(tone => (
-                    <button
-                      key={tone}
-                      onClick={() => setSettings({ ...settings, personalityTone: tone })}
-                      className={`p-4 rounded-xl border text-left transition-all ${settings.personalityTone === tone || (!settings.personalityTone && tone === 'friendly') ? 'border-[#FF6A5C] bg-[#FFEDE9] ring-1 ring-[#FF6A5C]' : 'border-[rgba(20,35,31,0.10)] hover:bg-[#F4F2ED]'}`}
-                    >
-                      <div className="font-semibold text-[#14231F] mb-1">
-                        {tone === 'friendly' ? t('toneFriendlyLabel') : tone === 'formal' ? t('toneFormalLabel') : t('toneEnergeticLabel')}
-                      </div>
-                      <div className="text-xs text-[#4B5A55]">
-                        {tone === 'friendly' ? t('toneFriendlyDesc') : tone === 'formal' ? t('toneFormalDesc') : t('toneEnergeticDesc')}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Order Now Behavior */}
-              <div className="py-4 border-t border-[rgba(20,35,31,0.10)]">
-                <h3 className="text-base font-semibold text-[#14231F] mb-1">{t('orderNowTitle')}</h3>
-                <p className="text-sm text-[#4B5A55] mb-3">{t('orderNowDesc')}</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {orderNowOptions.map(({ key, label, disabled }) => (
-                    <button
-                      key={key}
-                      type="button"
-                      disabled={disabled}
-                      onClick={() => setSettings({ ...settings, orderNowBehavior: key })}
-                      className={`p-3 rounded-xl border text-left transition-all ${
-                        (settings.orderNowBehavior || 'saule') === key
-                          ? 'border-[#FF6A5C] bg-[#FFEDE9] ring-1 ring-[#FF6A5C]'
-                          : disabled
-                          ? 'opacity-50 cursor-not-allowed border-[rgba(20,35,31,0.10)]'
-                          : 'border-[rgba(20,35,31,0.10)] hover:bg-[#F4F2ED]'
-                      }`}
-                    >
-                      <div className="font-semibold text-sm text-[#14231F]">{label}</div>
-                      {disabled && <div className="text-xs text-[#8A8880] mt-0.5">{t('orderNowFillContactHint')}</div>}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Instagram Integration */}
-              <div className="py-4 border-t border-[rgba(20,35,31,0.10)]">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <h3 className="text-base font-semibold text-[#14231F]">{t('instagramIntegration.title')}</h3>
-                      {metaSuccess !== 'connected' && (
-                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-wide bg-[#FFF1EE] text-[#FF6A5C] border border-[#FFB9A9] px-2 py-0.5 rounded-full">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#FF6A5C]" />
-                          {t('instagramIntegration.comingSoonBadge')}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-[#4B5A55]">{t('instagramIntegration.description')}</p>
-                  </div>
-                </div>
-                <div className="mt-3">
-                  {metaSuccess === 'connected' ? (
-                    <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-50 border border-green-200 text-green-700 font-medium text-sm rounded-lg shadow-sm">
-                      <CheckCircle2 className="w-5 h-5" />
-                      {t('instagramIntegration.connectedMsg')}
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled
-                      title={t('instagramIntegration.comingSoonBadge')}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#F4F2ED] text-[#8A8880] font-medium text-sm rounded-lg cursor-not-allowed"
-                    >
-                      {t('instagramIntegration.connectBtn')}
-                    </button>
-                  )}
-                </div>
-
-                {metaSuccess !== 'connected' && (
-                  <>
-                    <div className="mt-4 flex items-center justify-between gap-4 flex-wrap bg-[#F4F2ED] border border-[rgba(20,35,31,0.10)] rounded-xl p-4">
-                      <div>
-                        <p className="text-sm font-semibold text-[#14231F]">{t('instagramIntegration.workaroundTitle')}</p>
-                        <p className="text-xs text-[#4B5A55] mt-0.5">{t('instagramIntegration.workaroundDesc')}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleCopyProfileLink}
-                        className="flex items-center gap-2 text-sm font-medium text-[#14231F] bg-white border border-[rgba(20,35,31,0.10)] px-3 py-1.5 rounded-lg hover:border-[#FF6A5C] hover:text-[#FF6A5C] transition shrink-0"
-                      >
-                        <span className="font-mono text-xs text-[#4B5A55]">{profileUrl}</span>
-                        {copiedProfileLink ? t('instagramIntegration.copiedBtn') : t('instagramIntegration.copyLinkBtn')}
-                      </button>
-                    </div>
-
-                    <div className="mt-4">
-                      <p className="text-sm font-semibold text-[#14231F] mb-1.5">{t('instagramIntegration.guideHeading')}</p>
-                      <p className="text-xs text-[#4B5A55] mb-2">{t('instagramIntegration.guideIntro')}</p>
-                      <ol className="space-y-1.5">
-                        {[
-                          t('instagramIntegration.guideStep1'),
-                          t('instagramIntegration.guideStep2'),
-                          t('instagramIntegration.guideStep3', { link: profileUrl }),
-                          t('instagramIntegration.guideStep4'),
-                        ].map((step, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs text-[#4B5A55]">
-                            <span className="shrink-0 w-4 h-4 rounded-full bg-[#FFF1EE] text-[#FF6A5C] text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
-                            {step}
-                          </li>
-                        ))}
-                      </ol>
-                      <p className="text-xs text-[#8A8880] mt-2">{t('instagramIntegration.guideNote')}</p>
-                    </div>
-                  </>
-                )}
-              </div>
-              </>
-              )}
-
-              {settingsSection === 'capture' && (
-              <>
-              {/* Lead Capture */}
-              <div className="flex items-center justify-between py-4 border-t border-[rgba(20,35,31,0.10)]">
-                <div>
-                  <h3 className="text-base font-semibold text-[#14231F]">{t('leadCaptureTitle')}</h3>
-                  <p className="text-sm text-[#4B5A55]">{t('leadCaptureDesc')}</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" checked={settings.leadCaptureEnabled !== false} onChange={(e) => setSettings({ ...settings, leadCaptureEnabled: e.target.checked })} />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FF6A5C]"></div>
-                </label>
-              </div>
-              {settings.leadCaptureEnabled === false && (
-                <div className="bg-[#F4F2ED] p-4 rounded-xl -mt-2 mb-2 animate-in fade-in slide-in-from-top-2">
-                  <label className="block text-sm font-semibold text-[#14231F] mb-2 font-mono uppercase text-xs tracking-wider">{t('preferredContactMethodLabel')}</label>
-                  {availableContactMethods.length > 0 ? (
-                    <>
-                      <select
-                        value={settings.preferredContactMethod || ''}
-                        onChange={(e) => setSettings({ ...settings, preferredContactMethod: e.target.value || undefined })}
-                        className="w-full p-3 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F] bg-white"
-                      >
-                        <option value="">{t('preferredContactMethodPlaceholder')}</option>
-                        {availableContactMethods.map((method) => (
-                          <option key={method} value={method}>{tEditor(`contactMethods.${method}`)}</option>
-                        ))}
-                      </select>
-                      <p className="text-xs text-[#8A8880] mt-2">{t('preferredContactMethodHint')}</p>
-                    </>
-                  ) : (
-                    <p className="text-sm text-[#4B5A55]">{t('preferredContactMethodEmptyHint')}</p>
-                  )}
-                </div>
-              )}
-
-              {/* Notification Email */}
-              <div className="py-4 border-t border-[rgba(20,35,31,0.10)]">
-                <h3 className="text-base font-semibold text-[#14231F]">{t('notificationEmailTitle')}</h3>
-                <p className="text-sm text-[#4B5A55] mb-3">{t('notificationEmailDesc')}</p>
-                <input
-                  type="email"
-                  value={settings.notificationEmail || ''}
-                  onChange={(e) => setSettings({ ...settings, notificationEmail: e.target.value })}
-                  placeholder={t('notificationEmailPlaceholder')}
-                  className="w-full p-3 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F]"
-                />
-              </div>
-
-              {/* Appointments */}
-              <div className="py-4 border-t border-[rgba(20,35,31,0.10)]">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-base font-semibold text-[#14231F]">{t('appointmentTitle')}</h3>
-                    <p className="text-sm text-[#4B5A55]">{t('appointmentDesc')}</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" checked={settings.appointmentEnabled === true} onChange={(e) => setSettings({ ...settings, appointmentEnabled: e.target.checked })} />
-                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FF6A5C]"></div>
-                  </label>
-                </div>
-                {settings.appointmentEnabled && (
-                  <div className="bg-[#F4F2ED] p-4 rounded-xl mt-2 animate-in fade-in slide-in-from-top-2">
-                    <label className="block text-sm font-semibold text-[#14231F] mb-2 font-mono uppercase text-xs tracking-wider">{t('appointmentInstructionsLabel')}</label>
-                    <textarea
-                      value={settings.appointmentInstructions || ''}
-                      onChange={(e) => setSettings({ ...settings, appointmentInstructions: e.target.value })}
-                      placeholder={t('appointmentInstructionsPlaceholder')}
-                      className="w-full p-3 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F]"
-                      rows={3}
-                    />
-                    <p className="text-xs text-[#8A8880] mt-2">{t('appointmentHint')}</p>
-                  </div>
-                )}
-              </div>
-              </>
-              )}
-
-              {settingsSection === 'voice' && (
-              <>
-              {/* Custom Greeting */}
-              <div className="py-4 border-t border-[rgba(20,35,31,0.10)]">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-base font-semibold text-[#14231F]">{t('greetingTitle')}</h3>
-                    <p className="text-sm text-[#4B5A55]">{t('greetingDesc')}</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" checked={!!settings.customGreetingEnabled} onChange={(e) => setSettings({ ...settings, customGreetingEnabled: e.target.checked })} />
-                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FF6A5C]"></div>
-                  </label>
-                </div>
-                {settings.customGreetingEnabled && (
-                  <div className="bg-[#F4F2ED] p-4 rounded-xl animate-in fade-in slide-in-from-top-2 flex flex-col gap-3">
-                    {/* Below: per-language greeting examples. These labels/placeholders are intentionally
-                        shown in their own language (autonym), not translated to the dashboard's UI language â€”
-                        they demonstrate what to type for that specific visitor-facing language field. */}
-                    <p className="text-xs text-[#8A8880]">{t('greetingHint')}</p>
-                    {([
-                      { locale: 'tr' as const, label: 'TÃ¼rkÃ§e', placeholder: 'Ã–rn: Merhaba! Uliana Pehlivan sayfasÄ±na hoÅŸ geldiniz. Size nasÄ±l yardÄ±mcÄ± olabilirim?' },
-                      { locale: 'en' as const, label: 'English', placeholder: "e.g. Hello! Welcome to Uliana Pehlivan's page. How can I help you?" },
-                      { locale: 'ru' as const, label: 'Ğ ÑƒÑÑĞºĞ¸Ğ¹', placeholder: 'ĞĞ°Ğ¿Ñ€.: Ğ—Ğ´Ñ€Ğ°Ğ²ÑÑ‚Ğ²ÑƒĞ¹Ñ‚Ğµ! Ğ”Ğ¾Ğ±Ñ€Ğ¾ Ğ¿Ğ¾Ğ¶Ğ°Ğ»Ğ¾Ğ²Ğ°Ñ‚ÑŒ Ğ½Ğ° ÑÑ‚Ñ€Ğ°Ğ½Ğ¸Ñ†Ñƒ Uliana Pehlivan. Ğ§ĞµĞ¼ Ğ¼Ğ¾Ğ³Ñƒ Ğ²Ğ°Ğ¼ Ğ¿Ğ¾Ğ¼Ğ¾Ñ‡ÑŒ?' },
-                    ]).map(({ locale: greetingLocale, label, placeholder }) => (
-                      <div key={greetingLocale}>
-                        <label className="block text-xs font-semibold text-[#8A8880] mb-1 font-mono uppercase tracking-wider">{label}</label>
-                        <textarea
-                          value={settings.customGreeting?.[greetingLocale] || ''}
-                          onChange={(e) => setSettings({ ...settings, customGreeting: { ...settings.customGreeting, [greetingLocale]: e.target.value } })}
-                          placeholder={placeholder}
-                          className="w-full p-3 rounded-lg border border-[rgba(20,35,31,0.10)] focus:outline-none focus:border-[#FF6A5C] text-sm text-[#14231F]"
-                          rows={2}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Voice Communication */}
-              <div className="py-4 border-t border-[rgba(20,35,31,0.10)]">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 bg-[#FFEDE9] text-[#FF6A5C] rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                      <Mic className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-semibold text-[#14231F]">{t('voiceTitle')}</h3>
-                      <p className="text-sm text-[#4B5A55]">{t('voiceDesc')}</p>
-                    </div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={!!settings.voiceEnabled}
-                      onChange={(e) => setSettings({ ...settings, voiceEnabled: e.target.checked })}
-                    />
-                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FF6A5C]"></div>
-                  </label>
-                </div>
-
-                {settings.voiceEnabled && (
-                  <div className="bg-[#F4F2ED] p-4 rounded-xl mt-4 animate-in fade-in slide-in-from-top-2 flex flex-col gap-4">
-                    {/* Welcome message per language (Fixed display + Listen button) */}
-                    <div>
-                      <label className="block text-xs font-semibold text-[#8A8880] mb-2 font-mono uppercase tracking-wider">{t('voiceWelcomeLabel')}</label>
-                      <div className="space-y-3">
-                        {([
-                          {
-                            localeKey: 'tr' as const,
-                            label: 'TÃ¼rkÃ§e',
-                            text: `Merhaba! ${business.name} sayfasÄ±na hoÅŸ geldiniz. Size nasÄ±l yardÄ±mcÄ± olabilirim?`,
-                          },
-                          {
-                            localeKey: 'en' as const,
-                            label: 'English',
-                            text: `Hello! Welcome to ${business.name}'s page. How can I help you?`,
-                          },
-                          {
-                            localeKey: 'ru' as const,
-                            label: 'Ğ ÑƒÑÑĞºĞ¸Ğ¹',
-                            text: `Ğ—Ğ´Ñ€Ğ°Ğ²ÑÑ‚Ğ²ÑƒĞ¹Ñ‚Ğµ! Ğ”Ğ¾Ğ±Ñ€Ğ¾ Ğ¿Ğ¾Ğ¶Ğ°Ğ»Ğ¾Ğ²Ğ°Ñ‚ÑŒ Ğ½Ğ° ÑÑ‚Ñ€Ğ°Ğ½Ğ¸Ñ†Ñƒ ${business.name}. Ğ§ĞµĞ¼ Ğ¼Ğ¾Ğ³Ñƒ Ğ²Ğ°Ğ¼ Ğ¿Ğ¾Ğ¼Ğ¾Ñ‡ÑŒ?`,
-                          },
-                        ]).map(({ localeKey, label, text }) => (
-                          <div key={localeKey} className="bg-white p-3.5 rounded-xl border border-[rgba(20,35,31,0.10)]">
-                            <div className="flex items-center justify-between mb-1.5">
-                              <span className="text-xs font-bold text-[#FF6A5C] font-mono uppercase tracking-wider">{label}</span>
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[#FFEDE9] text-[#FF6A5C]">
-                                <Volume2 className="w-3.5 h-3.5" />
-                                Hazir cue
-                              </span>
-                            </div>
-                            <p className="text-sm text-[#14231F] font-medium leading-relaxed bg-[#F4F2ED]/60 p-2.5 rounded-lg border border-[rgba(20,35,31,0.05)]">
-                              "{text}"
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-              </>
-              )}
-
-              {settingsSection === 'knowledge' && (
-                <KnowledgeBasePanel businessId={business.id} initialKnowledge={initialKnowledge} />
-              )}
-
-              {/* Save Button */}
-              <div className="pt-6 border-t border-[rgba(20,35,31,0.10)] flex items-center justify-between">
-                {showToast ? (
-                  <span className="text-sm font-medium text-green-600 flex items-center"><CheckCircle2 className="w-4 h-4 mr-1" /> {t('settingsSavedToast')}</span>
-                ) : <span />}
-                <button
-                  onClick={handleSaveSettings}
-                  disabled={isSaving}
-                  className="bg-[#FF6A5C] text-white px-8 py-3 rounded-full font-bold text-sm hover:bg-orange-600 transition shadow-md disabled:opacity-50 flex items-center"
-                >
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  {t('saveSettingsBtn')}
-                </button>
-              </div>
-            </div>
-          </div>
         )}
       </main>
 

@@ -130,6 +130,37 @@ export default function ConversationsPanel({
     };
   }, [selectedConversationId]);
 
+  // Realtime subscription for conversation messages
+  useEffect(() => {
+    if (!selectedConversationId) return;
+
+    const channel = supabase
+      .channel(`realtime-messages-${selectedConversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${selectedConversationId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newMsg = payload.new as MessageRow;
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === newMsg.id)) return prev;
+              return [...prev, newMsg];
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedConversationId, supabase]);
+
   const liveConversations = conversations.filter((c) => !deletedIds.has(c.id));
   const isArchived = (c: ConversationRow) => archivedMap[c.id] ?? c.is_archived;
   const archivedCount = liveConversations.filter(isArchived).length;
@@ -146,6 +177,30 @@ export default function ConversationsPanel({
       </div>
     );
   }
+
+  // Pre-calculate package indices for each conversation ID.
+  // Group non-preview conversations by visitor_session_id and sort them by created_at ascending.
+  const packageIndexMap = (() => {
+    const groups: Record<string, ConversationRow[]> = {};
+    for (const c of conversations) {
+      if (c.is_preview) continue;
+      if (!groups[c.visitor_session_id]) {
+        groups[c.visitor_session_id] = [];
+      }
+      groups[c.visitor_session_id].push(c);
+    }
+
+    const map: Record<string, number> = {};
+    for (const visitorId in groups) {
+      const sorted = [...groups[visitorId]].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+      sorted.forEach((c, index) => {
+        map[c.id] = index + 1;
+      });
+    }
+    return map;
+  })();
 
   const selectedConversation = visibleConversations.find((c) => c.id === selectedConversationId);
 
@@ -167,6 +222,7 @@ export default function ConversationsPanel({
           const isSelected = c.id === selectedConversationId;
           const isRead = readMap[c.id];
           const leadName = leadByConversationId[c.id];
+          const packageIndex = packageIndexMap[c.id] || 1;
           return (
             <div
               key={c.id}
@@ -175,7 +231,14 @@ export default function ConversationsPanel({
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-semibold text-[#14231F] truncate">
-                  {c.is_preview ? t('conversations.testConversationLabel') : (leadName || t('conversations.visitorLabel', { id: c.visitor_session_id.slice(-6) }))}
+                  {c.is_preview 
+                    ? t('conversations.testConversationLabel') 
+                    : (
+                        leadName 
+                          ? `${leadName} (Paket ${packageIndex})`
+                          : `${t('conversations.visitorLabel', { id: c.visitor_session_id.slice(-6) })} (Paket ${packageIndex})`
+                      )
+                  }
                 </span>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {c.is_preview && (

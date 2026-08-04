@@ -54,7 +54,7 @@ describe('runSauleTurn', () => {
   });
 
   it('can be invoked from a plain test harness (no Next.js request/cookies context)', async () => {
-    const { runSauleTurn } = await import('./run');
+    const { runSauleTurn } = await import('./assistantRun');
     const supabaseAdmin = createFakeSupabase();
 
     const result = await runSauleTurn({
@@ -79,7 +79,7 @@ describe('runSauleTurn', () => {
   });
 
   it('opens a visible page section without calling the LLM when the visitor asks for it', async () => {
-    const { runSauleTurn } = await import('./run');
+    const { runSauleTurn } = await import('./assistantRun');
     const { streamText } = await import('ai');
     const supabaseAdmin = createFakeSupabase({
       blocks: [
@@ -113,7 +113,7 @@ describe('runSauleTurn', () => {
   });
 
   it('warns when the model claims success without calling the capture tool (caught in production, 2026-07-18)', async () => {
-    const { runSauleTurn } = await import('./run');
+    const { runSauleTurn } = await import('./assistantRun');
     const supabaseAdmin = createFakeSupabase();
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -145,7 +145,7 @@ describe('runSauleTurn', () => {
   });
 
   it('throws a 404 AgentTurnError when the business does not exist', async () => {
-    const { runSauleTurn } = await import('./run');
+    const { runSauleTurn } = await import('./assistantRun');
     const { AgentTurnError } = await import('@/agents/shared/errors');
     const supabaseAdmin = createFakeSupabase({ businesses: null });
 
@@ -164,7 +164,7 @@ describe('runSauleTurn', () => {
   });
 
   it('throws a 429 AgentTurnError when the business daily message cap is exceeded (Faz 4.1)', async () => {
-    const { runSauleTurn } = await import('./run');
+    const { runSauleTurn } = await import('./assistantRun');
     const { AgentTurnError } = await import('@/agents/shared/errors');
     const { BUSINESS_DAILY_MESSAGE_CAP } = await import('@/agents/shared/limits');
     const supabaseAdmin = createFakeSupabase({ __counts: { messages: BUSINESS_DAILY_MESSAGE_CAP } });
@@ -188,7 +188,7 @@ describe('runSauleTurn', () => {
   });
 
   it('throws a 402 AgentTurnError with a credits_exhausted JSON payload when the business has no credits (Faz 4.3)', async () => {
-    const { runSauleTurn } = await import('./run');
+    const { runSauleTurn } = await import('./assistantRun');
     const { AgentTurnError } = await import('@/agents/shared/errors');
     const inactiveConversation = { id: 'old-conv-1', last_message_at: '2000-01-01T00:00:00.000Z', created_at: '2000-01-01T00:00:00.000Z' };
     const supabaseAdmin = createFakeSupabase({
@@ -217,7 +217,7 @@ describe('runSauleTurn', () => {
   });
 
   it('deducts a credit via the deduct_credits RPC after a successful Saule turn (Faz 4.3)', async () => {
-    const { runSauleTurn } = await import('./run');
+    const { runSauleTurn } = await import('./assistantRun');
     const { SAULE_CREDIT_COST } = await import('@/agents/shared/credits');
     const inactiveConversation = { id: 'old-conv-1', last_message_at: '2000-01-01T00:00:00.000Z', created_at: '2000-01-01T00:00:00.000Z' };
     const supabaseAdmin = createFakeSupabase({ conversations: inactiveConversation });
@@ -244,7 +244,7 @@ describe('runSauleTurn', () => {
   });
 
   it('skips abuse limits entirely for editor preview conversations (Faz 4.1)', async () => {
-    const { runSauleTurn } = await import('./run');
+    const { runSauleTurn } = await import('./assistantRun');
     const { BUSINESS_DAILY_MESSAGE_CAP } = await import('@/agents/shared/limits');
     const supabaseAdmin = createFakeSupabase({ __counts: { messages: BUSINESS_DAILY_MESSAGE_CAP } });
 

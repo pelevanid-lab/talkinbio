@@ -106,15 +106,24 @@ export async function runSauleTurn({
       .maybeSingle();
 
     if (convData && isConversationActive(convData.last_message_at, convData.created_at)) {
-      conversationId = convData.id;
-      willCreateNewConversation = false;
+      // Group user questions in packages of up to 20 messages per conversation
+      const { count: msgCount } = await supabaseAdmin
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('conversation_id', convData.id)
+        .eq('role', 'user');
+
+      if ((msgCount || 0) < 20) {
+        conversationId = convData.id;
+        willCreateNewConversation = false;
+      }
     }
   }
 
   if (!isPreview) {
-    // Faz 4.3: Kredi modeli güncellendi — Her mesaj yerine her "oturum" için kredi düşülür.
+    // Faz 4.3: Kredi modeli güncellendi — Her mesaj yerine her "oturum/paket" için kredi düşülür.
     // Sadece YENİ bir oturum başlatılırken bakiyeye bakılır. Eğer oturum halihazırda açıksa
-    // (kredisi başlangıçta ödenmişse) bakiye sıfırlansa bile oturum sonuna kadar (SESSION_MESSAGE_CAP) devam edebilir.
+    // (kredisi başlangıçta ödenmişse) bakiye sıfırlansa bile oturum sonuna kadar (20 soru) devam edebilir.
     if (willCreateNewConversation && !hasCredits(business)) {
       throw new AgentTurnError(creditsExhaustedPayload(locale, directLinks), 402);
     }
@@ -159,39 +168,6 @@ export async function runSauleTurn({
     await supabaseAdmin.from('messages').insert({ conversation_id: conversationId, business_id: businessId, role: 'assistant', content: text });
     await supabaseAdmin.from('conversations').update({ last_message_at: new Date().toISOString() }).eq('id', conversationId);
   };
-
-  // Faz 4.1: oturum içi mesaj tavanı (soft) — dolunca sert blokaj değil, "yeni sohbet" daveti.
-  // Faz 1.6'nın yalnızca demo işletmeye özel geçici tavanının yerini alır.
-  if (!isPreview) {
-    const { count } = await supabaseAdmin
-      .from('messages')
-      .select('id', { count: 'exact', head: true })
-      .eq('conversation_id', conversationId)
-      .eq('role', 'user');
-    if ((count || 0) > SESSION_MESSAGE_CAP) {
-      const localeKey = locale === 'en' || locale === 'ru' ? locale : 'tr';
-      const text = {
-        tr: 'Bu sohbet 50 mesaj sınırına ulaştı. Yeni sohbet başlatırsanız Saule temiz bir oturumdan devam eder.',
-        en: 'This chat has reached the 50-message limit. Start a new chat and Saule will continue from a fresh session.',
-        ru: 'Этот чат достиг лимита 50 сообщений. Начните новый чат, и Saule продолжит с чистой сессии.',
-      }[localeKey];
-      const sessionLimitTurn = createSauleStaticTurn(text, 'session_limit_reached');
-      const creditsToDeduct = willCreateNewConversation ? SAULE_CREDIT_COST : 0;
-      await persistAssistantMessage(sessionLimitTurn.text);
-      await recordUsageEvent(supabaseAdmin, {
-        businessId,
-        agent: 'saule',
-        channel,
-        model: 'session-limit',
-        usage: { inputTokens: 0, outputTokens: 0 },
-        creditsCharged: creditsToDeduct,
-      });
-      if (creditsToDeduct > 0) {
-        await deductCredits(supabaseAdmin, businessId, creditsToDeduct);
-      }
-      return createStaticTextResult(sessionLimitTurn.text);
-    }
-  }
 
   const sauleSettings = business.saule_settings || {};
   // Faz 2.3 bağlam diyeti: bloklar sadece ziyaretçinin dilinde, kompakt olarak prompt'a girer.

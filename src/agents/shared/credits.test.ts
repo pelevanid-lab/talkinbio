@@ -11,10 +11,10 @@ import {
 } from './credits';
 
 describe('constants', () => {
-  it('default to the calibrated values (update >= 6, per user correction 2026-07-18)', () => {
+  it('default to the calibrated values (update >= 60, per user correction 2026-07-18)', () => {
     expect(SAULE_CREDIT_COST).toBe(1);
-    expect(SAULE_STUDIO_UPDATE_CREDIT_COST).toBe(6);
-    expect(SAULE_STUDIO_INSTALL_CREDIT_COST).toBe(10);
+    expect(SAULE_STUDIO_UPDATE_CREDIT_COST).toBe(60);
+    expect(SAULE_STUDIO_INSTALL_CREDIT_COST).toBe(100);
   });
 });
 

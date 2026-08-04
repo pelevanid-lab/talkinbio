@@ -8,10 +8,10 @@ For all future UI changes, new pages, and component designs in this repository, 
      - `#FF6A5C` (Coral / Orange) - Saule accent
      - `#14231F` (Ink / Dark Green-Black) - Main text, dark backgrounds
      - `#F4F2ED` (Paper / Cream) - Main light background
-     - `#38F9D7` (Neon Green) - Beiwe accent
+     - `#BDB76B` (Dark Khaki) - Beiwe accent
    - Backgrounds: Use `#F4F2ED` (Paper) for main backgrounds, `#FFFFFF` for elevated cards.
    - Text: Use `#14231F` (Ink) for primary text/headings, `#4B5A55` (Ink Soft) for secondary text, and `#8A8880` (Muted) for placeholders/passive text.
-   - Accent: Use `#FF6A5C` (Coral) for primary actions/highlights/Saule, `#FFEDE9` (Coral Tint) for light accent backgrounds, `#38F9D7` (Neon Green) for Beiwe highlights, and `#2B6F5C` (Teal) for secondary highlights (like eyebrow text).
+   - Accent: Use `#FF6A5C` (Coral) for primary actions/highlights/Saule, `#FFEDE9` (Coral Tint) for light accent backgrounds, `#BDB76B` (Dark Khaki) for Beiwe highlights, and `#2B6F5C` (Teal) for secondary highlights (like eyebrow text).
    - Borders: Use `rgba(20,35,31,0.10)`.
 
 2. **Typography**:

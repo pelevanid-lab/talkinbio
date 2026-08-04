@@ -1,9 +1,9 @@
 import { createClient as createServerClient } from '@/utils/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import LeadsClient from './LeadsClient';
+import FrontDeskClient from './FrontDeskClient';
 
-export default async function LeadsDashboardPage() {
+export default async function FrontDeskDashboardPage() {
   const supabase = await createServerClient();
   const { data: userData, error: authError } = await supabase.auth.getUser();
 
@@ -29,19 +29,12 @@ export default async function LeadsDashboardPage() {
     );
   }
 
-  // Fetch leads
-  const { data: leads } = await supabase
-    .from('leads')
+  // Fetch Saule knowledge base (Faz 1.4)
+  const { data: knowledge } = await supabase
+    .from('saule_knowledge')
     .select('*')
     .eq('business_id', business.id)
     .order('created_at', { ascending: false });
 
-  // Fetch conversations (Faz 1.1 — transkript ekranı; is_preview'lar da gelir, "Test" rozetiyle ayrışır — Faz 1.7)
-  const { data: conversations } = await supabase
-    .from('conversations')
-    .select('id, visitor_session_id, last_message_at, is_read, is_preview, is_archived, created_at')
-    .eq('business_id', business.id)
-    .order('last_message_at', { ascending: false, nullsFirst: false });
-
-  return <LeadsClient business={business} initialLeads={leads || []} initialConversations={conversations || []} />;
+  return <FrontDeskClient business={business} initialKnowledge={knowledge || []} />;
 }

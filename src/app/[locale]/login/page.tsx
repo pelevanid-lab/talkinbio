@@ -14,11 +14,13 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [mode, setMode] = useState<'login' | 'forgot_password'>('login');
   const [rememberMe, setRememberMe] = useState(false);
+  const [searchParamsStr, setSearchParamsStr] = useState('');
   const supabase = createClient();
 
   useEffect(() => {
     // Read error from URL if present (e.g. from auth callback)
     if (typeof window !== 'undefined') {
+      setSearchParamsStr(window.location.search);
       const urlParams = new URLSearchParams(window.location.search);
       const urlError = urlParams.get('error');
       if (urlError) {
@@ -239,7 +241,7 @@ export default function LoginPage() {
 
           {mode === 'login' && (
             <a
-              href={`/register${typeof window !== 'undefined' && window.location.search ? window.location.search : ''}`}
+              href={`/register${searchParamsStr}`}
               className="block text-center w-full text-slate-500 hover:text-[var(--coral)] text-sm font-medium mt-4 transition"
             >
               {t('registerLink')}

@@ -264,7 +264,10 @@
     }
   },
   "Editor": {
-    "panelTitle": "Your Page",
+    "panelTitle": "Editor",
+    "openPreview": "Open Preview",
+    "costEstimation": "(Max. ≈{cost} credits)",
+    "placeholderCost": "(Max. ≈{cost} credits per operation)",
     "previewBtn": "Preview",
     "tabAgent": "Setup Agent",
     "tabBulk": "Bulk Text",
@@ -338,7 +341,9 @@
       "gallery": "Gallery",
       "testimonials": "Testimonials",
       "links": "Links",
-      "extra_services": "Custom (Extra Services)"
+      "extra_services": "Custom (Extra Services)",
+      "draft_semantic_index": "Draft Search Index",
+      "published_semantic_index": "Published Search Index"
     },
     "previewEmpty": "Start with Instagram import or bulk text.",
     "assistantSuffix": "Assistant",
@@ -451,7 +456,8 @@
     "studioPostTitle": "Post",
     "studioPostDesc": "Carry your page?s visual language into social posts.",
     "studioMotionTitle": "Motion",
-    "studioMotionDesc": "Prepare short motion outputs from existing media."
+    "studioMotionDesc": "Prepare short motion outputs from existing media.",
+    "studioOpenBtn": "Open Studio"
   },
   "BlockEditor": {
     "title": "Edit Block",
@@ -578,14 +584,14 @@
     "eyebrow": "Plans",
     "title": "Transparent capacity, transparent pricing.",
     "intro": "Flexible credit-based pricing. As long as you have credits, you don't need to pay monthly subscription fees; you only pay for what you use.",
-    "plan_free": "Trial",
+    "plan_free": "Sign up free",
     "plan_starter": "Starter",
     "plan_pro": "Pro",
     "plan_business": "Business",
     "perMonth": "/mo",
     "credits": "{count} credits",
     "capacityExample": "≈ {saule} Saule conversations OR {beiwe} page updates",
-    "idealFor_free": "Every new registered user is rewarded with a one-time grant of 20 credits.",
+    "idealFor_free": "Every new registered user is rewarded with a one-time grant of 200 credits.",
     "idealFor_starter": "For individual businesses launching their page and answering first visitor questions.",
     "idealFor_pro": "For growing businesses with steady visitor traffic and regular page updates.",
     "idealFor_business": "For teams that need multiple service lines, heavier page production, and custom voice cues.",
@@ -637,7 +643,7 @@
     },
     "q6": {
       "title": "Our Revenue Model",
-      "content": "Our revenue model is not subscription-based; it is a credit wallet. Because Shopier does not support subscriptions, users buy credits that do not expire and credits are charged only when real work happens.\n\nThe Trial plan is $0 and grants a one-time 20 credits so new users can experience the product.\n\nStarter ($15, 200 credits) is for individual businesses launching their page and answering first visitor questions.\n\nPro ($40, 600 credits) is for growing businesses with steady visitor traffic and regular page updates.\n\nBusiness ($90, 1,500 credits) is for teams that need multiple service lines, heavier page production, and custom voice cues.\n\nThe Extra Credit Pack is $8 for 100 credits. Pricing is dollar-fixed; local collection can be converted at the current exchange rate. Operation credit costs stay fixed, so larger packs give customers more usable capacity while preserving margin."
+      "content": "Our revenue model is not subscription-based; it is a credit wallet. Because Shopier does not support subscriptions, users buy credits that do not expire and credits are charged only when real work happens.\n\nThe Trial plan is $0 and grants a one-time 200 credits so new users can experience the product.\n\nStarter ($15, 2,000 credits) is for individual businesses launching their page and answering first visitor questions.\n\nPro ($40, 6,000 credits) is for growing businesses with steady visitor traffic and regular page updates.\n\nBusiness ($90, 15,000 credits) is for teams that need multiple service lines, heavier page production, and custom voice cues.\n\nThe Extra Credit Pack is $8 for 1,000 credits. Pricing is dollar-fixed; local collection can be converted at the current exchange rate. Operation credit costs stay fixed, so larger packs give customers more usable capacity while preserving margin."
     },
     "q7": {
       "title": "Where We're Headed",
@@ -855,6 +861,14 @@
     "settingsSavedToast": "Settings saved",
     "saveSettingsBtn": "Save Settings",
     "sauleSubtitle": "Your Digital Front Desk Assistant",
+    "frontDeskToggleTitle": "Digital Front Desk Assistant",
+    "frontDeskToggleHint": "You must have a minimum of 20 credits to keep the front desk active. (If credits drop below 20, the assistant is automatically turned off). 1 credit is deducted for each 20-question pack or each user session.",
+    "frontDeskStatusActive": "Active",
+    "frontDeskStatusOff": "Off",
+    "frontDeskStatusLowCredits": "Insufficient Credits",
+    "frontDeskCurrentCredits": "Your Current Balance:",
+    "frontDeskTopUpBtn": "Top Up Credits",
+    "frontDeskCreditUnit": "Credits",
     "toneSectionTitle": "Personality & Tone",
     "toneFriendlyLabel": "Warm & Friendly",
     "toneFormalLabel": "Formal & Professional",
@@ -884,7 +898,7 @@
     "greetingDesc": "Set the first message yourself.",
     "greetingHint": "Shown based on the language the visitor is viewing the page in; for any language you leave blank, Saule's default greeting is used.",
     "voiceTitle": "Voice Communication (Beta)",
-    "voiceDesc": "Let visitors ask by microphone; Saule responds with approved short voice cues plus written/page guidance.",
+    "voiceDesc": "Let visitors ask by microphone; the assistant responds with approved short voice cues plus written/page guidance. When enabled, an additional 50 credits are deducted for each user session.\n\nIt turns off automatically if your balance falls below 200 credits.",
     "voiceToggleLabel": "Enable Voice Communication",
     "voiceModelLabel": "Assistant Voice",
     "voiceWelcomeLabel": "Approved Saule Voice Cues",
@@ -951,14 +965,16 @@
     },
     "navAnalytics": "Analytics",
     "navBilling": "Credits",
-    "navCreativeStudio": "Your Page"
+    "navSetup": "Setup",
+    "navCreativeStudio": "Creative Studio",
+    "navFrontDesk": "Front Desk Settings"
   },
   "CreativeStudio": {
     "pageTitle": "Page Studio",
     "comingSoonBadge": "Coming soon",
     "liveBadge": "Live now",
     "heroTitle": "Production space for a richer page",
-    "heroDesc": "Post and visual editing tools improve the visual quality of your page. Core setup stays in Your Page.",
+    "heroDesc": "Post and visual editing tools improve the visual quality of your page. Core setup stays in Editor.",
     "twinCta": "Create Your Digital Twin",
     "feature1Title": "Removed",
     "feature1Desc": "A visual identity trained on your own photos, representing you.",

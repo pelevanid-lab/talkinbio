@@ -5,11 +5,11 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 // aynı mantık) — gerçek maliyet Faz 4.2'nin usage_events verisiyle değiştikçe
 // kod değişikliği gerekmeden kalibre edilebilsin diye.
 export const SAULE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE) || 1;
-export const SAULE_VOICE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_VOICE) || 5;
-export const SAULE_STUDIO_UPDATE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_STUDIO_UPDATE) || 6;
-export const SAULE_STUDIO_INSTALL_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_STUDIO_INSTALL) || 10;
-export const CUE_PACK_STANDARD_CREDIT_COST = Number(process.env.CREDIT_COST_CUE_PACK_STANDARD) || 2;
-export const CUE_PACK_CUSTOM_CREDIT_COST = Number(process.env.CREDIT_COST_CUE_PACK_CUSTOM) || 6;
+export const SAULE_VOICE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_VOICE) || 51;
+export const SAULE_STUDIO_UPDATE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_STUDIO_UPDATE) || 60;
+export const SAULE_STUDIO_INSTALL_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_STUDIO_INSTALL) || 100;
+export const CUE_PACK_STANDARD_CREDIT_COST = Number(process.env.CREDIT_COST_CUE_PACK_STANDARD) || 20;
+export const CUE_PACK_CUSTOM_CREDIT_COST = Number(process.env.CREDIT_COST_CUE_PACK_CUSTOM) || 60;
 
 export const CREDIT_COST_MENU = [
   {
@@ -17,9 +17,9 @@ export const CREDIT_COST_MENU = [
     agent: 'saule',
     credits: SAULE_CREDIT_COST,
     label: {
-      tr: 'Saule oturumu (50 mesaja kadar)',
-      en: 'Saule session (up to 50 messages)',
-      ru: 'Saule session (up to 50 messages)',
+      tr: 'Saule ziyaretçi paketi (20 soruya kadar)',
+      en: 'Saule visitor package (up to 20 questions)',
+      ru: 'Пакет посетителя Saule (до 20 вопросов)',
     },
   },
   {
@@ -27,9 +27,9 @@ export const CREDIT_COST_MENU = [
     agent: 'saule',
     credits: SAULE_VOICE_CREDIT_COST,
     label: {
-      tr: 'Mikrofonla soru oturumu (STT dahil, 50 mesaja kadar)',
-      en: 'Voice-input session (STT included, up to 50 messages)',
-      ru: 'Сессия с голосовым вводом (STT включен, до 50 сообщений)',
+      tr: 'Mikrofonla soru paketi (STT dahil, ek 50 kredi, 20 soruya kadar)',
+      en: 'Voice-input package (STT included, additional 50 credits, up to 20 questions)',
+      ru: 'Голосовой пакет (STT включен, дополнительно 50 кредитов, до 20 вопросов)',
     },
   },
   {

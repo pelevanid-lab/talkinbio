@@ -26,10 +26,21 @@ export function hasRealContent(block: Block | undefined): boolean {
 
 export function getLocalizedValue(item: any, locale: string, field: string): string {
   if (!item) return '';
-  if (item[locale] && item[locale][field] !== undefined) {
+  
+  // Case 1: item[locale] exists as an object, e.g. item.tr.title (used by services)
+  if (item[locale] && typeof item[locale] === 'object' && item[locale][field] !== undefined) {
     return item[locale][field] || '';
   }
-  return item[field] || '';
+  
+  // Case 2: item[field] is an object containing locale keys, e.g. item.question.tr (used by faq, testimonials, gallery)
+  if (item[field] && typeof item[field] === 'object') {
+    if (item[field][locale] !== undefined) {
+      return item[field][locale] || '';
+    }
+  }
+
+  // Case 3: item[field] is a flat string, e.g. item.author or item.url
+  return typeof item[field] === 'string' ? item[field] : '';
 }
 
 export function isItemVisibleInLocale(item: any, locale: string): boolean {

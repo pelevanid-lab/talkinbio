@@ -148,7 +148,7 @@ export default function PricingPage() {
                 </p>
                 <p style={{ margin: 0, fontWeight: 700, color: 'var(--teal)', fontSize: '0.95rem' }}>{t('credits', { count: plan.credits })}</p>
                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--ink-soft)', lineHeight: 1.5, minHeight: '2.5rem' }}>
-                  {t('capacityExample', { saule: sauleChats, studio: studioUpdates })}
+                  {t('capacityExample', { saule: sauleChats, beiwe: studioUpdates })}
                 </p>
                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--ink-soft)', lineHeight: 1.5, fontWeight: 500 }}>
                   {t(`idealFor_${plan.id}` as any)}

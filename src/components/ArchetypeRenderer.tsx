@@ -999,7 +999,7 @@ function buildOrderNowHandler(
 // not a real `blocks` row, so it reads its data from block.content.method/.value instead of the
 // usual per-locale content shape.
 function renderContact(block: any, ctx: RenderCtx) {
-  const { locale, radiusClass, headingFont } = ctx;
+  const { locale, radiusClass, headingFont, activeItemId } = ctx;
   const methodKeys: string[] = (block.content?.method || '').split(',').filter(Boolean);
   let values: Record<string, string> = {};
   try { values = block.content?.value ? JSON.parse(block.content.value) : {}; } catch { values = {}; }
@@ -1012,14 +1012,22 @@ function renderContact(block: any, ctx: RenderCtx) {
       <div className="flex flex-col gap-3">
         {items.map(({ key, value }) => {
           const Icon = contactIcon(key);
+          const isActive = activeItemId === key;
           return (
             <a
               key={key}
+              data-tb-item-id={key}
               href={contactHref(key, value)}
               target="_blank"
               rel="noopener noreferrer"
-              className={`w-full p-4 flex items-center gap-3 font-semibold border shadow-sm transition hover:scale-[1.02] ${radiusClass}`}
-              style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--primary)' }}
+              className={`w-full p-4 flex items-center gap-3 font-semibold border shadow-sm transition hover:scale-[1.02] ${radiusClass} ${
+                isActive ? 'ring-2 ring-[var(--coral)] scale-[1.02]' : ''
+              }`}
+              style={{ 
+                backgroundColor: 'var(--surface)', 
+                borderColor: isActive ? 'var(--coral)' : 'var(--border)', 
+                color: 'var(--primary)' 
+              }}
             >
               <Icon className="w-5 h-5 shrink-0" />
               <span>{CONTACT_METHOD_LABELS[key]?.[locale] || key}: {value}</span>
@@ -1125,10 +1133,25 @@ export default function ArchetypeRenderer({
       .filter(b => b.type !== 'settings' && b.type !== 'contact' && b.is_visible !== false && hasRealContentForLocale(b, locale))
       .slice()
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    
+    // Extricate the SSS (faq) block to guarantee it renders at the very bottom of the page
+    const faqBlock = real.find(b => b.type === 'faq');
+    const otherBlocks = real.filter(b => b.type !== 'faq');
+    
     const hasAnyValue = (contactMethod || '').split(',').filter(Boolean).some((k) => contactValues[k]?.trim());
-    if (!hasAnyValue) return real;
-    const contactBlock = { id: '__contact__', type: 'contact', content: { method: contactMethod, value: contactValue } };
-    return [...real, contactBlock];
+    
+    const finalBlocks = [...otherBlocks];
+    
+    if (hasAnyValue) {
+      const contactBlock = { id: '__contact__', type: 'contact', content: { method: contactMethod, value: contactValue } };
+      finalBlocks.push(contactBlock);
+    }
+    
+    if (faqBlock) {
+      finalBlocks.push(faqBlock);
+    }
+    
+    return finalBlocks;
   }, [blocks, contactMethod, contactValue, contactValues, locale]);
 
   const onOrderNowClick = useMemo(

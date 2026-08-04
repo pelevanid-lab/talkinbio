@@ -4,14 +4,11 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Inbox, Coins, Tag, BarChart3 } from 'lucide-react';
-import ArchetypeRenderer from './ArchetypeRenderer';
-import ProfileHeader from './ProfileHeader';
+import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Inbox, Coins, Tag, BarChart3, Eye } from 'lucide-react';
 import AgentMarkdown from './AgentMarkdown';
-import ChatWidget from './ChatWidget';
 import BlockEditorModal from './BlockEditorModal';
 import SetPasswordModal from './SetPasswordModal';
-import LanguageSwitcher from './LanguageSwitcher';
+
 import { BeiweIcon } from './AgentIcons';
 import { useChat, UIMessage } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
@@ -61,8 +58,8 @@ export default function EditorClient({
   const [theme, setTheme] = useState<Theme>(business.theme || DEFAULT_THEME);
   const [editingBlock, setEditingBlock] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [showMobilePreview, setShowMobilePreview] = useState(false);
-  const [viewMode, setViewMode] = useState<'instagram' | 'manual' | 'bulk' | 'visual' | 'activity'>('instagram');
+
+  const [viewMode, setViewMode] = useState<'instagram' | 'manual' | 'bulk' | 'activity'>('instagram');
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [bulkText, setBulkText] = useState('');
   const [instagramSource, setInstagramSource] = useState('');
@@ -79,7 +76,7 @@ export default function EditorClient({
   const [isPublished, setIsPublished] = useState<boolean>(business.is_published || false);
   const [isTogglingPublish, setIsTogglingPublish] = useState(false);
   const [needsRepublish, setNeedsRepublish] = useState<boolean>(business.needs_republish || false);
-  const [previewActiveBlockId, setPreviewActiveBlockId] = useState<string | null>(null);
+
   // After a single-locale edit, offer to open the stale locale fields for manual review.
   // Nothing is translated or copied automatically: the owner remains the source of truth.
   const [syncPrompt, setSyncPrompt] = useState<null | { blockId: string; type: SyncableBlockType; content: unknown; sourceLocale: LocaleKey; targetLocales: LocaleKey[] }>(null);
@@ -320,18 +317,24 @@ export default function EditorClient({
         })
         .eq('id', existing.id);
       if (error) throw error;
-      return;
+    } else {
+      const { error } = await supabase.from('blocks').insert({
+        business_id: business.id,
+        type: PUBLISHED_SNAPSHOT_BLOCK_TYPE,
+        title: 'Published Snapshot',
+        content,
+        order: 10000,
+        is_visible: false,
+      });
+      if (error) throw error;
     }
 
-    const { error } = await supabase.from('blocks').insert({
-      business_id: business.id,
-      type: PUBLISHED_SNAPSHOT_BLOCK_TYPE,
-      title: 'Published Snapshot',
-      content,
-      order: 10000,
-      is_visible: false,
-    });
-    if (error) throw error;
+    // Rebuild published semantic index on the server for visitor queries
+    await fetch(`/api/admin/businesses/${business.id}/reindex-semantic`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ publishVersion: 'published' })
+    }).catch(err => console.error('Published semantic re-indexing failed:', err));
   };
 
   const handleTogglePublish = async () => {
@@ -439,6 +442,14 @@ export default function EditorClient({
       }
       await markNeedsRepublish();
       await archiveCurrentAndNewSession();
+
+      // Trigger background re-indexing for editor preview
+      fetch(`/api/admin/businesses/${business.id}/reindex-semantic`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ publishVersion: 'draft' })
+      }).catch(err => console.error('Background draft re-indexing failed:', err));
+
       if (!isManualLanguageUpdate) {
         maybeOfferLanguageSync(savedBlockId, blockType, originalContent, data.content);
       }
@@ -478,9 +489,16 @@ export default function EditorClient({
     try {
       await supabase.from('blocks').delete().eq('id', editingBlock.id);
       const updatedBlocks = blocks.filter(b => b.id !== editingBlock.id);
-      setBlocks(updatedBlocks);
+       setBlocks(updatedBlocks);
       await markNeedsRepublish();
       await archiveCurrentAndNewSession();
+
+      // Trigger background re-indexing for editor preview
+      fetch(`/api/admin/businesses/${business.id}/reindex-semantic`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ publishVersion: 'draft' })
+      }).catch(err => console.error('Background draft re-indexing failed:', err));
     } catch (err) {
       console.error(err);
     } finally {
@@ -812,49 +830,21 @@ export default function EditorClient({
   return (
     <div className="flex h-[100dvh]">
       {/* Left Sidebar */}
-      <div className="w-full md:w-[450px] bg-white border-r border-slate-200 flex flex-col h-full z-10 shrink-0">
+      <div className="w-full bg-white flex flex-col h-full z-10 shrink-0">
         <div className="p-4 md:p-6 border-b border-slate-200 bg-white">
-          <div className="flex flex-wrap justify-between items-center gap-y-2 mb-3">
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl font-bold font-bricolage text-[var(--ink)]">{t('panelTitle')}</h1>
-              <LanguageSwitcher />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <a
-                href="/dashboard/leads"
-                className="p-2 bg-slate-100 text-[var(--ink)] hover:bg-slate-200 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-colors"
-                title={t('leadsNavTooltip')}
-              >
-                <Inbox className="w-5 h-5" />
-                <span className="hidden md:inline">{t('leadsNavLabel')}</span>
-              </a>
-              <a
-                href="/dashboard/analytics"
-                className="p-2 bg-slate-100 text-[var(--ink)] hover:bg-slate-200 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-colors"
-                title="Analiz"
-              >
-                <BarChart3 className="w-5 h-5" />
-                <span className="hidden md:inline">Analiz</span>
-              </a>
-              <button
-                className="md:hidden p-2 bg-[var(--coral-tint)] text-[var(--coral)] rounded-lg font-medium text-sm flex items-center"
-                onClick={() => setShowMobilePreview(true)}
-              >
-                <Smartphone className="w-5 h-5" />
-              </button>
-            </div>
+          <div className="flex justify-between items-center gap-4">
+            <h1 className="text-xl font-bold font-bricolage text-[var(--ink)]">{t('panelTitle')}</h1>
+            <a
+              href={`/${locale}/${username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 bg-slate-100 text-[var(--ink)] hover:bg-slate-200 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-colors"
+              title={t('openPreview')}
+            >
+              <Eye className="w-5 h-5" />
+              <span className="hidden md:inline">{t('openPreview')}</span>
+            </a>
           </div>
-
-          <a
-            href="/dashboard/billing"
-            className="flex items-center justify-between gap-2 px-3 py-2 mb-4 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-[var(--ink)] transition-colors"
-            title={t('creditBalanceHint')}
-          >
-            <span className="flex items-center gap-1.5">
-              <Coins className="w-4 h-4" /> {t('creditBalance')}
-            </span>
-            <span className="font-semibold">{(business.credit_balance ?? 0).toLocaleString('tr-TR')}</span>
-          </a>
 
           {/* Mode Switcher: setup, editing and visual work are separated so the editor is scannable. */}
           <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-200 space-y-3">
@@ -877,18 +867,12 @@ export default function EditorClient({
             </div>
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 px-1">{t('editorMenuEdit')}</div>
-              <div className="grid grid-cols-[1fr_1fr_44px] gap-1">
+              <div className="grid grid-cols-[1fr_44px] gap-1">
               <button
                 onClick={() => setViewMode('manual')}
                 className={`py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'manual' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 {t('tabManual')}
-              </button>
-              <button 
-                onClick={() => setViewMode('visual')}
-                className={`py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'visual' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                {t('tabVisual')}
               </button>
               <button
                 onClick={() => setViewMode('activity')}
@@ -951,7 +935,7 @@ export default function EditorClient({
                   disabled={!instagramSource.trim() || isChatLoading}
                   className="mt-4 w-full py-3 bg-[var(--coral)] text-white rounded-lg font-bold hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center justify-center"
                 >
-                  {isChatLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : `${t('instagramSubmitBtn')} (Maks. ≈${installCreditCost} kredi)`}
+                  {isChatLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : `${t('instagramSubmitBtn')} ${t('costEstimation', { cost: installCreditCost })}`}
                 </button>
               </div>
               <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
@@ -1025,7 +1009,7 @@ export default function EditorClient({
                           disabled={isChatLoading}
                           className="w-full mt-1 py-2 px-4 bg-[var(--coral)] text-white text-xs font-bold rounded-full hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                         >
-                          <span>✦</span> {t('pageStatus.continueBtn')} (Maks. ≈{installCreditCost} kredi)
+                          <span>✦</span> {t('pageStatus.continueBtn')} {t('costEstimation', { cost: installCreditCost })}
                         </button>
                       ) : (
                         <p className="text-xs text-green-700 font-medium text-center">
@@ -1107,7 +1091,7 @@ export default function EditorClient({
                         }
                       }}
                       rows={1}
-                      placeholder={`${t('agentInputPlaceholder')} (İşlem başı maks. ≈${installCreditCost} kredi)`}
+                      placeholder={`${t('agentInputPlaceholder')} ${t('placeholderCost', { cost: installCreditCost })}`}
                       className="w-full bg-white border border-slate-300 rounded-3xl pl-12 pr-12 py-3 text-sm focus:outline-none focus:border-[var(--coral)] focus:ring-1 focus:ring-[var(--coral)] shadow-sm resize-none overflow-hidden min-h-[46px] max-h-[150px]"
                       style={{ maxHeight: '150px' }}
                     />
@@ -1133,39 +1117,6 @@ export default function EditorClient({
                 </form>
               </div>
             </div>
-          ) : viewMode === 'visual' ? (
-            <div className="p-4 md:p-6 space-y-4 pb-20 overflow-y-auto">
-              <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <h3 className="text-sm font-bold text-[var(--ink)] mb-2">{t('studioToolsTitle')}</h3>
-                <p className="text-xs text-slate-500 mb-4">{t('studioToolsDesc')}</p>
-                <div className="grid grid-cols-1 gap-3">
-                  <Link
-                    href="/dashboard/creative-studio/post"
-                    className="p-4 rounded-xl border border-slate-200 hover:border-[var(--coral)] hover:bg-[var(--coral-tint)] transition-colors flex items-start gap-3"
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-[var(--coral-tint)] text-[var(--coral)] flex items-center justify-center shrink-0">
-                      <Tag className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <span className="block text-sm font-bold text-[var(--ink)]">{t('studioPostTitle')}</span>
-                      <span className="block text-xs text-slate-500 mt-1">{t('studioPostDesc')}</span>
-                    </div>
-                  </Link>
-                  <Link
-                    href="/dashboard/creative-studio/motion"
-                    className="p-4 rounded-xl border border-slate-200 hover:border-[var(--coral)] hover:bg-[var(--coral-tint)] transition-colors flex items-start gap-3"
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-[var(--coral-tint)] text-[var(--coral)] flex items-center justify-center shrink-0">
-                      <Smartphone className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <span className="block text-sm font-bold text-[var(--ink)]">{t('studioMotionTitle')}</span>
-                      <span className="block text-xs text-slate-500 mt-1">{t('studioMotionDesc')}</span>
-                    </div>
-                  </Link>
-                </div>
-              </div>
-            </div>
           ) : viewMode === 'bulk' ? (
             <div className="p-4 md:p-6 space-y-4 pb-20 flex flex-col h-full overflow-y-auto">
               <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col">
@@ -1184,7 +1135,7 @@ export default function EditorClient({
                   disabled={!bulkText.trim() || isChatLoading}
                   className="mt-4 w-full py-3 bg-[var(--coral)] text-white rounded-lg font-bold hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center justify-center"
                 >
-                  {isChatLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : `${t('bulkSubmitBtn')} (Maks. ≈${installCreditCost} kredi)`}
+                  {isChatLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : `${t('bulkSubmitBtn')} ${t('costEstimation', { cost: installCreditCost })}`}
                 </button>
               </div>
             </div>
@@ -1646,88 +1597,6 @@ export default function EditorClient({
               </div>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Right Area: Live Preview */}
-      <div className={`
-        ${showMobilePreview ? 'fixed inset-0 z-[150] bg-slate-100 flex items-center pt-8' : 'hidden'} 
-        md:relative md:flex flex-1 bg-slate-100 justify-center overflow-y-auto
-      `}>
-        {showMobilePreview && (
-          <button 
-            className="absolute top-4 right-4 z-[200] p-2 bg-white rounded-full shadow-lg text-slate-600 md:hidden"
-            onClick={() => setShowMobilePreview(false)}
-          >
-            <X className="w-6 h-6" />
-          </button>
-        )}
-        <div className="my-10 w-full max-w-[390px] rounded-[3rem] border-[12px] border-slate-800 bg-white shadow-2xl overflow-hidden flex flex-col relative h-[800px] shrink-0 mx-auto">
-          
-          {/* Mockup Notch */}
-<div className="absolute top-0 inset-x-0 h-6 flex justify-center z-50">
-            <div className="w-32 h-6 bg-slate-800 rounded-b-xl"></div>
-          </div>
-
-          {/* Top 70% Content Area — background follows the resolved theme so dark mode covers the
-              whole preview (header included), matching the live page. */}
-          <div
-            className="flex-1 flex flex-col relative overflow-hidden"
-            style={{
-              background: previewCanvas.pageCanvas,
-              '--tb-page-bg': previewCanvas.pageCanvas,
-              '--tb-page-bg-sticky': previewCanvas.stickyCanvas,
-            } as React.CSSProperties}
-          >
-            {/* Compact profile header — same ProfileHeader component the live page uses, so the
-                editor preview matches it 1:1. Avatar comes from the About block's photo. */}
-            <div className="w-full pt-12 pb-2 px-4 z-10 relative shrink-0">
-              <ProfileHeader
-                avatarUrl={avatarFromBlocks(blocks)}
-                name={pageTitle || business.name}
-                description={tagline[locale] || Object.values(tagline).find(Boolean) || business.category || undefined}
-                theme={theme}
-                activeBlockId={previewActiveBlockId}
-                onBack={() => setPreviewActiveBlockId(null)}
-                topRight={<div className="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center text-[10px] text-slate-500 font-medium bg-white/50 backdrop-blur-sm shadow-sm uppercase shrink-0">{locale}</div>}
-                shortcuts={resolveShortcuts(blocks)}
-                onShortcutSelect={setPreviewActiveBlockId}
-                minimal={previewActiveBlockId != null}
-              />
-            </div>
-
-            {/* Blocks (Archetype Preview) */}
-            <div className="w-full flex-1 overflow-y-auto">
-              <ArchetypeRenderer
-                blocks={blocks}
-                theme={theme}
-                businessName={business.name}
-                activeBlockId={previewActiveBlockId}
-                onActiveBlockChange={setPreviewActiveBlockId}
-                contactMethod={contactMethod}
-                contactValue={contactValue}
-                orderNowBehavior={business.saule_settings?.orderNowBehavior}
-              />
-              {blocks.length === 0 && (
-                <div className="text-center p-6 mx-4 mt-24 bg-white rounded-2xl shadow-sm border border-slate-100 text-slate-400 text-sm">
-                  {t('previewEmpty')}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Bottom 30% — real Saule, live (Faz 1.7): owner can test their own assistant without publishing.
-              Preview conversations are flagged is_preview so they never trigger lead emails or mix with real visitors. */}
-          <ChatWidget
-            variant="inline"
-            preview
-            businessId={business.id}
-            businessName={business.name}
-            locale={locale}
-            initialMessages={[]}
-            sauleSettings={business.saule_settings}
-            customGreeting={business.saule_settings?.customGreetingEnabled ? business.saule_settings?.customGreeting : null}
-          />
         </div>
       </div>
 

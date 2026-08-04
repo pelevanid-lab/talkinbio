@@ -142,7 +142,7 @@ export const POST_TEMPLATES: PostTemplate[] = [
   {
     id: 'ekran',
     label: 'postTemplateEkranLabel',
-    pillar: 'Ekran kaydı · nasıl yapılır',
+    pillar: 'postTemplateEkranPillar',
     hint: 'postTemplateEkranHint',
     imageMode: 'contain',
     background: { kind: 'solid', color: BRAND.ink },
@@ -202,7 +202,7 @@ export const POST_TEMPLATES: PostTemplate[] = [
   {
     id: 'obje-vitrini',
     label: 'postTemplateObjeLabel',
-    pillar: 'Ürün/obje · arka planı kaldırılmış',
+    pillar: 'postTemplateObjePillar',
     hint: 'postTemplateObjeHint',
     imageMode: 'contain',
     frameImage: false,
@@ -234,7 +234,7 @@ export const POST_TEMPLATES: PostTemplate[] = [
   {
     id: 'buyuk-rakam',
     label: 'postTemplateRakamLabel',
-    pillar: 'Görselsiz · istatistik',
+    pillar: 'postTemplateRakamPillar',
     hint: 'postTemplateRakamHint',
     imageMode: 'none',
     background: { kind: 'solid', color: BRAND.ink },
@@ -249,7 +249,7 @@ export const POST_TEMPLATES: PostTemplate[] = [
   {
     id: 'karanlik-sinematik',
     label: 'postTemplateSinematikLabel',
-    pillar: 'Motion çıktısı · sinematik kare',
+    pillar: 'postTemplateSinematikPillar',
     hint: 'postTemplateSinematikHint',
     imageMode: 'cover',
     background: { kind: 'solid', color: '#0A0F0D' },
@@ -266,7 +266,7 @@ export const POST_TEMPLATES: PostTemplate[] = [
   {
     id: 'alinti-karti',
     label: 'postTemplateAlintiLabel',
-    pillar: 'Alıntı/yorum · dizi hâlinde kullanılabilir',
+    pillar: 'postTemplateAlintiPillar',
     hint: 'postTemplateAlintiHint',
     imageMode: 'card',
     background: { kind: 'mesh', colors: ['#FFB199', '#F7716B', '#C86DD7', '#8E6FE3'] },
@@ -301,7 +301,7 @@ export const POST_TEMPLATES: PostTemplate[] = [
   {
     id: 'neon-vurgu',
     label: 'postTemplateNeonLabel',
-    pillar: 'Özellik duyurusu · canlı/eğlenceli',
+    pillar: 'postTemplateNeonPillar',
     hint: 'postTemplateNeonHint',
     imageMode: 'cover',
     background: { kind: 'solid', color: '#0B0B10' },
@@ -319,7 +319,7 @@ export const POST_TEMPLATES: PostTemplate[] = [
   {
     id: 'manifesto',
     label: 'postTemplateManifestoLabel',
-    pillar: 'Marka duruşu · minimal',
+    pillar: 'postTemplateManifestoPillar',
     hint: 'postTemplateManifestoHint',
     imageMode: 'none',
     background: { kind: 'solid', color: BRAND.paper },
@@ -336,7 +336,7 @@ export const POST_TEMPLATES: PostTemplate[] = [
   {
     id: 'ayna-ikili-ton',
     label: 'postTemplateAynaLabel',
-    pillar: 'Marka duruşu · grafik',
+    pillar: 'postTemplateAynaPillar',
     hint: 'postTemplateAynaHint',
     imageMode: 'none',
     background: { kind: 'split', left: BRAND.ink, right: BRAND.coral, angle: 0 },
@@ -352,7 +352,7 @@ export const POST_TEMPLATES: PostTemplate[] = [
   {
     id: 'ilham-karti',
     label: 'postTemplateIlhamLabel',
-    pillar: 'Liste/ipucu · görselsiz',
+    pillar: 'postTemplateIlhamPillar',
     hint: 'postTemplateIlhamHint',
     imageMode: 'list',
     background: { kind: 'solid', color: '#12131A' },

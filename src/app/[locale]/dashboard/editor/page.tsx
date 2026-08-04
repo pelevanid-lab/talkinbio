@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import EditorClient from '@/components/EditorClient';
+import DashboardShell from '@/components/dashboard/DashboardShell';
 import { SAULE_STUDIO_INSTALL_CREDIT_COST } from '@/agents/shared/credits';
 
 export default async function EditorPage() {
@@ -30,11 +31,15 @@ export default async function EditorPage() {
     supabase.from('setup_messages').select('*').eq('business_id', business.id).order('created_at', { ascending: true }),
   ]);
 
-  return <EditorClient 
-    business={business} 
-    initialBlocks={blocks || []} 
-    initialChatMessages={setupMessages || []} 
-    initialSessions={setupSessions || []} 
-    installCreditCost={SAULE_STUDIO_INSTALL_CREDIT_COST}
-  />;
+  return (
+    <DashboardShell business={business} active="setup">
+      <EditorClient 
+        business={business} 
+        initialBlocks={blocks || []} 
+        initialChatMessages={setupMessages || []} 
+        initialSessions={setupSessions || []} 
+        installCreditCost={SAULE_STUDIO_INSTALL_CREDIT_COST}
+      />
+    </DashboardShell>
+  );
 }

@@ -8,16 +8,18 @@ import {
   BarChart3,
   Coins,
   Pencil,
+  Sparkles,
   ExternalLink,
   LogOut,
   Menu,
   X,
+  Settings,
   type LucideIcon,
 } from 'lucide-react';
 import CreditBadge from '@/components/CreditBadge';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
-export type DashboardSection = 'leads' | 'analytics' | 'billing' | 'creative-studio';
+export type DashboardSection = 'setup' | 'leads' | 'analytics' | 'billing' | 'creative-studio' | 'front-desk';
 
 type NavItem = {
   key: DashboardSection;
@@ -42,8 +44,10 @@ export default function DashboardShell({ business, active, children }: { busines
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const navItems: NavItem[] = [
-    { key: 'creative-studio', label: t('navCreativeStudio'), href: '/dashboard/editor', icon: Pencil },
+    { key: 'setup', label: t('navSetup'), href: '/dashboard/editor', icon: Pencil },
+    { key: 'creative-studio', label: t('navCreativeStudio'), href: '/dashboard/creative-studio', icon: Sparkles },
     { key: 'leads', label: t('headerTitle'), href: '/dashboard/leads', icon: Inbox },
+    { key: 'front-desk', label: t('navFrontDesk'), href: '/dashboard/front-desk', icon: Settings },
     { key: 'analytics', label: t('navAnalytics'), href: '/dashboard/analytics', icon: BarChart3 },
     { key: 'billing', label: t('navBilling'), href: '/dashboard/billing', icon: Coins },
   ];
