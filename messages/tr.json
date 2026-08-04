@@ -966,7 +966,7 @@
     "navAnalytics": "Analiz",
     "navBilling": "Krediler",
     "navSetup": "Kurulum",
-    "navCreativeStudio": "Görsel Stüdyo (Yakında)",
+    "navCreativeStudio": "İçerik Merkezi (Yakında)",
     "navFrontDesk": "Front Desk Ayarları"
   },
   "CreativeStudio": {
@@ -1342,6 +1342,9 @@
     "postTemplateObjeLabel": "Obje vitrini",
     "postTemplateObjePillar": "Ürün/obje — arka planı kaldırılmış",
     "postTemplateObjeHint": "Sıcak mesh-gradient zemin + hafif grain, obje/kişi ortada yüzer. \"Arka planı kaldır\" ile üretilen görseller için tasarlandı.",
+    "postTemplateObjeSoftLabel": "Obje vitrini soft",
+    "postTemplateObjeSoftPillar": "Ürün/obje — yumuşak zemin",
+    "postTemplateObjeSoftHint": "Krem, haki ve tatlı turuncu mesh-gradient zemin, obje ortada yüzer. Daha yumuşak, marka tonlarında arka plansız görseller için.",
     "postTemplateGradientLabel": "Gradient duyuru",
     "postTemplateGradientPillar": "Özellik duyurusu",
     "postTemplateGradientHint": "'X yayında'nın gradient zeminli varyantı — daha canlı, daha az kurumsal.",

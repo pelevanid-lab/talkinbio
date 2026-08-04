@@ -966,7 +966,7 @@
     "navAnalytics": "Analytics",
     "navBilling": "Credits",
     "navSetup": "Setup",
-    "navCreativeStudio": "Creative Studio (Coming Soon)",
+    "navCreativeStudio": "Content Hub (Coming Soon)",
     "navFrontDesk": "Front Desk Settings"
   },
   "CreativeStudio": {
@@ -1342,6 +1342,9 @@
     "postTemplateObjeLabel": "Object showcase",
     "postTemplateObjePillar": "Product/object — background removed",
     "postTemplateObjeHint": "Warm mesh-gradient background + light grain, object/person floating in the center. Designed for visuals with removed backgrounds.",
+    "postTemplateObjeSoftLabel": "Object showcase soft",
+    "postTemplateObjeSoftPillar": "Product/object — soft background",
+    "postTemplateObjeSoftHint": "Cream, khaki, and warm orange mesh-gradient background, object floats in the center. Designed for softer, brand-colored visuals with removed backgrounds.",
     "postTemplateGradientLabel": "Gradient announcement",
     "postTemplateGradientPillar": "Feature announcement",
     "postTemplateGradientHint": "Gradient background variant of 'X is live' — more vibrant, less corporate.",

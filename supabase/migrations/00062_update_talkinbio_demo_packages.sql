@@ -61,9 +61,9 @@ set content = $${
     },
     {
       "id": "creative-studio",
-      "tr": {"title": "4. Sayfa ve içerik üretimini hızlandırır", "description": "Beiwe ile sayfanızı kurar, Creative Studio ile görsel açıdan zengin içerikler üretirsiniz."},
-      "en": {"title": "4. Speeds up page and content creation", "description": "Build your page with Beiwe and create richer visual content with Creative Studio."},
-      "ru": {"title": "4. Ускоряет создание страницы и контента", "description": "Создавайте страницу с Beiwe и визуально более богатый контент в Creative Studio."},
+      "tr": {"title": "4. Sayfa ve içerik üretimini hızlandırır", "description": "Beiwe ile sayfanızı kurar, İçerik Merkezi ile görsel açıdan zengin içerikler üretirsiniz."},
+      "en": {"title": "4. Speeds up page and content creation", "description": "Build your page with Beiwe and create richer visual content with Content Hub."},
+      "ru": {"title": "4. Ускоряет создание страницы и контента", "description": "Создавайте страницу с Beiwe и визуально более богатый контент в Контент-хабе."},
       "mediaUrl": "https://spjylpncgisogfxuiodl.supabase.co/storage/v1/object/public/media/km8iijnuyhg_1784832883177.png"
     }
   ]

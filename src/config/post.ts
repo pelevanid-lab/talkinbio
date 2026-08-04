@@ -51,6 +51,7 @@ export type PostTemplateId =
   | 'aci'
   | 'soz'
   | 'obje-vitrini'
+  | 'obje-vitrini-soft'
   | 'gradient-duyuru'
   | 'buyuk-rakam'
   | 'karanlik-sinematik'
@@ -215,6 +216,23 @@ export const POST_TEMPLATES: PostTemplate[] = [
     scrim: 'none',
     grain: 0.35,
     fontId: 'space-grotesk',
+  },
+  {
+    id: 'obje-vitrini-soft',
+    label: 'postTemplateObjeSoftLabel',
+    pillar: 'postTemplateObjeSoftPillar',
+    hint: 'postTemplateObjeSoftHint',
+    imageMode: 'contain',
+    frameImage: false,
+    background: { kind: 'mesh', colors: ['#F4F2ED', '#FFEDE9', '#BDB76B', '#FF6A5C'] },
+    headlineColor: BRAND.ink,
+    sublineColor: 'rgba(20,35,31,0.75)',
+    headlineSizePct: 5,
+    sublineSizePct: 2.4,
+    wordmarkColor: 'rgba(20,35,31,0.7)',
+    scrim: 'none',
+    grain: 0.25,
+    fontId: 'bricolage-grotesque',
   },
   {
     id: 'gradient-duyuru',
