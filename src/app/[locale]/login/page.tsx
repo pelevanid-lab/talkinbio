@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/routing';
 import { createClient } from '@/utils/supabase/client';
 import { Loader2, Mail, Lock } from 'lucide-react';
 
@@ -240,12 +241,12 @@ export default function LoginPage() {
           )}
 
           {mode === 'login' && (
-            <a
+            <Link
               href={`/register${searchParamsStr}`}
               className="block text-center w-full text-slate-500 hover:text-[var(--coral)] text-sm font-medium mt-4 transition"
             >
               {t('registerLink')}
-            </a>
+            </Link>
           )}
         </form>
       </div>
