@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { generateText } from 'ai';
-import { google } from '@ai-sdk/google';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+
+const googleProvider = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY,
+});
 import { normalizeString, checkExplicitContact, classifyIntent } from '@/utils/semantic/intentClassifier';
 import { CloudflareEmbeddingProvider, GeminiEmbeddingProvider, FakeEmbeddingProvider } from '@/utils/semantic/embeddingProvider';
 import { loadSemanticIndex } from '@/utils/semantic/indexer';
@@ -434,7 +438,7 @@ CRITICAL CONSTRAINTS & BEHAVIOR:
 Return ONLY a valid JSON object. Do not include markdown code block formatting (like \`\`\`json) or any pre/post text.`;
 
         const { text: geminiOutput } = await generateText({
-          model: google('gemini-2.5-flash'),
+          model: googleProvider('gemini-2.5-flash'),
           prompt: systemPrompt,
         });
 

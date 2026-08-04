@@ -1,5 +1,9 @@
 import { embed, embedMany } from 'ai';
-import { google } from '@ai-sdk/google';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+
+const googleProvider = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY,
+});
 
 export interface EmbeddingProvider {
   embedDocuments(texts: string[]): Promise<number[][]>;
@@ -9,7 +13,7 @@ export interface EmbeddingProvider {
 export class GeminiEmbeddingProvider implements EmbeddingProvider {
   async embedQuery(text: string): Promise<number[]> {
     const { embedding } = await embed({
-      model: google.textEmbeddingModel('gemini-embedding-001'),
+      model: googleProvider.textEmbeddingModel('gemini-embedding-001'),
       value: text,
     });
     return embedding;
@@ -18,7 +22,7 @@ export class GeminiEmbeddingProvider implements EmbeddingProvider {
   async embedDocuments(texts: string[]): Promise<number[][]> {
     if (texts.length === 0) return [];
     const { embeddings } = await embedMany({
-      model: google.textEmbeddingModel('gemini-embedding-001'),
+      model: googleProvider.textEmbeddingModel('gemini-embedding-001'),
       values: texts,
     });
     return embeddings;

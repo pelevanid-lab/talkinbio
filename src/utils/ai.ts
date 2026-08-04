@@ -1,5 +1,9 @@
 import { anthropic } from '@ai-sdk/anthropic';
-import { google } from '@ai-sdk/google';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+
+const googleProvider = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY,
+});
 
 const DEFAULT_MODEL = 'gemini-2.5-flash';
 
@@ -22,7 +26,7 @@ export function getModel(task: AgentTask) {
   const modelName = resolveModelName(task);
 
   if (modelName.startsWith('gemini')) {
-    return google(modelName);
+    return googleProvider(modelName);
   }
   return anthropic(modelName);
 }
