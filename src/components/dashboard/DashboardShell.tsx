@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/utils/supabase/client';
 import {
@@ -42,6 +42,19 @@ type Business = {
 export default function DashboardShell({ business, active, children }: { business: Business; active: DashboardSection; children: ReactNode }) {
   const t = useTranslations('Leads');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [isLocalhost, setIsLocalhost] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const { hostname, port } = window.location;
+      if (
+        (hostname === 'localhost' || hostname === '127.0.0.1') &&
+        (port === '3000' || port === '3001')
+      ) {
+        setIsLocalhost(true);
+      }
+    }
+  }, []);
 
   const navItems: NavItem[] = [
     { key: 'setup', label: t('navSetup'), href: '/dashboard/editor', icon: Pencil },
@@ -69,6 +82,20 @@ export default function DashboardShell({ business, active, children }: { busines
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = active === item.key;
+          const isFrozen = item.key === 'creative-studio' && !isLocalhost;
+
+          if (isFrozen) {
+            return (
+              <div
+                key={item.key}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#8A8880] cursor-not-allowed opacity-60"
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                {item.label}
+              </div>
+            );
+          }
+
           return (
             <a
               key={item.key}
