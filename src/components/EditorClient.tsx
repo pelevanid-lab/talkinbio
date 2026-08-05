@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Plus, Edit2, Copy, ExternalLink, Smartphone, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Inbox, Coins, Tag, BarChart3, Eye } from 'lucide-react';
+import { Loader2, Plus, Edit2, Copy, ExternalLink, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Inbox, Coins, Tag, BarChart3, Eye } from 'lucide-react';
 import AgentMarkdown from './AgentMarkdown';
 import BlockEditorModal from './BlockEditorModal';
 import SetPasswordModal from './SetPasswordModal';
@@ -59,10 +59,8 @@ export default function EditorClient({
   const [editingBlock, setEditingBlock] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const [viewMode, setViewMode] = useState<'instagram' | 'manual' | 'bulk' | 'activity'>('instagram');
+  const [viewMode, setViewMode] = useState<'manual' | 'activity'>('manual');
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
-  const [bulkText, setBulkText] = useState('');
-  const [instagramSource, setInstagramSource] = useState('');
   const [username, setUsername] = useState(business.username);
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [usernameError, setUsernameError] = useState('');
@@ -802,21 +800,6 @@ export default function EditorClient({
     }
   };
 
-  const handleBulkSubmit = () => {
-    if (!bulkText.trim()) return;
-    const bulkLabels = `${t('blocks.about')}, ${t('blocks.services')} ${t('etcAbbr')}`;
-    sendUserText(t('bulkPromptTemplate', { labels: bulkLabels, text: bulkText }));
-    setBulkText('');
-    setViewMode('activity');
-  };
-
-  const handleInstagramSubmit = () => {
-    const source = instagramSource.trim();
-    if (!source) return;
-    sendUserText(t('instagramPromptTemplate', { source }));
-    setInstagramSource('');
-    setViewMode('activity');
-  };
 
   const accent = theme.accent || {
     mode: 'solid' as const,
@@ -846,28 +829,10 @@ export default function EditorClient({
             </a>
           </div>
 
-          {/* Mode Switcher: setup, editing and visual work are separated so the editor is scannable. */}
-          <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-200 space-y-3">
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 px-1">{t('editorMenuSetup')}</div>
-              <div className="grid grid-cols-2 gap-1">
-                <button
-                  onClick={() => setViewMode('instagram')}
-                  className={`py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'instagram' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  {t('tabInstagram')}
-                </button>
-                <button 
-                  onClick={() => setViewMode('bulk')}
-                  className={`py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'bulk' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  {t('tabBulk')}
-                </button>
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 px-1">{t('editorMenuEdit')}</div>
-              <div className="grid grid-cols-[1fr_44px] gap-1">
+          {/* Mode Switcher: düzenleme ve Saule chat arasında geçiş */}
+          <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-200">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 px-1">{t('editorMenuEdit')}</div>
+            <div className="grid grid-cols-[1fr_44px] gap-1">
               <button
                 onClick={() => setViewMode('manual')}
                 className={`py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'manual' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
@@ -881,7 +846,6 @@ export default function EditorClient({
               >
                 <MessageSquare className="w-4 h-4 mx-auto" />
               </button>
-            </div>
             </div>
           </div>
         </div>
@@ -919,106 +883,9 @@ export default function EditorClient({
               </div>
             </div>
           )}
-          {viewMode === 'instagram' ? (
-            <div className="p-4 md:p-6 space-y-4 pb-20 overflow-y-auto">
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                <h3 className="text-sm font-bold text-[var(--ink)] mb-2">{t('instagramTitle')}</h3>
-                <p className="text-xs text-slate-500 mb-4">{t('instagramDesc')}</p>
-                <input
-                  value={instagramSource}
-                  onChange={(e) => setInstagramSource(e.target.value)}
-                  placeholder={t('instagramPlaceholder')}
-                  className="w-full p-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[var(--coral)]"
-                />
-                <button
-                  onClick={handleInstagramSubmit}
-                  disabled={!instagramSource.trim() || isChatLoading}
-                  className="mt-4 w-full py-3 bg-[var(--coral)] text-white rounded-lg font-bold hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center justify-center"
-                >
-                  {isChatLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : `${t('instagramSubmitBtn')} ${t('costEstimation', { cost: installCreditCost })}`}
-                </button>
-              </div>
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                <h3 className="text-sm font-bold text-[var(--ink)] mb-2">{t('pageStatus.title')}</h3>
-                <p className="text-xs text-slate-500 mb-3">{t('instagramStatusHint')}</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { type: 'about', label: t('blocks.about') },
-                    { type: 'services', label: t('blocks.services') },
-                    { type: 'pricing', label: t('blocks.pricing') },
-                    { type: 'faq', label: t('blocks.faq') },
-                  ].map(({ type, label }) => {
-                    const done = !!blocks.find(b => b.type === type && hasRealContent(b));
-                    return (
-                      <span key={type} className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-2 rounded-lg border ${done ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-[var(--ink-soft)] border-[rgba(20,35,31,0.15)]'}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${done ? 'bg-green-500' : 'bg-slate-300'}`} />
-                        {label}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          ) : viewMode === 'activity' ? (
+          {viewMode === 'activity' ? (
             <div className="flex flex-col h-full relative">
               <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ paddingBottom: chatInputBarHeight + 16 }}>
-                {/* Sayfa Durumu Kartı — sadece chat boşsa gösterilir */}
-                {messages.length === 0 && !isChatLoading && (() => {
-                  const trackedBlocks = [
-                    { type: 'about', label: t('blocks.about') },
-                    { type: 'services', label: t('blocks.services') },
-                    { type: 'hours', label: t('pageStatus.hoursLabel') },
-                    { type: 'faq', label: t('pageStatus.faqLabel') },
-                  ];
-                  const hasAnyContent = blocks.some(b => hasRealContent(b));
-                  const missingBlocks = trackedBlocks.filter(({ type }) => !blocks.find(b => b.type === type && hasRealContent(b)));
-                  const hasMissing = missingBlocks.length > 0 || !hasContactValue;
-
-                  return (
-                    <div className="rounded-2xl border border-[var(--coral)] bg-[var(--coral-tint)] p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold tracking-widest text-[var(--coral)] uppercase font-mono">
-                          {t('pageStatus.title')}
-                        </span>
-                        {hasAnyContent && (
-                          <span className="text-[10px] text-[var(--ink-soft)]">
-                            {t('pageStatus.completedCount', { done: trackedBlocks.length - missingBlocks.length + (hasContactValue ? 1 : 0), total: trackedBlocks.length + 1 })}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        {trackedBlocks.map(({ type, label }) => {
-                          const done = !!blocks.find(b => b.type === type && hasRealContent(b));
-                          return (
-                            <span key={type} className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border ${done ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-[var(--ink-soft)] border-[rgba(20,35,31,0.15)]'}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${done ? 'bg-green-500' : 'bg-slate-300'}`} />
-                              {label}
-                            </span>
-                          );
-                        })}
-                        <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border ${hasContactValue ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-[var(--ink-soft)] border-[rgba(20,35,31,0.15)]'}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${hasContactValue ? 'bg-green-500' : 'bg-slate-300'}`} />
-                          {t('pageStatus.contactLabel')}
-                        </span>
-                      </div>
-
-                      {hasMissing ? (
-                        <button
-                          onClick={() => sendUserText('__DEVAM__')}
-                          disabled={isChatLoading}
-                          className="w-full mt-1 py-2 px-4 bg-[var(--coral)] text-white text-xs font-bold rounded-full hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                        >
-                          <span>✦</span> {t('pageStatus.continueBtn')} {t('costEstimation', { cost: installCreditCost })}
-                        </button>
-                      ) : (
-                        <p className="text-xs text-green-700 font-medium text-center">
-                          {t('pageStatus.allComplete')}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })()}
 
                 {messages.map((m, idx) => (
                   <div key={idx} className={`flex items-end gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -1115,28 +982,6 @@ export default function EditorClient({
                     <MessageSquarePlus className="w-5 h-5" />
                   </button>
                 </form>
-              </div>
-            </div>
-          ) : viewMode === 'bulk' ? (
-            <div className="p-4 md:p-6 space-y-4 pb-20 flex flex-col h-full overflow-y-auto">
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col">
-                <h3 className="text-sm font-bold text-[var(--ink)] mb-2">{t('bulkTitle')}</h3>
-                <p className="text-xs text-slate-500 mb-4">
-                  {t('bulkDesc')}
-                </p>
-                <textarea 
-                  value={bulkText}
-                  onChange={(e) => setBulkText(e.target.value)}
-                  placeholder={t('bulkPlaceholder')}
-                  className="w-full flex-1 min-h-[200px] p-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[var(--coral)] resize-none"
-                ></textarea>
-                <button 
-                  onClick={handleBulkSubmit}
-                  disabled={!bulkText.trim() || isChatLoading}
-                  className="mt-4 w-full py-3 bg-[var(--coral)] text-white rounded-lg font-bold hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center justify-center"
-                >
-                  {isChatLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : `${t('bulkSubmitBtn')} ${t('costEstimation', { cost: installCreditCost })}`}
-                </button>
               </div>
             </div>
           ) : (
