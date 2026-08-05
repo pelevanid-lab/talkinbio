@@ -58,9 +58,9 @@ export default function DashboardShell({ business, active, children }: { busines
 
   const navItems: NavItem[] = [
     { key: 'setup', label: t('navSetup'), href: '/dashboard/editor', icon: Pencil },
+    { key: 'front-desk', label: t('navFrontDesk'), href: '/dashboard/front-desk', icon: Settings },
     { key: 'creative-studio', label: t('navCreativeStudio'), href: '/dashboard/creative-studio', icon: Sparkles },
     { key: 'leads', label: t('headerTitle'), href: '/dashboard/leads', icon: Inbox },
-    { key: 'front-desk', label: t('navFrontDesk'), href: '/dashboard/front-desk', icon: Settings },
     { key: 'analytics', label: t('navAnalytics'), href: '/dashboard/analytics', icon: BarChart3 },
     { key: 'billing', label: t('navBilling'), href: '/dashboard/billing', icon: Coins },
   ];

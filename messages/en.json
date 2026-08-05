@@ -581,38 +581,62 @@
     "voiceInfoFiller": "I'm writing it down for you now."
   },
   "Pricing": {
-    "eyebrow": "Plans",
-    "title": "Transparent capacity, transparent pricing.",
-    "intro": "Flexible credit-based pricing. As long as you have credits, you don't need to pay monthly subscription fees; you only pay for what you use.",
-    "plan_free": "Sign up free",
+    "eyebrow": "Pricing",
+    "title": "Your page is free. Pay with credits only when you use them.",
+    "intro": "Create, edit, and publish your Talkinbio page for free, forever. Credits are only used for interactive visitor experiences, content creation, and other AI operations. No monthly fees.",
+    "badge_1": "Free page",
+    "badge_2": "Free publishing",
+    "badge_3": "No monthly fee",
+    "badge_4": "Credits never expire",
+    "freeStartTitle": "Free starter space",
+    "freeCtaButton": "Start free",
+    "freeStartDesc": "Create and publish your interactive page, and earn 200 gift credits to try Talkinbio. No credit card required.",
+    "freeStartPauseLabel": "When credits run out:",
+    "freeStartPauseInfo": "Your page and all blocks stay live. Only credit-consuming interactive features are paused.",
+    "packagesTitle": "Credit packages",
+    "packageUsageDesc": "Used for interactive visitor experiences, content, image, audio, and video creation.",
+    "credits": "{count} credits",
+    "creditsUnit": "credits",
+    "ctaButton": "Buy now",
+    "desc_free": "To set up your page and explore the product",
+    "desc_extra": "Getting started",
+    "desc_starter": "Regular use",
+    "desc_pro": "Heavy interaction and content creation",
+    "desc_business": "High traffic and advanced production",
+    "whereTitle": "Where do you use credits?",
+    "use_interactive_title": "Interactive experience",
+    "use_interactive_desc": "Showing the right content based on visitor choices and questions.",
+    "use_content_title": "Content creation",
+    "use_content_desc": "Post, Story, Reel copy, content plans, and social media materials.",
+    "use_media_title": "Image, audio & video",
+    "use_media_desc": "Image generation, voiceover, Twin, and motion content.",
+    "use_assistant_title": "Talkinbio Assistant",
+    "use_assistant_soon": "Coming soon",
+    "use_assistant_desc": "Assistant conversations on Instagram, WhatsApp, and other channels.",
+    "freeTableTitle": "Always free",
+    "creditTableTitle": "Credit-powered",
+    "free_1": "Page creation",
+    "free_2": "Publishing your page",
+    "free_3": "Editing your page",
+    "free_4": "Recreating your page",
+    "free_5": "Viewing links and content blocks",
+    "free_6": "Static page stays live when credits run out",
+    "credit_1": "Interactive visitor sessions",
+    "credit_2": "Free-form AI responses",
+    "credit_3": "Voice usage",
+    "credit_4": "Content creation",
+    "credit_5": "Image, audio, and video creation",
+    "credit_6": "Future channel assistants",
+    "footerNote": "Pricing",
+    "operationCostsTitle": "Credit Cost per Operation",
+    "operationCostsSubtitle": "See how many credits each action consumes.",
+    "plan_free": "Free Start",
     "plan_starter": "Starter",
     "plan_pro": "Pro",
     "plan_business": "Business",
-    "perMonth": "/mo",
-    "credits": "{count} credits",
-    "capacityExample": "≈ {saule} Saule conversations OR {beiwe} page updates",
-    "idealFor_free": "Every new registered user is rewarded with a one-time grant of 200 credits.",
-    "idealFor_starter": "For individual businesses launching their page and answering first visitor questions.",
-    "idealFor_pro": "For growing businesses with steady visitor traffic and regular page updates.",
-    "idealFor_business": "For teams that need multiple service lines, heavier page production, and custom voice cues.",
+    "capacityExample": "~{saule} visitor sessions or ~{beiwe} AI updates",
     "extraPackName": "Extra Credit Pack",
-    "extraPackNote": "Can be purchased on top of any plan",
-    "operationCostsTitle": "Operation costs",
-    "operationCostsSubtitle": "Credits are charged only when real work happens. Simple page-routing answers do not create LLM cost.",
-    "freeCtaButton": "Register",
-    "ctaButton": "Buy now",
-    "formTitle": "Get in touch",
-    "formSubtitle": "Reach out to our team for support regarding our credit packages or custom enterprise requests.",
-    "formEmail": "Email",
-    "formPhone": "Phone",
-    "formPlanLabel": "Plan you're interested in",
-    "formPlanNone": "Not sure yet",
-    "formMessage": "Anything you'd like to add (optional)",
-    "formSubmit": "Send",
-    "formSubmitting": "Sending...",
-    "formSuccess": "We've received your request. Our team will reach out soon.",
-    "formErrorGeneric": "Something went wrong while sending, please try again.",
-    "footerNote": "Plans"
+    "extraPackNote": "Top up your balance at any time with as many credits as you need."
   },
   "Stakeholders": {
     "title": "To Our Stakeholders",
@@ -860,9 +884,9 @@
     "settingsSaveError": "An error occurred while saving the settings.",
     "settingsSavedToast": "Settings saved",
     "saveSettingsBtn": "Save Settings",
-    "sauleSubtitle": "Your Digital Front Desk Assistant",
-    "frontDeskToggleTitle": "Digital Front Desk Assistant",
-    "frontDeskToggleHint": "You must have a minimum of 20 credits to keep the front desk active. (If credits drop below 20, the assistant is automatically turned off). 1 credit is deducted for each 20-question pack or each user session.",
+    "sauleSubtitle": "Interactive Page Settings",
+    "frontDeskToggleTitle": "Interactive Page",
+    "frontDeskToggleHint": "You must have a minimum of 20 credits to keep your interactive page active. (If credits drop below 20, it is automatically turned off). 1 credit is deducted for each 20-question pack or each user session.",
     "frontDeskStatusActive": "Active",
     "frontDeskStatusOff": "Off",
     "frontDeskStatusLowCredits": "Insufficient Credits",
@@ -967,7 +991,7 @@
     "navBilling": "Credits",
     "navSetup": "Setup",
     "navCreativeStudio": "Content Hub (Coming Soon)",
-    "navFrontDesk": "Front Desk Settings"
+    "navFrontDesk": "Interactive Page"
   },
   "CreativeStudio": {
     "pageTitle": "Page Studio",
@@ -1029,7 +1053,7 @@
     "usageEmpty": "No usage recorded yet.",
     "freeLabel": "Free",
     "agent": {
-      "saule": "Saule (Visitor Chat)",
+      "saule": "Interactive Page Session",
       "beiwe": "Page Setup",
       "analysis": "Automated Analysis"
     },
@@ -1477,5 +1501,210 @@
     "podcastNoClips": "No clips generated yet.",
     "castErrorCreate": "Failed to create character.",
     "title": "Talkinbio Lab"
+  },
+  "Wizard": {
+    "categorySelectTitle": "What kind of profile are you creating?",
+    "categorySelectSub": "Pick your category and get a tailored setup flow.",
+    "setupTitle": "Let us set up your page",
+    "saveBtn": "Save and continue",
+    "skipBtn": "Skip for now",
+    "doneTitle": "Your profile is ready!",
+    "doneSub": "Head to the dashboard to customize your design and publish.",
+    "doneBtn": "Go to dashboard",
+    "skipped": "Skipped",
+    "langOffer": {
+      "title": "Translate your content",
+      "sub": "Saule auto-translates your page content. It costs credits, but your 100 welcome credits are ready to use.",
+      "addBtn": "Add language",
+      "pickLabel": "Which language?",
+      "translateBtn": "Translate and save",
+      "translating": "Translating, please wait...",
+      "success": "{count} blocks successfully translated."
+    },
+    "categories": {
+      "hizmet": {
+        "label": "Service",
+        "desc": "Appointments, sessions, consulting"
+      },
+      "icerikUreticisi": {
+        "label": "Content Creator",
+        "desc": "Brand deals, digital presence"
+      },
+      "muzisyen": {
+        "label": "Musician",
+        "desc": "Music, events, audience"
+      },
+      "urun": {
+        "label": "Product",
+        "desc": "Sales, catalog, store"
+      }
+    },
+    "hizmet": {
+      "header": {
+        "label": "Who + title",
+        "tip": "Your name and specialty are the first thing visitors see. Keep it short and clear."
+      },
+      "services": {
+        "label": "My services",
+        "tip": "Visitors look for pricing first. Adding a price or range for each service increases booking chances.",
+        "itemLabel": "Service"
+      },
+      "about": {
+        "label": "Why me",
+        "tip": "Your credentials, experience, and what makes you different."
+      },
+      "testimonials": {
+        "label": "Client testimonials",
+        "tip": "Real testimonials are your strongest persuasion tool. Name and quote is enough."
+      },
+      "gallery": {
+        "label": "Results",
+        "tip": "Before-and-after photos or workspace images build trust."
+      },
+      "faq": {
+        "label": "FAQ",
+        "tip": "Answer common questions before the appointment."
+      },
+      "contact": {
+        "label": "Book appointment",
+        "tip": "The visitor is convinced — make it easy to reach you. Add at least one contact method."
+      }
+    },
+    "icerikUreticisi": {
+      "header": {
+        "label": "Who + niche",
+        "tip": "Describe your content niche in one sentence."
+      },
+      "links": {
+        "label": "My platforms",
+        "tip": "Brands want to know where to find you. Add your active platforms.",
+        "itemLabel": "Platform"
+      },
+      "kitlem": {
+        "label": "My audience",
+        "tip": "Platform, follower count, audience profile. Key info for brand deals — skip what you prefer not to share."
+      },
+      "gallery": {
+        "label": "Best work",
+        "tip": "Add your strongest visuals from past work."
+      },
+      "testimonials": {
+        "label": "Brands I worked with",
+        "tip": "Brand name and what you did together is enough."
+      },
+      "contact": {
+        "label": "Business contact",
+        "tip": "How should brands reach you? Email is usually preferred."
+      }
+    },
+    "muzisyen": {
+      "header": {
+        "label": "Who + genre",
+        "tip": "State your genre so fans recognize you instantly."
+      },
+      "links": {
+        "label": "Listen now",
+        "tip": "Fans want to press play immediately. Put Spotify first.",
+        "itemLabel": "Platform"
+      },
+      "sonCikan": {
+        "label": "Latest release",
+        "tip": "Introduce your new single, album, or video. A short description is enough."
+      },
+      "about": {
+        "label": "My story",
+        "tip": "Who you are and how you started. Keep it short."
+      },
+      "testimonials": {
+        "label": "Press / reviews",
+        "tip": "Articles, magazine reviews, or fan messages."
+      },
+      "gallery": {
+        "label": "Visuals / clips",
+        "tip": "Concert photos, album covers, stage visuals."
+      },
+      "contact": {
+        "label": "Booking",
+        "tip": "Contact info for concert and event offers."
+      }
+    },
+    "urun": {
+      "header": {
+        "label": "Brand + intro",
+        "tip": "Make your brand name and what you sell immediately clear."
+      },
+      "services": {
+        "label": "Featured products",
+        "tip": "Nobody buys without photos. Add an image and price for each product.",
+        "itemLabel": "Product"
+      },
+      "links": {
+        "label": "Buy now",
+        "tip": "Add your store, Etsy, or website link.",
+        "itemLabel": "Store"
+      },
+      "testimonials": {
+        "label": "Customer reviews",
+        "tip": "Real reviews increase sales."
+      },
+      "gallery": {
+        "label": "Product gallery",
+        "tip": "Your products from the best angles."
+      },
+      "about": {
+        "label": "Brand story",
+        "tip": "How you started and what you believe in."
+      },
+      "faq": {
+        "label": "Shipping / returns",
+        "tip": "Shipping time, return policy, packaging info."
+      },
+      "contact": {
+        "label": "Order / contact",
+        "tip": "Contact for orders and custom requests."
+      }
+    },
+    "fields": {
+      "name": "Name / Brand name",
+      "namePlaceholder": "Your name or brand name",
+      "tagline": "One-line intro",
+      "taglinePlaceholder": "e.g. Nutritionist based in Istanbul",
+      "optional": "optional",
+      "item": "Item",
+      "itemName": "Name",
+      "description": "Description",
+      "descriptionPlaceholder": "Description — write as much as you like",
+      "price": "Price",
+      "pricePlaceholder": "Price or range",
+      "media": "Image",
+      "uploadLabel": "Upload image",
+      "addItem": "+ Add",
+      "linkLabel": "Label",
+      "caption": "Caption (optional)",
+      "quote": "Quote",
+      "author": "Name",
+      "role": "Title / Role (optional)",
+      "question": "Question",
+      "answer": "Answer",
+      "textPlaceholder": "Write here...",
+      "contact": {
+        "whatsapp": "WhatsApp",
+        "email": "Email",
+        "instagram": "Instagram",
+        "telegram": "Telegram"
+      },
+      "contactPlaceholder": {
+        "whatsapp": "+1 XXX XXX XXXX",
+        "email": "hello@example.com",
+        "instagram": "@username",
+        "telegram": "@username"
+      }
+    },
+    "errors": {
+      "nameRequired": "Please enter a name.",
+      "contactRequired": "You must add at least one contact method.",
+      "createFailed": "Could not create your profile. Please try again.",
+      "generic": "Something went wrong. Please try again."
+    }
   }
 }

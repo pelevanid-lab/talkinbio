@@ -202,13 +202,16 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
     console.error('Failed to load past messages', err);
   }
 
+  const { getCategoryById: getWizardCategory } = await import('@/config/wizardCategories');
+  const wizardCat = business.category_id ? getWizardCategory(business.category_id) : null;
+  const schemaType = wizardCat?.schemaType ?? 'LocalBusiness';
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
+    '@type': schemaType,
     name: business.name,
     url: `https://www.talkinbio.com/${locale}/${business.username}`,
     description: pageBusiness.category,
-    '@id': `https://www.talkinbio.com/${locale}/${business.username}#localbusiness`
+    '@id': `https://www.talkinbio.com/${locale}/${business.username}#entity`
   };
 
   // Koyu modda tüm viewport (header satırı dahil) koyu zemine uyar — ArchetypeRenderer'ın kendi

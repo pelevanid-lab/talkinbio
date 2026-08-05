@@ -570,6 +570,25 @@
   gap: 4px;
 }
 
+/* Adımlar arası ok — lg ekranlarda feature-card'ın sağ kenarına yerleşir */
+@media (min-width: 1024px) {
+  #landing-page .feature-card:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 38px;
+    right: -22px;
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    border-top: 2px solid var(--teal);
+    border-right: 2px solid var(--teal);
+    border-radius: 0 4px 0 0;
+    transform: rotate(45deg);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+}
+
 /* ---- Apps Section ---- */
 #landing-page .apps-section {
   padding: 60px 0;

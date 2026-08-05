@@ -30,38 +30,41 @@ const landingCopy = {
       trustCue: 'Ücretsiz yayınla. Kredi kartı gerekmez.'
     },
     interaction: {
-      title: 'Sayfan sadece görünmez. Ziyaretçinle etkileşim kurar.',
-      subtitle: 'Ziyaretçi ne aradığını yazdığında Talkinbio doğru bölümü açar, hazırladığın cevabı gösterir veya seçtiğin kanala yönlendirir.',
-      cta: 'Nasıl çalıştığını keşfet',
-      cards: [
-        { q: '"Hangi hizmetleri veriyorsunuz?"', a: 'Hizmetler açılır' },
-        { q: '"Fiyatlar nedir?"', a: 'Paketler açılır' },
-        { q: '"Nereden satın alabilirim?"', a: 'Satış bağlantısı gösterilir' },
-        { q: '"Size nasıl ulaşabilirim?"', a: 'İletişim seçenekleri açılır' }
-      ]
+      title: 'Sayfan ücretsiz.\nKrediyi sadece\nkullandığında harca.',
+      subtitle: 'Sayfa oluşturma, yayınlama ve düzenleme tamamen ücretsizdir. Krediler yalnızca interaktif ziyaretçi deneyimlerinde ve yapay zekâ üretimlerinde kullanılır.',
+      cta: 'Tüm fiyatlandırmayı gör',
+      freeLabel: 'Sayfa + yayın',
+      freeValue: 'Ücretsiz',
+      packages: [
+        { label: '1.000 kredi', price: '$8' },
+        { label: '2.000 kredi', price: '$15' },
+        { label: '6.000 kredi', price: '$40' },
+        { label: '15.000 kredi', price: '$90' },
+      ],
+      footNote: 'Krediler süre aşımına uğramaz · Aylık ücret yok'
     },
     features: {
       cards: [
         {
-          title: 'Her tür içeriği paylaş',
-          desc: 'Sosyal medya bağlantıları, videolar, müzikler, yazılar, galeriler, dosyalar ve daha fazlasını ekle.',
-          linkText: 'Tüm içerik türlerini gör'
+          step: '01',
+          title: 'Sayfanı 10 dakikada kur',
+          desc: 'Kategorini seç, birkaç soruyu yanıtla. Talkinbio sayfanı ve interaktif deneyimini birlikte hazırlar — ek kurulum gerekmez.',
         },
         {
-          title: 'Ürünlerini ve hizmetlerini sun',
-          desc: 'Ürünlerini, hizmetlerini, paketlerini ve fiyatlarını ücretsiz yayınla. Satış bağlantısını kendi platformuna bağla. Satış senden komisyon yok.',
-          linkText: 'Daha fazla bilgi'
+          step: '02',
+          title: 'Bağlantını bio\'na ekle',
+          desc: 'Talkinbio adresini Instagram, TikTok ve diğer kanallardaki bio bölümüne koy. Tek link, her yerde çalışır.',
         },
         {
-          title: 'Uygulamalarla güçlendir',
-          desc: 'İhtiyacın olan özellikleri sonradan ekle. Kullanmadığın özellikler için ödeme yapma.',
-          linkText: 'Uygulamaları keşfet'
+          step: '03',
+          title: 'Ziyaretçin sorar, sayfan cevaplar',
+          desc: 'İnteraktif sayfan ziyaretçinin ne aradığını anlar; doğru bölümü açar, hazırladığın cevabı gösterir veya seni çağırır.',
         },
         {
-          title: 'Analiz et ve büyüt',
-          desc: 'Ziyaretlerini, tıklamalarını ve gelirini izle. Kitleni daha iyi tanı ve stratejini güçlendir.',
-          linkText: 'Analitik özellikleri gör'
-        }
+          step: '04',
+          title: 'Kitleni tanı ve büyü',
+          desc: 'Her ziyareti, tıklamayı ve iletişim talebini kayıt altına al. Neyin işe yaradığını gör, stratejini güçlendir.',
+        },
       ]
     },
     apps: {
@@ -182,38 +185,41 @@ const landingCopy = {
       trustCue: 'Publish for free. No credit card required.'
     },
     interaction: {
-      title: 'Your page does not just show. It interacts with your visitor.',
-      subtitle: 'When a visitor writes what they are looking for, Talkinbio opens the right section, shows your prepared answer or routes to your channel.',
-      cta: 'Discover how it works',
-      cards: [
-        { q: '"Which services do you provide?"', a: 'Services section opens' },
-        { q: '"What are the prices?"', a: 'Packages section opens' },
-        { q: '"Where can I buy?"', a: 'Sales link is displayed' },
-        { q: '"How can I reach you?"', a: 'Contact options open' }
-      ]
+      title: 'Your page is free.\nPay with credits\nonly when you use them.',
+      subtitle: 'Page creation, publishing, and editing are completely free. Credits are only used for interactive visitor experiences and AI-powered creation.',
+      cta: 'See full pricing',
+      freeLabel: 'Page + publishing',
+      freeValue: 'Free',
+      packages: [
+        { label: '1,000 credits', price: '$8' },
+        { label: '2,000 credits', price: '$15' },
+        { label: '6,000 credits', price: '$40' },
+        { label: '15,000 credits', price: '$90' },
+      ],
+      footNote: 'Credits never expire · No monthly fee'
     },
     features: {
       cards: [
         {
-          title: 'Share any type of content',
-          desc: 'Add social media links, videos, music, articles, galleries, files, and more.',
-          linkText: 'See all content types'
+          step: '01',
+          title: 'Set up in 10 minutes',
+          desc: 'Choose your category and answer a few questions. Talkinbio builds your page and interactive experience together — no extra setup needed.',
         },
         {
-          title: 'Present your products & services',
-          desc: 'Publish your products, services, packages and pricing for free. Connect sales links to your own platform. Zero commission.',
-          linkText: 'More information'
+          step: '02',
+          title: 'Add the link to your bio',
+          desc: 'Put your Talkinbio address in your Instagram, TikTok, and other bio sections. One link, works everywhere.',
         },
         {
-          title: 'Power up with applications',
-          desc: 'Add the features you need later. Never pay for the features you don\'t use.',
-          linkText: 'Explore applications'
+          step: '03',
+          title: 'Visitor asks, page answers',
+          desc: 'Your interactive page understands what the visitor is looking for — opens the right section, shows your answer, or calls on you.',
         },
         {
-          title: 'Analyze and grow',
-          desc: 'Track your visits, clicks, and revenue. Get to know your audience better and strengthen your strategy.',
-          linkText: 'See analytical features'
-        }
+          step: '04',
+          title: 'Know your audience, grow',
+          desc: 'Track every visit, click, and contact request. See what works and sharpen your strategy.',
+        },
       ]
     },
     apps: {
@@ -334,38 +340,41 @@ const landingCopy = {
       trustCue: 'Публикация бесплатна. Карта не требуется.'
     },
     interaction: {
-      title: 'Страница не просто отображает. Она общается с клиентом.',
-      subtitle: 'Когда гость пишет, что ищет, Talkinbio открывает нужный раздел, показывает ответ или ведет в канал связи.',
-      cta: 'Узнать как это работает',
-      cards: [
-        { q: '"Какие услуги вы предоставляете?"', a: 'Открывается раздел услуг' },
-        { q: '"Каковы цены?"', a: 'Открывается раздел тарифов' },
-        { q: '"Где я могу купить?"', a: 'Показывается ссылка на покупку' },
-        { q: '"Как с вами связаться?"', a: 'Открываются контакты' }
-      ]
+      title: 'Страница бесплатна.\nТратьте кредиты\nтолько когда используете.',
+      subtitle: 'Создание, публикация и редактирование страницы полностью бесплатны. Кредиты используются только для интерактивных визитов и AI-создания.',
+      cta: 'Все тарифы',
+      freeLabel: 'Страница + публикация',
+      freeValue: 'Бесплатно',
+      packages: [
+        { label: '1 000 кредитов', price: '$8' },
+        { label: '2 000 кредитов', price: '$15' },
+        { label: '6 000 кредитов', price: '$40' },
+        { label: '15 000 кредитов', price: '$90' },
+      ],
+      footNote: 'Кредиты не истекают · Без ежемесячной платы'
     },
     features: {
       cards: [
         {
-          title: 'Делитесь любым контентом',
-          desc: 'Добавляйте ссылки на соцсети, видео, музыку, статьи, галереи, файлы и многое другое.',
-          linkText: 'Все типы контента'
+          step: '01',
+          title: 'Настройте за 10 минут',
+          desc: 'Выберите категорию и ответьте на несколько вопросов. Talkinbio создаёт страницу и интерактивный опыт вместе — без лишних настроек.',
         },
         {
-          title: 'Представляйте продукты и услуги',
-          desc: 'Публикуйте услуги, пакеты и цены бесплатно. Подключайте ссылки к своей платформе. Без комиссии.',
-          linkText: 'Подробнее'
+          step: '02',
+          title: 'Добавьте ссылку в bio',
+          desc: 'Разместите адрес Talkinbio в Instagram, TikTok и других каналах. Одна ссылка, работает везде.',
         },
         {
-          title: 'Усиливайте приложениями',
-          desc: 'Добавляйте нужные функции позже. Платите только за те приложения, которыми реально пользуетесь.',
-          linkText: 'Обзор приложений'
+          step: '03',
+          title: 'Гость спрашивает — страница отвечает',
+          desc: 'Интерактивная страница понимает, что ищет гость, открывает нужный раздел, показывает ответ или зовёт вас.',
         },
         {
-          title: 'Анализируйте и растите',
-          desc: 'Отслеживайте просмотры, клики и доход. Узнавайте свою аудиторию лучше и улучшайте стратегию.',
-          linkText: 'Аналитические функции'
-        }
+          step: '04',
+          title: 'Узнайте аудиторию, растите',
+          desc: 'Фиксируйте каждый визит, клик и запрос. Видите, что работает — усиливайте стратегию.',
+        },
       ]
     },
     apps: {
@@ -631,7 +640,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                     {copy.interaction.subtitle}
                   </p>
                   <div className="pt-4">
-                    <Link href="/register" className="coral-link">
+                    <Link href="/pricing" className="coral-link">
                       {copy.interaction.cta}
                       <svg width="18" height="12" viewBox="0 0 18 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M12 1L17 6M17 6L12 11M17 6H1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -640,13 +649,59 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   </div>
                 </div>
 
-                <div className="bubble-grid">
-                  {copy.interaction.cards.map((card: any, idx: number) => (
-                    <div key={idx} className="bubble-item">
-                      <div className="bubble-q">{card.q}</div>
-                      <div className="bubble-a">{card.a}</div>
+                {/* Fiyatlandırma mini tablosu */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {/* Ücretsiz satırı */}
+                  <div style={{
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.10)',
+                    borderRadius: '14px',
+                    padding: '13px 18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                  }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'rgba(244,242,237,0.80)' }}>
+                      {(copy.interaction as any).freeLabel}
+                    </span>
+                    <span style={{
+                      padding: '3px 11px',
+                      background: 'rgba(43,111,92,0.30)',
+                      border: '1px solid rgba(43,111,92,0.45)',
+                      borderRadius: '100px',
+                      fontSize: '11px', fontWeight: 700,
+                      color: '#7ECEA0', whiteSpace: 'nowrap',
+                      fontFamily: 'var(--font-ibm-plex-mono)',
+                      letterSpacing: '0.04em',
+                    }}>
+                      {(copy.interaction as any).freeValue}
+                    </span>
+                  </div>
+
+                  {/* Kredi paketleri */}
+                  {(copy.interaction as any).packages.map((pkg: any, i: number) => (
+                    <div key={i} className="bubble-item" style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '11px 18px',
+                    }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'rgba(244,242,237,0.75)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
+                        {pkg.label}
+                      </span>
+                      <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--coral)', fontFamily: 'var(--font-bricolage)' }}>
+                        {pkg.price}
+                      </span>
                     </div>
                   ))}
+
+                  {/* Alt not */}
+                  <p style={{
+                    fontSize: '11px', color: 'rgba(244,242,237,0.30)',
+                    fontFamily: 'var(--font-ibm-plex-mono)',
+                    textAlign: 'center', margin: '2px 0 0', letterSpacing: '0.02em',
+                  }}>
+                    {(copy.interaction as any).footNote}
+                  </p>
                 </div>
               </div>
             </div>
@@ -658,23 +713,39 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <div className="wrap">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {copy.features.cards.map((card: any, idx: number) => (
-                <div key={idx} className="feature-card">
-                  <div className="feature-card-icon">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--ink)]">
-                      {idx === 0 && <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M12 2v10M12 2L8 6M12 2l4 4"/>}
-                      {idx === 1 && <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/>}
-                      {idx === 2 && <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>}
-                      {idx === 3 && <path d="M18 20V10M12 20V4M6 20v-6"/>}
-                    </svg>
+                <div key={idx} className="feature-card" style={{ position: 'relative' }}>
+                  {/* Adım numarası + ikon */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                    <span style={{
+                      fontFamily: 'var(--font-ibm-plex-mono)',
+                      fontSize: '11px', fontWeight: 700,
+                      color: 'var(--teal)', letterSpacing: '0.08em',
+                    }}>
+                      {card.step}
+                    </span>
+                    <div className="feature-card-icon" style={{ margin: 0 }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--ink)]">
+                        {/* 01 – AI sohbet / wand */}
+                        {idx === 0 && <><path d="M15 4V2m0 2v2m0-2h-2m2 0h2M9 11l-4 4 4 4m-4-4h10"/><path d="M17.5 7.5 19 9l-6.5 6.5-1.5-1.5z"/></>}
+                        {/* 02 – link zinciri */}
+                        {idx === 1 && <><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></>}
+                        {/* 03 – konuşma balonu */}
+                        {idx === 2 && <><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></>}
+                        {/* 04 – chart bars */}
+                        {idx === 3 && <path d="M18 20V10M12 20V4M6 20v-6"/>}
+                      </svg>
+                    </div>
                   </div>
-                  <h3>{card.title}</h3>
-                  <p>{card.desc}</p>
-                  <Link href="/register" className="arrow-link">
-                    {card.linkText}
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M1 6H11M11 6L6 1M11 6L6 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </Link>
+
+                  <h3 style={{ marginBottom: '10px' }}>{card.title}</h3>
+                  <p style={{ marginBottom: 0 }}>{card.desc}</p>
+
+                  {/* Adımlar arası bağlantı oku — son kartta yok */}
+                  {idx < 3 && (
+                    <div style={{
+                      display: 'none',
+                    }} className="step-connector" aria-hidden="true" />
+                  )}
                 </div>
               ))}
             </div>

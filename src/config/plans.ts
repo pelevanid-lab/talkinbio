@@ -10,3 +10,11 @@ export const PLANS = [
 ] as const;
 
 export const EXTRA_PACK = { id: 'extra', name: 'Ek Kredi', price: 8, credits: 1000 } as const;
+
+// Satın alınabilir kredi paketleri: pricing sayfası ve /dashboard/billing aynı
+// listeyi kullanır (tek kaynak) — free plan burada yok, o ayrı bir "ücretsiz
+// başlangıç" bölümünde sunuluyor. Görüntüleme sırası: en küçükten en büyüğe.
+export const CREDIT_PACKAGES = [
+  { id: EXTRA_PACK.id, credits: EXTRA_PACK.credits, price: EXTRA_PACK.price },
+  ...PLANS.filter((p) => p.id !== 'free').map((p) => ({ id: p.id, credits: p.credits, price: p.price })),
+];

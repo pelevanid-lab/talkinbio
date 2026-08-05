@@ -21,9 +21,10 @@ export async function getOrCreateBusinessTwin(businessId: string): Promise<strin
 
   const { error } = await supabaseAdmin
     .from('character_profiles')
-    .insert({ id: characterId, business_id: businessId });
+    .upsert({ id: characterId, business_id: businessId }, { onConflict: 'id', ignoreDuplicates: true });
 
-  if (error) throw error;
+  if (error) throw new Error(`character_profiles upsert failed: ${error.message} (hint: ${error.hint ?? 'none'}, code: ${error.code})`);
+
 
   return characterId;
 }

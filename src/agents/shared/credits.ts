@@ -17,9 +17,9 @@ export const CREDIT_COST_MENU = [
     agent: 'saule',
     credits: SAULE_CREDIT_COST,
     label: {
-      tr: 'Saule ziyaretçi paketi (20 soruya kadar)',
-      en: 'Saule visitor package (up to 20 questions)',
-      ru: 'Пакет посетителя Saule (до 20 вопросов)',
+      tr: 'İnteraktif sayfa oturumu (20 soruya kadar)',
+      en: 'Interactive page session (up to 20 questions)',
+      ru: 'Сессия интерактивной страницы (до 20 вопросов)',
     },
   },
   {
@@ -27,9 +27,9 @@ export const CREDIT_COST_MENU = [
     agent: 'saule',
     credits: SAULE_VOICE_CREDIT_COST,
     label: {
-      tr: 'Mikrofonla soru paketi (STT dahil, ek 50 kredi, 20 soruya kadar)',
-      en: 'Voice-input package (STT included, additional 50 credits, up to 20 questions)',
-      ru: 'Голосовой пакет (STT включен, дополнительно 50 кредитов, до 20 вопросов)',
+      tr: 'Sesli oturum (STT dahil, ek 50 kredi, 20 soruya kadar)',
+      en: 'Voice session (STT included, additional 50 credits, up to 20 questions)',
+      ru: 'Голосовая сессия (STT включён, дополнительно 50 кредитов, до 20 вопросов)',
     },
   },
   {

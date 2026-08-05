@@ -581,38 +581,62 @@
     "voiceInfoFiller": "Şimdi size yazıyorum."
   },
   "Pricing": {
-    "eyebrow": "Planlar",
-    "title": "Şeffaf kapasite, şeffaf fiyat.",
-    "intro": "Kredi tabanlı esnek fiyatlandırma. Krediniz bitmediği sürece her ay yenileme yapmak veya aylık sabit ücret ödemek zorunda değilsiniz; sadece kullandığınız kadar harcarsınız.",
-    "plan_free": "Sign up free",
+    "eyebrow": "Fiyatlandırma",
+    "title": "Sayfan ücretsiz. Krediyi sadece kullandığında harca.",
+    "intro": "Talkinbio sayfanı ücretsiz oluşturabilir, düzenleyebilir ve süresiz yayınlayabilirsin. Krediler yalnızca interaktif ziyaretçi deneyimlerinde, içerik üretiminde ve diğer yapay zekâ işlemlerinde kullanılır. Aylık ücret yoktur.",
+    "badge_1": "Ücretsiz sayfa",
+    "badge_2": "Ücretsiz yayın",
+    "badge_3": "Aylık ücret yok",
+    "badge_4": "Krediler süre aşımına uğramaz",
+    "freeStartTitle": "Ücretsiz başlangıç alanı",
+    "freeCtaButton": "Ücretsiz başla",
+    "freeStartDesc": "İnteraktif sayfanı oluştur, yayınla ve kredi gerektiren servisleri deneyebilmen için 200 hediye kredi kazan. Kredi kartı gerekmez.",
+    "freeStartPauseLabel": "Kredi bittiğinde:",
+    "freeStartPauseInfo": "Sayfan ve tüm blokların yayında kalır. Yalnızca kredi kullanan interaktif özellikler duraklatılır.",
+    "packagesTitle": "Kredi paketleri",
+    "packageUsageDesc": "İnteraktif ziyaretçi deneyimleri, içerik, görsel, ses ve video üretimlerinde kullanılır.",
+    "credits": "{count} kredi",
+    "creditsUnit": "kredi",
+    "ctaButton": "Satın al",
+    "desc_free": "Sayfanı kurmak ve ürünü tanımak için",
+    "desc_extra": "Başlangıç kullanımı",
+    "desc_starter": "Düzenli kullanım",
+    "desc_pro": "Yoğun etkileşim ve içerik üretimi",
+    "desc_business": "Yüksek trafik ve gelişmiş üretimler",
+    "whereTitle": "Kredilerini nerede kullanırsın?",
+    "use_interactive_title": "İnteraktif deneyim",
+    "use_interactive_desc": "Ziyaretçilerin seçimlerine ve sorularına göre doğru içeriklerin gösterilmesi.",
+    "use_content_title": "İçerik üretimi",
+    "use_content_desc": "Gönderi, Story, Reel metni, içerik planı ve sosyal medya materyalleri.",
+    "use_media_title": "Görsel, ses ve video",
+    "use_media_desc": "Görsel üretimi, seslendirme, Twin ve hareketli içerikler.",
+    "use_assistant_title": "Talkinbio Asistanı",
+    "use_assistant_soon": "Yakında",
+    "use_assistant_desc": "Instagram, WhatsApp ve diğer kanallarda gerçekleşen asistan görüşmeleri.",
+    "freeTableTitle": "Her zaman ücretsiz",
+    "creditTableTitle": "Kredi kullananlar",
+    "free_1": "Sayfa oluşturma",
+    "free_2": "Sayfayı yayınlama",
+    "free_3": "Sayfayı düzenleme",
+    "free_4": "Sayfayı yeniden oluşturma",
+    "free_5": "Bağlantı ve içerik bloklarının görüntülenmesi",
+    "free_6": "Kredi bittiğinde statik sayfanın yayında kalması",
+    "credit_1": "İnteraktif ziyaretçi oturumları",
+    "credit_2": "Serbest yapay zekâ cevapları",
+    "credit_3": "Sesli kullanım",
+    "credit_4": "İçerik üretimi",
+    "credit_5": "Görsel, ses ve video üretimi",
+    "credit_6": "Gelecekte kanal asistanları",
+    "footerNote": "Fiyatlandırma",
+    "operationCostsTitle": "İşlem Başına Kredi Maliyeti",
+    "operationCostsSubtitle": "Her işlem için kaç kredi harcandığını görün.",
+    "plan_free": "Ücretsiz Başlangıç",
     "plan_starter": "Starter",
     "plan_pro": "Pro",
     "plan_business": "Business",
-    "perMonth": "/ay",
-    "credits": "{count} kredi",
-    "capacityExample": "≈ {saule} Saule sohbeti VEYA {beiwe} sayfa güncellemesi",
-    "idealFor_free": "Her yeni kayıt olan kullanıcıya bir kereye mahsus 200 kredi hediye edilir.",
-    "idealFor_starter": "Sayfasını yayına almak ve ilk ziyaretçi sorularını karşılamak isteyen bireysel işletmeler için.",
-    "idealFor_pro": "Düzenli ziyaretçi trafiği olan ve sayfasını sık güncelleyen büyüyen işletmeler için.",
-    "idealFor_business": "Birden fazla hizmet hattı, daha yoğun sayfa üretimi ve özel ses paketi isteyen ekipler için.",
+    "capacityExample": "~{saule} ziyaretçi oturumu veya ~{beiwe} AI güncelleme",
     "extraPackName": "Ek Kredi Paketi",
-    "extraPackNote": "Herhangi bir plana ek olarak satın alınabilir",
-    "operationCostsTitle": "İşlem maliyetleri",
-    "operationCostsSubtitle": "Kredi yalnızca gerçek işlem olduğunda düşer. Sayfada yönlendirme yapan basit cevaplar LLM maliyeti üretmez.",
-    "freeCtaButton": "Kayıt Ol",
-    "ctaButton": "Satın al",
-    "formTitle": "Bize ulaşın",
-    "formSubtitle": "Kredi paketlerimizle ilgili destek almak veya özel kurumsal talepleriniz için ekibimize ulaşabilirsiniz.",
-    "formEmail": "E-posta",
-    "formPhone": "Telefon",
-    "formPlanLabel": "İlgilendiğiniz plan",
-    "formPlanNone": "Henüz karar vermedim",
-    "formMessage": "Eklemek istediğiniz bir not (opsiyonel)",
-    "formSubmit": "Gönder",
-    "formSubmitting": "Gönderiliyor...",
-    "formSuccess": "Talebiniz alındı. Ekibimiz en kısa sürede sizinle iletişime geçecek.",
-    "formErrorGeneric": "Gönderilirken bir hata oluştu, lütfen tekrar deneyin.",
-    "footerNote": "Planlar"
+    "extraPackNote": "İstediğin zaman dilediğin kadar bakiye yükleyebilirsin."
   },
   "Stakeholders": {
     "title": "Paydaşlarımıza",
@@ -860,9 +884,9 @@
     "settingsSaveError": "Ayarlar kaydedilirken hata oluştu.",
     "settingsSavedToast": "Ayarlar kaydedildi",
     "saveSettingsBtn": "Ayarları Kaydet",
-    "sauleSubtitle": "Dijital Ön Masa Asistanınız",
-    "frontDeskToggleTitle": "Dijital Ön Masa Asistanı",
-    "frontDeskToggleHint": "Masanın aktif olması için minimum 20 krediniz olmalı. (20 kredinin altına düştüğünde asistan otomatik olarak kapatılır). Her 20 soruluk paket ya da her bir kullanıcı oturumu için 1 kredi düşülür.",
+    "sauleSubtitle": "İnteraktif Sayfa Ayarları",
+    "frontDeskToggleTitle": "İnteraktif Sayfa",
+    "frontDeskToggleHint": "İnteraktif sayfanın aktif olması için minimum 20 krediniz olmalı. (20 kredinin altına düştüğünde otomatik olarak kapatılır). Her 20 soruluk paket ya da her bir kullanıcı oturumu için 1 kredi düşülür.",
     "frontDeskStatusActive": "Aktif",
     "frontDeskStatusOff": "Kapalı",
     "frontDeskStatusLowCredits": "Kredi Yetersiz",
@@ -967,7 +991,7 @@
     "navBilling": "Krediler",
     "navSetup": "Kurulum",
     "navCreativeStudio": "İçerik Merkezi (Yakında)",
-    "navFrontDesk": "Front Desk Ayarları"
+    "navFrontDesk": "İnteraktif Sayfa"
   },
   "CreativeStudio": {
     "pageTitle": "Sayfa Stüdyosu",
@@ -1029,7 +1053,7 @@
     "usageEmpty": "Henüz bir kullanım kaydı yok.",
     "freeLabel": "Ücretsiz",
     "agent": {
-      "saule": "Saule (Ziyaretçi Sohbeti)",
+      "saule": "İnteraktif Sayfa Oturumu",
       "beiwe": "Sayfa Kurulumu",
       "analysis": "Otomatik Analiz"
     },
@@ -1477,5 +1501,210 @@
     "podcastNoClips": "Henüz klip üretilmedi.",
     "castErrorCreate": "Karakter oluşturulamadı.",
     "title": "Talkinbio Lab"
+  },
+  "Wizard": {
+    "categorySelectTitle": "Ne tür bir profil oluşturuyorsun?",
+    "categorySelectSub": "Kategorini seç, sana özel adım sırası gelsin.",
+    "setupTitle": "Sayfanı kuralım",
+    "saveBtn": "Kaydet ve devam",
+    "skipBtn": "Şimdilik geç",
+    "doneTitle": "Profilin hazır!",
+    "doneSub": "Dashboard'a geç, sayfanı özelleştir ve yayınla.",
+    "doneBtn": "Dashboard'a git",
+    "skipped": "Atlandı",
+    "langOffer": {
+      "title": "İçeriğini başka dile çevir",
+      "sub": "Saule, sayfandaki metinleri otomatik çevirir. Kredi harcar ama ilk çeviride 100 hediye kredinini kullanabilirsin.",
+      "addBtn": "Dil ekle",
+      "pickLabel": "Hangi dile çevirelim?",
+      "translateBtn": "Çevir ve kaydet",
+      "translating": "Çeviriliyor, biraz bekle...",
+      "success": "{count} blok başarıyla çevrildi."
+    },
+    "categories": {
+      "hizmet": {
+        "label": "Hizmet",
+        "desc": "Randevu, seans, danışmanlık"
+      },
+      "icerikUreticisi": {
+        "label": "İçerik Üreticisi",
+        "desc": "Marka iş birlikleri, dijital varlık"
+      },
+      "muzisyen": {
+        "label": "Müzisyen",
+        "desc": "Müzik, etkinlik, kitle"
+      },
+      "urun": {
+        "label": "Ürün",
+        "desc": "Satış, katalog, mağaza"
+      }
+    },
+    "hizmet": {
+      "header": {
+        "label": "Kim + unvan",
+        "tip": "Adın ve uzmanlığın ziyaretçinin ilk gördüğü şey. Kısa ve net tut."
+      },
+      "services": {
+        "label": "Hizmetlerim",
+        "tip": "Ziyaretçin en çok fiyat arıyor. Her hizmete fiyat yazman randevu ihtimalini artırır.",
+        "itemLabel": "Hizmet"
+      },
+      "about": {
+        "label": "Neden ben",
+        "tip": "Sertifikan, deneyimin, farkın. Ziyaretçi neden seni seçmeli?"
+      },
+      "testimonials": {
+        "label": "Danışan yorumları",
+        "tip": "Gerçek yorumlar en güçlü ikna aracı. İsim ve alıntı yeterli."
+      },
+      "gallery": {
+        "label": "Sonuçlar",
+        "tip": "Öncesi-sonrası fotoğraflar güven oluşturur."
+      },
+      "faq": {
+        "label": "Sık sorulan sorular",
+        "tip": "Randevudan önce aklına takılan soruları buraya yaz."
+      },
+      "contact": {
+        "label": "Randevu al",
+        "tip": "Ziyaretçi ikna oldu, kolayca ulaşabilsin. En az bir iletişim yolu ekle."
+      }
+    },
+    "icerikUreticisi": {
+      "header": {
+        "label": "Kim + niş",
+        "tip": "Hangi konuda içerik ürettiğini tek cümlede anlat."
+      },
+      "links": {
+        "label": "Platformlarım",
+        "tip": "Marka seni nerede bulabileceğini merak ediyor. Aktif platformları ekle.",
+        "itemLabel": "Platform"
+      },
+      "kitlem": {
+        "label": "Kitlem",
+        "tip": "Platform, takipçi sayısı, kitle profili. Göstermek istemediklerini atlayabilirsin."
+      },
+      "gallery": {
+        "label": "En iyi işlerim",
+        "tip": "Önceki işlerinden en güçlü görselleri ekle."
+      },
+      "testimonials": {
+        "label": "Çalıştığım markalar",
+        "tip": "Marka adı ve ne yaptığınız yeterli."
+      },
+      "contact": {
+        "label": "İş için iletişim",
+        "tip": "Marka seninle nasıl iletişime geçsin? E-posta önerilir."
+      }
+    },
+    "muzisyen": {
+      "header": {
+        "label": "Kim + tür",
+        "tip": "Müzik türünü belirt, hayranın seni hemen tanısın."
+      },
+      "links": {
+        "label": "Şimdi dinle",
+        "tip": "Hayranın ilk saniyede çalmak ister. Spotify'ı en üste koy.",
+        "itemLabel": "Platform"
+      },
+      "sonCikan": {
+        "label": "Son çıkan",
+        "tip": "Yeni single, albüm ya da klibini tanıtır. Kısa açıklama yeterli."
+      },
+      "about": {
+        "label": "Hikayem",
+        "tip": "Kim olduğunu, müziğine nasıl başladığını anlat. Kısa tut."
+      },
+      "testimonials": {
+        "label": "Basın / yorumlar",
+        "tip": "Basında çıkan yazılar veya hayran mesajları."
+      },
+      "gallery": {
+        "label": "Görseller / klipler",
+        "tip": "Konser fotoğrafları, albüm kapakları, sahne görselleri."
+      },
+      "contact": {
+        "label": "Booking",
+        "tip": "Konser teklifleri için iletişim. E-posta veya WhatsApp."
+      }
+    },
+    "urun": {
+      "header": {
+        "label": "Marka + tanıtım",
+        "tip": "Marka adın ve ne sattığın net olsun."
+      },
+      "services": {
+        "label": "Öne çıkan ürünler",
+        "tip": "Ürününü fotoğrafsız kimse almaz. Her ürüne görsel ve fiyat ekle.",
+        "itemLabel": "Ürün"
+      },
+      "links": {
+        "label": "Satın al",
+        "tip": "Mağaza, Etsy veya Trendyol linkini ekle.",
+        "itemLabel": "Mağaza"
+      },
+      "testimonials": {
+        "label": "Müşteri yorumları",
+        "tip": "Gerçek yorumlar satışı artırır."
+      },
+      "gallery": {
+        "label": "Ürün galerisi",
+        "tip": "Ürünlerinin en iyi fotoğrafları."
+      },
+      "about": {
+        "label": "Marka hikayem",
+        "tip": "Nasıl başladığını anlat. Kişisel marka için değerli."
+      },
+      "faq": {
+        "label": "Kargo / iade",
+        "tip": "Kargo süresi, iade koşulları, paketleme bilgisi."
+      },
+      "contact": {
+        "label": "Sipariş / iletişim",
+        "tip": "Sipariş ve özel talepler için iletişim yolu."
+      }
+    },
+    "fields": {
+      "name": "Ad / Marka adı",
+      "namePlaceholder": "Adın ya da marka adın",
+      "tagline": "Tek cümle tanıtım",
+      "taglinePlaceholder": "Örn: İstanbul'da beslenme uzmanı",
+      "optional": "opsiyonel",
+      "item": "Öge",
+      "itemName": "Ad",
+      "description": "Açıklama",
+      "descriptionPlaceholder": "Açıklama — istediğin kadar uzun yazabilirsin",
+      "price": "Fiyat",
+      "pricePlaceholder": "Fiyat ya da aralık",
+      "media": "Görsel",
+      "uploadLabel": "Görsel yükle",
+      "addItem": "+ Ekle",
+      "linkLabel": "Etiket",
+      "caption": "Açıklama (opsiyonel)",
+      "quote": "Alıntı",
+      "author": "Ad",
+      "role": "Unvan / Rol (opsiyonel)",
+      "question": "Soru",
+      "answer": "Cevap",
+      "textPlaceholder": "Buraya yaz...",
+      "contact": {
+        "whatsapp": "WhatsApp",
+        "email": "E-posta",
+        "instagram": "Instagram",
+        "telegram": "Telegram"
+      },
+      "contactPlaceholder": {
+        "whatsapp": "+90 5XX XXX XX XX",
+        "email": "ornek@mail.com",
+        "instagram": "@kullanici_adi",
+        "telegram": "@kullanici_adi"
+      }
+    },
+    "errors": {
+      "nameRequired": "Lütfen bir ad gir.",
+      "contactRequired": "En az bir iletişim yöntemi eklemelisin.",
+      "createFailed": "Profil oluşturulamadı, lütfen tekrar dene.",
+      "generic": "Bir hata oluştu, lütfen tekrar dene."
+    }
   }
 }

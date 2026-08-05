@@ -1,247 +1,1035 @@
 'use client';
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { createClient } from '@/utils/supabase/client';
+import { useState, useEffect, useCallback } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
+import { CheckCircle2, Circle, Loader2, Plus, Trash2, ChevronRight, Globe } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
+import { ColoredTextField } from '@/utils/coloredText';
+import MediaUploader from '@/components/MediaUploader';
+import { WIZARD_CATEGORIES, getCategoryById, type WizardCategory, type WizardStep } from '@/config/wizardCategories';
+
+// ─── Yerel tipler ────────────────────────────────────────────────────────────
+
+type StepStatus = 'pending' | 'active' | 'saved' | 'skipped';
+type LangPhase = 'offer' | 'picking' | 'translating' | 'done';
+
+interface StepState {
+  status: StepStatus;
+  data: any;
+}
+
+// ─── Yardımcı fonksiyonlar ────────────────────────────────────────────────────
+
+function generateUsername(name: string): string {
+  const base = name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+  return (base || 'user') + Math.floor(Math.random() * 9000 + 1000);
+}
+
+function buildBlockContent(blockType: string, data: any, locale: string): any {
+  switch (blockType) {
+    case 'services':
+      return {
+        layoutVariant: 'grid-cards',
+        items: (data.items || []).map((item: any) => ({
+          [locale]: { title: item.title || '', description: item.description || '' },
+          price: item.price || '',
+          mediaUrl: item.mediaUrl || '',
+        })),
+      };
+    case 'about':
+      return { [locale]: { text: data.text || '' } };
+    case 'custom':
+      return { [locale]: { text: data.text || '' } };
+    case 'links':
+      return {
+        layoutVariant: 'stacked',
+        items: (data.items || []).map((item: any) => ({
+          label: item.label || '',
+          url: item.url || '',
+        })),
+      };
+    case 'gallery':
+      return {
+        layoutVariant: 'grid',
+        items: (data.items || []).map((item: any) => ({
+          url: item.url || '',
+          caption: { [locale]: item.caption || '' },
+        })),
+      };
+    case 'testimonials':
+      return {
+        layoutVariant: 'scroll-cards',
+        items: (data.items || []).map((item: any) => ({
+          quote: { [locale]: item.quote || '' },
+          author: item.author || '',
+          role: { [locale]: item.role || '' },
+        })),
+      };
+    case 'faq':
+      return {
+        layoutVariant: 'accordion',
+        items: (data.items || []).map((item: any) => ({
+          question: { [locale]: item.question || '' },
+          answer: { [locale]: item.answer || '' },
+        })),
+      };
+    default:
+      return data;
+  }
+}
+
+function hasContent(blockType: string, data: any): boolean {
+  if (!data) return false;
+  switch (blockType) {
+    case 'header': return !!(data.name?.trim());
+    case 'about':
+    case 'custom':  return !!(data.text?.trim());
+    case 'services':
+    case 'links':
+    case 'gallery':
+    case 'testimonials':
+    case 'faq':     return Array.isArray(data.items) && data.items.length > 0;
+    case 'contact': {
+      const methods = data.methods || {};
+      const values = data.values || {};
+      return Object.keys(methods).some((k) => methods[k] && values[k]?.trim());
+    }
+    default: return false;
+  }
+}
+
+// ─── Adım form bileşenleri ────────────────────────────────────────────────────
+
+function HeaderForm({ data, onChange, t }: { data: any; onChange: (d: any) => void; t: any }) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="block text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)] mb-1.5">
+          {t('fields.name')}
+        </label>
+        <input
+          value={data.name || ''}
+          onChange={(e) => onChange({ ...data, name: e.target.value })}
+          placeholder={t('fields.namePlaceholder')}
+          className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[var(--coral)]"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)] mb-1.5">
+          {t('fields.tagline')} <span className="normal-case font-normal text-slate-400">({t('fields.optional')})</span>
+        </label>
+        <input
+          value={data.tagline || ''}
+          onChange={(e) => onChange({ ...data, tagline: e.target.value })}
+          placeholder={t('fields.taglinePlaceholder')}
+          className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[var(--coral)]"
+        />
+      </div>
+    </div>
+  );
+}
+
+function ServiceForm({ data, onChange, t, itemLabel }: { data: any; onChange: (d: any) => void; t: any; itemLabel: string }) {
+  const items: any[] = data.items || [];
+  const update = (idx: number, field: string, val: string) => {
+    const next = items.map((it, i) => i === idx ? { ...it, [field]: val } : it);
+    onChange({ ...data, items: next });
+  };
+  const remove = (idx: number) => onChange({ ...data, items: items.filter((_, i) => i !== idx) });
+  const add = () => onChange({ ...data, items: [...items, { title: '', description: '', price: '', mediaUrl: '' }] });
+
+  return (
+    <div className="space-y-3">
+      {items.map((item, idx) => (
+        <div key={idx} className="border border-slate-200 rounded-lg p-3 bg-slate-50 space-y-2.5 relative">
+          <button onClick={() => remove(idx)} className="absolute top-2 right-2 text-red-400 hover:text-red-600 p-1 rounded">
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">{itemLabel}</label>
+            <ColoredTextField
+              compact
+              value={item.title}
+              onChange={(v) => update(idx, 'title', v)}
+              placeholder={t('fields.itemName')}
+              className="w-full px-2.5 py-2 border border-slate-200 rounded focus:outline-none focus:border-[var(--coral)] text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">
+              {t('fields.description')} <span className="font-normal text-slate-400">({t('fields.optional')})</span>
+            </label>
+            <ColoredTextField
+              compact
+              multiline
+              value={item.description}
+              onChange={(v) => update(idx, 'description', v)}
+              placeholder={t('fields.descriptionPlaceholder')}
+              className="w-full px-2.5 py-2 border border-slate-200 rounded focus:outline-none focus:border-[var(--coral)] text-sm min-h-[60px]"
+            />
+          </div>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className="block text-xs font-semibold text-slate-500 mb-1">
+                {t('fields.price')} <span className="font-normal text-slate-400">({t('fields.optional')})</span>
+              </label>
+              <input
+                value={item.price}
+                onChange={(e) => update(idx, 'price', e.target.value)}
+                placeholder={t('fields.pricePlaceholder')}
+                className="w-full px-2.5 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:border-[var(--coral)]"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">
+              {t('fields.media')} <span className="font-normal text-slate-400">({t('fields.optional')})</span>
+            </label>
+            <MediaUploader
+              value={item.mediaUrl}
+              onChange={(url) => update(idx, 'mediaUrl', url)}
+              label={t('fields.uploadLabel')}
+            />
+          </div>
+        </div>
+      ))}
+      <button
+        onClick={add}
+        className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] text-sm font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50"
+      >
+        <Plus className="w-3.5 h-3.5" /> {t('fields.addItem')}
+      </button>
+    </div>
+  );
+}
+
+function TextForm({ data, onChange, t }: { data: any; onChange: (d: any) => void; t: any }) {
+  return (
+    <ColoredTextField
+      multiline
+      value={data.text || ''}
+      onChange={(v) => onChange({ ...data, text: v })}
+      placeholder={t('fields.textPlaceholder')}
+      className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[var(--coral)] min-h-[100px]"
+    />
+  );
+}
+
+function LinksForm({ data, onChange, t, itemLabel }: { data: any; onChange: (d: any) => void; t: any; itemLabel: string }) {
+  const items: any[] = data.items || [];
+  const update = (idx: number, field: string, val: string) => {
+    const next = items.map((it, i) => i === idx ? { ...it, [field]: val } : it);
+    onChange({ ...data, items: next });
+  };
+  const remove = (idx: number) => onChange({ ...data, items: items.filter((_, i) => i !== idx) });
+  const add = () => onChange({ ...data, items: [...items, { label: '', url: '' }] });
+
+  return (
+    <div className="space-y-2.5">
+      {items.map((item, idx) => (
+        <div key={idx} className="border border-slate-200 rounded-lg p-3 bg-slate-50 space-y-2 relative">
+          <button onClick={() => remove(idx)} className="absolute top-2 right-2 text-red-400 hover:text-red-600 p-1 rounded">
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">{itemLabel}</label>
+            <ColoredTextField
+              compact
+              value={item.label}
+              onChange={(v) => update(idx, 'label', v)}
+              placeholder={t('fields.linkLabel')}
+              className="w-full px-2.5 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:border-[var(--coral)]"
+            />
+          </div>
+          <input
+            value={item.url}
+            onChange={(e) => update(idx, 'url', e.target.value)}
+            placeholder="https://"
+            className="w-full px-2.5 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:border-[var(--coral)]"
+          />
+        </div>
+      ))}
+      <button
+        onClick={add}
+        className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] text-sm font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50"
+      >
+        <Plus className="w-3.5 h-3.5" /> {t('fields.addItem')}
+      </button>
+    </div>
+  );
+}
+
+function GalleryForm({ data, onChange, t }: { data: any; onChange: (d: any) => void; t: any }) {
+  const items: any[] = data.items || [];
+  const updateUrl = (idx: number, url: string) => {
+    const next = items.map((it, i) => i === idx ? { ...it, url } : it);
+    onChange({ ...data, items: next });
+  };
+  const updateCaption = (idx: number, caption: string) => {
+    const next = items.map((it, i) => i === idx ? { ...it, caption } : it);
+    onChange({ ...data, items: next });
+  };
+  const remove = (idx: number) => onChange({ ...data, items: items.filter((_, i) => i !== idx) });
+  const add = () => onChange({ ...data, items: [...items, { url: '', caption: '' }] });
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        {items.map((item, idx) => (
+          <div key={idx} className="relative border border-slate-200 rounded-lg p-2 bg-slate-50 flex flex-col gap-2">
+            <button
+              onClick={() => remove(idx)}
+              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 z-10 shadow-sm"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+            <div className="h-28">
+              <MediaUploader value={item.url} onChange={(url) => updateUrl(idx, url)} label={t('fields.uploadLabel')} />
+            </div>
+            <input
+              value={item.caption}
+              onChange={(e) => updateCaption(idx, e.target.value)}
+              placeholder={t('fields.caption')}
+              className="w-full px-2 py-1.5 border border-slate-200 rounded text-xs focus:outline-none focus:border-[var(--coral)]"
+            />
+          </div>
+        ))}
+      </div>
+      <button
+        onClick={add}
+        className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] text-sm font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50"
+      >
+        <Plus className="w-3.5 h-3.5" /> {t('fields.addItem')}
+      </button>
+    </div>
+  );
+}
+
+function TestimonialsForm({ data, onChange, t }: { data: any; onChange: (d: any) => void; t: any }) {
+  const items: any[] = data.items || [];
+  const update = (idx: number, field: string, val: string) => {
+    const next = items.map((it, i) => i === idx ? { ...it, [field]: val } : it);
+    onChange({ ...data, items: next });
+  };
+  const remove = (idx: number) => onChange({ ...data, items: items.filter((_, i) => i !== idx) });
+  const add = () => onChange({ ...data, items: [...items, { quote: '', author: '', role: '' }] });
+
+  return (
+    <div className="space-y-3">
+      {items.map((item, idx) => (
+        <div key={idx} className="border border-slate-200 rounded-lg p-3 bg-slate-50 space-y-2.5 relative">
+          <button onClick={() => remove(idx)} className="absolute top-2 right-2 text-red-400 hover:text-red-600 p-1 rounded">
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+          <ColoredTextField
+            compact
+            multiline
+            value={item.quote}
+            onChange={(v) => update(idx, 'quote', v)}
+            placeholder={t('fields.quote')}
+            className="w-full px-2.5 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:border-[var(--coral)] min-h-[60px]"
+          />
+          <div className="flex gap-2">
+            <input
+              value={item.author}
+              onChange={(e) => update(idx, 'author', e.target.value)}
+              placeholder={t('fields.author')}
+              className="flex-1 px-2.5 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:border-[var(--coral)]"
+            />
+            <input
+              value={item.role}
+              onChange={(e) => update(idx, 'role', e.target.value)}
+              placeholder={t('fields.role')}
+              className="flex-1 px-2.5 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:border-[var(--coral)]"
+            />
+          </div>
+        </div>
+      ))}
+      <button
+        onClick={add}
+        className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] text-sm font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50"
+      >
+        <Plus className="w-3.5 h-3.5" /> {t('fields.addItem')}
+      </button>
+    </div>
+  );
+}
+
+function FaqForm({ data, onChange, t }: { data: any; onChange: (d: any) => void; t: any }) {
+  const items: any[] = data.items || [];
+  const update = (idx: number, field: string, val: string) => {
+    const next = items.map((it, i) => i === idx ? { ...it, [field]: val } : it);
+    onChange({ ...data, items: next });
+  };
+  const remove = (idx: number) => onChange({ ...data, items: items.filter((_, i) => i !== idx) });
+  const add = () => onChange({ ...data, items: [...items, { question: '', answer: '' }] });
+
+  return (
+    <div className="space-y-3">
+      {items.map((item, idx) => (
+        <div key={idx} className="border border-slate-200 rounded-lg p-3 bg-slate-50 space-y-2.5 relative">
+          <button onClick={() => remove(idx)} className="absolute top-2 right-2 text-red-400 hover:text-red-600 p-1 rounded">
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+          <ColoredTextField
+            compact
+            value={item.question}
+            onChange={(v) => update(idx, 'question', v)}
+            placeholder={t('fields.question')}
+            className="w-full px-2.5 py-2 border border-slate-200 rounded font-medium text-sm focus:outline-none focus:border-[var(--coral)]"
+          />
+          <ColoredTextField
+            compact
+            multiline
+            value={item.answer}
+            onChange={(v) => update(idx, 'answer', v)}
+            placeholder={t('fields.answer')}
+            className="w-full px-2.5 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:border-[var(--coral)] min-h-[60px]"
+          />
+        </div>
+      ))}
+      <button
+        onClick={add}
+        className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] text-sm font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50"
+      >
+        <Plus className="w-3.5 h-3.5" /> {t('fields.addItem')}
+      </button>
+    </div>
+  );
+}
+
+const CONTACT_METHODS = ['whatsapp', 'email', 'instagram', 'telegram'] as const;
+type ContactMethod = typeof CONTACT_METHODS[number];
+
+function ContactForm({ data, onChange, t }: { data: any; onChange: (d: any) => void; t: any }) {
+  const methods: Record<ContactMethod, boolean> = data.methods || { whatsapp: false, email: true, instagram: false, telegram: false };
+  const values: Record<ContactMethod, string> = data.values || { whatsapp: '', email: '', instagram: '', telegram: '' };
+
+  const toggleMethod = (m: ContactMethod) => onChange({ ...data, methods: { ...methods, [m]: !methods[m] } });
+  const setValue = (m: ContactMethod, v: string) => onChange({ ...data, values: { ...values, [m]: v } });
+
+  return (
+    <div className="space-y-2.5">
+      {CONTACT_METHODS.map((m) => (
+        <div key={m} className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+          <div className="flex items-center gap-2 mb-2">
+            <input
+              type="checkbox"
+              id={`contact-${m}`}
+              checked={!!methods[m]}
+              onChange={() => toggleMethod(m)}
+              className="w-4 h-4 rounded text-[var(--coral)] accent-[var(--coral)]"
+            />
+            <label htmlFor={`contact-${m}`} className="text-sm font-semibold cursor-pointer">
+              {t(`fields.contact.${m}`)}
+            </label>
+          </div>
+          {methods[m] && (
+            <input
+              type={m === 'email' ? 'email' : 'text'}
+              value={values[m]}
+              onChange={(e) => setValue(m, e.target.value)}
+              placeholder={t(`fields.contactPlaceholder.${m}`)}
+              className="w-full px-2.5 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:border-[var(--coral)]"
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Ana sayfa ────────────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
-  const t = useTranslations('Onboarding');
+  const t = useTranslations('Wizard');
+  const locale = useLocale();
   const router = useRouter();
   const supabase = createClient();
-  const [step, setStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form State
-  const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    contacts: {
-      whatsapp: { selected: true, value: '' },
-      phone: { selected: false, value: '' },
-      instagram: { selected: false, value: '' },
-      email: { selected: false, value: '' },
-    },
-    services: [] as any[],
-    hours: {} as any,
-  });
+  const [phase, setPhase] = useState<'loading' | 'category-select' | 'wizard' | 'done'>('loading');
+  const [selectedCategory, setSelectedCategory] = useState<WizardCategory | null>(null);
+  const [currentStepIdx, setCurrentStepIdx] = useState(0);
+  const [businessId, setBusinessId] = useState<string | null>(null);
+  const [stepStates, setStepStates] = useState<Record<string, StepState>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleNext = () => setStep((s) => Math.min(s + 1, 3));
-  const handlePrev = () => setStep((s) => Math.max(s - 1, 1));
+  // ── Dil ekleme (done ekranı) ──────────────────────────────────────────────
+  const [langPhase, setLangPhase] = useState<LangPhase>('offer');
+  const [targetLang, setTargetLang] = useState<'en' | 'ru'>('en');
+  const [translatedCount, setTranslatedCount] = useState(0);
 
-  const submitForm = async () => {
-    setIsSubmitting(true);
-    try {
-      const { data: userData, error: authError } = await supabase.auth.getUser();
-      if (authError || !userData?.user) {
-        // For MVP, if not logged in, we should ideally ask them to login first. 
-        // We'll redirect to login or show an error.
-        alert(t('loginRequiredAlert'));
-        setIsSubmitting(false);
+  // ── Yükleme: oturum + mevcut işletme kontrolü ─────────────────────────────
+  useEffect(() => {
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.replace(`/${locale}/login`); return; }
+
+      const { data: biz } = await supabase
+        .from('businesses')
+        .select('id, setup_completed, category_id')
+        .eq('owner_id', user.id)
+        .maybeSingle();
+
+      if (biz?.setup_completed) {
+        router.replace(`/${locale}/dashboard/editor`);
         return;
       }
 
-      // 1. Create Business
-      const username = formData.name.toLowerCase().replace(/[^a-z0-9]/g, '') + Math.floor(Math.random() * 1000);
-      const selectedContacts = Object.entries(formData.contacts).filter(([_, v]) => v.selected);
-      const contactMethods = selectedContacts.map(([k]) => k).join(',');
-      const contactValues = JSON.stringify(
-        selectedContacts.reduce((acc, [k, v]) => ({ ...acc, [k]: v.value }), {})
-      );
+      if (biz && !biz.setup_completed) {
+        // Yarım kalmış wizard — mevcut blokları kontrol ederek durumu yükle
+        setBusinessId(biz.id);
+        const cat = biz.category_id ? getCategoryById(biz.category_id) : null;
+        if (cat) {
+          setSelectedCategory(cat);
+          const { data: blocks } = await supabase
+            .from('blocks')
+            .select('type, id')
+            .eq('business_id', biz.id);
+          const existingTypes = new Set((blocks || []).map((b: any) => b.type));
+          const initial: Record<string, StepState> = {};
+          cat.steps.forEach((step) => {
+            if (step.blockType === 'header' || step.blockType === 'contact') {
+              initial[step.id] = { status: 'saved', data: {} };
+            } else {
+              initial[step.id] = {
+                status: existingTypes.has(step.blockType) ? 'saved' : 'pending',
+                data: {},
+              };
+            }
+          });
+          setStepStates(initial);
+          // İlk tamamlanmamış adıma git
+          const firstPending = cat.steps.findIndex((s) => initial[s.id].status === 'pending');
+          setCurrentStepIdx(firstPending >= 0 ? firstPending : cat.steps.length - 1);
+          setPhase('wizard');
+          return;
+        }
+      }
 
-      const { data: business, error: bizError } = await supabase.from('businesses').insert({
-        owner_id: userData.user.id,
-        username,
-        name: formData.name,
-        category: formData.category,
-        contact_method: contactMethods,
-        contact_value: contactValues,
-        credit_balance: 200,
-      }).select().single();
+      setPhase('category-select');
+    };
+    init();
+  }, []);
 
-      if (bizError || !business) throw new Error(t('businessCreationFailedError'));
+  // ── Kategori seçimi ───────────────────────────────────────────────────────
+  const handleSelectCategory = (cat: WizardCategory) => {
+    setSelectedCategory(cat);
+    const initial: Record<string, StepState> = {};
+    cat.steps.forEach((step) => {
+      initial[step.id] = { status: 'pending', data: {} };
+    });
+    setStepStates(initial);
+    setCurrentStepIdx(0);
+    setPhase('wizard');
+  };
 
-      // 2. Create Blocks (Services)
-      if (formData.services.length > 0) {
+  // ── Adım verisi güncelleme ────────────────────────────────────────────────
+  const updateStepData = useCallback((stepId: string, data: any) => {
+    setStepStates((prev) => ({
+      ...prev,
+      [stepId]: { ...prev[stepId], data },
+    }));
+  }, []);
+
+  // ── Dil çevirisi ─────────────────────────────────────────────────────────
+  const handleTranslate = async () => {
+    if (!businessId) return;
+    setLangPhase('translating');
+
+    try {
+      const { data: blocks } = await supabase
+        .from('blocks')
+        .select('id, type, content')
+        .eq('business_id', businessId);
+
+      if (!blocks || blocks.length === 0) {
+        setLangPhase('done');
+        return;
+      }
+
+      const SYNCABLE = ['about', 'custom', 'services', 'gallery', 'testimonials', 'faq'];
+      const translatable = blocks.filter((b: any) => SYNCABLE.includes(b.type));
+
+      let count = 0;
+      for (const block of translatable) {
+        const res = await fetch('/api/content/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            businessId,
+            type: block.type,
+            content: block.content,
+            sourceLocale: locale,
+            targetLocales: [targetLang],
+          }),
+        });
+        if (res.ok) {
+          const { content: merged } = await res.json();
+          if (merged) {
+            await supabase.from('blocks').update({ content: merged }).eq('id', block.id);
+            count++;
+          }
+        }
+      }
+
+      setTranslatedCount(count);
+      setLangPhase('done');
+    } catch {
+      setLangPhase('done'); // sessizce geç, hata kritik değil
+    }
+  };
+
+  // ── Kaydet ────────────────────────────────────────────────────────────────
+  const handleSave = async () => {
+    if (!selectedCategory) return;
+    const step = selectedCategory.steps[currentStepIdx];
+    const data = stepStates[step.id]?.data || {};
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Oturum bulunamadı');
+
+      if (step.blockType === 'header') {
+        // İşletme oluştur
+        const name = (data.name || '').trim();
+        if (!name) { setError(t('errors.nameRequired')); setIsSaving(false); return; }
+        const username = generateUsername(name);
+        const tagline = (data.tagline || '').trim();
+
+        const { data: biz, error: bizErr } = await supabase
+          .from('businesses')
+          .insert({
+            owner_id: user.id,
+            username,
+            name,
+            category: t(selectedCategory.labelKey as any) || selectedCategory.id,
+            category_id: selectedCategory.id,
+            ...(tagline ? { tagline: { [locale]: tagline } } : {}),
+            credit_balance: 100,
+            setup_completed: false,
+          })
+          .select()
+          .single();
+
+        if (bizErr || !biz) throw new Error(t('errors.createFailed'));
+        setBusinessId(biz.id);
+
+      } else if (step.blockType === 'contact') {
+        // İletişim bilgisini işletmeye yaz
+        if (!businessId) throw new Error('İşletme kimliği bulunamadı');
+        const methods: Record<string, boolean> = data.methods || {};
+        const values: Record<string, string> = data.values || {};
+        const selected = CONTACT_METHODS.filter((m) => methods[m] && values[m]?.trim());
+        if (step.required && selected.length === 0) {
+          setError(t('errors.contactRequired'));
+          setIsSaving(false);
+          return;
+        }
+        const contactMethod = selected[0] || '';
+        const contactValue = JSON.stringify(
+          selected.reduce((acc, m) => ({ ...acc, [m]: values[m] }), {} as Record<string, string>)
+        );
+        await supabase
+          .from('businesses')
+          .update({ contact_method: contactMethod, contact_value: contactValue })
+          .eq('id', businessId);
+
+      } else {
+        // Blok oluştur
+        if (!businessId) throw new Error('İşletme kimliği bulunamadı');
+        const content = buildBlockContent(step.blockType, data, locale);
+        const label = t(step.labelKey as any);
         await supabase.from('blocks').insert({
-          business_id: business.id,
-          type: 'services',
-          title: t('servicesBlockTitle'),
-          content: { items: formData.services },
-          order: 1
+          business_id: businessId,
+          type: step.blockType,
+          title: label,
+          content,
+          order: currentStepIdx,
+          is_visible: true,
         });
       }
 
-      // 3. Create Blocks (Hours)
-      if (Object.keys(formData.hours).length > 0) {
-        await supabase.from('blocks').insert({
-          business_id: business.id,
-          type: 'hours',
-          title: t('hoursBlockTitle'),
-          content: { schedule: formData.hours },
-          order: 2
-        });
-      }
-
-      router.push(`/${business.username}`);
-    } catch (error) {
-      console.error(error);
-      alert(t('genericErrorAlert'));
+      // Adımı kayıtlı işaretle ve ilerle
+      setStepStates((prev) => ({
+        ...prev,
+        [step.id]: { ...prev[step.id], status: 'saved' },
+      }));
+      await advance();
+    } catch (e: any) {
+      setError(e.message || t('errors.generic'));
     } finally {
-      setIsSubmitting(false);
+      setIsSaving(false);
+    }
+  };
+
+  // ── Geç ───────────────────────────────────────────────────────────────────
+  const handleSkip = async () => {
+    if (!selectedCategory) return;
+    const step = selectedCategory.steps[currentStepIdx];
+    setStepStates((prev) => ({
+      ...prev,
+      [step.id]: { ...prev[step.id], status: 'skipped' },
+    }));
+    await advance();
+  };
+
+  // ── İlerleme / bitiş ─────────────────────────────────────────────────────
+  const advance = async () => {
+    if (!selectedCategory) return;
+    const nextIdx = currentStepIdx + 1;
+    if (nextIdx >= selectedCategory.steps.length) {
+      // Sihirbaz bitti — setup_completed = true
+      if (businessId) {
+        await supabase.from('businesses').update({ setup_completed: true }).eq('id', businessId);
+      }
+      setPhase('done');
+    } else {
+      setCurrentStepIdx(nextIdx);
+    }
+  };
+
+  // ── Belirli bir adıma atla (adım listesinden) ─────────────────────────────
+  const jumpToStep = (idx: number) => {
+    const step = selectedCategory?.steps[idx];
+    if (!step) return;
+    // Sadece header kayıtlıysa diğer adımlara atlanabilir
+    const headerSaved = stepStates[selectedCategory!.steps[0].id]?.status === 'saved';
+    if (idx > 0 && !headerSaved) return;
+    setCurrentStepIdx(idx);
+    setError(null);
+  };
+
+  // ─── Render: loading ──────────────────────────────────────────────────────
+  if (phase === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--page-bg,#f7f7f5)]">
+        <Loader2 className="w-8 h-8 text-[var(--coral)] animate-spin" />
+      </div>
+    );
+  }
+
+  // ─── Render: done ─────────────────────────────────────────────────────────
+  if (phase === 'done') {
+    const toDashboard = () => router.push(`/${locale}/dashboard/editor`);
+
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--page-bg,#f7f7f5)] p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-green-100 text-[var(--teal)] rounded-full flex items-center justify-center mx-auto mb-5">
+            <CheckCircle2 className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl font-bold text-[var(--ink)] mb-2">{t('doneTitle')}</h1>
+          <p className="text-slate-500 mb-6">{t('doneSub')}</p>
+
+          {/* ── Dil ekleme bölümü ── */}
+          {langPhase === 'offer' && (
+            <>
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 text-left">
+                <div className="flex gap-2.5 items-start">
+                  <Globe className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-blue-800 mb-0.5">{t('langOffer.title')}</p>
+                    <p className="text-xs text-blue-600">{t('langOffer.sub')}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-2.5 mb-3">
+                <button
+                  onClick={() => setLangPhase('picking')}
+                  className="flex-1 py-2.5 rounded-xl border-2 border-blue-400 text-blue-600 font-semibold text-sm hover:bg-blue-50 transition"
+                >
+                  {t('langOffer.addBtn')}
+                </button>
+                <button
+                  onClick={toDashboard}
+                  className="flex-1 py-2.5 rounded-xl bg-[var(--coral)] text-white font-semibold text-sm hover:brightness-95 transition flex items-center justify-center gap-1.5"
+                >
+                  {t('doneBtn')} <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </>
+          )}
+
+          {langPhase === 'picking' && (
+            <>
+              <p className="text-sm font-semibold text-slate-700 mb-3">{t('langOffer.pickLabel')}</p>
+              <div className="flex gap-3 mb-5">
+                {(['en', 'ru'] as const).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setTargetLang(l)}
+                    className={`flex-1 py-3 rounded-xl border-2 font-semibold text-sm transition ${
+                      targetLang === l
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                    }`}
+                  >
+                    {l === 'en' ? '🇬🇧 English' : '🇷🇺 Русский'}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2.5">
+                <button
+                  onClick={handleTranslate}
+                  className="flex-1 py-3 rounded-xl bg-blue-500 text-white font-semibold text-sm hover:bg-blue-600 transition"
+                >
+                  {t('langOffer.translateBtn')}
+                </button>
+                <button
+                  onClick={toDashboard}
+                  className="px-4 py-3 rounded-xl border border-slate-200 text-slate-500 font-semibold text-sm hover:bg-slate-50 transition"
+                >
+                  {t('skipBtn')}
+                </button>
+              </div>
+            </>
+          )}
+
+          {langPhase === 'translating' && (
+            <div className="flex flex-col items-center gap-3 py-4">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+              <p className="text-sm text-slate-500">{t('langOffer.translating')}</p>
+            </div>
+          )}
+
+          {langPhase === 'done' && (
+            <>
+              {translatedCount > 0 && (
+                <div className="bg-green-50 border border-green-100 rounded-xl p-3 mb-5 text-sm text-green-700">
+                  {t('langOffer.success', { count: translatedCount })}
+                </div>
+              )}
+              <button
+                onClick={toDashboard}
+                className="w-full bg-[var(--coral)] text-white rounded-xl py-3 font-semibold text-base hover:brightness-95 transition flex items-center justify-center gap-2"
+              >
+                {t('doneBtn')} <ChevronRight className="w-4 h-4" />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Render: category-select ──────────────────────────────────────────────
+  if (phase === 'category-select') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--page-bg,#f7f7f5)] p-4">
+        <div className="w-full max-w-lg">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-[var(--ink)] mb-2">{t('categorySelectTitle')}</h1>
+            <p className="text-slate-500">{t('categorySelectSub')}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {WIZARD_CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => handleSelectCategory(cat)}
+                className="bg-white border-2 border-transparent rounded-2xl p-5 text-left hover:border-current shadow-sm hover:shadow-md transition-all group"
+                style={{ '--hover-color': cat.color } as React.CSSProperties}
+              >
+                <div className="text-3xl mb-3">{cat.emoji}</div>
+                <div
+                  className="text-base font-bold mb-1"
+                  style={{ color: cat.color }}
+                >
+                  {t(cat.labelKey as any)}
+                </div>
+                <div className="text-xs text-slate-500 leading-relaxed">
+                  {t(cat.descKey as any)}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Render: wizard ───────────────────────────────────────────────────────
+  if (!selectedCategory) return null;
+  const steps = selectedCategory.steps;
+  const currentStep = steps[currentStepIdx];
+  const currentState = stepStates[currentStep.id] || { status: 'active', data: {} };
+  const totalSteps = steps.length;
+  const savedCount = Object.values(stepStates).filter((s) => s.status === 'saved').length;
+  const progressPct = Math.round((savedCount / totalSteps) * 100);
+
+  const renderStepForm = () => {
+    const data = currentState.data;
+    const onChange = (d: any) => updateStepData(currentStep.id, d);
+    const itemLabel = currentStep.itemLabelKey ? t(currentStep.itemLabelKey as any) : t('fields.item');
+
+    switch (currentStep.blockType) {
+      case 'header':       return <HeaderForm data={data} onChange={onChange} t={t} />;
+      case 'services':     return <ServiceForm data={data} onChange={onChange} t={t} itemLabel={itemLabel} />;
+      case 'about':
+      case 'custom':       return <TextForm data={data} onChange={onChange} t={t} />;
+      case 'links':        return <LinksForm data={data} onChange={onChange} t={t} itemLabel={itemLabel} />;
+      case 'gallery':      return <GalleryForm data={data} onChange={onChange} t={t} />;
+      case 'testimonials': return <TestimonialsForm data={data} onChange={onChange} t={t} />;
+      case 'faq':          return <FaqForm data={data} onChange={onChange} t={t} />;
+      case 'contact':      return <ContactForm data={data} onChange={onChange} t={t} />;
+      default:             return null;
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden">
-        {/* Progress Bar */}
-        <div className="bg-slate-100 h-2 w-full">
-          <div 
-            className="bg-blue-600 h-full transition-all duration-300" 
-            style={{ width: `${(step / 3) * 100}%` }}
-          />
+    <div className="min-h-screen bg-[var(--page-bg,#f7f7f5)] p-4 flex flex-col items-center">
+      <div className="w-full max-w-lg py-6">
+
+        {/* ── Üst çubuk ── */}
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-4 shadow-sm">
+          <div className="p-4 pb-3 border-b border-slate-100">
+            <div className="flex items-baseline justify-between mb-2">
+              <span className="text-sm font-bold text-[var(--ink)]">{t('setupTitle')}</span>
+              <span className="text-xs text-slate-400 tabular-nums">{savedCount} / {totalSteps}</span>
+            </div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">{selectedCategory.emoji}</span>
+              <span className="text-xs font-semibold" style={{ color: selectedCategory.color }}>
+                {t(selectedCategory.labelKey as any)}
+              </span>
+            </div>
+            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${progressPct}%`, background: selectedCategory.color }}
+              />
+            </div>
+          </div>
+
+          {/* ── Adım listesi ── */}
+          <div className="divide-y divide-slate-100">
+            {steps.map((step, idx) => {
+              const state = stepStates[step.id];
+              const isActive = idx === currentStepIdx;
+              const isSaved = state?.status === 'saved';
+              const isSkipped = state?.status === 'skipped';
+              const label = t(step.labelKey as any);
+
+              return (
+                <button
+                  key={step.id}
+                  onClick={() => jumpToStep(idx)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                    isActive
+                      ? 'bg-orange-50'
+                      : isSaved || isSkipped
+                      ? 'hover:bg-slate-50 cursor-pointer'
+                      : 'cursor-default'
+                  }`}
+                >
+                  {/* Durum ikonu */}
+                  {isSaved ? (
+                    <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: selectedCategory.color }} />
+                  ) : isActive ? (
+                    <div
+                      className="w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[9px] font-bold"
+                      style={{ background: selectedCategory.color }}
+                    >
+                      {idx + 1}
+                    </div>
+                  ) : isSkipped ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-dashed border-slate-300 flex-shrink-0" />
+                  ) : (
+                    <Circle className="w-4 h-4 flex-shrink-0 text-slate-200" />
+                  )}
+
+                  <span
+                    className={`text-sm font-medium flex-1 ${
+                      isActive
+                        ? 'text-[var(--ink)] font-bold'
+                        : isSaved
+                        ? 'text-slate-500 line-through decoration-slate-300'
+                        : isSkipped
+                        ? 'text-slate-400 italic'
+                        : 'text-slate-400'
+                    }`}
+                  >
+                    {label}
+                  </span>
+
+                  {isSkipped && (
+                    <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                      {t('skipped')}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="p-8">
-          {step === 1 && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold">{t('step1.title')}</h2>
-              <p className="text-slate-500">{t('step1.subtitle')}</p>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t('step1.businessNameLabel')}</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={e => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder={t('step1.businessNamePlaceholder')}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t('step1.categoryLabel')}</label>
-                  <input
-                    type="text"
-                    value={formData.category}
-                    onChange={e => setFormData({...formData, category: e.target.value})}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder={t('step1.categoryPlaceholder')}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold">{t('step2.title')}</h2>
-              <p className="text-slate-500">{t('step2.subtitle')}</p>
-
-              <div className="space-y-4">
-                <label className="block text-sm font-medium text-slate-700">{t('step2.contactMethodsLabel')}</label>
-
-                {(Object.keys(formData.contacts) as Array<keyof typeof formData.contacts>).map((method) => {
-                  const labels: Record<string, string> = {
-                    whatsapp: t('step2.contacts.whatsapp'),
-                    phone: t('step2.contacts.phone'),
-                    instagram: t('step2.contacts.instagram'),
-                    email: t('step2.contacts.email')
-                  };
-                  const placeholders: Record<string, string> = {
-                    whatsapp: t('step2.contactPlaceholders.whatsapp'),
-                    phone: t('step2.contactPlaceholders.phone'),
-                    instagram: t('step2.contactPlaceholders.instagram'),
-                    email: t('step2.contactPlaceholders.email')
-                  };
-
-                  return (
-                    <div key={method} className="flex flex-col space-y-2 p-3 border border-slate-200 rounded-lg bg-white">
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          id={`contact-${method}`}
-                          checked={formData.contacts[method].selected}
-                          onChange={(e) => setFormData({
-                            ...formData, 
-                            contacts: { 
-                              ...formData.contacts, 
-                              [method]: { ...formData.contacts[method], selected: e.target.checked } 
-                            }
-                          })}
-                          className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                        />
-                        <label htmlFor={`contact-${method}`} className="ml-2 block text-sm font-medium text-slate-900">
-                          {labels[method]}
-                        </label>
-                      </div>
-                      
-                      {formData.contacts[method].selected && (
-                        <div className="ml-6">
-                          <input 
-                            type={method === 'email' ? 'email' : 'text'}
-                            value={formData.contacts[method].value}
-                            onChange={(e) => setFormData({
-                              ...formData, 
-                              contacts: { 
-                                ...formData.contacts, 
-                                [method]: { ...formData.contacts[method], value: e.target.value } 
-                              }
-                            })}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
-                            placeholder={placeholders[method]}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-6 text-center py-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-4">
-                <CheckCircle2 className="w-8 h-8" />
-              </div>
-              <h2 className="text-2xl font-bold">{t('step6.title')}</h2>
-              <p className="text-slate-500">{t('step6.subtitle')}</p>
-            </div>
-          )}
-
-          {/* Navigation */}
-          <div className="mt-8 flex justify-between items-center pt-6 border-t border-slate-100">
-            <button 
-              onClick={handlePrev}
-              disabled={step === 1 || isSubmitting}
-              className="px-4 py-2 text-slate-500 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium transition"
-            >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              {t('back')}
-            </button>
-
-            {step < 3 ? (
-              <button
-                onClick={handleNext}
-                disabled={isSubmitting || (step === 1 && !formData.name)}
-                className="px-6 py-2 bg-slate-900 text-white rounded-full hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium shadow-md transition"
+        {/* ── Aktif adım formu ── */}
+        <div
+          className="bg-white rounded-2xl border shadow-sm overflow-hidden"
+          style={{ borderColor: selectedCategory.color, borderWidth: '1.5px', borderLeftWidth: '3px' }}
+        >
+          <div className="p-4 pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <div
+                className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+                style={{ background: selectedCategory.color }}
               >
-                {t('next')}
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </button>
-            ) : (
-              <button
-                onClick={submitForm}
-                disabled={isSubmitting}
-                className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium shadow-md transition"
-              >
-                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                {isSubmitting ? t('creating') : t('create')}
-              </button>
+                {currentStepIdx + 1}
+              </div>
+              <h2 className="text-base font-bold text-[var(--ink)]">
+                {t(currentStep.labelKey as any)}
+              </h2>
+            </div>
+          </div>
+
+          <div className="p-4 space-y-4">
+            {/* Tavsiye kutusu */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 flex gap-2.5">
+              <span className="text-sm flex-shrink-0 mt-0.5">💡</span>
+              <p className="text-sm text-amber-800 leading-relaxed">
+                {t(currentStep.tipKey as any)}
+              </p>
+            </div>
+
+            {/* Form alanları */}
+            {renderStepForm()}
+
+            {/* Hata */}
+            {error && (
+              <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {error}
+              </p>
             )}
+
+            {/* Butonlar */}
+            <div className="flex gap-2.5 pt-1">
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="flex-1 py-3 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-2 transition hover:brightness-95 disabled:opacity-60"
+                style={{ background: selectedCategory.color }}
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {t('saveBtn')}
+              </button>
+              {!currentStep.required && (
+                <button
+                  onClick={handleSkip}
+                  disabled={isSaving}
+                  className="px-4 py-3 rounded-xl border border-slate-200 text-slate-500 font-semibold text-sm hover:bg-slate-50 transition disabled:opacity-60"
+                >
+                  {t('skipBtn')}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

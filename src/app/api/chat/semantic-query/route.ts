@@ -397,11 +397,98 @@ export async function POST(request: Request) {
           finalResult.text = '';
         }
       } else {
-        executedBehavior = 'Fallback';
-        finalResult.type = 'fallback';
-        finalResult.text = ''; // Let client handle showing lead form or direct contact channel automatically
+        // BEHAVIOR 4: Hybrid safety net. The fast hybrid ranker (embedding + lexical +
+        // intent gate) found nothing confident enough — this can be a genuinely
+        // under-indexed question, OR a false negative from the intent gate (e.g. a query
+        // classified as "book" hard-rejecting a "learn" entry that was actually the right
+        // answer). Instead of silently giving up, make one last, deliberately more
+        // expensive attempt with the FULL page context (every compiled entry for this
+        // locale, not just the top 4 by score) so Saule stays "aware of the whole site"
+        // for the rare cases the cheap path misses. This should fire rarely — most
+        // queries are served above without ever reaching here.
+        const localeEntries = entries.filter((e) => e.locale === activeLocale);
+        if (localeEntries.length === 0) {
+          executedBehavior = 'Fallback (no content indexed)';
+          finalResult.type = 'fallback';
+          finalResult.text = '';
+        } else {
+          executedBehavior = 'Gemini Full-Context Escalation';
+          try {
+            const fullContextText = localeEntries
+              .map((e, index) => `Item #${index + 1}:
+- Source Type: ${e.sourceType}
+- Title/Question: ${e.searchText.split('.')[0]}
+- Content/Answer: ${(e.answer || e.searchText).replace(/<[^>]*>/g, '').substring(0, 300)}
+- Action Block: ${e.action?.blockId || ''}
+- Action Item: ${e.action?.itemId || ''}`)
+              .join('\n\n');
+
+            const escalationPrompt = `You are Saule, a warm, professional, premium, and friendly virtual assistant for the bio/portfolio page owner.
+Your goal is to answer the visitor's query with maximum warmth, clarity, and precision in the requested language: "${activeLocale === 'tr' ? 'Turkish' : activeLocale === 'ru' ? 'Russian' : 'English'}".
+
+A faster keyword/embedding search already ran and found no confident match, so this is a full manual pass with EVERYTHING known about the page owner (every service, product, FAQ, and knowledge base note):
+---
+${fullContextText}
+---
+
+CRITICAL CONSTRAINTS & BEHAVIOR:
+1. Answer the user's query: "${query}" using ONLY the context above.
+2. Be highly proactive and business-focused: if the exact thing asked for isn't offered but a related alternative is mentioned in the context (e.g. training instead of a direct session, or vice versa), explain warmly and steer to the alternative, and set "action" to open it.
+3. Do NOT invent, assume, or extrapolate any details (prices, times, services, addresses) not explicitly mentioned in the context.
+4. If truly nothing in the context is relevant to the query, set "found" to false and leave "text" empty — do not apologize or guess.
+5. Keep the answer warm, elegant, premium, and concise (under 2-3 sentences).
+6. You MUST return your output in JSON format with exactly these four keys:
+   - "found": (boolean) true if you answered using real context, false if nothing relevant exists.
+   - "text": (string) your warm, natural, helpful conversational response, or "" if found is false.
+   - "action": (object or null) {"type": "open_block", "blockId": "...", "itemId": "..."} using the Action Block/Item of the matching (or proactively suggested alternative) item, or null.
+   - "suggestedQuestions": (array of strings) 2-3 short, clickable follow-up questions, or [] if found is false.
+
+Return ONLY a valid JSON object. Do not include markdown code block formatting (like \`\`\`json) or any pre/post text.`;
+
+            const { text: geminiOutput } = await generateText({
+              model: googleProvider('gemini-2.5-flash'),
+              prompt: escalationPrompt,
+            });
+
+            let cleanJson = geminiOutput.trim();
+            if (cleanJson.startsWith('```')) {
+              cleanJson = cleanJson.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+            }
+            const parsed = JSON.parse(cleanJson);
+
+            if (parsed.found && parsed.text) {
+              finalResult.type = 'match';
+              finalResult.text = parsed.text;
+              finalResult.action = parsed.action || null;
+              finalResult.suggestedQuestions = parsed.suggestedQuestions || [];
+
+              const actionBlockId = finalResult.action?.blockId;
+              const actionItemId = finalResult.action?.itemId;
+              if (actionBlockId) {
+                const matchedCand = localeEntries.find(
+                  (e) => e.action?.blockId === actionBlockId && (!actionItemId || e.action?.itemId === actionItemId)
+                );
+                if (matchedCand) {
+                  finalResult.matchedBlock = {
+                    title: matchedCand.searchText.split('.')[0] || '',
+                    description: matchedCand.answer || '',
+                    blockId: actionBlockId,
+                    itemId: actionItemId || undefined,
+                  };
+                }
+              }
+            } else {
+              finalResult.type = 'fallback';
+              finalResult.text = '';
+            }
+          } catch (escalationErr) {
+            console.error('Gemini full-context escalation failed, falling back:', escalationErr);
+            finalResult.type = 'fallback';
+            finalResult.text = '';
+          }
+        }
       }
-    } 
+    }
     // 3. BEHAVIOR 2: Conversational FAQ / Knowledge Base synthesis (Gemini 2.5 Flash RAG)
     else {
       executedBehavior = 'Gemini RAG';

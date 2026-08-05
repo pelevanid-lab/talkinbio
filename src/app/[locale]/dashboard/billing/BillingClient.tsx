@@ -5,8 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { format, type Locale } from 'date-fns';
 import { tr, enUS, ru } from 'date-fns/locale';
 import { Coins, MessageCircle, Wrench, BarChart3 } from 'lucide-react';
-import { PLANS, EXTRA_PACK } from '@/config/plans';
-import { SAULE_CREDIT_COST, SAULE_STUDIO_UPDATE_CREDIT_COST, CREDIT_COST_MENU } from '@/agents/shared/credits';
+import { CREDIT_PACKAGES } from '@/config/plans';
 import DashboardShell from '@/components/dashboard/DashboardShell';
 
 const DATE_FNS_LOCALES: Record<string, Locale> = { tr, en: enUS, ru };
@@ -146,67 +145,36 @@ export default function BillingClient({ business, transactions, ownerEmail }: { 
           </div>
         </div>
 
-        {/* Credit cost menu */}
-        <div className="bg-white rounded-[20px] border border-[rgba(20,35,31,0.10)] p-6">
-          <h2 className="text-lg font-[800] text-[#14231F] font-['Bricolage_Grotesque'] mb-1">{tPricing('operationCostsTitle')}</h2>
-          <p className="text-sm text-[#4B5A55] mb-4">{tPricing('operationCostsSubtitle')}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {CREDIT_COST_MENU.map((item) => (
-              <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-[rgba(20,35,31,0.08)] bg-[#FBFAF7] px-4 py-3">
-                <span className="text-sm font-medium text-[#14231F]">{item.label[(locale as keyof typeof item.label) || 'tr'] || item.label.tr}</span>
-                <span className="text-sm font-[800] text-[#059669] whitespace-nowrap">{t('credits', { count: item.credits })}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Top-up / plan request */}
         <div className="bg-white rounded-[20px] border border-[rgba(20,35,31,0.10)] p-6">
           <h2 className="text-lg font-[800] text-[#14231F] font-['Bricolage_Grotesque'] mb-1">{t('topUpTitle')}</h2>
           <p className="text-sm text-[#4B5A55] mb-5">{t('topUpSubtitle')}</p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            {PLANS.map((plan) => {
-              const sauleChats = Math.floor(plan.credits / SAULE_CREDIT_COST);
-              const studioUpdates = Math.floor(plan.credits / SAULE_STUDIO_UPDATE_CREDIT_COST);
-              const isFree = plan.id === 'free';
-              return (
-                <button
-                  key={plan.id}
-                  onClick={isFree ? undefined : () => handleTopUpCta(plan.id)}
-                  disabled={isFree}
-                  className={`text-left border rounded-xl p-5 flex flex-col gap-3 ${
-                    isFree 
-                      ? 'border-[rgba(20,35,31,0.10)] opacity-80 cursor-default bg-[#F4F2ED]' 
-                      : selectedPlan === plan.id 
-                        ? 'border-[#FF6A5C] bg-[#FFEDE9] transition' 
-                        : 'border-[rgba(20,35,31,0.10)] hover:border-[rgba(20,35,31,0.25)] transition'
-                  }`}
-                >
-                  <p className="text-lg font-[800] text-[#14231F]">{tPricing(`plan_${plan.id}` as any)}</p>
-                  <p className="text-2xl font-[800] text-[#14231F] font-['Bricolage_Grotesque']">${plan.price}</p>
-                  <p className="text-sm font-[700] text-[#059669]">{tPricing('credits', { count: plan.credits })}</p>
-                  <p className="text-xs text-[#4B5A55] leading-relaxed min-h-[2.5rem]">
-                    {tPricing('capacityExample', { saule: sauleChats, beiwe: studioUpdates })}
-                  </p>
-                  <p className="text-xs font-medium text-[#4B5A55] leading-relaxed">
-                    {tPricing(`idealFor_${plan.id}` as any)}
-                  </p>
-                </button>
-              );
-            })}
-            
-            <button
-              onClick={() => handleTopUpCta('extra')}
-              className={`text-left border rounded-xl p-5 transition flex flex-col gap-3 ${selectedPlan === 'extra' ? 'border-[#FF6A5C] bg-[#FFEDE9]' : 'border-dashed border-[rgba(20,35,31,0.25)] hover:border-[rgba(20,35,31,0.4)]'}`}
-            >
-              <p className="text-lg font-[800] text-[#14231F]">{tPricing('extraPackName')}</p>
-              <p className="text-2xl font-[800] text-[#14231F] font-['Bricolage_Grotesque']">${EXTRA_PACK.price}</p>
-              <p className="text-sm font-[700] text-[#059669]">{tPricing('credits', { count: EXTRA_PACK.credits })}</p>
-              <p className="text-xs text-[#8A8880] leading-relaxed">
-                {tPricing('extraPackNote')}
-              </p>
-            </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {CREDIT_PACKAGES.map((pkg) => (
+              <button
+                key={pkg.id}
+                onClick={() => handleTopUpCta(pkg.id)}
+                className={`text-left border rounded-xl p-5 flex flex-col gap-2 transition ${
+                  selectedPlan === pkg.id
+                    ? 'border-[#FF6A5C] bg-[#FFEDE9]'
+                    : 'border-[rgba(20,35,31,0.10)] hover:border-[rgba(20,35,31,0.25)]'
+                }`}
+              >
+                <div>
+                  <span className="text-3xl font-[800] text-[#14231F] font-['Bricolage_Grotesque'] leading-none">
+                    {pkg.credits.toLocaleString(numberLocale)}
+                  </span>
+                  <span className="block text-[10px] font-[700] text-[#2B6F5C] uppercase tracking-wide mt-1">
+                    {tPricing('creditsUnit')}
+                  </span>
+                </div>
+                <p className="text-xl font-[800] text-[#14231F] font-['Bricolage_Grotesque']">${pkg.price}</p>
+                <p className="text-xs text-[#4B5A55] leading-relaxed">
+                  {tPricing(`desc_${pkg.id}` as any)}
+                </p>
+              </button>
+            ))}
           </div>
 
           {submitted ? (
