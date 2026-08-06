@@ -1092,8 +1092,9 @@
 
 @media (max-width: 767px) {
   /* Phone visual box = padding(10*2) + phone-screen-inner height(580) = 600px.
-     The details card overlays only the bottom 30% of that box, so the phone
-     itself stays ~70% visible above it instead of being fully covered. */
+     The details card starts at the 70% mark (phone stays ~70% visible above
+     it) and is tall enough to spill a bit past the phone's bottom edge into
+     the section's own spacing, instead of leaving a dead gap before it. */
   #landing-page .phone-container {
     flex-direction: column !important;
     align-items: center !important;
