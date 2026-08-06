@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ChevronLeft, Tag, X, Check, AlertCircle, MessageSquare, Phone, Mail, ArrowLeft } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -162,7 +162,7 @@ export default function ProfileHeader({
         <div className="relative w-full flex justify-center min-h-[144px]">
           {/* Holografik/dijital glitch efekti — avatar ve Saule balonu arasındaki geçişte
               ikisi de kullanıyor; tek stil burada (avatar↔balon geçişinde yeniden monte
-              edilip parse edilmemesi için AnimatePresence dışında, koşulsuz). */}
+              edilip parse edilmemesi için koşulsuz, ikisinin de dışında). */}
           <style>{`
             @keyframes holo-glitch {
               0% { transform: translate(0) skew(0deg); filter: hue-rotate(0deg) saturate(1.2); }
@@ -202,8 +202,14 @@ export default function ProfileHeader({
             )}
           </div>
 
-          {/* Morphing Avatar / Saule Speech Bubble Container */}
-          <AnimatePresence mode="wait">
+          {/* Morphing Avatar / Saule Speech Bubble Container.
+              NOT: Burada bilinçli olarak AnimatePresence YOK. framer-motion 12.42 + React 19.2
+              kombinasyonunda `mode="wait"` yeni çocuğu hiç commit etmiyor (avatar sonsuza dek
+              takılı kalıyor — state doğru güncelleniyor ama DOM hiç değişmiyor), `mode="popLayout"`
+              ise eski çocuğu unmount etmeden bırakıyor (avatar+balon aynı anda, DOM'da birikiyor).
+              Düz koşullu render + motion.div'in kendi initial/animate'i (giriş animasyonu) korunuyor,
+              sadece çıkış crossfade'i kayboluyor — kütüphane uyumsuzluğu düzelene kadar bilinçli ödün. */}
+          <>
             {!sauleActive ? (
               <motion.div
                 key="avatar"
@@ -381,7 +387,7 @@ export default function ProfileHeader({
                 )}
               </motion.div>
             )}
-          </AnimatePresence>
+          </>
 
           {/* Sağ slot — avatar üst kenarına hizalı */}
           <div className="absolute right-0 top-0 flex items-center" style={{ color: c.text, zIndex: 30 }}>
