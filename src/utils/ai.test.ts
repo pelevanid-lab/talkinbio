@@ -7,6 +7,7 @@ vi.mock('@ai-sdk/anthropic', () => ({
 }));
 vi.mock('@ai-sdk/google', () => ({
   google: vi.fn((modelName: string) => ({ provider: 'google', modelName })),
+  createGoogleGenerativeAI: vi.fn(() => vi.fn((modelName: string) => ({ provider: 'google', modelName }))),
 }));
 
 describe('getModel', () => {
@@ -28,15 +29,15 @@ describe('getModel', () => {
   it('falls back to the default model when no env vars are set', async () => {
     const { getModel } = await import('./ai');
     const model = getModel('saule') as unknown as FakeModel;
-    expect(model.modelName).toBe('gemini-2.5-flash-lite');
+    expect(model.modelName).toBe('gemini-2.5-flash');
     expect(model.provider).toBe('google');
   });
 
   it('does not use AI_MODEL as a shared fallback', async () => {
     process.env.AI_MODEL = 'claude-shared-test';
     const { getModel } = await import('./ai');
-    expect((getModel('beiwe') as unknown as FakeModel).modelName).toBe('gemini-2.5-flash-lite');
-    expect((getModel('analysis') as unknown as FakeModel).modelName).toBe('gemini-2.5-flash-lite');
+    expect((getModel('beiwe') as unknown as FakeModel).modelName).toBe('gemini-2.5-flash');
+    expect((getModel('analysis') as unknown as FakeModel).modelName).toBe('gemini-2.5-flash');
   });
 
   it('prefers the task-specific env var over the default', async () => {
@@ -44,7 +45,7 @@ describe('getModel', () => {
     process.env.AI_MODEL_BEIWE = 'claude-beiwe-specific';
     const { getModel } = await import('./ai');
     expect((getModel('beiwe') as unknown as FakeModel).modelName).toBe('claude-beiwe-specific');
-    expect((getModel('saule') as unknown as FakeModel).modelName).toBe('gemini-2.5-flash-lite');
+    expect((getModel('saule') as unknown as FakeModel).modelName).toBe('gemini-2.5-flash');
   });
 
   it('routes gemini model names to the google provider', async () => {

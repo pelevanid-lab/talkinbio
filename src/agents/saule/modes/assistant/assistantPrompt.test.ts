@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildSaulePrompt, parseContactInfo } from './prompt';
+import { buildSaulePrompt, parseContactInfo } from './assistantPrompt';
 
 const baseParams = {
   business: {

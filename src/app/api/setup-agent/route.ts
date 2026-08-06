@@ -7,6 +7,7 @@ import { getUIMessageText } from '@/agents/shared/uiMessages';
 import { SAULE_STUDIO_MAX_INPUT_CHARS, SAULE_HISTORY_WINDOW } from '@/agents/shared/limits';
 import { recordUsageEvent } from '@/agents/shared/usage';
 import { sauleCreditCost, deductCredits } from '@/agents/shared/credits';
+import { getBusinessFromRequest } from '@/utils/businessAuth';
 
 // Large pastes (e.g. a business owner dropping in several long service descriptions at once,
 // each needing translation into 3 languages) can take the model well past a minute to finish
@@ -19,6 +20,15 @@ export async function POST(req: Request) {
 
     if (!sessionId) {
       return new Response('Missing sessionId', { status: 400 });
+    }
+
+    // Bulgu (stabilizasyon taraması): bu route businessId'yi request body'den alıp
+    // hiçbir sahiplik kontrolü yapmadan o işletmenin bloklarını okuyup yazıyor ve
+    // kredisini düşürüyordu — businessId'yi bilen herkes başka bir işletmenin AI
+    // editörünü tetikleyebilirdi. /api/content/generate'teki owner-auth deseniyle aynı.
+    const authedBusiness = await getBusinessFromRequest();
+    if (!authedBusiness || authedBusiness.id !== businessId) {
+      return new Response('Unauthorized', { status: 403 });
     }
 
     const supabase = createClient(

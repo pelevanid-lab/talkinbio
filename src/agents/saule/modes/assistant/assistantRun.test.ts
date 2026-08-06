@@ -46,7 +46,10 @@ vi.mock('ai', () => ({
 }));
 
 vi.mock('@ai-sdk/anthropic', () => ({ anthropic: vi.fn((m: string) => ({ provider: 'anthropic', modelName: m })) }));
-vi.mock('@ai-sdk/google', () => ({ google: vi.fn((m: string) => ({ provider: 'google', modelName: m })) }));
+vi.mock('@ai-sdk/google', () => ({
+  google: vi.fn((m: string) => ({ provider: 'google', modelName: m })),
+  createGoogleGenerativeAI: vi.fn(() => vi.fn((m: string) => ({ provider: 'google', modelName: m }))),
+}));
 
 describe('runSauleTurn', () => {
   beforeEach(() => {

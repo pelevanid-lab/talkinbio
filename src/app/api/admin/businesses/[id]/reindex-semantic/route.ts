@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { CloudflareEmbeddingProvider, GeminiEmbeddingProvider, FakeEmbeddingProvider } from '@/utils/semantic/embeddingProvider';
 import { buildSemanticIndex } from '@/utils/semantic/indexer';
+import { getBusinessFromRequest } from '@/utils/businessAuth';
 
 export async function POST(
   request: Request,
@@ -9,6 +10,15 @@ export async function POST(
 ) {
   try {
     const { id: businessId } = await params;
+
+    // Bulgu (stabilizasyon taraması): service-role client kullanıyor (RLS'i atlar)
+    // ve hiçbir sahiplik kontrolü yoktu — businessId'yi bilen herkes başka bir
+    // işletme için pahalı bir embedding reindex tetikleyebilirdi.
+    const authedBusiness = await getBusinessFromRequest();
+    if (!authedBusiness || authedBusiness.id !== businessId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
     const body = await request.json().catch(() => ({}));
     const publishVersion = body.publishVersion || 'draft';
 

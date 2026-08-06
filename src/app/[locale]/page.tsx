@@ -147,7 +147,7 @@ const landingCopy = {
         },
         {
           q: 'Sayfamı nerelerde paylaşabilirim?',
-          a: 'Biyografi linkinizde, Instagram DM otomatik yanıtlarında, TikTok, LinkedIn, YouTube hesaplarınızda veya basılı QR kodlarınızda paylaşabilirsiniz.'
+          a: 'Instagram, TikTok, LinkedIn, YouTube hesaplarınızın biyografi linkinde veya basılı QR kodlarınızda paylaşabilirsiniz.'
         }
       ]
     },
@@ -302,7 +302,7 @@ const landingCopy = {
         },
         {
           q: 'Where can I share my page?',
-          a: 'You can share it in your bio link, Instagram DM auto-replies, TikTok, LinkedIn, YouTube accounts, or on printed QR codes.'
+          a: 'You can share it in the bio link of your Instagram, TikTok, LinkedIn, or YouTube accounts, or on printed QR codes.'
         }
       ]
     },
@@ -457,7 +457,7 @@ const landingCopy = {
         },
         {
           q: 'Где я могу поделиться ссылкой?',
-          a: 'В био-ссылке, автоответах Instagram DM, TikTok, LinkedIn, YouTube или печатных QR-кодах.'
+          a: 'В био-ссылке ваших аккаунтов Instagram, TikTok, LinkedIn, YouTube или на печатных QR-кодах.'
         }
       ]
     },

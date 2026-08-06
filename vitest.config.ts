@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, configDefaults } from 'vitest/config';
 
 export default defineConfig({
   resolve: {
@@ -6,5 +6,9 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // .claude/ altında geçici agent worktree'leri oluşabiliyor (bkz. temizlenen
+    // .claude/worktrees/jovial-kirch-9549df) — bunların içindeki test dosyaları
+    // ayrı bir bağlamda yaşıyor ve toplanırsa sahte kırmızılar üretiyor.
+    exclude: [...configDefaults.exclude, '**/.claude/**'],
   },
 });

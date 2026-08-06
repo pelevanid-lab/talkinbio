@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import KnowledgeBasePanel from '../leads/KnowledgeBasePanel';
 import DashboardShell from '@/components/dashboard/DashboardShell';
+import { FEATURES } from '@/config/features';
 
 // Contact methods offered as an "Order Now" target — same keys as business.contact_value.
 const ORDER_NOW_METHOD_LABELS: Record<string, Record<string, string>> = {
@@ -294,7 +295,8 @@ export default function FrontDeskClient({ business, initialKnowledge }: { busine
                   </div>
                 </div>
 
-                {/* Instagram Integration */}
+                {/* Instagram Integration — bkz. src/config/features.ts, prod'da pasif */}
+                {FEATURES.instagramIntegration && (
                 <div className="py-4 border-t border-[rgba(20,35,31,0.10)]">
                   <div className="flex items-center justify-between mb-2">
                     <div>
@@ -372,6 +374,7 @@ export default function FrontDeskClient({ business, initialKnowledge }: { busine
                     </>
                   )}
                 </div>
+                )}
               </>
             )}
 

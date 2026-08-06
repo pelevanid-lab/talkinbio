@@ -45,11 +45,6 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: true });
       }
 
-      if (invoice.status === 'success') {
-        // Already processed
-        return NextResponse.json({ success: true });
-      }
-
       // Find the plan to add credits
       const plan = invoice.plan_id === 'extra' ? EXTRA_PACK : PLANS.find(p => p.id === invoice.plan_id);
       if (!plan) {
@@ -57,24 +52,26 @@ export async function POST(req: Request) {
          return NextResponse.json({ success: true });
       }
 
-      // Update the invoice status
-      await supabaseAdmin
-        .from('business_invoices')
-        .update({ status: 'success', shopier_order_id: order.id })
-        .eq('id', invoice.id);
+      // Atomik + idempotent: fulfill_invoice() tek transaction içinde invoice'ı
+      // 'success' işaretler ve krediyi ekler. Invoice zaten 'success' ise (aynı
+      // webhook'un tekrar teslimi) false döner ve hiçbir şey değişmez — elle
+      // select-then-update yapmak iki eşzamanlı teslimat arasında race condition'a
+      // (çift kredi) açık olurdu.
+      const { data: fulfilled, error: fulfillError } = await supabaseAdmin.rpc('fulfill_invoice', {
+        p_invoice_id: invoice.id,
+        p_business_id: invoice.business_id,
+        p_credits: plan.credits,
+        p_shopier_order_id: String(order.id),
+      });
 
-      // Add credits
-      const { data: business } = await supabaseAdmin
-        .from('businesses')
-        .select('credit_balance')
-        .eq('id', invoice.business_id)
-        .single();
+      if (fulfillError) {
+        console.error('fulfill_invoice RPC failed:', fulfillError);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+      }
 
-      if (business) {
-        await supabaseAdmin
-          .from('businesses')
-          .update({ credit_balance: (business.credit_balance || 0) + plan.credits })
-          .eq('id', invoice.business_id);
+      if (!fulfilled) {
+        // Already processed by an earlier delivery of this webhook.
+        return NextResponse.json({ success: true });
       }
 
       // Try to fulfill order in Shopier
