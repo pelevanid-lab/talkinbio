@@ -8,11 +8,14 @@ import { insertLeadAndNotify } from '@/agents/saule/modes/assistant/assistantToo
 // yok (bu rota zaten token harcamıyor).
 export async function POST(req: Request) {
   try {
-    const { businessId, name, contact, message } = await req.json();
+    const { businessId, name, contact, message, triggerReason } = await req.json();
 
     if (!businessId || !name || !contact) {
       return new Response('Missing required fields', { status: 400 });
     }
+
+    const VALID_TRIGGER_REASONS = new Set(['no_match', 'credits_exhausted', 'proactive']);
+    const safeTriggerReason = VALID_TRIGGER_REASONS.has(triggerReason) ? triggerReason : null;
 
     const cookieStore = await cookies();
     const visitorSessionId = cookieStore.get('visitor_session_id')?.value;
@@ -62,6 +65,7 @@ export async function POST(req: Request) {
       contact,
       summary: typeof message === 'string' && message.trim() ? message.trim() : 'Kredi limiti nedeniyle sohbet yerine doğrudan mesaj bırakıldı.',
       notificationEmail,
+      triggerReason: safeTriggerReason,
     });
 
     return Response.json(result);

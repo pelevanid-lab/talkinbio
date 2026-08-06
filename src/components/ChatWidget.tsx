@@ -141,14 +141,18 @@ export default function ChatWidget({
       if (data.type === 'match') {
         pageRuntime?.setSauleText(data.text);
         pageRuntime?.setSauleState('response');
+        pageRuntime?.recordSuccessfulAnswer();
       } else if (data.type === 'clarification') {
         pageRuntime?.setSauleText(data.text);
         pageRuntime?.setSauleState('response');
       } else {
-        // Fallback
+        // Fallback — cevap bulunamadı VEYA kredi bitti (bkz. semantic-query'nin 402
+        // yanıtındaki `reason`). Analiz sayfasında ayrı raporlanabilsin diye lead formu
+        // buradan açılırsa hangi sebepten açıldığı işaretlenir.
         if (pageRuntime?.leadCaptureEnabled) {
           pageRuntime?.setSauleText(data.text || t('noMatchLead'));
           pageRuntime?.setSauleState('lead_form');
+          pageRuntime?.setLeadFormReason(data.reason === 'credits_exhausted' ? 'credits_exhausted' : 'no_match');
         } else if (pageRuntime?.contactValue) {
           pageRuntime?.setSauleText(data.text || t('noMatchContact'));
           pageRuntime?.setSauleState('response');

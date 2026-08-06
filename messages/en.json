@@ -801,6 +801,7 @@
     "callCta": "Call Now",
     "emailCta": "Send Email",
     "leadForm": {
+      "proactivePrompt": "Looks like you found what you were after! Leave your details if you'd like — we'll follow up personally so nothing slips through.",
       "namePlaceholder": "Your Name",
       "contactPlaceholder": "Phone or Email",
       "submitBtn": "Send My Info",
@@ -843,6 +844,42 @@
     "localeLabelTr": "Turkish",
     "localeLabelEn": "English",
     "localeLabelRu": "Russian"
+  },
+  "Analytics": {
+    "title": "Analytics",
+    "statViews": "Total Views",
+    "statConversations": "Chats with Saule",
+    "statLeads": "New Requests",
+    "statEngagement": "Contact Intent",
+    "funnelTitle": "Visitor Journey",
+    "funnelViews": "Viewed the Page",
+    "funnelConversations": "Asked Saule",
+    "funnelEngagement": "Reached Out / Left Info",
+    "channelsTitle": "Channel Analysis (Sources)",
+    "noData": "No data yet.",
+    "visitorUnit": "visitors",
+    "leadSourceTitle": "Where Did Requests Come From?",
+    "leadSource": {
+      "no_match": "Saule couldn't find an answer",
+      "credits_exhausted": "Credits ran out",
+      "proactive": "Proactive invite",
+      "instagram_dm": "Instagram DM",
+      "other": "Other"
+    },
+    "engagementTitle": "Contact Intent",
+    "engagement": {
+      "whatsapp": "WhatsApp",
+      "phone": "Phone",
+      "email": "Email",
+      "instagram": "Instagram",
+      "telegram": "Telegram",
+      "order": "Order Now",
+      "other": "Other"
+    },
+    "insightsTitle": "Topics Visitors Couldn't Find",
+    "insightsSub": "Recurring questions Saule couldn't answer — consider adding these to your page.",
+    "insightsEmpty": "No recurring topic detected yet.",
+    "insightsCount": "asked {count} times"
   },
   "Leads": {
     "noBusinessTitle": "You haven't set up a business yet",
@@ -1506,6 +1543,7 @@
     "categorySelectTitle": "What do you want your visitors to do?",
     "categorySelectSub": "Based on your pick, we'll build you a tailored starting page.",
     "setupTitle": "Let us set up your page",
+    "stepListToggle": "All steps",
     "saveBtn": "Save and continue",
     "skipBtn": "Skip for now",
     "doneTitle": "Your profile is ready!",

@@ -804,6 +804,7 @@
     "callCta": "Позвонить",
     "emailCta": "Отправить письмо",
     "leadForm": {
+      "proactivePrompt": "Похоже, вы нашли то, что искали! Оставьте свои данные — мы свяжемся с вами лично, чтобы ничего не упустить.",
       "namePlaceholder": "Ваше имя",
       "contactPlaceholder": "Телефон или email",
       "submitBtn": "Отправить данные",
@@ -846,6 +847,42 @@
     "localeLabelTr": "Турецкий",
     "localeLabelEn": "Английский",
     "localeLabelRu": "Русский"
+  },
+  "Analytics": {
+    "title": "Аналитика",
+    "statViews": "Всего просмотров",
+    "statConversations": "Беседы с Saule",
+    "statLeads": "Новые заявки",
+    "statEngagement": "Обращения",
+    "funnelTitle": "Путь посетителя",
+    "funnelViews": "Увидел страницу",
+    "funnelConversations": "Спросил Saule",
+    "funnelEngagement": "Обратился / оставил данные",
+    "channelsTitle": "Анализ каналов (источники)",
+    "noData": "Данных пока нет.",
+    "visitorUnit": "посетителей",
+    "leadSourceTitle": "Откуда пришли заявки?",
+    "leadSource": {
+      "no_match": "Saule не нашла ответ",
+      "credits_exhausted": "Закончились кредиты",
+      "proactive": "Проактивное приглашение",
+      "instagram_dm": "Instagram DM",
+      "other": "Другое"
+    },
+    "engagementTitle": "Намерение связаться",
+    "engagement": {
+      "whatsapp": "WhatsApp",
+      "phone": "Телефон",
+      "email": "Email",
+      "instagram": "Instagram",
+      "telegram": "Telegram",
+      "order": "Заказать",
+      "other": "Другое"
+    },
+    "insightsTitle": "Темы, которые не нашли посетители",
+    "insightsSub": "Повторяющиеся вопросы, на которые Saule не смогла ответить — стоит добавить их на страницу.",
+    "insightsEmpty": "Повторяющихся тем пока не обнаружено.",
+    "insightsCount": "спрошено {count} раз"
   },
   "Leads": {
     "noBusinessTitle": "Вы ещё не создали бизнес-профиль",
@@ -1506,6 +1543,7 @@
     "categorySelectTitle": "Что должны делать ваши посетители?",
     "categorySelectSub": "На основе вашего выбора мы соберём стартовую версию страницы.",
     "setupTitle": "Создаём вашу страницу",
+    "stepListToggle": "Все шаги",
     "saveBtn": "Сохранить и продолжить",
     "skipBtn": "Пропустить",
     "doneTitle": "Профиль готов!",

@@ -128,9 +128,11 @@ export async function POST(request: Request) {
       if (willCreateNewConversation && creditBalance < 1) {
         return NextResponse.json({
           type: 'fallback',
-          text: activeLocale === 'tr' 
-            ? 'Bu işletmenin Saule sohbet kredisi tükendi.' 
-            : 'This business has exhausted its Saule chat credits.',
+          // reason: client bunu okuyup lead formu açılırsa "neden açıldığını" (bkz.
+          // leads.trigger_reason) doğru işaretleyebilsin — "cevap bulunamadı" ile "kredi
+          // bitti" analiz sayfasında ayrı raporlanan iki farklı, eyleme geçirilebilir durum.
+          reason: 'credits_exhausted',
+          text: pickLocale(activeLocale, 'Bu işletmenin Saule sohbet kredisi tükendi.', 'This business has exhausted its Saule chat credits.', 'У этого бизнеса закончились кредиты чата Saule.'),
           suggestedQuestions: []
         }, { status: 402 });
       }

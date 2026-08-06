@@ -110,7 +110,9 @@ export default function ProfileHeader({
           businessId: pageRuntime?.businessId || '',
           name: leadName.trim(),
           contact: leadContact.trim(),
-          message: 'Saule Bubble Lead Form'
+          message: 'Saule Bubble Lead Form',
+          // Analiz sayfasının lead kaynağı kırılımı için (bkz. leads.trigger_reason).
+          triggerReason: pageRuntime?.leadFormReason || null,
         }),
       });
       if (!res.ok) throw new Error();
@@ -362,6 +364,7 @@ export default function ProfileHeader({
                             href={`https://wa.me/${pageRuntime.contactValue.replace(/[^0-9]/g, '')}`}
                             target="_blank"
                             rel="noreferrer"
+                            onClick={() => pageRuntime.recordEngagementClick('contact_click', 'whatsapp')}
                             className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-full text-xs font-semibold shadow-sm transition"
                           >
                             <MessageSquare className="w-3.5 h-3.5 fill-white" /> {t('whatsappCta')}
@@ -369,6 +372,7 @@ export default function ProfileHeader({
                         ) : pageRuntime.contactMethod === 'phone' ? (
                           <a
                             href={`tel:${pageRuntime.contactValue}`}
+                            onClick={() => pageRuntime.recordEngagementClick('contact_click', 'phone')}
                             className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#FF6A5C] hover:opacity-95 text-white rounded-full text-xs font-semibold shadow-sm transition"
                           >
                             <Phone className="w-3.5 h-3.5 fill-white" /> {t('callCta')}
@@ -376,6 +380,7 @@ export default function ProfileHeader({
                         ) : (
                           <a
                             href={`mailto:${pageRuntime.contactValue}`}
+                            onClick={() => pageRuntime.recordEngagementClick('contact_click', 'email')}
                             className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2B6F5C] hover:opacity-95 text-white rounded-full text-xs font-semibold shadow-sm transition"
                           >
                             <Mail className="w-3.5 h-3.5" /> {t('emailCta')}

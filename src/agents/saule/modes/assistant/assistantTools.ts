@@ -16,6 +16,10 @@ export type InsertLeadAndNotifyParams = {
   sourceUsername?: string;
   preferredDatetime?: string;
   notificationEmail?: string;
+  // 'no_match' | 'credits_exhausted' | 'proactive' | null — bkz. leads.trigger_reason
+  // (migration 00071). Instagram DM/capture_lead aracı gibi bu ayrımı bilmeyen çağıranlar
+  // için opsiyonel; null "diğer" olarak raporlanır.
+  triggerReason?: string | null;
 };
 
 /**
@@ -36,6 +40,7 @@ export async function insertLeadAndNotify({
   sourceUsername,
   preferredDatetime,
   notificationEmail,
+  triggerReason,
 }: InsertLeadAndNotifyParams): Promise<{ success: boolean; message: string }> {
   // Faz 1.7: editör test konuşmalarından lead yazılmaz. Lead capture sadece ziyaretçilerin
   // (preview: false) girişlerinden tutulur. Böylece test konuşmalarındaki demo veriler
@@ -52,6 +57,7 @@ export async function insertLeadAndNotify({
     summary,
     source_username: sourceUsername,
     preferred_datetime: preferredDatetime,
+    trigger_reason: triggerReason || null,
     status: 'new',
   });
   if (error) {
@@ -139,6 +145,8 @@ export function captureLeadTool({ supabaseAdmin, businessId, conversationId, con
         sourceUsername: source_username,
         preferredDatetime: preferred_datetime,
         notificationEmail,
+        // Bu araç bugün yalnızca Instagram DM kanalından (bkz. webhooks/instagram) çağrılıyor.
+        triggerReason: 'instagram_dm',
       });
     },
   });

@@ -801,6 +801,7 @@
     "callCta": "Hemen Ara",
     "emailCta": "E-posta Gönder",
     "leadForm": {
+      "proactivePrompt": "Sanırım aradığınızı buldunuz! İsterseniz bilgilerinizi bırakın, size özel olarak dönelim — hiçbir şeyi kaçırmayın.",
       "namePlaceholder": "Adınız",
       "contactPlaceholder": "Telefon veya E-posta",
       "submitBtn": "Bilgilerimi İlet",
@@ -843,6 +844,42 @@
     "localeLabelTr": "Türkçe",
     "localeLabelEn": "İngilizce",
     "localeLabelRu": "Rusça"
+  },
+  "Analytics": {
+    "title": "Analiz",
+    "statViews": "Toplam Görüntülenme",
+    "statConversations": "Saule ile Konuşma",
+    "statLeads": "Yeni Talep",
+    "statEngagement": "İletişime Geçme",
+    "funnelTitle": "Ziyaretçi Yolculuğu",
+    "funnelViews": "Sayfayı Gördü",
+    "funnelConversations": "Saule'ye Sordu",
+    "funnelEngagement": "İletişime Geçti / Bilgi Bıraktı",
+    "channelsTitle": "Kanal Analizi (Kaynaklar)",
+    "noData": "Henüz veri bulunmuyor.",
+    "visitorUnit": "ziyaretçi",
+    "leadSourceTitle": "Talepler Nereden Geldi?",
+    "leadSource": {
+      "no_match": "Saule cevap bulamadı",
+      "credits_exhausted": "Kredi bitti",
+      "proactive": "Proaktif davet",
+      "instagram_dm": "Instagram DM",
+      "other": "Diğer"
+    },
+    "engagementTitle": "İletişim Niyeti",
+    "engagement": {
+      "whatsapp": "WhatsApp",
+      "phone": "Telefon",
+      "email": "E-posta",
+      "instagram": "Instagram",
+      "telegram": "Telegram",
+      "order": "Sipariş Ver",
+      "other": "Diğer"
+    },
+    "insightsTitle": "Ziyaretçilerin Bulamadığı Konular",
+    "insightsSub": "Saule'nin cevap veremediği, tekrar eden sorular — sayfana eklemeyi düşün.",
+    "insightsEmpty": "Henüz tekrar eden bir konu tespit edilmedi.",
+    "insightsCount": "{count} kez soruldu"
   },
   "Leads": {
     "noBusinessTitle": "Henüz bir işletme kurmamışsınız",
@@ -1506,6 +1543,7 @@
     "categorySelectTitle": "Ziyaretçilerinizin ne yapmasını istiyorsunuz?",
     "categorySelectSub": "Seçimine göre sana özel bir başlangıç sayfası hazırlayalım.",
     "setupTitle": "Sayfanı kuralım",
+    "stepListToggle": "Tüm adımlar",
     "saveBtn": "Kaydet ve devam",
     "skipBtn": "Şimdilik geç",
     "doneTitle": "Profilin hazır!",

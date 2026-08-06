@@ -224,6 +224,7 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
         contactValue={resolvedContactValue}
         leadCaptureEnabled={pageBusiness.saule_settings?.leadCaptureEnabled !== false}
         customGreeting={customGreeting}
+        isOwner={isOwner}
       >
       {/* Scrollable content — flex-1 min-h-0 so it fills only the space ABOVE the in-flow Saule
           dock below. Blocks scroll within here; the last block ends above Saule and can never

@@ -1,7 +1,7 @@
 'use client';
 
 import { DEFAULT_THEME, Theme, resolveAccentFill, resolveThemeColors } from '@/config/archetypes';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, Mail, MessageCircle, Link as LinkIcon, AtSign } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkBreaks from 'remark-breaks';
@@ -13,6 +13,7 @@ import { iconForLinkUrl } from '@/utils/linkIcon';
 import { hasRealContentForLocale, isItemVisibleInLocale, getLocalizedValue } from '@/config/blockTypes';
 import { SauleIcon } from './AgentIcons';
 import { stableItemId } from '@/utils/pageActionTargets';
+import { useOptionalPublicPageRuntime } from './PublicPageRuntime';
 
 type RenderCtx = {
   locale: string;
@@ -28,6 +29,10 @@ type RenderCtx = {
   onOrderNowClick: ((message: string) => void) | null;
   businessName: string;
   activeItemId?: string | null;
+  // Sıfır sürtünmeli niyet takibi (bkz. PublicPageRuntime.recordEngagementClick) — sayfa
+  // sahibi kendi önizlemesindeyken veya PublicPageRuntimeProvider yokken (editör mockup'ı)
+  // no-op'a düşer.
+  onEngagementClick: (eventType: 'contact_click' | 'order_click', channel?: string | null) => void;
 };
 
 // Static Tailwind class lookups (never string-interpolated — Tailwind needs literal class names to compile them).
@@ -999,7 +1004,7 @@ function buildOrderNowHandler(
 // not a real `blocks` row, so it reads its data from block.content.method/.value instead of the
 // usual per-locale content shape.
 function renderContact(block: any, ctx: RenderCtx) {
-  const { locale, radiusClass, headingFont, activeItemId } = ctx;
+  const { locale, radiusClass, headingFont, activeItemId, onEngagementClick } = ctx;
   const methodKeys: string[] = (block.content?.method || '').split(',').filter(Boolean);
   let values: Record<string, string> = {};
   try { values = block.content?.value ? JSON.parse(block.content.value) : {}; } catch { values = {}; }
@@ -1020,6 +1025,7 @@ function renderContact(block: any, ctx: RenderCtx) {
               href={contactHref(key, value)}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => onEngagementClick('contact_click', key)}
               className={`w-full p-4 flex items-center gap-3 font-semibold border shadow-sm transition hover:scale-[1.02] ${radiusClass} ${
                 isActive ? 'ring-2 ring-[var(--coral)] scale-[1.02]' : ''
               }`}
@@ -1086,6 +1092,14 @@ export default function ArchetypeRenderer({
   const activeBlockId = controlledActiveBlockId !== undefined ? controlledActiveBlockId : internalActiveBlockId;
   const setActiveBlockId = onActiveBlockChange || setInternalActiveBlockId;
   const locale = useLocale();
+  // useOptionalPublicPageRuntime() editör önizlemesinde (Provider yok) null döner — no-op'a düşer.
+  const pageRuntime = useOptionalPublicPageRuntime();
+  const onEngagementClick = useCallback(
+    (eventType: 'contact_click' | 'order_click', channel?: string | null) => {
+      pageRuntime?.recordEngagementClick(eventType, channel);
+    },
+    [pageRuntime]
+  );
 
   // Linktree tiles open the full page (like website mode) scrolled to the tapped section, rather
   // than isolating just that block — so visitors can still scroll up/down to the neighboring
@@ -1154,10 +1168,17 @@ export default function ArchetypeRenderer({
     return finalBlocks;
   }, [blocks, contactMethod, contactValue, contactValues, locale]);
 
-  const onOrderNowClick = useMemo(
+  const rawOrderNowClick = useMemo(
     () => buildOrderNowHandler(orderNowBehavior, contactValues),
     [orderNowBehavior, contactValues]
   );
+  const onOrderNowClick = useMemo(() => {
+    if (!rawOrderNowClick) return null;
+    return (message: string) => {
+      onEngagementClick('order_click', orderNowBehavior || 'saule');
+      rawOrderNowClick(message);
+    };
+  }, [rawOrderNowClick, onEngagementClick, orderNowBehavior]);
 
   const styleVars = useMemo(() => {
     const c = resolveThemeColors(theme);
@@ -1181,7 +1202,7 @@ export default function ArchetypeRenderer({
   const bodyFont = 'tb-body';
   const cardWrap = theme.layoutStyle === 'card-heavy';
   const sectionGapClass = SECTION_GAP_CLASS[theme.layoutStyle] || 'gap-10';
-  const renderCtx: RenderCtx = { locale, radiusClass, headingFont, theme, cardWrap, onOrderNowClick, businessName, activeItemId };
+  const renderCtx: RenderCtx = { locale, radiusClass, headingFont, theme, cardWrap, onOrderNowClick, businessName, activeItemId, onEngagementClick };
 
   const renderBlock = (block: any) => {
     const renderFn = BLOCK_RENDERERS[block.type];

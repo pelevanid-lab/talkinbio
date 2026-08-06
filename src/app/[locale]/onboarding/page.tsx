@@ -17,6 +17,11 @@ type LangPhase = 'offer' | 'picking' | 'translating' | 'done';
 interface StepState {
   status: StepStatus;
   data: any;
+  // Var olan bir blocks satırının id'si — dolu olduğunda handleSave INSERT değil UPDATE yapar.
+  // Bir adıma geri dönüp tekrar "Kaydet"e basmak (jumpToStep her zaman 0. adıma izin verir,
+  // kayıtlı adımlara da izin verir) eskiden HER ZAMAN yeni bir satır ekliyordu — aynı blok
+  // ikinci, üçüncü kez oluşuyordu. blockId bilindiğinde artık üstüne yazılıyor.
+  blockId?: string;
 }
 
 // ─── Yardımcı fonksiyonlar ────────────────────────────────────────────────────
@@ -87,24 +92,58 @@ function buildBlockContent(blockType: string, data: any, locale: string): any {
   }
 }
 
-function hasContent(blockType: string, data: any): boolean {
-  if (!data) return false;
+// buildBlockContent'in tersi — yarım kalmış bir sihirbaza dönüşte var olan bir blok bulunduğunda
+// içeriğini adım formunun beklediği düz (locale'siz) şekle geri çevirir. Eskiden dönüşte
+// `data: {}` set ediliyordu — adım "kayıtlı" görünüyordu ama forma geri dönülünce alanlar
+// bomboş çıkıyordu; kullanıcı doldurup tekrar kaydedince buildBlockContent + handleSave'in eski
+// INSERT-only davranışı aynı bloğu ikinci kez ekliyordu (bkz. StepState.blockId).
+function parseBlockContent(blockType: string, content: any, locale: string): any {
+  if (!content) return {};
   switch (blockType) {
-    case 'header': return !!(data.name?.trim());
-    case 'about':
-    case 'custom':  return !!(data.text?.trim());
     case 'services':
     case 'pricing':
+      return {
+        items: (content.items || []).map((item: any) => ({
+          title: item?.[locale]?.title || '',
+          description: item?.[locale]?.description || '',
+          price: item?.price || '',
+          mediaUrl: item?.mediaUrl || '',
+        })),
+      };
+    case 'about':
+    case 'custom':
+      return { text: content?.[locale]?.text || '' };
     case 'links':
+      return {
+        items: (content.items || []).map((item: any) => ({
+          label: item?.label || '',
+          url: item?.url || '',
+        })),
+      };
     case 'gallery':
+      return {
+        items: (content.items || []).map((item: any) => ({
+          url: item?.url || '',
+          caption: item?.caption?.[locale] || '',
+        })),
+      };
     case 'testimonials':
-    case 'faq':     return Array.isArray(data.items) && data.items.length > 0;
-    case 'contact': {
-      const methods = data.methods || {};
-      const values = data.values || {};
-      return Object.keys(methods).some((k) => methods[k] && values[k]?.trim());
-    }
-    default: return false;
+      return {
+        items: (content.items || []).map((item: any) => ({
+          quote: item?.quote?.[locale] || '',
+          author: item?.author || '',
+          role: item?.role?.[locale] || '',
+        })),
+      };
+    case 'faq':
+      return {
+        items: (content.items || []).map((item: any) => ({
+          question: item?.question?.[locale] || '',
+          answer: item?.answer?.[locale] || '',
+        })),
+      };
+    default:
+      return content;
   }
 }
 
@@ -139,14 +178,72 @@ function HeaderForm({ data, onChange, t }: { data: any; onChange: (d: any) => vo
   );
 }
 
-function ServiceForm({ data, onChange, t, itemLabel }: { data: any; onChange: (d: any) => void; t: any; itemLabel: string }) {
+// ─── Genel liste formu ──────────────────────────────────────────────────────
+// Hizmetler/Paketler, Bağlantılar, Referanslar, SSS adımları neredeyse birebir aynı
+// "kart listesi + ekle/sil" iskeletini kopyalıyordu (~250 satır tekrar). Galeri hariç
+// (2 sütunlu resim ızgarası gerçekten farklı bir görünüm — kendi bileşeninde kalıyor)
+// hepsi tek bir alan-listesi tarifiyle burada üretiliyor.
+type ItemField = {
+  key: string;
+  kind: 'colored' | 'coloredMultiline' | 'text' | 'media';
+  placeholder?: string; // 'media' kind kullanmıyor (MediaUploader kendi metnini alır)
+  label?: React.ReactNode; // yoksa etiketsiz render edilir (örn. testimonials'ın author/role'ü)
+  half?: boolean; // ardışık iki `half` alan aynı satırda yan yana durur
+  bold?: boolean;
+};
+
+function ItemListForm({
+  data, onChange, t, fields, newItem,
+}: { data: any; onChange: (d: any) => void; t: any; fields: ItemField[]; newItem: Record<string, string> }) {
   const items: any[] = data.items || [];
   const update = (idx: number, field: string, val: string) => {
     const next = items.map((it, i) => i === idx ? { ...it, [field]: val } : it);
     onChange({ ...data, items: next });
   };
   const remove = (idx: number) => onChange({ ...data, items: items.filter((_, i) => i !== idx) });
-  const add = () => onChange({ ...data, items: [...items, { title: '', description: '', price: '', mediaUrl: '' }] });
+  const add = () => onChange({ ...data, items: [...items, newItem] });
+
+  const renderField = (item: any, idx: number, f: ItemField) => {
+    const value = item[f.key] || '';
+    const onFieldChange = (v: string) => update(idx, f.key, v);
+    const body = f.kind === 'media' ? (
+      <MediaUploader value={value} onChange={onFieldChange} label={t('fields.uploadLabel')} />
+    ) : f.kind === 'text' ? (
+      <input
+        value={value}
+        onChange={(e) => onFieldChange(e.target.value)}
+        placeholder={f.placeholder}
+        className="w-full px-2.5 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:border-[var(--coral)]"
+      />
+    ) : (
+      <ColoredTextField
+        compact
+        multiline={f.kind === 'coloredMultiline'}
+        value={value}
+        onChange={onFieldChange}
+        placeholder={f.placeholder}
+        className={`w-full px-2.5 py-2 border border-slate-200 rounded focus:outline-none focus:border-[var(--coral)] text-sm ${f.bold ? 'font-medium' : ''} ${f.kind === 'coloredMultiline' ? 'min-h-[60px]' : ''}`}
+      />
+    );
+    if (!f.label) return body;
+    return (
+      <div>
+        <label className="block text-xs font-semibold text-slate-500 mb-1">{f.label}</label>
+        {body}
+      </div>
+    );
+  };
+
+  // `half` alanları çift çift aynı satıra grupla (örn. referansların yazar/unvanı)
+  const rows: ItemField[][] = [];
+  for (let i = 0; i < fields.length; i++) {
+    if (fields[i].half && fields[i + 1]?.half) {
+      rows.push([fields[i], fields[i + 1]]);
+      i++;
+    } else {
+      rows.push([fields[i]]);
+    }
+  }
 
   return (
     <div className="space-y-3">
@@ -155,52 +252,13 @@ function ServiceForm({ data, onChange, t, itemLabel }: { data: any; onChange: (d
           <button onClick={() => remove(idx)} className="absolute top-2 right-2 text-red-400 hover:text-red-600 p-1 rounded">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">{itemLabel}</label>
-            <ColoredTextField
-              compact
-              value={item.title}
-              onChange={(v) => update(idx, 'title', v)}
-              placeholder={t('fields.itemName')}
-              className="w-full px-2.5 py-2 border border-slate-200 rounded focus:outline-none focus:border-[var(--coral)] text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">
-              {t('fields.description')} <span className="font-normal text-slate-400">({t('fields.optional')})</span>
-            </label>
-            <ColoredTextField
-              compact
-              multiline
-              value={item.description}
-              onChange={(v) => update(idx, 'description', v)}
-              placeholder={t('fields.descriptionPlaceholder')}
-              className="w-full px-2.5 py-2 border border-slate-200 rounded focus:outline-none focus:border-[var(--coral)] text-sm min-h-[60px]"
-            />
-          </div>
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label className="block text-xs font-semibold text-slate-500 mb-1">
-                {t('fields.price')} <span className="font-normal text-slate-400">({t('fields.optional')})</span>
-              </label>
-              <input
-                value={item.price}
-                onChange={(e) => update(idx, 'price', e.target.value)}
-                placeholder={t('fields.pricePlaceholder')}
-                className="w-full px-2.5 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:border-[var(--coral)]"
-              />
+          {rows.map((row, rIdx) => row.length === 1 ? (
+            <div key={rIdx}>{renderField(item, idx, row[0])}</div>
+          ) : (
+            <div key={rIdx} className="flex gap-2">
+              {row.map((f) => <div key={f.key} className="flex-1">{renderField(item, idx, f)}</div>)}
             </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">
-              {t('fields.media')} <span className="font-normal text-slate-400">({t('fields.optional')})</span>
-            </label>
-            <MediaUploader
-              value={item.mediaUrl}
-              onChange={(url) => update(idx, 'mediaUrl', url)}
-              label={t('fields.uploadLabel')}
-            />
-          </div>
+          ))}
         </div>
       ))}
       <button
@@ -222,50 +280,6 @@ function TextForm({ data, onChange, t }: { data: any; onChange: (d: any) => void
       placeholder={t('fields.textPlaceholder')}
       className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-[var(--coral)] min-h-[100px]"
     />
-  );
-}
-
-function LinksForm({ data, onChange, t, itemLabel }: { data: any; onChange: (d: any) => void; t: any; itemLabel: string }) {
-  const items: any[] = data.items || [];
-  const update = (idx: number, field: string, val: string) => {
-    const next = items.map((it, i) => i === idx ? { ...it, [field]: val } : it);
-    onChange({ ...data, items: next });
-  };
-  const remove = (idx: number) => onChange({ ...data, items: items.filter((_, i) => i !== idx) });
-  const add = () => onChange({ ...data, items: [...items, { label: '', url: '' }] });
-
-  return (
-    <div className="space-y-2.5">
-      {items.map((item, idx) => (
-        <div key={idx} className="border border-slate-200 rounded-lg p-3 bg-slate-50 space-y-2 relative">
-          <button onClick={() => remove(idx)} className="absolute top-2 right-2 text-red-400 hover:text-red-600 p-1 rounded">
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">{itemLabel}</label>
-            <ColoredTextField
-              compact
-              value={item.label}
-              onChange={(v) => update(idx, 'label', v)}
-              placeholder={t('fields.linkLabel')}
-              className="w-full px-2.5 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:border-[var(--coral)]"
-            />
-          </div>
-          <input
-            value={item.url}
-            onChange={(e) => update(idx, 'url', e.target.value)}
-            placeholder="https://"
-            className="w-full px-2.5 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:border-[var(--coral)]"
-          />
-        </div>
-      ))}
-      <button
-        onClick={add}
-        className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] text-sm font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50"
-      >
-        <Plus className="w-3.5 h-3.5" /> {t('fields.addItem')}
-      </button>
-    </div>
   );
 }
 
@@ -305,99 +319,6 @@ function GalleryForm({ data, onChange, t }: { data: any; onChange: (d: any) => v
           </div>
         ))}
       </div>
-      <button
-        onClick={add}
-        className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] text-sm font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50"
-      >
-        <Plus className="w-3.5 h-3.5" /> {t('fields.addItem')}
-      </button>
-    </div>
-  );
-}
-
-function TestimonialsForm({ data, onChange, t }: { data: any; onChange: (d: any) => void; t: any }) {
-  const items: any[] = data.items || [];
-  const update = (idx: number, field: string, val: string) => {
-    const next = items.map((it, i) => i === idx ? { ...it, [field]: val } : it);
-    onChange({ ...data, items: next });
-  };
-  const remove = (idx: number) => onChange({ ...data, items: items.filter((_, i) => i !== idx) });
-  const add = () => onChange({ ...data, items: [...items, { quote: '', author: '', role: '' }] });
-
-  return (
-    <div className="space-y-3">
-      {items.map((item, idx) => (
-        <div key={idx} className="border border-slate-200 rounded-lg p-3 bg-slate-50 space-y-2.5 relative">
-          <button onClick={() => remove(idx)} className="absolute top-2 right-2 text-red-400 hover:text-red-600 p-1 rounded">
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-          <ColoredTextField
-            compact
-            multiline
-            value={item.quote}
-            onChange={(v) => update(idx, 'quote', v)}
-            placeholder={t('fields.quote')}
-            className="w-full px-2.5 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:border-[var(--coral)] min-h-[60px]"
-          />
-          <div className="flex gap-2">
-            <input
-              value={item.author}
-              onChange={(e) => update(idx, 'author', e.target.value)}
-              placeholder={t('fields.author')}
-              className="flex-1 px-2.5 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:border-[var(--coral)]"
-            />
-            <input
-              value={item.role}
-              onChange={(e) => update(idx, 'role', e.target.value)}
-              placeholder={t('fields.role')}
-              className="flex-1 px-2.5 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:border-[var(--coral)]"
-            />
-          </div>
-        </div>
-      ))}
-      <button
-        onClick={add}
-        className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] text-sm font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50"
-      >
-        <Plus className="w-3.5 h-3.5" /> {t('fields.addItem')}
-      </button>
-    </div>
-  );
-}
-
-function FaqForm({ data, onChange, t }: { data: any; onChange: (d: any) => void; t: any }) {
-  const items: any[] = data.items || [];
-  const update = (idx: number, field: string, val: string) => {
-    const next = items.map((it, i) => i === idx ? { ...it, [field]: val } : it);
-    onChange({ ...data, items: next });
-  };
-  const remove = (idx: number) => onChange({ ...data, items: items.filter((_, i) => i !== idx) });
-  const add = () => onChange({ ...data, items: [...items, { question: '', answer: '' }] });
-
-  return (
-    <div className="space-y-3">
-      {items.map((item, idx) => (
-        <div key={idx} className="border border-slate-200 rounded-lg p-3 bg-slate-50 space-y-2.5 relative">
-          <button onClick={() => remove(idx)} className="absolute top-2 right-2 text-red-400 hover:text-red-600 p-1 rounded">
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-          <ColoredTextField
-            compact
-            value={item.question}
-            onChange={(v) => update(idx, 'question', v)}
-            placeholder={t('fields.question')}
-            className="w-full px-2.5 py-2 border border-slate-200 rounded font-medium text-sm focus:outline-none focus:border-[var(--coral)]"
-          />
-          <ColoredTextField
-            compact
-            multiline
-            value={item.answer}
-            onChange={(v) => update(idx, 'answer', v)}
-            placeholder={t('fields.answer')}
-            className="w-full px-2.5 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:border-[var(--coral)] min-h-[60px]"
-          />
-        </div>
-      ))}
       <button
         onClick={add}
         className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-[var(--teal)] text-sm font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50"
@@ -470,6 +391,11 @@ export default function OnboardingPage() {
   const [stepStates, setStepStates] = useState<Record<string, StepState>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Adım listesi varsayılan olarak kapalı — eskiden her adımda tüm liste açık duruyordu,
+  // tek bir alanı doldurmak için ekranın yarısı bu krom'a gidiyordu (bkz. ilerleme çubuğu +
+  // adım listesi + kart aynı bilgiyi üç kez tekrarlıyordu). İsteyen "Adımlar" satırına
+  // dokunup açabiliyor; jumpToStep davranışı değişmedi.
+  const [stepListOpen, setStepListOpen] = useState(false);
 
   // ── Sihirbaz sonu: hesap oluşturma kapısı (anonim → kalıcı hesap) ─────────
   const [signupEmail, setSignupEmail] = useState('');
@@ -522,7 +448,7 @@ export default function OnboardingPage() {
 
       const { data: biz } = await supabase
         .from('businesses')
-        .select('id, username, setup_completed, category_id, credit_balance')
+        .select('id, username, setup_completed, category_id, credit_balance, name, tagline, contact_method, contact_value')
         .eq('owner_id', user.id)
         .maybeSingle();
 
@@ -532,7 +458,10 @@ export default function OnboardingPage() {
       }
 
       if (biz && !biz.setup_completed) {
-        // Yarım kalmış wizard — mevcut blokları kontrol ederek durumu yükle
+        // Yarım kalmış wizard — mevcut blokları/işletme verisini geri yükleyerek durumu kur.
+        // NOT: sadece "hangi adımlar kayıtlı" değil, o adımların GERÇEK VERİSİ de geri
+        // yükleniyor (bkz. parseBlockContent) — eskiden data: {} set ediliyordu, kullanıcı
+        // geri dönüp forma bakınca alanlar bomboş görünüyordu.
         setBusinessId(biz.id);
         setPreviewUsername(biz.username);
         const cat = biz.category_id ? getCategoryById(biz.category_id) : null;
@@ -540,18 +469,32 @@ export default function OnboardingPage() {
           setSelectedCategory(cat);
           const { data: blocks } = await supabase
             .from('blocks')
-            .select('type, id')
+            .select('type, id, content')
             .eq('business_id', biz.id);
-          const existingTypes = new Set((blocks || []).map((b: any) => b.type));
+          const blocksByType = new Map((blocks || []).map((b: any) => [b.type, b]));
           const initial: Record<string, StepState> = {};
           cat.steps.forEach((step) => {
-            if (step.blockType === 'header' || step.blockType === 'contact') {
-              initial[step.id] = { status: 'saved', data: {} };
+            if (step.blockType === 'header') {
+              // Business satırı var olduğu için header her zaman kayıtlı sayılır — ama verisi
+              // de geri yüklenir, aksi halde geri dönülünce boş görünen isim/slogan alanları
+              // tekrar kaydedilince yeni bir business satırı (bkz. handleSave) oluşturuyordu.
+              initial[step.id] = { status: 'saved', data: { name: biz.name || '', tagline: biz.tagline?.[locale] || biz.tagline?.tr || '' } };
+            } else if (step.blockType === 'contact') {
+              // Eskiden koşulsuz "saved" işaretleniyordu — hiç doldurulmamış olsa bile.
+              const hasContactValue = !!(biz.contact_method && biz.contact_value);
+              let methods: Record<string, boolean> = {};
+              let values: Record<string, string> = {};
+              if (hasContactValue) {
+                const selectedKeys = (biz.contact_method || '').split(',').filter(Boolean);
+                try { values = biz.contact_value ? JSON.parse(biz.contact_value) : {}; } catch { values = {}; }
+                methods = Object.fromEntries(selectedKeys.map((k: string) => [k, true]));
+              }
+              initial[step.id] = { status: hasContactValue ? 'saved' : 'pending', data: { methods, values } };
             } else {
-              initial[step.id] = {
-                status: existingTypes.has(step.blockType) ? 'saved' : 'pending',
-                data: {},
-              };
+              const block = blocksByType.get(step.blockType) as { id: string; content: any } | undefined;
+              initial[step.id] = block
+                ? { status: 'saved', data: parseBlockContent(step.blockType, block.content, locale), blockId: block.id }
+                : { status: 'pending', data: {} };
             }
           });
           setStepStates(initial);
@@ -652,38 +595,54 @@ export default function OnboardingPage() {
     setIsSaving(true);
     setError(null);
 
+    // Blok adımları için: var olan blockId biliniyorsa UPDATE, yoksa INSERT. Yeni bir blok
+    // oluşursa aşağıda güncellenir — böylece "kayıtlı" bir adıma geri dönüp tekrar kaydetmek
+    // artık aynı bloğu ikinci kez eklemek yerine üstüne yazıyor (bkz. StepState.blockId).
+    let savedBlockId = stepStates[step.id]?.blockId;
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Oturum bulunamadı');
 
       if (step.blockType === 'header') {
-        // İşletme oluştur
         const name = (data.name || '').trim();
         if (!name) { setError(t('errors.nameRequired')); setIsSaving(false); return; }
-        const username = generateUsername(name, desiredUsername);
         const tagline = (data.tagline || '').trim();
 
-        const { data: biz, error: bizErr } = await supabase
-          .from('businesses')
-          .insert({
-            owner_id: user.id,
-            username,
-            name,
-            category: t(selectedCategory.labelKey as any) || selectedCategory.id,
-            category_id: selectedCategory.id,
-            ...(tagline ? { tagline: { [locale]: tagline } } : {}),
-            // Hesapsız (anonim) aşamada düşük bir başlangıç kredisi — e-posta bile
-            // istemeyen bir akışta AI maliyeti sınırlı kalsın. Hesap kalıcı hale
-            // gelince (bkz. finishWizardOrGate) 100'e tamamlanır.
-            credit_balance: 20,
-            setup_completed: false,
-          })
-          .select()
-          .single();
+        if (businessId) {
+          // İşletme zaten var (bu adıma geri dönülmüş) — username'e DOKUNULMAZ, zaten
+          // paylaşılmış bir önizleme linki olabilir. Diğer dillerin tagline'ı korunur.
+          const { data: current } = await supabase.from('businesses').select('tagline').eq('id', businessId).single();
+          const mergedTagline = { ...(current?.tagline || {}), ...(tagline ? { [locale]: tagline } : {}) };
+          const { error: updErr } = await supabase
+            .from('businesses')
+            .update({ name, ...(Object.keys(mergedTagline).length ? { tagline: mergedTagline } : {}) })
+            .eq('id', businessId);
+          if (updErr) throw new Error(t('errors.createFailed'));
+        } else {
+          const username = generateUsername(name, desiredUsername);
+          const { data: biz, error: bizErr } = await supabase
+            .from('businesses')
+            .insert({
+              owner_id: user.id,
+              username,
+              name,
+              category: t(selectedCategory.labelKey as any) || selectedCategory.id,
+              category_id: selectedCategory.id,
+              ...(tagline ? { tagline: { [locale]: tagline } } : {}),
+              // Hesapsız (anonim) aşamada düşük bir başlangıç kredisi — e-posta bile
+              // istemeyen bir akışta AI maliyeti sınırlı kalsın. Hesap kalıcı hale
+              // gelince (bkz. finishWizardOrGate) 100'e tamamlanır.
+              credit_balance: 20,
+              setup_completed: false,
+            })
+            .select()
+            .single();
 
-        if (bizErr || !biz) throw new Error(t('errors.createFailed'));
-        setBusinessId(biz.id);
-        setPreviewUsername(biz.username);
+          if (bizErr || !biz) throw new Error(t('errors.createFailed'));
+          setBusinessId(biz.id);
+          setPreviewUsername(biz.username);
+        }
 
       } else if (step.blockType === 'contact') {
         // İletişim bilgisini işletmeye yaz
@@ -696,7 +655,11 @@ export default function OnboardingPage() {
           setIsSaving(false);
           return;
         }
-        const contactMethod = selected[0] || '';
+        // NOT: contact_method TÜM seçilen kanalların virgülle ayrılmış listesi olmalı (bkz.
+        // ArchetypeRenderer/semantic-query'nin .split(',') beklentisi) — eskiden yalnızca
+        // selected[0] yazılıyordu, birden fazla kanal seçilince ilki dışındakiler public
+        // sayfada hiç görünmüyordu (contact_value'daki veri sessizce ölü kalıyordu).
+        const contactMethod = selected.join(',');
         const contactValue = JSON.stringify(
           selected.reduce((acc, m) => ({ ...acc, [m]: values[m] }), {} as Record<string, string>)
         );
@@ -706,24 +669,39 @@ export default function OnboardingPage() {
           .eq('id', businessId);
 
       } else {
-        // Blok oluştur
+        // Blok oluştur veya (blockId biliniyorsa) var olanı güncelle
         if (!businessId) throw new Error('İşletme kimliği bulunamadı');
         const content = buildBlockContent(step.blockType, data, locale);
         const label = t(step.labelKey as any);
-        await supabase.from('blocks').insert({
-          business_id: businessId,
-          type: step.blockType,
-          title: label,
-          content,
-          order: currentStepIdx,
-          is_visible: true,
-        });
+
+        if (savedBlockId) {
+          const { error: updErr } = await supabase
+            .from('blocks')
+            .update({ content, title: label })
+            .eq('id', savedBlockId);
+          if (updErr) throw new Error(t('errors.generic'));
+        } else {
+          const { data: newBlock, error: insErr } = await supabase
+            .from('blocks')
+            .insert({
+              business_id: businessId,
+              type: step.blockType,
+              title: label,
+              content,
+              order: currentStepIdx,
+              is_visible: true,
+            })
+            .select('id')
+            .single();
+          if (insErr) throw new Error(t('errors.generic'));
+          savedBlockId = newBlock?.id;
+        }
       }
 
       // Adımı kayıtlı işaretle ve ilerle
       setStepStates((prev) => ({
         ...prev,
-        [step.id]: { ...prev[step.id], status: 'saved' },
+        [step.id]: { ...prev[step.id], status: 'saved', blockId: savedBlockId },
       }));
       await advance();
     } catch (e: any) {
@@ -1097,16 +1075,61 @@ export default function OnboardingPage() {
     const onChange = (d: any) => updateStepData(currentStep.id, d);
     const itemLabel = currentStep.itemLabelKey ? t(currentStep.itemLabelKey as any) : t('fields.item');
 
+    const optionalSuffix = <span className="font-normal text-slate-400">({t('fields.optional')})</span>;
+
     switch (currentStep.blockType) {
       case 'header':       return <HeaderForm data={data} onChange={onChange} t={t} />;
       case 'services':
-      case 'pricing':       return <ServiceForm data={data} onChange={onChange} t={t} itemLabel={itemLabel} />;
+      case 'pricing':
+        return (
+          <ItemListForm
+            data={data} onChange={onChange} t={t}
+            newItem={{ title: '', description: '', price: '', mediaUrl: '' }}
+            fields={[
+              { key: 'title', kind: 'colored', placeholder: t('fields.itemName'), label: itemLabel },
+              { key: 'description', kind: 'coloredMultiline', placeholder: t('fields.descriptionPlaceholder'), label: <>{t('fields.description')} {optionalSuffix}</> },
+              { key: 'price', kind: 'text', placeholder: t('fields.pricePlaceholder'), label: <>{t('fields.price')} {optionalSuffix}</> },
+              { key: 'mediaUrl', kind: 'media', label: <>{t('fields.media')} {optionalSuffix}</> },
+            ]}
+          />
+        );
       case 'about':
       case 'custom':       return <TextForm data={data} onChange={onChange} t={t} />;
-      case 'links':        return <LinksForm data={data} onChange={onChange} t={t} itemLabel={itemLabel} />;
+      case 'links':
+        return (
+          <ItemListForm
+            data={data} onChange={onChange} t={t}
+            newItem={{ label: '', url: '' }}
+            fields={[
+              { key: 'label', kind: 'colored', placeholder: t('fields.linkLabel'), label: itemLabel },
+              { key: 'url', kind: 'text', placeholder: 'https://' },
+            ]}
+          />
+        );
       case 'gallery':      return <GalleryForm data={data} onChange={onChange} t={t} />;
-      case 'testimonials': return <TestimonialsForm data={data} onChange={onChange} t={t} />;
-      case 'faq':          return <FaqForm data={data} onChange={onChange} t={t} />;
+      case 'testimonials':
+        return (
+          <ItemListForm
+            data={data} onChange={onChange} t={t}
+            newItem={{ quote: '', author: '', role: '' }}
+            fields={[
+              { key: 'quote', kind: 'coloredMultiline', placeholder: t('fields.quote') },
+              { key: 'author', kind: 'text', placeholder: t('fields.author'), half: true },
+              { key: 'role', kind: 'text', placeholder: t('fields.role'), half: true },
+            ]}
+          />
+        );
+      case 'faq':
+        return (
+          <ItemListForm
+            data={data} onChange={onChange} t={t}
+            newItem={{ question: '', answer: '' }}
+            fields={[
+              { key: 'question', kind: 'colored', placeholder: t('fields.question'), bold: true },
+              { key: 'answer', kind: 'coloredMultiline', placeholder: t('fields.answer') },
+            ]}
+          />
+        );
       case 'contact':      return <ContactForm data={data} onChange={onChange} t={t} />;
       default:             return null;
     }
@@ -1118,7 +1141,7 @@ export default function OnboardingPage() {
 
         {/* ── Üst çubuk ── */}
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-4 shadow-sm">
-          <div className="p-4 pb-3 border-b border-slate-100">
+          <div className="p-4 pb-3">
             <div className="flex items-baseline justify-between mb-2">
               <span className="text-sm font-bold text-[var(--ink)]">{t('setupTitle')}</span>
               <span className="text-xs text-slate-400 tabular-nums">{savedCount} / {totalSteps}</span>
@@ -1149,8 +1172,19 @@ export default function OnboardingPage() {
             </div>
           </div>
 
+          {/* Adım listesi varsayılan kapalı — bkz. stepListOpen tanımı. Kapalıyken bile
+              hangi adımda olunduğu üstteki "x/y" sayacı ve ilerleme çubuğuyla zaten belli. */}
+          <button
+            type="button"
+            onClick={() => setStepListOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-4 py-2 border-t border-slate-100 text-xs font-semibold text-slate-500 hover:bg-slate-50 transition"
+          >
+            {t('stepListToggle')}
+            <ChevronRight className={`w-3.5 h-3.5 transition-transform ${stepListOpen ? 'rotate-90' : ''}`} />
+          </button>
+
           {/* ── Adım listesi ── */}
-          <div className="divide-y divide-slate-100">
+          <div className={`divide-y divide-slate-100 border-t border-slate-100 ${stepListOpen ? '' : 'hidden'}`}>
             {steps.map((step, idx) => {
               const state = stepStates[step.id];
               const isActive = idx === currentStepIdx;
