@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, Tag, X, Check, AlertCircle, MessageSquare, Phone, Mail, ArrowLeft } from 'lucide-react';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Theme, resolveThemeColors } from '@/config/archetypes';
 import { iconForLinkUrl } from '@/utils/linkIcon';
 import { renderColoredSegments } from '@/utils/coloredText';
@@ -61,6 +62,7 @@ export default function ProfileHeader({
 }) {
   const c = resolveThemeColors(theme);
   const initial = (name || '?').trim().charAt(0).toUpperCase();
+  const t = useTranslations('PublicPage');
 
   const pageRuntime = useOptionalPublicPageRuntime();
   const sauleActive = pageRuntime?.sauleActive ?? false;
@@ -75,16 +77,9 @@ export default function ProfileHeader({
   const activeLocale = (params?.locale as 'tr' | 'en' | 'ru') || 'tr';
 
   const handleResetToGreeting = () => {
-    if (pageRuntime) {
-      pageRuntime.setSauleQuestion('');
-      pageRuntime.setQueryTrigger(null);
-      pageRuntime.setSauleSuggestions([]);
-      pageRuntime.setSauleMatchedBlock(null);
-      const greetingText = pageRuntime.customGreeting?.[activeLocale] || pageRuntime.customGreeting?.tr || 'Hoşgeldiniz, size nasıl yardımcı olabilirim?';
-      pageRuntime.setSauleText(greetingText);
-      pageRuntime.setSauleState('idle');
-      pageRuntime.triggerGlitch();
-    }
+    if (!pageRuntime) return;
+    const greetingText = pageRuntime.customGreeting?.[activeLocale] || t('greetingFallback');
+    pageRuntime.resetToGreeting(greetingText);
   };
 
   const [isGlitching, setIsGlitching] = useState(false);
@@ -121,7 +116,7 @@ export default function ProfileHeader({
       if (!res.ok) throw new Error();
       setLeadSubmitted(true);
     } catch {
-      setLeadError('Bir hata oluştu, lütfen daha sonra tekrar deneyin.');
+      setLeadError(t('leadForm.error'));
     } finally {
       setLeadSubmitting(false);
     }
@@ -165,6 +160,32 @@ export default function ProfileHeader({
       {/* Tek yatay bant: sol = talkinbio wordmark · orta = avatar / Saule bubble · sağ = topRight */}
       <div className="flex flex-col items-center text-center">
         <div className="relative w-full flex justify-center min-h-[144px]">
+          {/* Holografik/dijital glitch efekti — avatar ve Saule balonu arasındaki geçişte
+              ikisi de kullanıyor; tek stil burada (avatar↔balon geçişinde yeniden monte
+              edilip parse edilmemesi için AnimatePresence dışında, koşulsuz). */}
+          <style>{`
+            @keyframes holo-glitch {
+              0% { transform: translate(0) skew(0deg); filter: hue-rotate(0deg) saturate(1.2); }
+              15% { transform: translate(-2px, 1px) skew(-3deg); filter: hue-rotate(45deg) contrast(1.2); }
+              30% { transform: translate(1px, -1px) skew(1deg); filter: hue-rotate(90deg) saturate(1.5); }
+              45% { transform: translate(-1px, 2px) skew(-1deg); filter: none; }
+              60% { transform: translate(2px, -2px) skew(2deg); filter: hue-rotate(-45deg); }
+              75% { transform: translate(0) skew(0deg); filter: none; }
+            }
+            .holo-glitch-active {
+              animation: holo-glitch 0.4s ease-in-out;
+              position: relative;
+            }
+            .holo-glitch-active::before {
+              content: '';
+              position: absolute;
+              inset: 0;
+              background: repeating-linear-gradient(0deg, rgba(56, 249, 215, 0.1), rgba(56, 249, 215, 0.1) 1px, transparent 1px, transparent 3px);
+              pointer-events: none;
+              z-index: 10;
+              border-radius: inherit;
+            }
+          `}</style>
           {/* Sol slot — avatar üst kenarına hizalı */}
           <div className="absolute left-0 top-0 flex items-center gap-2" style={{ color: c.text, zIndex: 30 }}>
             {topLeft}
@@ -193,30 +214,6 @@ export default function ProfileHeader({
                 className={`w-36 h-36 rounded-full overflow-hidden flex items-center justify-center shrink-0 border ${isGlitching ? 'holo-glitch-active' : ''}`}
                 style={{ backgroundColor: c.surface, borderColor: c.border }}
               >
-                {/* Holographic / digital glitch effect styling */}
-                <style>{`
-                  @keyframes holo-glitch {
-                    0% { transform: translate(0) skew(0deg); filter: hue-rotate(0deg) saturate(1.2); }
-                    15% { transform: translate(-2px, 1px) skew(-3deg); filter: hue-rotate(45deg) contrast(1.2); }
-                    30% { transform: translate(1px, -1px) skew(1deg); filter: hue-rotate(90deg) saturate(1.5); }
-                    45% { transform: translate(-1px, 2px) skew(-1deg); filter: none; }
-                    60% { transform: translate(2px, -2px) skew(2deg); filter: hue-rotate(-45deg); }
-                    75% { transform: translate(0) skew(0deg); filter: none; }
-                  }
-                  .holo-glitch-active {
-                    animation: holo-glitch 0.4s ease-in-out;
-                    position: relative;
-                  }
-                  .holo-glitch-active::before {
-                    content: '';
-                    position: absolute;
-                    inset: 0;
-                    background: repeating-linear-gradient(0deg, rgba(56, 249, 215, 0.12), rgba(56, 249, 215, 0.12) 1px, transparent 1px, transparent 3px);
-                    pointer-events: none;
-                    z-index: 10;
-                    border-radius: inherit;
-                  }
-                `}</style>
                 {name.toLowerCase().includes('talkinbio') ? (
                   <SauleIcon size={144} className="w-full h-full" />
                 ) : avatarUrl ? (
@@ -244,36 +241,11 @@ export default function ProfileHeader({
                     type="button"
                     onClick={handleResetToGreeting}
                     className="absolute left-3 top-3 p-1.5 rounded-full hover:bg-[rgba(20,35,31,0.05)] text-[var(--ink-soft)] hover:text-[var(--ink)] transition-colors z-20"
-                    aria-label="Geri Dön"
+                    aria-label={t('backAriaLabel')}
                   >
                     <ArrowLeft className="w-4 h-4" />
                   </button>
                 )}
-
-                {/* Style for technological scanlines and chromatic aberration glitch */}
-                <style>{`
-                  @keyframes holo-glitch {
-                    0% { transform: translate(0) skew(0deg); filter: hue-rotate(0deg) saturate(1.1); }
-                    15% { transform: translate(-2px, 1px) skew(-2deg); filter: hue-rotate(15deg) contrast(1.1); }
-                    30% { transform: translate(1px, -1px) skew(1deg); filter: hue-rotate(30deg) saturate(1.3); }
-                    45% { transform: translate(-1px, 1px) skew(-1deg); filter: none; }
-                    60% { transform: translate(2px, -1px) skew(1deg); filter: hue-rotate(-15deg); }
-                    75% { transform: translate(0) skew(0deg); filter: none; }
-                  }
-                  .holo-glitch-active {
-                    animation: holo-glitch 0.4s ease-in-out;
-                    position: relative;
-                  }
-                  .holo-glitch-active::before {
-                    content: '';
-                    position: absolute;
-                    inset: 0;
-                    background: repeating-linear-gradient(0deg, rgba(56, 249, 215, 0.06), rgba(56, 249, 215, 0.06) 1px, transparent 1px, transparent 3px);
-                    pointer-events: none;
-                    z-index: 10;
-                    border-radius: inherit;
-                  }
-                `}</style>
 
                 {/* Sub-form and Response Renderers */}
                 {sauleState === 'lead_form' && !leadSubmitted ? (
@@ -282,7 +254,7 @@ export default function ProfileHeader({
                     <div className="w-full">
                       <input
                         type="text"
-                        placeholder="Adınız"
+                        placeholder={t('leadForm.namePlaceholder')}
                         value={leadName}
                         onChange={(e) => setLeadName(e.target.value)}
                         required
@@ -292,7 +264,7 @@ export default function ProfileHeader({
                     <div className="w-full">
                       <input
                         type="text"
-                        placeholder="Telefon veya E-posta"
+                        placeholder={t('leadForm.contactPlaceholder')}
                         value={leadContact}
                         onChange={(e) => setLeadContact(e.target.value)}
                         required
@@ -310,7 +282,7 @@ export default function ProfileHeader({
                       disabled={leadSubmitting}
                       className="w-full py-1.5 rounded-full bg-[#FF6A5C] text-white text-xs font-semibold hover:opacity-95 transition-opacity flex items-center justify-center gap-1 shadow-sm"
                     >
-                      {leadSubmitting ? 'Gönderiliyor...' : 'Bilgilerimi İlet'}
+                      {leadSubmitting ? t('leadForm.submitting') : t('leadForm.submitBtn')}
                     </button>
                   </form>
                 ) : leadSubmitted ? (
@@ -318,9 +290,9 @@ export default function ProfileHeader({
                     <div className="w-8 h-8 rounded-full bg-[#FFEDE9] border border-[#FF6A5C] flex items-center justify-center text-[#FF6A5C]">
                       <Check className="w-4 h-4" />
                     </div>
-                    <p className="text-sm font-semibold text-[var(--ink)]">Talebiniz Alındı!</p>
+                    <p className="text-sm font-semibold text-[var(--ink)]">{t('leadForm.successTitle')}</p>
                     <p className="text-xs text-[var(--ink-soft)] leading-normal font-medium">
-                      Size en kısa sürede geri dönüş sağlayacağız. Teşekkürler!
+                      {t('leadForm.successBody')}
                     </p>
                   </div>
                 ) : (
@@ -328,7 +300,7 @@ export default function ProfileHeader({
                     {sauleQuestion && (
                       <div className="flex flex-col items-center gap-1 mb-1 select-none">
                         <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--teal)] font-bold">
-                          Sorunuz
+                          {t('yourQuestion')}
                         </span>
                         <div className="px-4 py-1.5 bg-[#FFEDE9] text-[#FF6A5C] text-xs font-semibold rounded-full border border-[#FF6A5C]/20 shadow-sm max-w-xs text-center leading-normal">
                           “{sauleQuestion}”
@@ -359,7 +331,7 @@ export default function ProfileHeader({
                     {sauleSuggestions.length > 0 && (
                       <div className="mt-3 w-full max-w-xs select-none">
                         <div className="text-[9px] font-mono uppercase tracking-wider text-[var(--ink-soft)] font-bold mb-2">
-                          İlgili diğer sorular
+                          {t('relatedQuestions')}
                         </div>
                         <div className="flex flex-col gap-1.5 w-full">
                           {sauleSuggestions.map((suggestion, idx) => (
@@ -386,21 +358,21 @@ export default function ProfileHeader({
                             rel="noreferrer"
                             className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-full text-xs font-semibold shadow-sm transition"
                           >
-                            <MessageSquare className="w-3.5 h-3.5 fill-white" /> WhatsApp ile Sor
+                            <MessageSquare className="w-3.5 h-3.5 fill-white" /> {t('whatsappCta')}
                           </a>
                         ) : pageRuntime.contactMethod === 'phone' ? (
                           <a
                             href={`tel:${pageRuntime.contactValue}`}
                             className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#FF6A5C] hover:opacity-95 text-white rounded-full text-xs font-semibold shadow-sm transition"
                           >
-                            <Phone className="w-3.5 h-3.5 fill-white" /> Hemen Ara
+                            <Phone className="w-3.5 h-3.5 fill-white" /> {t('callCta')}
                           </a>
                         ) : (
                           <a
                             href={`mailto:${pageRuntime.contactValue}`}
                             className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2B6F5C] hover:opacity-95 text-white rounded-full text-xs font-semibold shadow-sm transition"
                           >
-                            <Mail className="w-3.5 h-3.5" /> E-posta Gönder
+                            <Mail className="w-3.5 h-3.5" /> {t('emailCta')}
                           </a>
                         )}
                       </div>

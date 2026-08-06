@@ -1,78 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { Send, Mic, Square, Loader2 } from 'lucide-react';
 import { useOptionalPublicPageRuntime } from './PublicPageRuntime';
 
 type LocalizedGreeting = Partial<Record<'tr' | 'en' | 'ru', string>>;
-
-const translations = {
-  tr: {
-    matchingBlock: 'İlgili bölümü açıyorum:\n\n✨ {title}',
-    matchingFAQ: 'Cevabınızı ilgili bölümde buldum:\n\n💬 {title}\n\n📝 {answer}',
-    noMatchLead: 'Aradığınız konuyu doğrudan sayfa üzerinde bulamadım. Ancak bana bilgilerinizi iletirseniz size en kısa sürede geri dönüş sağlayabiliriz:',
-    noMatchContact: 'Aradığınız konuyu bulamadım. Detaylı bilgi almak için bizimle doğrudan iletişime geçebilirsiniz:',
-    noMatchFallback: 'Aradığınız konuyu şu anda bulamadım. Lütfen sayfa üzerindeki diğer bölümleri inceleyin.',
-    listening: 'Dinliyorum...',
-    placeholder: 'Bir mesaj yazın...',
-    welcomeFallback: 'Hoşgeldiniz, size nasıl yardımcı olabilirim?',
-  },
-  en: {
-    matchingBlock: 'Opening the relevant section:\n\n✨ {title}',
-    matchingFAQ: 'I found the answer you were looking for:\n\n💬 {title}\n\n📝 {answer}',
-    noMatchLead: 'I could not find the exact topic on the page. However, if you leave your contact details, we will get back to you as soon as possible:',
-    noMatchContact: 'I could not find the topic. For detailed information, you can contact us directly:',
-    noMatchFallback: 'I could not find what you are looking for at the moment. Please explore other sections of the page.',
-    listening: 'Listening...',
-    placeholder: 'Write a message...',
-    welcomeFallback: 'Welcome, how can I help you?',
-  },
-  ru: {
-    matchingBlock: 'Открываю соответствующий раздел:\n\n✨ {title}',
-    matchingFAQ: 'Я нашел ответ на ваш вопрос:\n\n💬 {title}\n\n📝 {answer}',
-    noMatchLead: 'Я не смог найти эту тему на странице. Однако, если вы оставите свои контактные данные, мы свяжемся с вами в ближайшее время:',
-    noMatchContact: 'Я не смог найти тему. Для получения подробной информации вы можете связаться с нами напрямую:',
-    noMatchFallback: 'В настоящее время я не могу найти то, что вы ищете. Пожалуйста, изучите другие разделы страницы.',
-    listening: 'Слушаю...',
-    placeholder: 'Напишите сообщение...',
-    welcomeFallback: 'Добро пожаловать, чем я могу вам помочь?',
-  }
-};
-
-const EXPLICIT_CHANNELS_KEYWORDS = {
-  whatsapp: {
-    tr: ['whatsapp', 'whatsapp numarasi', 'whatsapptan nasil ulasirim', 'whatsapp var mi', 'whatsapp iletisim', 'telefon ve whatsapp', 'whatsapp numarası'],
-    en: ['whatsapp', 'whatsapp number', 'how to reach on whatsapp', 'do you have whatsapp', 'whatsapp contact'],
-    ru: ['whatsapp', 'ватсап', 'номер ватсап', 'как связаться через ватсап', 'есть ли ватсап', 'контакт ватсап']
-  },
-  telegram: {
-    tr: ['telegram', 'telegram adresi', 'telegram iletisim'],
-    en: ['telegram', 'telegram contact', 'telegram address'],
-    ru: ['телеграм', 'telegram', 'контакт телеграм']
-  },
-  email: {
-    tr: ['email', 'e-posta', 'e-posta adresi', 'eposta', 'mail', 'mail adresi', 'e-mail'],
-    en: ['email', 'e-mail', 'email address', 'mail'],
-    ru: ['почта', 'email', 'электронная почта', 'емейл']
-  },
-  phone: {
-    tr: ['telefon', 'telefon numarasi', 'ara', 'arama', 'numara', 'cep', 'gsm'],
-    en: ['phone', 'phone number', 'call', 'number', 'mobile'],
-    ru: ['телефон', 'номер телефона', 'позвонить', 'номер', 'мобильный']
-  },
-  instagram: {
-    tr: ['instagram', 'instagram adresi', 'instagram hesabi', 'insta'],
-    en: ['instagram', 'instagram address', 'instagram account', 'insta'],
-    ru: ['инстаграм', 'инста', 'instagram']
-  }
-};
-
-const GENERIC_CONTACT_KEYWORDS = {
-  tr: ['iletisim', 'ulasim', 'ulas', 'bize ulas', 'nasil ulasabilirim', 'irtibat', 'iletisime gec', 'bana yaz', 'ulasmak', 'nasıl ulaşırım'],
-  en: ['contact', 'reach', 'how to reach', 'get in touch', 'how can i contact', 'contact info'],
-  ru: ['контакт', 'контакты', 'связь', 'связаться', 'как связаться', 'напишите', 'связи']
-};
 
 function normalizeString(str: string): string {
   return str
@@ -88,9 +21,8 @@ function normalizeString(str: string): string {
 
 // Local lightweight fallback lexical matching loop in case API endpoint fails
 function findMatchingBlockFallback(
-  query: string, 
-  blocks: any[], 
-  knowledge: any[],
+  query: string,
+  blocks: any[],
   locale: 'tr' | 'en' | 'ru'
 ): { blockId?: string; itemId?: string; title: string; answer?: string } | null {
   const q = normalizeString(query);
@@ -106,25 +38,20 @@ function findMatchingBlockFallback(
 
 export default function ChatWidget({
   businessId,
-  businessName,
   locale,
-  initialMessages = [],
   customGreeting,
   sauleSettings,
   variant = 'sheet',
   preview = false,
-  initialCreditsExhausted = false,
 }: {
   businessId: string;
-  businessName: string;
   locale: string;
-  initialMessages?: any[];
   customGreeting?: LocalizedGreeting | null;
   sauleSettings?: any;
   variant?: 'sheet' | 'inline';
   preview?: boolean;
-  initialCreditsExhausted?: boolean;
 }) {
+  const t = useTranslations('PublicPage');
   const [input, setInput] = useState('');
   const [isQuerying, setIsQuerying] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -132,7 +59,6 @@ export default function ChatWidget({
   const welcomeTimerRef = useRef<any>(null);
 
   const activeLocale = (locale === 'en' || locale === 'ru' ? locale : 'tr') as 'tr' | 'en' | 'ru';
-  const loc = translations[activeLocale];
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
@@ -151,7 +77,7 @@ export default function ChatWidget({
 
     welcomeTimerRef.current = setTimeout(() => {
       if (welcomeFiredRef.current) return;
-      const greetingText = customGreeting?.[activeLocale] || loc.welcomeFallback;
+      const greetingText = customGreeting?.[activeLocale] || t('greetingFallback');
       pageRuntime?.setSauleText(greetingText);
       pageRuntime?.setSauleState('idle');
       pageRuntime?.setSauleActive(true);
@@ -163,7 +89,8 @@ export default function ChatWidget({
         clearTimeout(welcomeTimerRef.current);
       }
     };
-  }, [customGreeting, activeLocale, pageRuntime, loc.welcomeFallback]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customGreeting, activeLocale, pageRuntime]);
   
   // Watch and trigger external queries (such as suggested questions in the header)
   useEffect(() => {
@@ -220,35 +147,30 @@ export default function ChatWidget({
       } else {
         // Fallback
         if (pageRuntime?.leadCaptureEnabled) {
-          pageRuntime?.setSauleText(data.text || loc.noMatchLead);
+          pageRuntime?.setSauleText(data.text || t('noMatchLead'));
           pageRuntime?.setSauleState('lead_form');
         } else if (pageRuntime?.contactValue) {
-          pageRuntime?.setSauleText(data.text || loc.noMatchContact);
+          pageRuntime?.setSauleText(data.text || t('noMatchContact'));
           pageRuntime?.setSauleState('response');
         } else {
-          pageRuntime?.setSauleText(data.text || loc.noMatchFallback);
+          pageRuntime?.setSauleText(data.text || t('noMatchFallback'));
           pageRuntime?.setSauleState('idle');
         }
       }
     } catch (err) {
       console.error('Semantic query processing failed, running local fallback:', err);
-      
+
       // Local fallback lexical match if the backend is down / fails
-      const fallbackMatch = findMatchingBlockFallback(
-        query,
-        pageRuntime?.blocks || [],
-        pageRuntime?.knowledge || [],
-        activeLocale
-      );
+      const fallbackMatch = findMatchingBlockFallback(query, pageRuntime?.blocks || [], activeLocale);
 
       if (fallbackMatch) {
-        pageRuntime?.setSauleText(loc.matchingBlock.replace('{title}', fallbackMatch.title));
+        pageRuntime?.setSauleText(t('matchingBlock', { title: fallbackMatch.title }));
         pageRuntime?.setSauleState('idle');
         if (fallbackMatch.blockId) {
           pageRuntime?.openBlock(fallbackMatch.blockId, fallbackMatch.itemId);
         }
       } else {
-        pageRuntime?.setSauleText(loc.noMatchFallback);
+        pageRuntime?.setSauleText(t('noMatchFallback'));
         pageRuntime?.setSauleState('idle');
       }
     } finally {
@@ -320,7 +242,7 @@ export default function ChatWidget({
       }
     } catch (err) {
       console.error('Mic access denied:', err);
-      alert('Mikrofon erişimi izni gerekli.');
+      alert(t('mic.permissionDenied'));
     }
   };
 
@@ -377,7 +299,7 @@ export default function ChatWidget({
                 ? 'bg-amber-100 text-amber-600'
                 : 'bg-[var(--paper)] text-[var(--ink-soft)] hover:bg-[var(--coral-tint)] hover:text-[var(--coral)]'
             }`}
-            title="Mikrofon (Basılı Tut ve Konuş)"
+            title={t('mic.tooltip')}
           >
             {isTranscribing ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -399,7 +321,7 @@ export default function ChatWidget({
                 e.currentTarget.form?.requestSubmit();
               }
             }}
-            placeholder={isRecording ? loc.listening : loc.placeholder}
+            placeholder={isRecording ? t('listening') : t('chatPlaceholder')}
             disabled={isRecording || isTranscribing}
             rows={1}
             style={{ height: '46px' }}

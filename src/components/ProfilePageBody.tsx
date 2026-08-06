@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import ArchetypeRenderer from './ArchetypeRenderer';
 import ProfileHeader from './ProfileHeader';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -71,6 +71,7 @@ type LocalizedText = Partial<Record<'tr' | 'en' | 'ru', string>> | null;
 // Owns activeBlockId so the "back" control can live in the same header (ProfileHeader) as the
 // avatar/name/language switcher instead of floating inside the scrollable block content below.
 export default function ProfilePageBody({ blocks, theme, businessName, pageTitle, tagline, category, contactMethod, contactValue, orderNowBehavior, locale }: { blocks: any[], theme?: Theme | null, businessName: string, pageTitle: string, tagline?: LocalizedText, category?: string | null, contactMethod?: string | null, contactValue?: string | null, orderNowBehavior?: string | null, locale: 'tr' | 'en' | 'ru' }) {
+  const t = useTranslations('PublicPage');
   const [localActiveBlockId, setLocalActiveBlockId] = useState<string | null>(null);
   const pageRuntime = useOptionalPublicPageRuntime();
   const activeBlockId = pageRuntime?.activeBlockId ?? localActiveBlockId;
@@ -91,12 +92,14 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
 
   const minimalHeader = activeBlockId != null;
 
-  const filteredBlocks = useMemo(() => {
-    if (!pageRuntime?.sauleQuestion) return blocks;
-    const matchedBlockId = pageRuntime?.sauleMatchedBlock?.blockId;
+  // Saule bir soruya eşleşen tek bir bloğu vurgulamak istediğinde gösterilecek alt küme.
+  // Eşleşme yoksa (fallback/no-match) `matchedBlockId` boş kalır ve aşağıda normal tam
+  // blok listesine düşülür — sayfa asla boş kalmaz (bkz. render, "matchedBlockId" dalı).
+  const matchedBlockId = pageRuntime?.sauleMatchedBlock?.blockId;
+  const matchedBlocks = useMemo(() => {
     if (!matchedBlockId) return [];
     return blocks.filter((b) => b.id === matchedBlockId || b.type === matchedBlockId);
-  }, [blocks, pageRuntime?.sauleQuestion, pageRuntime?.sauleMatchedBlock?.blockId]);
+  }, [blocks, matchedBlockId]);
 
   return (
     <>
@@ -115,50 +118,41 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
         />
       </div>
 
-      {pageRuntime?.sauleQuestion ? (
-        pageRuntime?.sauleMatchedBlock?.blockId && (
-          <div 
-            onClick={() => {
-              const targetBlockId = pageRuntime.sauleMatchedBlock!.blockId;
-              const targetItemId = pageRuntime.sauleMatchedBlock!.itemId;
-              
-              // Clear active question/chat state
-              pageRuntime.setSauleQuestion('');
-              pageRuntime.setQueryTrigger(null);
-              pageRuntime.setSauleSuggestions([]);
-              pageRuntime.setSauleMatchedBlock(null);
-              const greetingText = pageRuntime.customGreeting?.[locale] || pageRuntime.customGreeting?.tr || 'Hoşgeldiniz, size nasıl yardımcı olabilirim?';
-              pageRuntime.setSauleText(greetingText);
-              pageRuntime.setSauleState('idle');
-              pageRuntime.triggerGlitch();
-              
-              // Transition to full-page website view focused on the block
-              pageRuntime.openBlock(targetBlockId, targetItemId);
-            }}
-            className="w-full mt-5 border border-dashed border-[rgba(20,35,31,0.12)] hover:border-[#FF6A5C]/40 hover:shadow-md rounded-[20px] overflow-hidden cursor-pointer transition duration-300 relative group bg-white"
-          >
-            {/* Elegant pill indicator explaining click interaction to transition */}
-            <div className="absolute top-3.5 right-4.5 z-10 px-2.5 py-1 rounded-full bg-[#FF6A5C] text-white text-[9px] font-mono font-bold tracking-wide uppercase shadow-sm opacity-80 group-hover:opacity-100 group-hover:scale-105 transition duration-200 select-none">
-              Tam Sayfada Gör ↗
-            </div>
-            
-            <div className="pointer-events-none p-1">
-              <ArchetypeRenderer
-                blocks={filteredBlocks}
-                theme={resolvedTheme}
-                businessName={businessName}
-                activeBlockId={pageRuntime.sauleMatchedBlock.blockId}
-                activeItemId={pageRuntime.sauleMatchedBlock.itemId ?? null}
-                activeOpenSequence={pageRuntime.openSequence ?? 0}
-                onActiveBlockChange={() => {}}
-                contactMethod={contactMethod}
-                contactValue={contactValue}
-                orderNowBehavior={orderNowBehavior}
-              />
-            </div>
+      {matchedBlockId ? (
+        <div
+          onClick={() => {
+            const targetBlockId = pageRuntime!.sauleMatchedBlock!.blockId;
+            const targetItemId = pageRuntime!.sauleMatchedBlock!.itemId;
+            const greetingText = pageRuntime!.customGreeting?.[locale] || t('greetingFallback');
+            pageRuntime!.resetToGreeting(greetingText);
+            // Transition to full-page website view focused on the block
+            pageRuntime!.openBlock(targetBlockId, targetItemId);
+          }}
+          className="w-full mt-5 border border-dashed border-[rgba(20,35,31,0.12)] hover:border-[#FF6A5C]/40 hover:shadow-md rounded-[20px] overflow-hidden cursor-pointer transition duration-300 relative group bg-white"
+        >
+          {/* Elegant pill indicator explaining click interaction to transition */}
+          <div className="absolute top-3.5 right-4.5 z-10 px-2.5 py-1 rounded-full bg-[#FF6A5C] text-white text-[9px] font-mono font-bold tracking-wide uppercase shadow-sm opacity-80 group-hover:opacity-100 group-hover:scale-105 transition duration-200 select-none">
+            {t('viewFullPage')}
           </div>
-        )
+
+          <div className="pointer-events-none p-1">
+            <ArchetypeRenderer
+              blocks={matchedBlocks}
+              theme={resolvedTheme}
+              businessName={businessName}
+              activeBlockId={pageRuntime!.sauleMatchedBlock!.blockId}
+              activeItemId={pageRuntime!.sauleMatchedBlock!.itemId ?? null}
+              activeOpenSequence={pageRuntime!.openSequence ?? 0}
+              onActiveBlockChange={() => {}}
+              contactMethod={contactMethod}
+              contactValue={contactValue}
+              orderNowBehavior={orderNowBehavior}
+            />
+          </div>
+        </div>
       ) : (
+        // Soru yoksa VEYA Saule'nin sorulan soruya eşleşen bir bloğu yoksa (fallback/no-match)
+        // burası devreye girer — böylece cevapsız bir soru sayfayı asla boşaltmaz.
         <div className="w-full mt-3">
           {((blocks && blocks.length > 0) || (contactMethod && contactValue)) && (
             <ArchetypeRenderer

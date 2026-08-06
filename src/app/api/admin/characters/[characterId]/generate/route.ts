@@ -26,8 +26,7 @@ import {
   type TextSpace,
 } from '@/config/characters';
 
-// Görsel üretimi kuyruk üzerinden yürüyor ve dakikalar sürebiliyor — repoda zaten
-// kullanılan uzun iş deseni (bkz. api/setup-agent/route.ts).
+// Görsel üretimi kuyruk üzerinden yürüyor ve dakikalar sürebiliyor.
 export const maxDuration = 300;
 
 const VALID_ASPECT_RATIOS = ASPECT_RATIOS.map((a) => a.value);

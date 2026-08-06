@@ -1,6 +1,6 @@
-// Previously an 11-fixed-archetype lookup table. The setup-agent now generates a bespoke
-// theme (colors + Google Font pair) per business via the `setTheme` tool, so this file only
-// keeps the shared type + a fallback used when a business has no theme set yet.
+// Previously an 11-fixed-archetype lookup table. Each business now picks its own
+// theme (colors + light/dark mode) manually in the editor, so this file only keeps
+// the shared type + a fallback used when a business has no theme set yet.
 
 export type MediaProfile = 'gallery-first' | 'service-focused' | 'minimal';
 export type LayoutStyle = 'compact' | 'spacious' | 'card-heavy' | 'flat';

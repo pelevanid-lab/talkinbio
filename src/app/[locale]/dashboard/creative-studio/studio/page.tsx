@@ -8,8 +8,9 @@ import type { CharacterClip } from '@/config/clips';
 
 // admin/beiwe-lab/studio/page.tsx'in müşteri karşılığı — admin sürümüyle aynı: Twin +
 // işletmenin kendi Cast'inin TÜM kadrosunun klip havuzu (bkz. getBusinessCharacterIds).
-export default async function CreativeStudioStudioPage() {
-  const business = await requireBusinessOwner();
+export default async function CreativeStudioStudioPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const business = await requireBusinessOwner(locale);
   const t = await getTranslations('BeiweLab');
   const characterId = await getOrCreateBusinessTwin(business.id);
   const characterIds = await getBusinessCharacterIds(business.id, business.name);

@@ -7,7 +7,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 export const SAULE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE) || 1;
 export const SAULE_VOICE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_VOICE) || 51;
 export const SAULE_STUDIO_UPDATE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_STUDIO_UPDATE) || 60;
-export const SAULE_STUDIO_INSTALL_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_STUDIO_INSTALL) || 100;
 export const CUE_PACK_STANDARD_CREDIT_COST = Number(process.env.CREDIT_COST_CUE_PACK_STANDARD) || 20;
 export const CUE_PACK_CUSTOM_CREDIT_COST = Number(process.env.CREDIT_COST_CUE_PACK_CUSTOM) || 60;
 
@@ -43,16 +42,6 @@ export const CREDIT_COST_MENU = [
     },
   },
   {
-    id: 'saule_studio_install',
-    agent: 'saule',
-    credits: SAULE_STUDIO_INSTALL_CREDIT_COST,
-    label: {
-      tr: 'Çok bölümlü sayfa kurulumu',
-      en: 'Build a multi-section page',
-      ru: 'Создание многораздельной страницы',
-    },
-  },
-  {
     id: 'cue_standard',
     agent: 'voice',
     credits: CUE_PACK_STANDARD_CREDIT_COST,
@@ -73,16 +62,6 @@ export const CREDIT_COST_MENU = [
     },
   },
 ] as const;
-
-/**
- * O turda çağrılan Saule (Studio mode) araç sayısına göre kredi maliyeti: tek alan
- * güncellemesi (1 araç) vs. çoklu/bulk kurulum (2+ araç). Değişiklik
- * yoksa (0 araç, salt sohbet) ücretsiz.
- */
-export function sauleCreditCost(toolCallCount: number): number {
-  if (toolCallCount <= 0) return 0;
-  return toolCallCount === 1 ? SAULE_STUDIO_UPDATE_CREDIT_COST : SAULE_STUDIO_INSTALL_CREDIT_COST;
-}
 
 export function hasCredits(business: { credit_balance: number }): boolean {
   return business.credit_balance > 0;

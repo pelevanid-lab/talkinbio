@@ -267,14 +267,11 @@
     "panelTitle": "Editör",
     "openPreview": "Önizlemeyi Aç",
     "costEstimation": "(Maks. ≈{cost} kredi)",
-    "placeholderCost": "(İşlem başı maks. ≈{cost} kredi)",
     "previewBtn": "Önizleme",
     "tabAgent": "Kurulum Ajanı",
     "tabBulk": "Toplu Metin",
-    "tabManual": "İnce Ayar",
     "tabVisual": "Görsel",
     "editorMenuSetup": "Kurulum",
-    "editorMenuEdit": "Düzenleme",
     "profileLink": "Profil Bağlantınız",
     "pageTitle": "Sayfa Başlığı (opsiyonel)",
     "tagline": "Kısa Açıklama (opsiyonel)",
@@ -324,12 +321,15 @@
     "unpublishBtn": "Yayından Kaldır",
     "republishBtn": "Yeniden Yayınla",
     "republishHint": "Son değişikliklerin yayına yansıdığını onaylamak için tıkla.",
-    "publishHint": "Yayınlamak için Hakkımda veya Hizmetler bölümünden birini, ve iletişim bilgisini tamamlayın.",
+    "publishHint": "Yayınlamak için yukarıdaki maddeleri tamamlayın.",
     "optionalHint": "önerilir",
     "manualTitle": "İnce Ayar",
     "manualDesc": "İçerik, tasarım, iletişim ve yayın ayarlarını buradan manuel olarak düzenleyin.",
     "noContent": "Henüz hiç içerik yok.",
     "newSection": "Yeni Bölüm (Manuel)",
+    "newSectionGroupBasic": "Temel",
+    "newSectionGroupSales": "Satış ve hizmet",
+    "newSectionGroupTrust": "Güven",
     "blocks": {
       "about": "Hakkımda",
       "services": "Hizmetler",
@@ -348,9 +348,6 @@
     "previewEmpty": "Instagram’dan alarak veya toplu metinle başlayın.",
     "assistantSuffix": "Asistanı",
     "assistantGreeting": "Size nasıl yardımcı olabilirim?",
-    "chatPlaceholder": "Asistanınıza mesaj yazın...",
-    "agentInputPlaceholder": "İşlem notu yazın...",
-    "aiWelcome": "Merhaba {name}! Sayfanızı kurmak için Instagram’dan Al veya Toplu Metin seçeneklerinden biriyle başlayabilirsiniz.",
     "leadsNavTooltip": "Talepler & Konuşmalar Paneli",
     "leadsNavLabel": "Panel",
     "contentStudioTooltip": "İçerik Stüdyosu",
@@ -365,29 +362,6 @@
     "insightDefaultTrigger": "Konuşmalarımdan çıkan bir içgörüyü değerlendirmek istiyorum.",
     "creditBalance": "Kredi Bakiyesi",
     "creditBalanceHint": "Kredi bakiyeniz ve kullanım geçmişiniz — detaylar için tıklayın",
-    "archive": {
-      "title": "Geçmiş Konuşmalar",
-      "empty": "Geçmiş konuşma bulunamadı.",
-      "untitledChat": "Sohbet",
-      "archivedBadge": "Arşivlendi"
-    },
-    "newChatTooltip": "Yeni Sohbet",
-    "sessionDefaultTitle": "Yeni Sohbet",
-    "pageStatus": {
-      "title": "📊 Sayfa Durumu",
-      "completedCount": "{done}/{total} tamamlandı",
-      "hoursLabel": "Çalışma Saat.",
-      "faqLabel": "S.S.S.",
-      "contactLabel": "İletişim",
-      "continueBtn": "Eksikleri Tamamla",
-      "allComplete": "Temel bölümler tamamlandı. İnce Ayar’dan yayına hazırlayabilirsiniz.",
-      "analyzingPlaceholder": "Sayfamı analiz et..."
-    },
-    "systemManualEditMessage": "[Sistem: Bu oturumda manuel düzenleme yapıldı. Yeni sohbet başlatıldı.]",
-    "mediaUploadedMessage": "[Kullanıcı sisteme bir medya yükledi: {url}]",
-    "mediaUploadError": "Dosya yüklenirken hata oluştu: {message}",
-    "mediaUploadSizeError": "Dosya boyutu 150MB'dan küçük olmalıdır.",
-    "chatErrorFallback": "Mesaj gönderilirken bir hata oluştu. Çok uzun bir metin gönderdiyseniz, birkaç parçaya bölüp tekrar deneyin.",
     "publishToggleError": "Yayın durumu güncellenirken hata oluştu.",
     "acknowledgeError": "İşlem sırasında hata oluştu.",
     "saveBlockError": "Kaydedilirken hata oluştu.",
@@ -444,7 +418,6 @@
       }
     },
     "tabInstagram": "Instagram’dan Al",
-    "activityTitle": "İşlem Geçmişi",
     "instagramTitle": "Instagram’dan Al",
     "instagramDesc": "Profil linkinizi ya da kullanıcı adınızı girin. Sistem bilgileri tek işlemde okuyup sayfanızın ilk taslağını çıkarır.",
     "instagramPlaceholder": "instagram.com/kullaniciadi veya @kullaniciadi",
@@ -812,7 +785,34 @@
     "hoursBlockTitle": "Çalışma Saatleri"
   },
   "PublicPage": {
-    "unpublishedBanner": "Profiliniz henüz ziyaretçilere kapalı. Yayınlamak için eksikleri tamamlayın."
+    "unpublishedBanner": "Profiliniz henüz ziyaretçilere kapalı. Yayınlamak için eksikleri tamamlayın.",
+    "greetingFallback": "Hoşgeldiniz, size nasıl yardımcı olabilirim?",
+    "matchingBlock": "İlgili bölümü açıyorum:\n\n✨ {title}",
+    "noMatchLead": "Aradığınız konuyu doğrudan sayfa üzerinde bulamadım. Ancak bana bilgilerinizi iletirseniz size en kısa sürede geri dönüş sağlayabiliriz:",
+    "noMatchContact": "Aradığınız konuyu bulamadım. Detaylı bilgi almak için bizimle doğrudan iletişime geçebilirsiniz:",
+    "noMatchFallback": "Aradığınız konuyu şu anda bulamadım. Lütfen sayfa üzerindeki diğer bölümleri inceleyin.",
+    "listening": "Dinliyorum...",
+    "chatPlaceholder": "Bir mesaj yazın...",
+    "viewFullPage": "Tam Sayfada Gör ↗",
+    "backAriaLabel": "Geri Dön",
+    "yourQuestion": "Sorunuz",
+    "relatedQuestions": "İlgili diğer sorular",
+    "whatsappCta": "WhatsApp ile Sor",
+    "callCta": "Hemen Ara",
+    "emailCta": "E-posta Gönder",
+    "leadForm": {
+      "namePlaceholder": "Adınız",
+      "contactPlaceholder": "Telefon veya E-posta",
+      "submitBtn": "Bilgilerimi İlet",
+      "submitting": "Gönderiliyor...",
+      "error": "Bir hata oluştu, lütfen daha sonra tekrar deneyin.",
+      "successTitle": "Talebiniz Alındı!",
+      "successBody": "Size en kısa sürede geri dönüş sağlayacağız. Teşekkürler!"
+    },
+    "mic": {
+      "tooltip": "Mikrofon (Basılı Tut ve Konuş)",
+      "permissionDenied": "Mikrofon erişimi izni gerekli."
+    }
   },
   "Metadata": {
     "title": "talkinbio | Yeni Nesil Konuşan bio linkiniz",
@@ -1503,8 +1503,8 @@
     "title": "Talkinbio Lab"
   },
   "Wizard": {
-    "categorySelectTitle": "Ne tür bir profil oluşturuyorsun?",
-    "categorySelectSub": "Kategorini seç, sana özel adım sırası gelsin.",
+    "categorySelectTitle": "Ziyaretçilerinizin ne yapmasını istiyorsunuz?",
+    "categorySelectSub": "Seçimine göre sana özel bir başlangıç sayfası hazırlayalım.",
     "setupTitle": "Sayfanı kuralım",
     "saveBtn": "Kaydet ve devam",
     "skipBtn": "Şimdilik geç",
@@ -1529,20 +1529,20 @@
     },
     "categories": {
       "hizmet": {
-        "label": "Hizmet",
-        "desc": "Randevu, seans, danışmanlık"
+        "label": "Hizmetlerimi incelesinler",
+        "desc": "Danışman, eğitmen, terapist, freelancer, güzellik uzmanı, tamirci gibi hizmet verenler"
       },
       "icerikUreticisi": {
-        "label": "İçerik Üreticisi",
-        "desc": "Marka iş birlikleri, dijital varlık"
+        "label": "İçeriklerimi keşfetsinler",
+        "desc": "İçerik üreticisi, influencer, YouTuber, yayıncı"
       },
       "muzisyen": {
-        "label": "Müzisyen",
-        "desc": "Müzik, etkinlik, kitle"
+        "label": "Müziğimi dinlesinler",
+        "desc": "Müzisyen, grup, DJ, prodüktör"
       },
       "urun": {
-        "label": "Ürün",
-        "desc": "Satış, katalog, mağaza"
+        "label": "Ürünlerimi incelesinler",
+        "desc": "Fiziksel veya dijital ürün sunan kişiler"
       }
     },
     "hizmet": {
@@ -1550,22 +1550,23 @@
         "label": "Kim + unvan",
         "tip": "Adın ve uzmanlığın ziyaretçinin ilk gördüğü şey. Kısa ve net tut."
       },
+      "about": {
+        "label": "Neden ben",
+        "tip": "Sertifikan, deneyimin, farkın. Ziyaretçi neden seni seçmeli?"
+      },
       "services": {
         "label": "Hizmetlerim",
         "tip": "Ziyaretçin en çok fiyat arıyor. Her hizmete fiyat yazman randevu ihtimalini artırır.",
         "itemLabel": "Hizmet"
       },
-      "about": {
-        "label": "Neden ben",
-        "tip": "Sertifikan, deneyimin, farkın. Ziyaretçi neden seni seçmeli?"
+      "pricing": {
+        "label": "Paketlerim",
+        "tip": "Tekli seans mı satıyorsun, paket mi? Net fiyatlarla paketlerini burada listele — ziyaretçi karşılaştırıp kolayca seçsin.",
+        "itemLabel": "Paket"
       },
       "testimonials": {
         "label": "Danışan yorumları",
         "tip": "Gerçek yorumlar en güçlü ikna aracı. İsim ve alıntı yeterli."
-      },
-      "gallery": {
-        "label": "Sonuçlar",
-        "tip": "Öncesi-sonrası fotoğraflar güven oluşturur."
       },
       "faq": {
         "label": "Sık sorulan sorular",
@@ -1581,22 +1582,18 @@
         "label": "Kim + niş",
         "tip": "Hangi konuda içerik ürettiğini tek cümlede anlat."
       },
+      "oneCikan": {
+        "label": "Öne çıkan içerik",
+        "tip": "En iyi ve en güncel işlerini buraya ekle — marka veya takipçin sayfana ilk girdiğinde bunları görsün."
+      },
       "links": {
-        "label": "Platformlarım",
+        "label": "Sosyal medya bağlantılarım",
         "tip": "Marka seni nerede bulabileceğini merak ediyor. Aktif platformları ekle.",
         "itemLabel": "Platform"
       },
-      "kitlem": {
-        "label": "Kitlem",
-        "tip": "Platform, takipçi sayısı, kitle profili. Göstermek istemediklerini atlayabilirsin."
-      },
-      "gallery": {
-        "label": "En iyi işlerim",
-        "tip": "Önceki işlerinden en güçlü görselleri ekle."
-      },
-      "testimonials": {
-        "label": "Çalıştığım markalar",
-        "tip": "Marka adı ve ne yaptığınız yeterli."
+      "isBirligi": {
+        "label": "İş birlikleri",
+        "tip": "Çalıştığın marka adı ve ne yaptığın yeterli — yeni markalara güven verir."
       },
       "contact": {
         "label": "İş için iletişim",
@@ -1608,26 +1605,27 @@
         "label": "Kim + tür",
         "tip": "Müzik türünü belirt, hayranın seni hemen tanısın."
       },
+      "sonYayin": {
+        "label": "Son yayın",
+        "tip": "Yeni single, albüm ya da klibini tanıtır. Kısa açıklama yeterli."
+      },
       "links": {
-        "label": "Şimdi dinle",
+        "label": "Dinleme bağlantıları",
         "tip": "Hayranın ilk saniyede çalmak ister. Spotify'ı en üste koy.",
         "itemLabel": "Platform"
       },
-      "sonCikan": {
-        "label": "Son çıkan",
-        "tip": "Yeni single, albüm ya da klibini tanıtır. Kısa açıklama yeterli."
+      "gallery": {
+        "label": "Video veya galeri",
+        "tip": "Konser fotoğrafları, klip kareleri, sahne görselleri."
       },
       "about": {
-        "label": "Hikayem",
-        "tip": "Kim olduğunu, müziğine nasıl başladığını anlat. Kısa tut."
+        "label": "Hakkımızda",
+        "tip": "Kim olduğunuzu, müziğe nasıl başladığınızı anlatın. Kısa tutun."
       },
-      "testimonials": {
-        "label": "Basın / yorumlar",
-        "tip": "Basında çıkan yazılar veya hayran mesajları."
-      },
-      "gallery": {
-        "label": "Görseller / klipler",
-        "tip": "Konser fotoğrafları, albüm kapakları, sahne görselleri."
+      "etkinlikler": {
+        "label": "Etkinlikler",
+        "tip": "Yaklaşan konser veya etkinliklerini tarih ve mekanla listele.",
+        "itemLabel": "Etkinlik"
       },
       "contact": {
         "label": "Booking",
@@ -1640,30 +1638,31 @@
         "tip": "Marka adın ve ne sattığın net olsun."
       },
       "services": {
-        "label": "Öne çıkan ürünler",
+        "label": "Ürünlerim",
         "tip": "Ürününü fotoğrafsız kimse almaz. Her ürüne görsel ve fiyat ekle.",
         "itemLabel": "Ürün"
       },
-      "links": {
-        "label": "Satın al",
-        "tip": "Mağaza, Etsy veya Trendyol linkini ekle.",
-        "itemLabel": "Mağaza"
-      },
-      "testimonials": {
-        "label": "Müşteri yorumları",
-        "tip": "Gerçek yorumlar satışı artırır."
+      "pricing": {
+        "label": "Fiyatlarım",
+        "tip": "Paket, set veya toplu alım fiyatların varsa burada net göster.",
+        "itemLabel": "Paket"
       },
       "gallery": {
-        "label": "Ürün galerisi",
+        "label": "Galeri",
         "tip": "Ürünlerinin en iyi fotoğrafları."
       },
-      "about": {
-        "label": "Marka hikayem",
-        "tip": "Nasıl başladığını anlat. Kişisel marka için değerli."
+      "teslimatIade": {
+        "label": "Teslimat ve iade bilgileri",
+        "tip": "Kargo süresi, iade koşulları ve paketleme bilgisini kısaca yaz."
       },
       "faq": {
-        "label": "Kargo / iade",
-        "tip": "Kargo süresi, iade koşulları, paketleme bilgisi."
+        "label": "Sık sorulan sorular",
+        "tip": "Satın almadan önce aklına takılan soruları buraya yaz."
+      },
+      "links": {
+        "label": "Satın al bağlantısı",
+        "tip": "Mağaza, Etsy veya Trendyol linkini ekle.",
+        "itemLabel": "Mağaza"
       },
       "contact": {
         "label": "Sipariş / iletişim",

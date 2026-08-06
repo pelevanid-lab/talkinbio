@@ -1,20 +1,21 @@
 import { createClient as createServerClient } from '@/utils/supabase/server';
-import { redirect } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 import { getTranslations } from 'next-intl/server';
 import ContentClient from './ContentClient';
 
-export default async function ContentDashboardPage() {
+export default async function ContentDashboardPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   const supabase = await createServerClient();
   const { data: userData, error: authError } = await supabase.auth.getUser();
 
   if (authError || !userData?.user) {
-    redirect('/login');
+    redirect({ href: '/login', locale });
   }
 
   const { data: business } = await supabase
     .from('businesses')
     .select('id, name, username, category, credit_balance')
-    .eq('owner_id', userData.user.id)
+    .eq('owner_id', userData!.user!.id)
     .single();
 
   if (!business) {

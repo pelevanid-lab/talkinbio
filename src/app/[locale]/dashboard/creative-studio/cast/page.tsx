@@ -7,8 +7,9 @@ import { requireBusinessOwner } from '@/utils/businessAuth';
 // admin/beiwe-lab/cast'in müşteri karşılığı — işletme kendi sanal yardımcı
 // oyuncularını (business_id = kendi id'si) oluşturur/görür, admin'in global cast'i
 // (business_id NULL) burada görünmez.
-export default async function CreativeStudioCastPage() {
-  const business = await requireBusinessOwner();
+export default async function CreativeStudioCastPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const business = await requireBusinessOwner(locale);
   const t = await getTranslations('BeiweLab');
 
   const { data: castRows } = await supabaseAdmin

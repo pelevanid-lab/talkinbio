@@ -1,21 +1,22 @@
 import { createClient as createServerClient } from '@/utils/supabase/server';
-import { notFound, redirect } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 import { getTranslations } from 'next-intl/server';
 import FrontDeskClient from './FrontDeskClient';
 
-export default async function FrontDeskDashboardPage() {
+export default async function FrontDeskDashboardPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   const supabase = await createServerClient();
   const { data: userData, error: authError } = await supabase.auth.getUser();
 
   if (authError || !userData?.user) {
-    redirect('/login');
+    redirect({ href: '/login', locale });
   }
 
   // Fetch business of user
   const { data: business } = await supabase
     .from('businesses')
     .select('id, name, username, saule_settings, credit_balance, contact_method, contact_value')
-    .eq('owner_id', userData.user.id)
+    .eq('owner_id', userData!.user!.id)
     .single();
 
   if (!business) {

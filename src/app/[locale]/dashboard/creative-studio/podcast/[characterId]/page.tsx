@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { redirect } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 import DashboardShell from '@/components/dashboard/DashboardShell';
 import CastRoomTabs from '@/components/beiwe-lab/CastRoomTabs';
 import BeiwePodcastClient from '@/components/beiwe-lab/BeiwePodcastClient';
@@ -13,16 +13,16 @@ const PODCAST_BASE_PATH = '/dashboard/creative-studio/podcast';
 
 // admin/beiwe-lab/podcast/[characterId]/page.tsx'in müşteri karşılığı — Twin + işletmenin
 // kendi Yardımcı Oyuncular'ı arasında CastRoomTabs ile geçiş.
-export default async function CreativeStudioPodcastPage({ params }: { params: Promise<{ characterId: string }> }) {
-  const business = await requireBusinessOwner();
+export default async function CreativeStudioPodcastPage({ params }: { params: Promise<{ characterId: string; locale: string }> }) {
+  const { characterId, locale } = await params;
+  const business = await requireBusinessOwner(locale);
   const t = await getTranslations('BeiweLab');
-  const { characterId } = await params;
 
   const twinId = await getOrCreateBusinessTwin(business.id);
   const roster = await getBusinessCastRoster(business);
 
   const active = roster.find((r) => r.id === characterId);
-  if (!active) redirect(`${PODCAST_BASE_PATH}/${twinId}`);
+  if (!active) redirect({ href: `${PODCAST_BASE_PATH}/${twinId}`, locale });
 
   const [{ data: profile }, { data: shots }, { data: clips }, { data: motions }] = await Promise.all([
     supabaseAdmin
@@ -53,8 +53,8 @@ export default async function CreativeStudioPodcastPage({ params }: { params: Pr
 
   const character: CharacterDefinition = {
     id: characterId as CharacterDefinition['id'],
-    name: active.name,
-    role: active.role,
+    name: active!.name,
+    role: active!.role,
     summary: '',
     accentColor: '#334155',
     identityPrompt: profile?.identity_prompt || undefined,

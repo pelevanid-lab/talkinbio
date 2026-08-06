@@ -8,10 +8,8 @@ import { PublicPageRuntimeProvider } from '@/components/PublicPageRuntime';
 import { createClient } from '@/utils/supabase/server';
 import { DEFAULT_THEME, resolvePageCanvases, resolveThemeColors } from '@/config/archetypes';
 import { googleFontsHref } from '@/utils/googleFonts';
-import { isConversationActive } from '@/utils/conversationWindow';
 import { getPageActionTargets, withContactPageActionTarget } from '@/utils/pageActionTargets';
 import { resolvePublishedRuntimeData } from '@/utils/publishedSnapshot';
-import { getActiveSauleCueManifest } from '@/agents/saule/modes/assistant/voicePackages';
 
 // Her ziyarette taze saule_settings (voiceEnabled dahil) çekilsin
 export const dynamic = 'force-dynamic';
@@ -143,22 +141,16 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
     .eq('business_id', business.id)
     .order('order', { ascending: true });
 
-  const { data: knowledge } = await supabase
-    .from('saule_knowledge')
-    .select('id, title, content, is_active, behavior, localized_data')
-    .eq('business_id', business.id)
-    .eq('is_active', true);
-
   const { business: pageBusiness, blocks: pageBlocks } = resolvePublishedRuntimeData(business, blocks || [], isOwner);
   const theme = pageBusiness.theme || DEFAULT_THEME;
   const sauleSettings = pageBusiness.saule_settings || {};
   const creditBalance = business.credit_balance ?? 0;
   const isFrontDeskActive = (sauleSettings.frontDeskEnabled !== false) && (creditBalance >= 20);
+  // NOT: "voice cue manifest" DB'den çekilip settings'e eklenirdi ama ChatWidget bunu hiç
+  // okumuyordu (yalnızca voiceEnabled bayrağını okuyor) — her ziyarette 2 gereksiz sorgu
+  // atıyordu. Kaldırıldı; sesli girişin açık olup olmadığını doğrudan bayrak belirliyor.
   const isVoiceEnabled = !!sauleSettings.voiceEnabled && (creditBalance >= 200);
-  const voiceCueManifest = isVoiceEnabled ? await getActiveSauleCueManifest('standard') : null;
-  const chatSauleSettings = voiceCueManifest
-    ? { ...sauleSettings, voiceEnabled: true, voiceCuePackage: 'standard', voiceCueManifest }
-    : { ...sauleSettings, voiceEnabled: false };
+  const chatSauleSettings = { ...sauleSettings, voiceEnabled: isVoiceEnabled };
   const customGreeting = sauleSettings.customGreetingEnabled && sauleSettings.customGreeting
     ? sauleSettings.customGreeting
     : null;
@@ -168,39 +160,6 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
     pageBusiness.contact_value,
     locale
   );
-
-  // 3. Fetch past conversation if visitor_session_id exists
-  let initialMessages: any[] = [];
-  try {
-    const cookieStore = await cookies();
-    const visitorSessionId = cookieStore.get('visitor_session_id')?.value;
-    if (visitorSessionId) {
-      const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createSupabaseClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
-      const { data: conv } = await supabaseAdmin
-        .from('conversations')
-        .select('last_message_at, created_at, messages(id, role, content, created_at)')
-        .eq('business_id', business.id)
-        .eq('visitor_session_id', visitorSessionId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      // Faz 1.3: >7 gün sessiz kalan konuşma "aktif" sayılmaz, geçmişi yüklenmez.
-      const isActive = conv && isConversationActive(conv.last_message_at, conv.created_at);
-
-      if (isActive && conv?.messages) {
-        initialMessages = conv.messages
-          .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-          .map((m: any) => ({ id: m.id, role: m.role, content: m.content }));
-      }
-    }
-  } catch (err) {
-    console.error('Failed to load past messages', err);
-  }
 
   const { getCategoryById: getWizardCategory } = await import('@/config/wizardCategories');
   const wizardCat = business.category_id ? getWizardCategory(business.category_id) : null;
@@ -261,8 +220,6 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
         targets={pageActionTargets}
         businessId={business.id}
         blocks={pageBlocks || []}
-        knowledge={knowledge || []}
-        businessName={pageBusiness.name}
         contactMethod={resolvedContactMethod}
         contactValue={resolvedContactValue}
         leadCaptureEnabled={pageBusiness.saule_settings?.leadCaptureEnabled !== false}
@@ -296,7 +253,7 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
       {isFrontDeskActive && (
         <div className="shrink-0 relative z-50" style={{ background: 'var(--tb-page-bg-sticky)' }}>
           <div className="max-w-md mx-auto w-full relative">
-            <ChatWidget businessId={business.id} businessName={pageBusiness.name} locale={locale} initialMessages={initialMessages} customGreeting={customGreeting} sauleSettings={chatSauleSettings} preview={isOwner} initialCreditsExhausted={(business.credit_balance ?? 0) <= 0} />
+            <ChatWidget businessId={business.id} locale={locale} customGreeting={customGreeting} sauleSettings={chatSauleSettings} preview={isOwner} />
           </div>
         </div>
       )}

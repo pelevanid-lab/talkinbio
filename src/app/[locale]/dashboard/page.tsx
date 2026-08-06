@@ -1,5 +1,6 @@
-import { redirect } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 
-export default function DashboardIndexPage() {
-  redirect('/dashboard/leads');
+export default async function DashboardIndexPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  redirect({ href: '/dashboard/leads', locale });
 }

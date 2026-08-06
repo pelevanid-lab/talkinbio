@@ -8,8 +8,9 @@ import type { CharacterShot } from '@/config/characters';
 import type { CharacterClip } from '@/config/clips';
 import type { StudioAsset } from '@/config/studio';
 
-export default async function CreativeStudioPage() {
-  const business = await requireBusinessOwner();
+export default async function CreativeStudioPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const business = await requireBusinessOwner(locale);
   const t = await getTranslations('BeiweLab');
   const characterId = await getOrCreateBusinessTwin(business.id);
   const characterIds = await getBusinessCharacterIds(business.id, business.name);

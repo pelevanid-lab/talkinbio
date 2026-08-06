@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { getTranslations } from 'next-intl/server';
-import { redirect } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 import AnalyticsClient from './AnalyticsClient';
 
 export default async function AnalyticsPage({ params }: any) {
@@ -10,18 +10,18 @@ export default async function AnalyticsPage({ params }: any) {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    redirect('/login');
+    redirect({ href: '/login', locale });
   }
 
   // Fetch business details
   const { data: business } = await supabase
     .from('businesses')
     .select('*')
-    .eq('owner_id', user.id)
+    .eq('owner_id', user!.id)
     .single();
 
   if (!business) {
-    redirect('/onboarding');
+    redirect({ href: '/onboarding', locale });
   }
 
   // Fetch page views

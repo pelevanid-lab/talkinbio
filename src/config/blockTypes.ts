@@ -4,6 +4,51 @@
 export const REQUIRED_TYPES = ['about', 'services'] as const;
 export const RECOMMENDED_TYPES = ['hours', 'faq', 'links', 'gallery', 'testimonials'] as const;
 
+// Kategoriye göre "yayına hazır" kuralı — Faz 2 wizard kategorileriyle birebir eşleşir
+// (bkz. src/config/wizardCategories.ts: hizmet/icerik-ureticisi/muzisyen/urun). Örn. bir
+// müzisyenin wizard'ında hiç 'services' adımı yok ve 'about' atlanabilir — eski sabit
+// REQUIRED_TYPES=['about','services'] kuralında bu kategori hiç yayınlanamayabiliyordu.
+// Bilinmeyen/eksik category_id için DEFAULT_PUBLISH_RULE'a düşülür — bu da eski sabit
+// REQUIRED_TYPES/RECOMMENDED_TYPES davranışının birebir aynısı, mevcut hesapları bozmaz.
+export type PublishRule = {
+  contentTypes: readonly string[];   // bunlardan en az biri gerçek içerik taşımalı
+  recommendedTypes: readonly string[];
+  requireContact: boolean;
+};
+
+const DEFAULT_PUBLISH_RULE: PublishRule = {
+  contentTypes: REQUIRED_TYPES,
+  recommendedTypes: RECOMMENDED_TYPES,
+  requireContact: true,
+};
+
+export const PUBLISH_RULES: Record<string, PublishRule> = {
+  hizmet: {
+    contentTypes: ['about', 'services'],
+    recommendedTypes: ['pricing', 'testimonials', 'faq'],
+    requireContact: true,
+  },
+  'icerik-ureticisi': {
+    contentTypes: ['gallery', 'links'],
+    recommendedTypes: ['testimonials'],
+    requireContact: true,
+  },
+  muzisyen: {
+    contentTypes: ['links', 'gallery', 'about', 'custom'],
+    recommendedTypes: ['services'],
+    requireContact: true,
+  },
+  urun: {
+    contentTypes: ['services', 'links'],
+    recommendedTypes: ['pricing', 'gallery', 'faq'],
+    requireContact: false,
+  },
+};
+
+export function getPublishRule(categoryId?: string | null): PublishRule {
+  return (categoryId && PUBLISH_RULES[categoryId]) || DEFAULT_PUBLISH_RULE;
+}
+
 type Block = { type: string; content?: any };
 
 // Reads real content regardless of which locale it was entered in.
@@ -77,9 +122,10 @@ export function hasRealContentForLocale(block: Block | undefined, locale: string
   return false;
 }
 
-export function isRequiredSatisfied(blocks: Block[], hasContactValue: boolean): boolean {
-  const hasAboutOrServices = REQUIRED_TYPES.some((type) =>
+export function isRequiredSatisfied(blocks: Block[], hasContactValue: boolean, categoryId?: string | null): boolean {
+  const rule = getPublishRule(categoryId);
+  const hasRequiredContent = rule.contentTypes.some((type) =>
     blocks.some((b) => b.type === type && hasRealContent(b))
   );
-  return hasAboutOrServices && hasContactValue;
+  return hasRequiredContent && (!rule.requireContact || hasContactValue);
 }

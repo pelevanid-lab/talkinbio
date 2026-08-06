@@ -4,16 +4,12 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Plus, Edit2, Copy, ExternalLink, X, MessageSquare, Settings2, Send, Square, Paperclip, CheckCircle2, Circle, GripVertical, ChevronLeft, Archive, MessageSquarePlus, Inbox, Coins, Tag, BarChart3, Eye } from 'lucide-react';
-import AgentMarkdown from './AgentMarkdown';
+import { Loader2, Edit2, Copy, ExternalLink, X, CheckCircle2, Circle, GripVertical, Tag, Eye } from 'lucide-react';
 import BlockEditorModal from './BlockEditorModal';
 import SetPasswordModal from './SetPasswordModal';
 
-import { BeiweIcon } from './AgentIcons';
-import { useChat, UIMessage } from '@ai-sdk/react';
-import { DefaultChatTransport } from 'ai';
 import { useTranslations, useLocale } from 'next-intl';
-import { RECOMMENDED_TYPES, hasRealContent, isRequiredSatisfied } from '@/config/blockTypes';
+import { getPublishRule, hasRealContent, isRequiredSatisfied } from '@/config/blockTypes';
 import { extractLocaleText, isSyncableType, type SyncableBlockType, type BlockLocaleText } from '@/agents/saule/modes/studio/localeSync';
 import type { LocaleKey } from '@/config/localeTitles';
 import { DEFAULT_THEME, Theme, resolveAccentFill, resolvePageCanvases, resolveThemeColors } from '@/config/archetypes';
@@ -22,45 +18,20 @@ import { collectShortcutCandidates, getShortcuts, resolveShortcuts, shortcutsEqu
 import { iconForLinkUrl } from '@/utils/linkIcon';
 import { ColoredTextField, renderColoredSegments } from '@/utils/coloredText';
 import { googleFontsHref } from '@/utils/googleFonts';
-import { compressImageIfNeeded } from '@/utils/imageCompression';
 import { PUBLISHED_SNAPSHOT_BLOCK_TYPE, createPublishedSnapshot, isEditorSystemBlock, stripPublishedSnapshotBlock } from '@/utils/publishedSnapshot';
 
-type LegacyMessage = { id: string; role: string; content: string };
-
-function toUIMessage(m: LegacyMessage): UIMessage {
-  return { id: m.id, role: m.role as UIMessage['role'], parts: [{ type: 'text', text: m.content }] };
-}
-
-function getMessageText(m: UIMessage): string {
-  return m.parts.filter((p) => p.type === 'text').map((p) => (p as { text: string }).text).join('');
-}
-
-export default function EditorClient({ 
-  business, 
-  initialBlocks, 
-  initialChatMessages, 
-  initialSessions,
-  installCreditCost = 10
-}: { 
-  business: any, 
-  initialBlocks: any[], 
-  initialChatMessages?: any[], 
-  initialSessions?: any[],
-  installCreditCost?: number
+export default function EditorClient({
+  business,
+  initialBlocks,
+}: {
+  business: any,
+  initialBlocks: any[],
 }) {
   const [blocks, setBlocks] = useState(() => stripPublishedSnapshotBlock(initialBlocks));
-  const [sessions, setSessions] = useState<any[]>(initialSessions || []);
-  const [activeSessionId, setActiveSessionId] = useState(() => {
-    const activeSession = (initialSessions || []).find((s) => !s.is_archived);
-    return activeSession ? activeSession.id : crypto.randomUUID();
-  });
-  const [showArchive, setShowArchive] = useState(false);
   const [theme, setTheme] = useState<Theme>(business.theme || DEFAULT_THEME);
   const [editingBlock, setEditingBlock] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const [viewMode, setViewMode] = useState<'manual' | 'activity'>('manual');
-  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [username, setUsername] = useState(business.username);
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [usernameError, setUsernameError] = useState('');
@@ -85,11 +56,7 @@ export default function EditorClient({
   const [contactMethods, setContactMethods] = useState<Record<string, { selected: boolean, value: string }>>(() =>
     Object.fromEntries(CONTACT_METHODS.map((m) => [m, { selected: m === 'email', value: '' }]))
   );
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
-  const chatEndRef = useRef<HTMLDivElement>(null);
-  const chatInputBarRef = useRef<HTMLDivElement>(null);
-  const [chatInputBarHeight, setChatInputBarHeight] = useState(96);
 
   const t = useTranslations('Editor');
   const locale = useLocale();
@@ -105,96 +72,17 @@ export default function EditorClient({
 
   const findBlock = (type: string) => blocks.find(b => b.type === type);
 
+  // Kategoriye göre yayın kuralı — bkz. config/blockTypes.ts PUBLISH_RULES. business.category_id
+  // yoksa (eski/bilinmeyen kategori) getPublishRule eski sabit REQUIRED/RECOMMENDED_TYPES'a düşer.
+  const publishRule = useMemo(() => getPublishRule(business.category_id), [business.category_id]);
+
   const checklist = useMemo(() => ({
-    contentReady: hasRealContent(findBlock('about')) || hasRealContent(findBlock('services')),
-    contact: hasContactValue,
-    recommended: RECOMMENDED_TYPES.map((type) => ({ type, done: hasRealContent(findBlock(type)) })),
-  }), [blocks, hasContactValue]);
+    contentReady: publishRule.contentTypes.some((type) => hasRealContent(findBlock(type))),
+    contact: !publishRule.requireContact || hasContactValue,
+    recommended: publishRule.recommendedTypes.map((type) => ({ type, done: hasRealContent(findBlock(type)) })),
+  }), [blocks, hasContactValue, publishRule]);
 
-  const canPublish = useMemo(() => isRequiredSatisfied(blocks, hasContactValue), [blocks, hasContactValue]);
-
-  // Setup AI Agent — resumes from the persisted setup_messages history when there is one,
-  // so returning to this tab (or reloading the page) doesn't lose the conversation's context.
-  // Setup AI Agent
-  const [input, setInput] = useState('');
-
-  const setupTransport = useMemo(() => new DefaultChatTransport({
-    api: '/api/setup-agent',
-    prepareSendMessagesRequest: ({ id, messages }) => ({
-      body: { id, messages, businessId: business.id, locale, sessionId: activeSessionId },
-    }),
-  }), [business.id, locale, activeSessionId]);
-
-  const { messages, setMessages, sendMessage, status, stop } = useChat({
-    transport: setupTransport,
-    messages: initialChatMessages && initialChatMessages.length > 0
-      ? initialChatMessages.filter((m) => m.session_id === activeSessionId).map((m) => toUIMessage({ id: m.id, role: m.role, content: m.content }))
-      : [],  // Boş başlıyor — Sayfa Durumu Kartı sahte mesaj yerine geçiyor
-    onError: (error) => {
-      console.error('Setup agent chat error:', error);
-      // Faz 4.3: kredi bitti / Faz 4.1: mesaj çok uzun gibi sunucudan gelen anlaşılır
-      // mesajları doğrudan göster; boşsa jenerik metne düş.
-      alert(error.message || t('chatErrorFallback'));
-    },
-  });
-  const isChatLoading = status === 'streaming' || status === 'submitted';
-
-  const sendUserText = (text: string) => sendMessage({ text });
-
-  const handleChatFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isChatLoading) return;
-    sendUserText(input);
-    setInput('');
-  };
-
-  const archiveCurrentAndNewSession = async () => {
-    if (activeSessionId) {
-      await supabase.from('setup_messages').insert({
-        business_id: business.id,
-        session_id: activeSessionId,
-        role: 'assistant',
-        content: t('systemManualEditMessage')
-      });
-      await supabase.from('setup_sessions').update({ is_archived: true }).eq('id', activeSessionId);
-      setSessions((prev) => prev.map((s) => (s.id === activeSessionId ? { ...s, is_archived: true } : s)));
-    }
-    await handleNewChat();
-  };
-
-  const handleNewChat = async () => {
-    const newId = crypto.randomUUID();
-    // Persisted immediately (not on first message) — otherwise an abandoned new chat
-    // never lands in setup_sessions and a reload resurrects the previous conversation.
-    await supabase.from('setup_sessions').upsert({
-      id: newId,
-      business_id: business.id,
-      title: t('sessionDefaultTitle'),
-      is_archived: false
-    }, { onConflict: 'id' });
-    setActiveSessionId(newId);
-    setMessages([]);  // Tamamen boş — Sayfa Durumu Kartı devraliyor
-    setSessions((prev) => [{ id: newId, title: t('sessionDefaultTitle'), created_at: new Date().toISOString(), is_archived: false }, ...prev]);
-    setShowArchive(false);
-  };
-
-  const switchSession = async (sessionId: string) => {
-    setActiveSessionId(sessionId);
-    setShowArchive(false);
-    // Explicitly picking an archived session means the user wants to continue it —
-    // pull it back into active duty so it resurfaces on the next reload.
-    const targetSession = sessions.find((s) => s.id === sessionId);
-    if (targetSession?.is_archived) {
-      await supabase.from('setup_sessions').update({ is_archived: false }).eq('id', sessionId);
-      setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, is_archived: false } : s)));
-    }
-    const { data } = await supabase.from('setup_messages').select('*').eq('session_id', sessionId).order('created_at', { ascending: true });
-    if (data && data.length > 0) {
-      setMessages(data.map((m: any) => toUIMessage({ id: m.id, role: m.role, content: m.content })));
-    } else {
-      setMessages([toUIMessage({ id: '1', role: 'assistant', content: t('aiWelcome', { name: business.name }) })]);
-    }
-  };
+  const canPublish = useMemo(() => isRequiredSatisfied(blocks, hasContactValue, business.category_id), [blocks, hasContactValue, business.category_id]);
 
   // Inject the AI-chosen Google Font pair (dynamic per business, so it can't be a static <link> in <head>).
   useEffect(() => {
@@ -208,90 +96,6 @@ export default function EditorClient({
     }
     link.href = googleFontsHref(theme.headingFont, theme.bodyFont);
   }, [theme.headingFont, theme.bodyFont]);
-
-  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setIsUploadingMedia(true);
-
-      // Same Instagram-style downscale/re-encode as MediaUploader (src/utils/imageCompression.ts)
-      // — this path (Beiwe chat's attachment button) used to upload the raw file untouched, so a
-      // phone photo well past Supabase Storage's own server-side size limit was rejected outright.
-      const processedFile = await compressImageIfNeeded(file);
-      if (processedFile.size > 150 * 1024 * 1024) {
-        throw new Error(t('mediaUploadSizeError'));
-      }
-
-      const fileExt = processedFile.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-
-      const { error } = await supabase.storage.from('media').upload(fileName, processedFile, { cacheControl: '31536000' });
-      if (error) throw error;
-
-      const { data: { publicUrl } } = supabase.storage.from('media').getPublicUrl(fileName);
-
-      sendUserText(t('mediaUploadedMessage', { url: publicUrl }));
-
-    } catch (err: any) {
-      alert(t('mediaUploadError', { message: err.message }));
-    } finally {
-      setIsUploadingMedia(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-
-  // Scroll chat to bottom
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // The floating input bar's height grows with the textarea (multi-line messages) — the message
-  // list's bottom padding needs to track it, otherwise a tall input overlaps the last message(s).
-  useEffect(() => {
-    const el = chatInputBarRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver((entries) => {
-      const height = entries[0]?.contentRect.height;
-      if (height) setChatInputBarHeight(height);
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [viewMode]);
-
-  // Polling to refresh blocks if they change via AI tool calls
-  useEffect(() => {
-    if (viewMode === 'manual') return;
-    const interval = setInterval(async () => {
-      const { data } = await supabase
-        .from('blocks')
-        .select('*')
-        .eq('business_id', business.id)
-        .order('order', { ascending: true });
-      if (data) {
-        setBlocks(stripPublishedSnapshotBlock(data));
-      }
-      
-      // Also refresh business to get theme/contact/needs_republish updates made by the AI agent
-      const { data: bData } = await supabase.from('businesses').select('theme, contact_method, contact_value, needs_republish').eq('id', business.id).single();
-      if (bData) {
-        if (bData.theme && JSON.stringify(bData.theme) !== JSON.stringify(theme)) {
-          setTheme(bData.theme);
-        }
-        if (bData.contact_value !== contactValue) {
-          setContactValue(bData.contact_value);
-        }
-        if (bData.contact_method !== contactMethod) {
-          setContactMethod(bData.contact_method);
-        }
-        if (bData.needs_republish) {
-          setNeedsRepublish(true);
-        }
-      }
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [business.id, supabase, viewMode, contactValue, contactMethod, theme]);
 
   const savePublishedSnapshot = async () => {
     const content = createPublishedSnapshot(business, blocks);
@@ -372,7 +176,6 @@ export default function EditorClient({
 
   // Flags the business as having unpublished edits — called after any manual save (block edit,
   // delete, reorder, layout mode) so the publish button can prompt the owner to re-confirm.
-  // AI-chat-driven edits mark this server-side (setup-agent route), picked up by the polling effect below.
   const markNeedsRepublish = async () => {
     if (!isPublished) return;
     setNeedsRepublish(true);
@@ -439,7 +242,6 @@ export default function EditorClient({
         setBlocks(updatedBlocks);
       }
       await markNeedsRepublish();
-      await archiveCurrentAndNewSession();
 
       // Trigger background re-indexing for editor preview
       fetch(`/api/admin/businesses/${business.id}/reindex-semantic`, {
@@ -489,7 +291,6 @@ export default function EditorClient({
       const updatedBlocks = blocks.filter(b => b.id !== editingBlock.id);
        setBlocks(updatedBlocks);
       await markNeedsRepublish();
-      await archiveCurrentAndNewSession();
 
       // Trigger background re-indexing for editor preview
       fetch(`/api/admin/businesses/${business.id}/reindex-semantic`, {
@@ -537,7 +338,6 @@ export default function EditorClient({
     setBlocks([...withNewOrder, ...others]);
     await Promise.all(withNewOrder.map((b) => supabase.from('blocks').update({ order: b.order }).eq('id', b.id)));
     await markNeedsRepublish();
-    await archiveCurrentAndNewSession();
   };
 
   const copyLink = () => {
@@ -828,163 +628,10 @@ export default function EditorClient({
               <span className="hidden md:inline">{t('openPreview')}</span>
             </a>
           </div>
-
-          {/* Mode Switcher: düzenleme ve Saule chat arasında geçiş */}
-          <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-200">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 px-1">{t('editorMenuEdit')}</div>
-            <div className="grid grid-cols-[1fr_44px] gap-1">
-              <button
-                onClick={() => setViewMode('manual')}
-                className={`py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'manual' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                {t('tabManual')}
-              </button>
-              <button
-                onClick={() => setViewMode('activity')}
-                className={`h-9 rounded-lg text-sm font-medium transition-all ${viewMode === 'activity' ? 'bg-slate-100 text-[var(--ink)] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                title={t('activityTitle')}
-              >
-                <MessageSquare className="w-4 h-4 mx-auto" />
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Main Left Content */}
         <div className="flex-1 overflow-y-auto bg-slate-50/50 relative">
-          {showArchive && (
-            <div className="absolute inset-0 z-20 bg-white flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b border-slate-200">
-                <h3 className="font-semibold text-slate-800">{t('archive.title')}</h3>
-                <button onClick={() => setShowArchive(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-500">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                {sessions.length === 0 ? (
-                  <div className="text-center text-slate-500 py-8 text-sm">{t('archive.empty')}</div>
-                ) : (
-                  sessions.map(s => (
-                    <button
-                      key={s.id}
-                      onClick={() => switchSession(s.id)}
-                      className={`w-full text-left p-4 rounded-xl border transition-colors ${activeSessionId === s.id ? 'bg-[var(--coral-tint)] border-[var(--coral)] text-[var(--coral)]' : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'}`}
-                    >
-                      <div className="font-medium flex items-center gap-2">
-                        {s.title || t('archive.untitledChat')}
-                        {s.is_archived && (
-                          <span className="text-[10px] font-normal uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">{t('archive.archivedBadge')}</span>
-                        )}
-                      </div>
-                      <div className="text-xs opacity-70 mt-1">{new Date(s.created_at).toLocaleString()}</div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-          {viewMode === 'activity' ? (
-            <div className="flex flex-col h-full relative">
-              <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ paddingBottom: chatInputBarHeight + 16 }}>
-
-                {messages.map((m, idx) => (
-                  <div key={idx} className={`flex items-end gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    {m.role !== 'user' && (
-                      <div className="w-7 h-7 rounded-full overflow-hidden border border-slate-200 shrink-0 mb-0.5 p-[1px] bg-white flex items-center justify-center">
-                        <BeiweIcon size={24} />
-                      </div>
-                    )}
-                    <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${m.role === 'user' ? 'bg-[var(--ink)] text-white' : 'bg-white border border-slate-200 text-slate-800 shadow-sm'}`}>
-                      {getMessageText(m) === '__DEVAM__' ? (
-                        <span className="italic text-white/70 text-xs">{t('pageStatus.analyzingPlaceholder')}</span>
-                      ) : m.role === 'user' ? (
-                        getMessageText(m)
-                      ) : (
-                        <AgentMarkdown>{getMessageText(m)}</AgentMarkdown>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {isChatLoading && (
-                  <div className="flex items-end gap-2 justify-start">
-                    <div className="w-7 h-7 rounded-full overflow-hidden border border-slate-200 shrink-0 mb-0.5 p-[1px] bg-white flex items-center justify-center">
-                      <BeiweIcon size={24} />
-                    </div>
-                    <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm flex items-center space-x-2">
-                      <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></div>
-                      <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce delay-100"></div>
-                      <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce delay-200"></div>
-                    </div>
-                  </div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-
-              <div ref={chatInputBarRef} className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent">
-                <form onSubmit={handleChatFormSubmit} className="flex items-end gap-2">
-                  <button
-                    type="button"
-                    title={t('archive.title')}
-                    onClick={() => setShowArchive(true)}
-                    className="w-[46px] h-[46px] flex items-center justify-center bg-white text-slate-500 hover:text-[var(--coral)] rounded-full border border-slate-300 shadow-sm shrink-0 transition-colors"
-                  >
-                    <Archive className="w-5 h-5" />
-                  </button>
-
-                  <div className="relative flex-1">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploadingMedia || isChatLoading}
-                      className="absolute left-3 bottom-1.5 p-1.5 text-slate-400 hover:text-[var(--coral)] rounded-full disabled:opacity-50 transition-colors z-10"
-                    >
-                      {isUploadingMedia ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
-                    </button>
-                    <input type="file" ref={fileInputRef} onChange={handleMediaUpload} accept="image/*,video/*" className="hidden" />
-
-                    <textarea
-                      value={input}
-                      onChange={(e) => {
-                        setInput(e.target.value);
-                        e.target.style.height = 'auto';
-                        e.target.style.height = `${e.target.scrollHeight}px`;
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          if (input.trim() && !isChatLoading) {
-                            e.currentTarget.form?.requestSubmit();
-                          }
-                        }
-                      }}
-                      rows={1}
-                      placeholder={`${t('agentInputPlaceholder')} ${t('placeholderCost', { cost: installCreditCost })}`}
-                      className="w-full bg-white border border-slate-300 rounded-3xl pl-12 pr-12 py-3 text-sm focus:outline-none focus:border-[var(--coral)] focus:ring-1 focus:ring-[var(--coral)] shadow-sm resize-none overflow-hidden min-h-[46px] max-h-[150px]"
-                      style={{ maxHeight: '150px' }}
-                    />
-                    {isChatLoading ? (
-                      <button type="button" onClick={() => stop()} className="absolute right-2 bottom-1.5 w-8 h-8 flex items-center justify-center bg-[var(--coral)] text-white rounded-full transition-opacity">
-                        <Square className="w-3 h-3 fill-white" />
-                      </button>
-                    ) : (
-                      <button type="submit" disabled={!input.trim()} className="absolute right-2 bottom-1.5 w-8 h-8 flex items-center justify-center bg-[var(--coral)] text-white rounded-full disabled:opacity-50 transition-opacity">
-                        <Send className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  <button
-                    type="button"
-                    title={t('newChatTooltip')}
-                    onClick={() => handleNewChat()}
-                    className="w-[46px] h-[46px] flex items-center justify-center bg-white text-slate-500 hover:text-[var(--coral)] rounded-full border border-slate-300 shadow-sm shrink-0 transition-colors"
-                  >
-                    <MessageSquarePlus className="w-5 h-5" />
-                  </button>
-                </form>
-              </div>
-            </div>
-          ) : (
             <div className="p-4 md:p-6 space-y-4 pb-20">
               {/* Public Link Display */}
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
@@ -1353,12 +1000,14 @@ export default function EditorClient({
                 <ul className="space-y-1 mb-3">
                   <li className={`text-xs flex items-center ${checklist.contentReady ? 'text-green-600' : 'text-[var(--ink-soft)]'}`}>
                     {checklist.contentReady ? <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 shrink-0" /> : <Circle className="w-3.5 h-3.5 mr-1.5 shrink-0" />}
-                    {t('blocks.about')} / {t('blocks.services')}
+                    {publishRule.contentTypes.map((type) => t(`blocks.${type}`)).join(' / ')}
                   </li>
-                  <li className={`text-xs flex items-center ${checklist.contact ? 'text-green-600' : 'text-[var(--ink-soft)]'}`}>
-                    {checklist.contact ? <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 shrink-0" /> : <Circle className="w-3.5 h-3.5 mr-1.5 shrink-0" />}
-                    {t('blocks.contact')}
-                  </li>
+                  {publishRule.requireContact && (
+                    <li className={`text-xs flex items-center ${checklist.contact ? 'text-green-600' : 'text-[var(--ink-soft)]'}`}>
+                      {checklist.contact ? <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 shrink-0" /> : <Circle className="w-3.5 h-3.5 mr-1.5 shrink-0" />}
+                      {t('blocks.contact')}
+                    </li>
+                  )}
                   {checklist.recommended.map(({ type, done }) => (
                     <li key={type} className={`text-xs flex items-center ${done ? 'text-green-600' : 'text-[var(--ink-soft)] opacity-70'}`}>
                       {done ? <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 shrink-0" /> : <Circle className="w-3.5 h-3.5 mr-1.5 shrink-0" />}
@@ -1418,30 +1067,36 @@ export default function EditorClient({
                 </div>
               ))}
 
-              <div className="pt-4 border-t border-slate-200 mt-6">
-                <h4 className="text-sm font-medium text-[var(--ink-soft)] mb-3">{t('newSection')}</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {!blocks.some(b => b.type === 'about') && (
-                    <button onClick={() => createNewBlock('about', t('blocks.about'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.about')}</button>
-                  )}
-                  {!blocks.some(b => b.type === 'services') && (
-                    <button onClick={() => createNewBlock('services', t('blocks.services'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.services')}</button>
-                  )}
-                  {!blocks.some(b => b.type === 'faq') && (
-                    <button onClick={() => createNewBlock('faq', t('blocks.faq'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.faq')}</button>
-                  )}
-                  {!blocks.some(b => b.type === 'hours') && (
-                    <button onClick={() => createNewBlock('hours', t('blocks.hours'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.hours')}</button>
-                  )}
-                  {!blocks.some(b => b.type === 'links') && (
-                    <button onClick={() => createNewBlock('links', t('blocks.links'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.links')}</button>
-                  )}
-                  <button onClick={() => createNewBlock('extra_services', t('blocks.extra_services'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.extra_services')}</button>
-                  <button onClick={() => createNewBlock('custom', t('blocks.custom'))} className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm">{t('blocks.custom')}</button>
-                </div>
+              <div className="pt-4 border-t border-slate-200 mt-6 space-y-4">
+                <h4 className="text-sm font-medium text-[var(--ink-soft)]">{t('newSection')}</h4>
+                {([
+                  { labelKey: 'newSectionGroupBasic', types: ['about', 'custom', 'links'] as const },
+                  { labelKey: 'newSectionGroupSales', types: ['services', 'pricing', 'hours', 'extra_services'] as const },
+                  { labelKey: 'newSectionGroupTrust', types: ['testimonials', 'gallery', 'faq'] as const },
+                ]).map((group) => {
+                  // custom/extra_services tekil (singleton) değil — birden fazla eklenebilir, o yüzden her zaman görünür.
+                  const repeatable = ['custom', 'extra_services'];
+                  const visibleTypes = group.types.filter((type) => repeatable.includes(type) || !blocks.some(b => b.type === type));
+                  if (visibleTypes.length === 0) return null;
+                  return (
+                    <div key={group.labelKey}>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">{t(group.labelKey as any)}</div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {visibleTypes.map((type) => (
+                          <button
+                            key={type}
+                            onClick={() => createNewBlock(type, t(`blocks.${type}`))}
+                            className="py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-sm"
+                          >
+                            {t(`blocks.${type}`)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          )}
         </div>
       </div>
 

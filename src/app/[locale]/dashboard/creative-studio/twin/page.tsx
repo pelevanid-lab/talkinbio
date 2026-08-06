@@ -10,8 +10,9 @@ import type { CharacterShot } from '@/config/characters';
 // BeiweTwinClient'ı kullanır, tek fark: requireAdmin() yerine requireBusinessOwner(),
 // sabit TWIN_CHARACTER_ID yerine bu işletmenin kendi (auto-provision edilen) Twin'i,
 // ve statik CHARACTERS registry fallback'i yok (business Twin'i orada değil).
-export default async function CreativeStudioTwinPage() {
-  const business = await requireBusinessOwner();
+export default async function CreativeStudioTwinPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const business = await requireBusinessOwner(locale);
   const characterId = await getOrCreateBusinessTwin(business.id);
   const t = await getTranslations('BeiweLab');
 

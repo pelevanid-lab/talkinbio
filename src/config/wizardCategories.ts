@@ -1,10 +1,15 @@
 // Kategori tabanlı kurulum sihirbazı yapılandırması.
 // Her kategori kendi adım sırası, blok tipi ve i18n anahtarlarını tanımlar.
 // Gerçek metinler messages/{locale}.json içinde — burası sadece yapı.
+//
+// Akış "Ziyaretçilerinizin ne yapmasını istiyorsunuz?" sorusuna verilen cevaba göre
+// kategori seçimidir — her kategorinin adım listesi o kategori için tanımlanan
+// "başlangıç sayfası" iskeletini birebir üretir (bkz. kategori açıklamaları altında).
 
 export type WizardBlockType =
   | 'header'       // İşletme kaydı — blok oluşturmaz, business row oluşturur
   | 'services'
+  | 'pricing'
   | 'about'
   | 'links'
   | 'gallery'
@@ -19,7 +24,7 @@ export interface WizardStep {
   required: boolean;    // true → "Şimdilik geç" butonu gizlenir
   labelKey: string;     // useTranslations('Wizard') içinde kullanılacak alt anahtar
   tipKey: string;       // useTranslations('Wizard') içinde kullanılacak alt anahtar
-  itemLabelKey?: string; // Liste blokları için (services/links vb.) öğe etiketi
+  itemLabelKey?: string; // Liste blokları için (services/pricing/links vb.) öğe etiketi
 }
 
 export interface WizardCategory {
@@ -33,7 +38,9 @@ export interface WizardCategory {
 }
 
 export const WIZARD_CATEGORIES: WizardCategory[] = [
-  // ─── HİZMET ────────────────────────────────────────────────────────────────
+  // ─── HİZMET — "Hizmetlerimi incelesinler" ─────────────────────────────────
+  // Danışman, eğitmen, terapist, freelancer, güzellik uzmanı, tamirci gibi hizmet verenler.
+  // Başlangıç sayfası: Profil, Hakkımda, Hizmetler, Fiyatlar, Referanslar, SSS, İletişim.
   {
     id: 'hizmet',
     emoji: '🛎',
@@ -50,6 +57,13 @@ export const WIZARD_CATEGORIES: WizardCategory[] = [
         tipKey: 'hizmet.header.tip',
       },
       {
+        id: 'about',
+        blockType: 'about',
+        required: false,
+        labelKey: 'hizmet.about.label',
+        tipKey: 'hizmet.about.tip',
+      },
+      {
         id: 'services',
         blockType: 'services',
         required: false,
@@ -58,11 +72,12 @@ export const WIZARD_CATEGORIES: WizardCategory[] = [
         itemLabelKey: 'hizmet.services.itemLabel',
       },
       {
-        id: 'about',
-        blockType: 'about',
+        id: 'pricing',
+        blockType: 'pricing',
         required: false,
-        labelKey: 'hizmet.about.label',
-        tipKey: 'hizmet.about.tip',
+        labelKey: 'hizmet.pricing.label',
+        tipKey: 'hizmet.pricing.tip',
+        itemLabelKey: 'hizmet.pricing.itemLabel',
       },
       {
         id: 'testimonials',
@@ -70,13 +85,6 @@ export const WIZARD_CATEGORIES: WizardCategory[] = [
         required: false,
         labelKey: 'hizmet.testimonials.label',
         tipKey: 'hizmet.testimonials.tip',
-      },
-      {
-        id: 'gallery',
-        blockType: 'gallery',
-        required: false,
-        labelKey: 'hizmet.gallery.label',
-        tipKey: 'hizmet.gallery.tip',
       },
       {
         id: 'faq',
@@ -95,7 +103,11 @@ export const WIZARD_CATEGORIES: WizardCategory[] = [
     ],
   },
 
-  // ─── İÇERİK ÜRETİCİSİ ─────────────────────────────────────────────────────
+  // ─── İÇERİK ÜRETİCİSİ — "İçeriklerimi keşfetsinler" ───────────────────────
+  // İçerik üreticisi, influencer, YouTuber, yayıncı.
+  // Başlangıç sayfası: Profil, Öne çıkan içerik, Sosyal medya bağlantıları, İş birliği, İletişim.
+  // NOT: Spesifikasyondaki "Son içerikler" ayrı bir adım değil — galeri bloğu tek (singleton)
+  // olduğundan "Öne çıkan içerik" adımıyla birleştirildi (tip metni ikisini de kapsar).
   {
     id: 'icerik-ureticisi',
     emoji: '🎬',
@@ -112,6 +124,13 @@ export const WIZARD_CATEGORIES: WizardCategory[] = [
         tipKey: 'icerikUreticisi.header.tip',
       },
       {
+        id: 'oneCikan',
+        blockType: 'gallery',
+        required: false,
+        labelKey: 'icerikUreticisi.oneCikan.label',
+        tipKey: 'icerikUreticisi.oneCikan.tip',
+      },
+      {
         id: 'links',
         blockType: 'links',
         required: false,
@@ -120,25 +139,11 @@ export const WIZARD_CATEGORIES: WizardCategory[] = [
         itemLabelKey: 'icerikUreticisi.links.itemLabel',
       },
       {
-        id: 'kitlem',
-        blockType: 'custom',
-        required: false,
-        labelKey: 'icerikUreticisi.kitlem.label',
-        tipKey: 'icerikUreticisi.kitlem.tip',
-      },
-      {
-        id: 'gallery',
-        blockType: 'gallery',
-        required: false,
-        labelKey: 'icerikUreticisi.gallery.label',
-        tipKey: 'icerikUreticisi.gallery.tip',
-      },
-      {
-        id: 'testimonials',
+        id: 'isBirligi',
         blockType: 'testimonials',
         required: false,
-        labelKey: 'icerikUreticisi.testimonials.label',
-        tipKey: 'icerikUreticisi.testimonials.tip',
+        labelKey: 'icerikUreticisi.isBirligi.label',
+        tipKey: 'icerikUreticisi.isBirligi.tip',
       },
       {
         id: 'contact',
@@ -150,7 +155,12 @@ export const WIZARD_CATEGORIES: WizardCategory[] = [
     ],
   },
 
-  // ─── MÜZİSYEN ──────────────────────────────────────────────────────────────
+  // ─── MÜZİSYEN — "Müziğimi dinlesinler" ────────────────────────────────────
+  // Müzisyen, grup, DJ, prodüktör.
+  // Başlangıç sayfası: Profil, Son yayın, Dinleme bağlantıları, Video veya galeri,
+  // Hakkımızda, Etkinlikler, İletişim.
+  // NOT: "Etkinlikler" için ayrı bir blok tipi yok — services bloğu (başlık/açıklama/fiyat)
+  // etkinlik adı/mekan-tarih/bilet fiyatı olarak yeniden kullanılıyor.
   {
     id: 'muzisyen',
     emoji: '🎵',
@@ -167,6 +177,13 @@ export const WIZARD_CATEGORIES: WizardCategory[] = [
         tipKey: 'muzisyen.header.tip',
       },
       {
+        id: 'sonYayin',
+        blockType: 'custom',
+        required: false,
+        labelKey: 'muzisyen.sonYayin.label',
+        tipKey: 'muzisyen.sonYayin.tip',
+      },
+      {
         id: 'links',
         blockType: 'links',
         required: false,
@@ -175,11 +192,11 @@ export const WIZARD_CATEGORIES: WizardCategory[] = [
         itemLabelKey: 'muzisyen.links.itemLabel',
       },
       {
-        id: 'sonCikan',
-        blockType: 'custom',
+        id: 'gallery',
+        blockType: 'gallery',
         required: false,
-        labelKey: 'muzisyen.sonCikan.label',
-        tipKey: 'muzisyen.sonCikan.tip',
+        labelKey: 'muzisyen.gallery.label',
+        tipKey: 'muzisyen.gallery.tip',
       },
       {
         id: 'about',
@@ -189,18 +206,12 @@ export const WIZARD_CATEGORIES: WizardCategory[] = [
         tipKey: 'muzisyen.about.tip',
       },
       {
-        id: 'testimonials',
-        blockType: 'testimonials',
+        id: 'etkinlikler',
+        blockType: 'services',
         required: false,
-        labelKey: 'muzisyen.testimonials.label',
-        tipKey: 'muzisyen.testimonials.tip',
-      },
-      {
-        id: 'gallery',
-        blockType: 'gallery',
-        required: false,
-        labelKey: 'muzisyen.gallery.label',
-        tipKey: 'muzisyen.gallery.tip',
+        labelKey: 'muzisyen.etkinlikler.label',
+        tipKey: 'muzisyen.etkinlikler.tip',
+        itemLabelKey: 'muzisyen.etkinlikler.itemLabel',
       },
       {
         id: 'contact',
@@ -212,7 +223,11 @@ export const WIZARD_CATEGORIES: WizardCategory[] = [
     ],
   },
 
-  // ─── ÜRÜN ──────────────────────────────────────────────────────────────────
+  // ─── ÜRÜN — "Ürünlerimi incelesinler" ─────────────────────────────────────
+  // Fiziksel veya dijital ürün sunan kişiler.
+  // Başlangıç sayfası: Profil, Ürünler, Fiyatlar, Galeri, Teslimat/iade bilgileri, SSS, İletişim
+  // + (spesifikasyon dışı, bilinçli ek) Satın al bağlantısı — bir e-ticaret sayfası için dış
+  // mağaza linki genelde iletişimden daha kritik bir dönüşüm adımı olduğundan eklendi.
   {
     id: 'urun',
     emoji: '📦',
@@ -237,19 +252,12 @@ export const WIZARD_CATEGORIES: WizardCategory[] = [
         itemLabelKey: 'urun.services.itemLabel',
       },
       {
-        id: 'links',
-        blockType: 'links',
+        id: 'pricing',
+        blockType: 'pricing',
         required: false,
-        labelKey: 'urun.links.label',
-        tipKey: 'urun.links.tip',
-        itemLabelKey: 'urun.links.itemLabel',
-      },
-      {
-        id: 'testimonials',
-        blockType: 'testimonials',
-        required: false,
-        labelKey: 'urun.testimonials.label',
-        tipKey: 'urun.testimonials.tip',
+        labelKey: 'urun.pricing.label',
+        tipKey: 'urun.pricing.tip',
+        itemLabelKey: 'urun.pricing.itemLabel',
       },
       {
         id: 'gallery',
@@ -259,11 +267,11 @@ export const WIZARD_CATEGORIES: WizardCategory[] = [
         tipKey: 'urun.gallery.tip',
       },
       {
-        id: 'about',
-        blockType: 'about',
+        id: 'teslimatIade',
+        blockType: 'custom',
         required: false,
-        labelKey: 'urun.about.label',
-        tipKey: 'urun.about.tip',
+        labelKey: 'urun.teslimatIade.label',
+        tipKey: 'urun.teslimatIade.tip',
       },
       {
         id: 'faq',
@@ -271,6 +279,14 @@ export const WIZARD_CATEGORIES: WizardCategory[] = [
         required: false,
         labelKey: 'urun.faq.label',
         tipKey: 'urun.faq.tip',
+      },
+      {
+        id: 'links',
+        blockType: 'links',
+        required: false,
+        labelKey: 'urun.links.label',
+        tipKey: 'urun.links.tip',
+        itemLabelKey: 'urun.links.itemLabel',
       },
       {
         id: 'contact',

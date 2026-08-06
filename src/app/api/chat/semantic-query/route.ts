@@ -15,6 +15,13 @@ import { findSemanticMatch } from '@/utils/semantic/matcher';
 // Short-term in-memory cache for query embeddings to avoid duplicate Cloudflare AI calls
 const queryEmbeddingCache = new Map<string, number[]>();
 
+// Deterministic (non-LLM) reply strings below need all three locales — this used to be a
+// two-way `activeLocale === 'tr' ? TR : EN` ternary in several places, which silently gave
+// RU visitors English text. One helper, one place to keep it correct in all three languages.
+function pickLocale<T>(locale: 'tr' | 'en' | 'ru', tr: T, en: T, ru: T): T {
+  return locale === 'tr' ? tr : locale === 'ru' ? ru : en;
+}
+
 // Extremely lightweight in-memory rate limiter
 const ipRateLimiter = new Map<string, { count: number; resetAt: number }>();
 
@@ -30,6 +37,9 @@ function isRateLimited(ip: string): boolean {
 }
 
 export async function POST(request: Request) {
+  // Outer catch needs the visitor's locale to reply in the right language too — declared
+  // here (not `const` inside try) so it survives a crash after the body is parsed.
+  let activeLocale: 'tr' | 'en' | 'ru' = 'tr';
   try {
     // 1. Rate limiting check
     const clientIp = request.headers.get('x-forwarded-for') || 'anonymous';
@@ -43,7 +53,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing businessId or query' }, { status: 400 });
     }
 
-    const activeLocale = (locale as 'tr' | 'en' | 'ru') || 'tr';
+    activeLocale = (locale as 'tr' | 'en' | 'ru') || 'tr';
     const normQuery = normalizeString(query);
 
     // Limit query length to prevent abuse / large payloads
@@ -284,7 +294,7 @@ export async function POST(request: Request) {
 
     if (entries.length === 0) {
       // Return safe fallback if no index entries can be compiled at all
-      const fallbackText = activeLocale === 'tr' ? 'Şu anda bu soruya cevap veremiyorum.' : 'I cannot answer this question right now.';
+      const fallbackText = pickLocale(activeLocale, 'Şu anda bu soruya cevap veremiyorum.', 'I cannot answer this question right now.', 'Сейчас я не могу ответить на этот вопрос.');
       await persistResponseAndDeduct(fallbackText);
       return NextResponse.json({
         type: 'fallback',
@@ -354,7 +364,7 @@ export async function POST(request: Request) {
     if (topCandidate && topCandidate.finalScore >= 0.70 && topCandidate.action?.type === 'open_block') {
       executedBehavior = 'Deterministic Block Match';
       finalResult.type = 'match';
-      finalResult.text = topCandidate.answer || (activeLocale === 'tr' ? `${topCandidate.title} bölümünü açıyorum.` : `Opening ${topCandidate.title} section.`);
+      finalResult.text = topCandidate.answer || pickLocale(activeLocale, `${topCandidate.title} bölümünü açıyorum.`, `Opening ${topCandidate.title} section.`, `Открываю раздел «${topCandidate.title}».`);
       finalResult.action = topCandidate.action;
       finalResult.matchedBlock = {
         title: topCandidate.title,
@@ -362,10 +372,13 @@ export async function POST(request: Request) {
         blockId: topCandidate.action?.blockId,
         itemId: topCandidate.action?.itemId,
       };
-      finalResult.suggestedQuestions = activeLocale === 'tr' 
-        ? ['İletişime nasıl geçerim?', 'Hemen randevu alabilir miyim?']
-        : ['How can I contact?', 'Can I book an appointment?'];
-    } 
+      finalResult.suggestedQuestions = pickLocale(
+        activeLocale,
+        ['İletişime nasıl geçerim?', 'Hemen randevu alabilir miyim?'],
+        ['How can I contact?', 'Can I book an appointment?'],
+        ['Как с вами связаться?', 'Можно ли записаться прямо сейчас?']
+      );
+    }
     // 2. BEHAVIOR 3: No candidates found above 0.35 similarity -> Fallback (handled on client side based on leadCaptureEnabled/contactValue)
     else if (topCandidates.length === 0) {
       // Check if it's a generic contact/address request (e.g. contains 'adres', 'konum', 'iletisim' but had no custom knowledge note in DB)
@@ -384,14 +397,17 @@ export async function POST(request: Request) {
           }
           finalResult.action = { type: 'open_block', blockId: '__contact__', itemId: preferred };
           finalResult.matchedBlock = {
-            title: activeLocale === 'tr' ? 'İletişim' : 'Contact',
-            description: activeLocale === 'tr' ? 'Bizimle doğrudan iletişime geçin.' : 'Get in touch with us directly.',
+            title: pickLocale(activeLocale, 'İletişim', 'Contact', 'Контакты'),
+            description: pickLocale(activeLocale, 'Bizimle doğrudan iletişime geçin.', 'Get in touch with us directly.', 'Свяжитесь с нами напрямую.'),
             blockId: '__contact__',
             itemId: preferred,
           };
-          finalResult.suggestedQuestions = activeLocale === 'tr'
-            ? ['Adresiniz nedir?', 'Yüz yüze eğitim var mı?']
-            : ['What is your address?', 'Is there face-to-face training?'];
+          finalResult.suggestedQuestions = pickLocale(
+            activeLocale,
+            ['Adresiniz nedir?', 'Yüz yüze eğitim var mı?'],
+            ['What is your address?', 'Is there face-to-face training?'],
+            ['Какой у вас адрес?', 'Есть ли очное обучение?']
+          );
         } else {
           finalResult.type = 'fallback';
           finalResult.text = '';
@@ -612,9 +628,12 @@ Return ONLY a valid JSON object. Do not include markdown code block formatting (
         // Fallback to top matched candidate
         finalResult.text = topCandidate?.answer || topCandidate?.searchText || '';
         finalResult.action = topCandidate?.action || null;
-        finalResult.suggestedQuestions = activeLocale === 'tr' 
-          ? ['İletişime nasıl geçerim?', 'Daha fazla bilgi alabilir miyim?']
-          : ['How to contact?', 'Can I get more info?'];
+        finalResult.suggestedQuestions = pickLocale(
+          activeLocale,
+          ['İletişime nasıl geçerim?', 'Daha fazla bilgi alabilir miyim?'],
+          ['How to contact?', 'Can I get more info?'],
+          ['Как с вами связаться?', 'Можно узнать больше?']
+        );
         
         if (topCandidate?.action?.blockId) {
           finalResult.matchedBlock = {
@@ -642,7 +661,7 @@ Return ONLY a valid JSON object. Do not include markdown code block formatting (
     console.error('Semantic query route error:', err);
     return NextResponse.json({
       type: 'fallback',
-      text: 'Bir hata oluştu, lütfen daha sonra tekrar deneyin.'
+      text: pickLocale(activeLocale, 'Bir hata oluştu, lütfen daha sonra tekrar deneyin.', 'An error occurred, please try again later.', 'Произошла ошибка, попробуйте позже.')
     }, { status: 500 });
   }
 }

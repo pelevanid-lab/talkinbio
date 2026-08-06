@@ -1,35 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- test doubles for the Supabase query builder are intentionally loose */
 import { describe, it, expect, vi } from 'vitest';
 import {
-  sauleCreditCost,
   hasCredits,
   deductCredits,
   creditsExhaustedPayload,
   SAULE_CREDIT_COST,
   SAULE_STUDIO_UPDATE_CREDIT_COST,
-  SAULE_STUDIO_INSTALL_CREDIT_COST,
 } from './credits';
 
 describe('constants', () => {
   it('default to the calibrated values (update >= 60, per user correction 2026-07-18)', () => {
     expect(SAULE_CREDIT_COST).toBe(1);
     expect(SAULE_STUDIO_UPDATE_CREDIT_COST).toBe(60);
-    expect(SAULE_STUDIO_INSTALL_CREDIT_COST).toBe(100);
-  });
-});
-
-describe('sauleCreditCost', () => {
-  it('charges nothing when no tool was called', () => {
-    expect(sauleCreditCost(0)).toBe(0);
-  });
-
-  it('charges the update tier for a single tool call', () => {
-    expect(sauleCreditCost(1)).toBe(SAULE_STUDIO_UPDATE_CREDIT_COST);
-  });
-
-  it('charges the install tier for multiple tool calls in one turn', () => {
-    expect(sauleCreditCost(2)).toBe(SAULE_STUDIO_INSTALL_CREDIT_COST);
-    expect(sauleCreditCost(6)).toBe(SAULE_STUDIO_INSTALL_CREDIT_COST);
   });
 });
 

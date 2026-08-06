@@ -267,14 +267,11 @@
     "panelTitle": "Editor",
     "openPreview": "Open Preview",
     "costEstimation": "(Max. ≈{cost} credits)",
-    "placeholderCost": "(Max. ≈{cost} credits per operation)",
     "previewBtn": "Preview",
     "tabAgent": "Setup Agent",
     "tabBulk": "Bulk Text",
-    "tabManual": "Fine Tune",
     "tabVisual": "Visual",
     "editorMenuSetup": "Setup",
-    "editorMenuEdit": "Editing",
     "profileLink": "Your Profile Link",
     "pageTitle": "Page Title (optional)",
     "tagline": "Short Description (optional)",
@@ -324,12 +321,15 @@
     "unpublishBtn": "Unpublish",
     "republishBtn": "Republish",
     "republishHint": "Tap to confirm your latest changes are reflected on the live page.",
-    "publishHint": "To publish, complete either About or Services, plus your contact info.",
+    "publishHint": "To publish, complete the items above.",
     "optionalHint": "recommended",
     "manualTitle": "Fine Tune",
     "manualDesc": "Manually edit content, design, contact and publishing settings here.",
     "noContent": "No content yet.",
     "newSection": "New Section (Manual)",
+    "newSectionGroupBasic": "Basics",
+    "newSectionGroupSales": "Sales & services",
+    "newSectionGroupTrust": "Trust",
     "blocks": {
       "about": "About",
       "services": "Services",
@@ -348,9 +348,6 @@
     "previewEmpty": "Start with Instagram import or bulk text.",
     "assistantSuffix": "Assistant",
     "assistantGreeting": "How can I help you?",
-    "chatPlaceholder": "Type a message to your assistant...",
-    "agentInputPlaceholder": "Write an operation note...",
-    "aiWelcome": "Hello {name}! Start with Import Instagram or Bulk Text to build your page.",
     "leadsNavTooltip": "Requests & Conversations Panel",
     "leadsNavLabel": "Panel",
     "contentStudioTooltip": "Content Studio",
@@ -365,29 +362,6 @@
     "insightDefaultTrigger": "I'd like to review an insight from my conversations.",
     "creditBalance": "Credit Balance",
     "creditBalanceHint": "Your credit balance and usage history — click for details",
-    "archive": {
-      "title": "Past Conversations",
-      "empty": "No past conversations found.",
-      "untitledChat": "Chat",
-      "archivedBadge": "Archived"
-    },
-    "newChatTooltip": "New Chat",
-    "sessionDefaultTitle": "New Chat",
-    "pageStatus": {
-      "title": "📊 Page Status",
-      "completedCount": "{done}/{total} completed",
-      "hoursLabel": "Hours",
-      "faqLabel": "FAQ",
-      "contactLabel": "Contact",
-      "continueBtn": "Complete Missing Parts",
-      "allComplete": "Core sections are complete. Use Fine Tune to prepare for publishing.",
-      "analyzingPlaceholder": "Analyze my page..."
-    },
-    "systemManualEditMessage": "[System: A manual edit was made in this session. A new chat was started.]",
-    "mediaUploadedMessage": "[The user uploaded a media file to the system: {url}]",
-    "mediaUploadError": "An error occurred while uploading the file: {message}",
-    "mediaUploadSizeError": "File size must be under 150MB.",
-    "chatErrorFallback": "An error occurred while sending the message. If you sent a very long text, try splitting it into a few parts and sending again.",
     "publishToggleError": "An error occurred while updating the publish status.",
     "acknowledgeError": "An error occurred while processing the request.",
     "saveBlockError": "An error occurred while saving.",
@@ -444,7 +418,6 @@
       }
     },
     "tabInstagram": "Import Instagram",
-    "activityTitle": "Activity",
     "instagramTitle": "Import Instagram",
     "instagramDesc": "Enter a profile link or username. The system reads it once and drafts the first version of your page.",
     "instagramPlaceholder": "instagram.com/username or @username",
@@ -812,7 +785,34 @@
     "hoursBlockTitle": "Business Hours"
   },
   "PublicPage": {
-    "unpublishedBanner": "Your profile isn't open to visitors yet. Complete the missing steps to publish it."
+    "unpublishedBanner": "Your profile isn't open to visitors yet. Complete the missing steps to publish it.",
+    "greetingFallback": "Welcome, how can I help you?",
+    "matchingBlock": "Opening the relevant section:\n\n✨ {title}",
+    "noMatchLead": "I could not find the exact topic on the page. However, if you leave your contact details, we will get back to you as soon as possible:",
+    "noMatchContact": "I could not find the topic. For detailed information, you can contact us directly:",
+    "noMatchFallback": "I could not find what you are looking for at the moment. Please explore other sections of the page.",
+    "listening": "Listening...",
+    "chatPlaceholder": "Write a message...",
+    "viewFullPage": "View Full Page ↗",
+    "backAriaLabel": "Go Back",
+    "yourQuestion": "Your Question",
+    "relatedQuestions": "Related questions",
+    "whatsappCta": "Ask via WhatsApp",
+    "callCta": "Call Now",
+    "emailCta": "Send Email",
+    "leadForm": {
+      "namePlaceholder": "Your Name",
+      "contactPlaceholder": "Phone or Email",
+      "submitBtn": "Send My Info",
+      "submitting": "Sending...",
+      "error": "An error occurred, please try again later.",
+      "successTitle": "Request Received!",
+      "successBody": "We will get back to you as soon as possible. Thank you!"
+    },
+    "mic": {
+      "tooltip": "Microphone (Hold to Speak)",
+      "permissionDenied": "Microphone access permission is required."
+    }
   },
   "Metadata": {
     "title": "talkinbio | Your Next-Generation Talking Bio Link",
@@ -1503,8 +1503,8 @@
     "title": "Talkinbio Lab"
   },
   "Wizard": {
-    "categorySelectTitle": "What kind of profile are you creating?",
-    "categorySelectSub": "Pick your category and get a tailored setup flow.",
+    "categorySelectTitle": "What do you want your visitors to do?",
+    "categorySelectSub": "Based on your pick, we'll build you a tailored starting page.",
     "setupTitle": "Let us set up your page",
     "saveBtn": "Save and continue",
     "skipBtn": "Skip for now",
@@ -1529,20 +1529,20 @@
     },
     "categories": {
       "hizmet": {
-        "label": "Service",
-        "desc": "Appointments, sessions, consulting"
+        "label": "Have visitors check out my services",
+        "desc": "Consultants, coaches, therapists, freelancers, beauty pros, repair techs, and other service providers"
       },
       "icerikUreticisi": {
-        "label": "Content Creator",
-        "desc": "Brand deals, digital presence"
+        "label": "Have visitors discover my content",
+        "desc": "Content creators, influencers, YouTubers, streamers"
       },
       "muzisyen": {
-        "label": "Musician",
-        "desc": "Music, events, audience"
+        "label": "Have visitors listen to my music",
+        "desc": "Musicians, bands, DJs, producers"
       },
       "urun": {
-        "label": "Product",
-        "desc": "Sales, catalog, store"
+        "label": "Have visitors check out my products",
+        "desc": "People selling physical or digital products"
       }
     },
     "hizmet": {
@@ -1550,22 +1550,23 @@
         "label": "Who + title",
         "tip": "Your name and specialty are the first thing visitors see. Keep it short and clear."
       },
+      "about": {
+        "label": "Why me",
+        "tip": "Your credentials, experience, and what makes you different."
+      },
       "services": {
         "label": "My services",
         "tip": "Visitors look for pricing first. Adding a price or range for each service increases booking chances.",
         "itemLabel": "Service"
       },
-      "about": {
-        "label": "Why me",
-        "tip": "Your credentials, experience, and what makes you different."
+      "pricing": {
+        "label": "My packages",
+        "tip": "Selling single sessions or packages? List your packages here with clear prices so visitors can compare and pick easily.",
+        "itemLabel": "Package"
       },
       "testimonials": {
         "label": "Client testimonials",
         "tip": "Real testimonials are your strongest persuasion tool. Name and quote is enough."
-      },
-      "gallery": {
-        "label": "Results",
-        "tip": "Before-and-after photos or workspace images build trust."
       },
       "faq": {
         "label": "FAQ",
@@ -1581,22 +1582,18 @@
         "label": "Who + niche",
         "tip": "Describe your content niche in one sentence."
       },
+      "oneCikan": {
+        "label": "Featured content",
+        "tip": "Add your best and most recent work — this is what a brand or new follower sees first."
+      },
       "links": {
-        "label": "My platforms",
+        "label": "My social links",
         "tip": "Brands want to know where to find you. Add your active platforms.",
         "itemLabel": "Platform"
       },
-      "kitlem": {
-        "label": "My audience",
-        "tip": "Platform, follower count, audience profile. Key info for brand deals — skip what you prefer not to share."
-      },
-      "gallery": {
-        "label": "Best work",
-        "tip": "Add your strongest visuals from past work."
-      },
-      "testimonials": {
-        "label": "Brands I worked with",
-        "tip": "Brand name and what you did together is enough."
+      "isBirligi": {
+        "label": "Brand collaborations",
+        "tip": "Brand name and what you did together is enough — it builds trust with new brands."
       },
       "contact": {
         "label": "Business contact",
@@ -1608,26 +1605,27 @@
         "label": "Who + genre",
         "tip": "State your genre so fans recognize you instantly."
       },
-      "links": {
-        "label": "Listen now",
-        "tip": "Fans want to press play immediately. Put Spotify first.",
-        "itemLabel": "Platform"
-      },
-      "sonCikan": {
+      "sonYayin": {
         "label": "Latest release",
         "tip": "Introduce your new single, album, or video. A short description is enough."
       },
-      "about": {
-        "label": "My story",
-        "tip": "Who you are and how you started. Keep it short."
-      },
-      "testimonials": {
-        "label": "Press / reviews",
-        "tip": "Articles, magazine reviews, or fan messages."
+      "links": {
+        "label": "Listening links",
+        "tip": "Fans want to press play immediately. Put Spotify first.",
+        "itemLabel": "Platform"
       },
       "gallery": {
-        "label": "Visuals / clips",
-        "tip": "Concert photos, album covers, stage visuals."
+        "label": "Video or gallery",
+        "tip": "Concert photos, video stills, stage visuals."
+      },
+      "about": {
+        "label": "About us",
+        "tip": "Who you are and how you started making music. Keep it short."
+      },
+      "etkinlikler": {
+        "label": "Events",
+        "tip": "List your upcoming shows with date and venue.",
+        "itemLabel": "Event"
       },
       "contact": {
         "label": "Booking",
@@ -1640,30 +1638,31 @@
         "tip": "Make your brand name and what you sell immediately clear."
       },
       "services": {
-        "label": "Featured products",
+        "label": "My products",
         "tip": "Nobody buys without photos. Add an image and price for each product.",
         "itemLabel": "Product"
       },
-      "links": {
-        "label": "Buy now",
-        "tip": "Add your store, Etsy, or website link.",
-        "itemLabel": "Store"
-      },
-      "testimonials": {
-        "label": "Customer reviews",
-        "tip": "Real reviews increase sales."
+      "pricing": {
+        "label": "My pricing",
+        "tip": "If you have bundles, sets, or bulk pricing, make them clear here.",
+        "itemLabel": "Package"
       },
       "gallery": {
-        "label": "Product gallery",
+        "label": "Gallery",
         "tip": "Your products from the best angles."
       },
-      "about": {
-        "label": "Brand story",
-        "tip": "How you started and what you believe in."
+      "teslimatIade": {
+        "label": "Shipping & returns",
+        "tip": "Briefly note shipping time, return policy, and packaging."
       },
       "faq": {
-        "label": "Shipping / returns",
-        "tip": "Shipping time, return policy, packaging info."
+        "label": "FAQ",
+        "tip": "Answer the questions people have before buying."
+      },
+      "links": {
+        "label": "Buy link",
+        "tip": "Add your store, Etsy, or website link.",
+        "itemLabel": "Store"
       },
       "contact": {
         "label": "Order / contact",

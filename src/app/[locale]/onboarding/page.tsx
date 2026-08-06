@@ -36,6 +36,7 @@ function generateUsername(name: string, desired?: string): string {
 function buildBlockContent(blockType: string, data: any, locale: string): any {
   switch (blockType) {
     case 'services':
+    case 'pricing':
       return {
         layoutVariant: 'grid-cards',
         items: (data.items || []).map((item: any) => ({
@@ -93,6 +94,7 @@ function hasContent(blockType: string, data: any): boolean {
     case 'about':
     case 'custom':  return !!(data.text?.trim());
     case 'services':
+    case 'pricing':
     case 'links':
     case 'gallery':
     case 'testimonials':
@@ -1097,7 +1099,8 @@ export default function OnboardingPage() {
 
     switch (currentStep.blockType) {
       case 'header':       return <HeaderForm data={data} onChange={onChange} t={t} />;
-      case 'services':     return <ServiceForm data={data} onChange={onChange} t={t} itemLabel={itemLabel} />;
+      case 'services':
+      case 'pricing':       return <ServiceForm data={data} onChange={onChange} t={t} itemLabel={itemLabel} />;
       case 'about':
       case 'custom':       return <TextForm data={data} onChange={onChange} t={t} />;
       case 'links':        return <LinksForm data={data} onChange={onChange} t={t} itemLabel={itemLabel} />;

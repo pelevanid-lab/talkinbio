@@ -25,8 +25,6 @@ type PublicPageRuntimeValue = {
   // Saule deterministic bubble state
   businessId: string;
   blocks: any[];
-  knowledge: any[];
-  businessName: string;
   contactMethod: string | null;
   contactValue: string | null;
   leadCaptureEnabled: boolean;
@@ -48,6 +46,12 @@ type PublicPageRuntimeValue = {
   setQueryTrigger: (trigger: { query: string } | null) => void;
   glitchTrigger: number;
   triggerGlitch: () => void;
+
+  // Soru/cevap balonundan karşılama durumuna dön — hem ProfileHeader'ın (geri oku)
+  // hem ProfilePageBody'nin (eşleşen blok kartı tıklaması) aynı sıfırlamayı tek
+  // yerden yapması için. fallbackGreeting çağıran taraftan gelir (locale bilgisi
+  // orada — useTranslations/useLocale) böylece karşılama her zaman doğru dilde olur.
+  resetToGreeting: (fallbackGreeting: string) => void;
 };
 
 const PublicPageRuntimeContext = createContext<PublicPageRuntimeValue | null>(null);
@@ -57,8 +61,6 @@ export function PublicPageRuntimeProvider({
   targets,
   businessId = '',
   blocks = [],
-  knowledge = [],
-  businessName = '',
   contactMethod = null,
   contactValue = null,
   leadCaptureEnabled = true,
@@ -68,8 +70,6 @@ export function PublicPageRuntimeProvider({
   targets: PageActionBlockTarget[];
   businessId?: string;
   blocks?: any[];
-  knowledge?: any[];
-  businessName?: string;
   contactMethod?: string | null;
   contactValue?: string | null;
   leadCaptureEnabled?: boolean;
@@ -92,12 +92,6 @@ export function PublicPageRuntimeProvider({
   const triggerGlitch = useCallback(() => {
     setGlitchTrigger((prev) => prev + 1);
   }, []);
-
-  const targetMap = useMemo(() => {
-    const map = new Map<string, Set<string>>();
-    targets.forEach((target) => map.set(target.blockId, new Set(target.items.map((item) => item.itemId))));
-    return map;
-  }, [targets]);
 
   const openBlock = useCallback(
     (blockId: string, itemId?: string | null): PageActionResult => {
@@ -123,6 +117,16 @@ export function PublicPageRuntimeProvider({
     setActiveItemId(null);
   }, []);
 
+  const resetToGreeting = useCallback((greetingText: string) => {
+    setSauleQuestion('');
+    setQueryTrigger(null);
+    setSauleSuggestions([]);
+    setSauleMatchedBlock(null);
+    setSauleText(greetingText);
+    setSauleState('idle');
+    setGlitchTrigger((prev) => prev + 1);
+  }, []);
+
   const value = useMemo(
     () => ({
       activeBlockId,
@@ -132,8 +136,6 @@ export function PublicPageRuntimeProvider({
       clearActiveBlock,
       businessId,
       blocks,
-      knowledge,
-      businessName,
       contactMethod,
       contactValue,
       leadCaptureEnabled,
@@ -154,6 +156,7 @@ export function PublicPageRuntimeProvider({
       setQueryTrigger,
       glitchTrigger,
       triggerGlitch,
+      resetToGreeting,
     }),
     [
       activeBlockId,
@@ -163,8 +166,6 @@ export function PublicPageRuntimeProvider({
       clearActiveBlock,
       businessId,
       blocks,
-      knowledge,
-      businessName,
       contactMethod,
       contactValue,
       leadCaptureEnabled,
@@ -178,6 +179,7 @@ export function PublicPageRuntimeProvider({
       queryTrigger,
       glitchTrigger,
       triggerGlitch,
+      resetToGreeting,
     ]
   );
 

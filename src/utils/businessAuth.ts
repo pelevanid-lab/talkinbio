@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 import { createClient as createServerClient } from '@/utils/supabase/server';
 
 export type Business = {
@@ -15,23 +15,27 @@ export type Business = {
  * "getUser + businesses sorgusu + redirect" bloğunun tek kaynağı. requireAdmin()'in
  * (src/utils/adminAuth.ts) business-owner karşılığı: paylaşımlı admin şifresi yerine
  * Supabase oturumu + `businesses.owner_id` eşleşmesi.
+ *
+ * `locale` zorunlu — next-intl'in `redirect()`'i (bkz. i18n/routing.ts) `next/navigation`'ın
+ * aksine locale prefix'ini korur; onsuz /en veya /ru'da gezinen bir kullanıcı sessizce
+ * varsayılan `tr`'ye düşer (bkz. dashboard 404 teşhisi — Ağustos 2026).
  */
-export async function requireBusinessOwner(): Promise<Business> {
+export async function requireBusinessOwner(locale: string): Promise<Business> {
   const supabase = await createServerClient();
   const { data: userData, error: authError } = await supabase.auth.getUser();
 
   if (authError || !userData?.user) {
-    redirect('/login');
+    redirect({ href: '/login', locale });
   }
 
   const { data: business } = await supabase
     .from('businesses')
     .select('*')
-    .eq('owner_id', userData.user.id)
+    .eq('owner_id', userData!.user!.id)
     .single();
 
   if (!business) {
-    redirect('/onboarding');
+    redirect({ href: '/onboarding', locale });
   }
 
   return business as Business;

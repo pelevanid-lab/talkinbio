@@ -1,21 +1,22 @@
 import { createClient as createServerClient } from '@/utils/supabase/server';
-import { redirect } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 import { getTranslations } from 'next-intl/server';
 import BillingClient from './BillingClient';
 import { PLANS, EXTRA_PACK } from '@/config/plans';
 
-export default async function BillingDashboardPage() {
+export default async function BillingDashboardPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   const supabase = await createServerClient();
   const { data: userData, error: authError } = await supabase.auth.getUser();
 
   if (authError || !userData?.user) {
-    redirect('/login');
+    redirect({ href: '/login', locale });
   }
 
   const { data: business } = await supabase
     .from('businesses')
     .select('id, name, username, credit_balance')
-    .eq('owner_id', userData.user.id)
+    .eq('owner_id', userData!.user!.id)
     .single();
 
   if (!business) {
@@ -75,5 +76,5 @@ export default async function BillingDashboardPage() {
   transactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   const recentTransactions = transactions.slice(0, 50);
 
-  return <BillingClient business={business} transactions={recentTransactions} ownerEmail={userData.user.email || ''} />;
+  return <BillingClient business={business} transactions={recentTransactions} ownerEmail={userData!.user!.email || ''} />;
 }

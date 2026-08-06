@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { redirect } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 import DashboardShell from '@/components/dashboard/DashboardShell';
 import CastRoomTabs from '@/components/beiwe-lab/CastRoomTabs';
 import BeiweVoiceClient from '@/components/beiwe-lab/BeiweVoiceClient';
@@ -12,10 +12,10 @@ const VOICE_BASE_PATH = '/dashboard/creative-studio/voice';
 
 // admin/beiwe-lab/voice/[characterId]/page.tsx'in müşteri karşılığı — Twin + işletmenin
 // kendi Yardımcı Oyuncular'ı (bkz. getBusinessCastRoster) arasında CastRoomTabs ile geçiş.
-export default async function CreativeStudioVoicePage({ params }: { params: Promise<{ characterId: string }> }) {
-  const business = await requireBusinessOwner();
+export default async function CreativeStudioVoicePage({ params }: { params: Promise<{ characterId: string; locale: string }> }) {
+  const { characterId, locale } = await params;
+  const business = await requireBusinessOwner(locale);
   const t = await getTranslations('BeiweLab');
-  const { characterId } = await params;
 
   const twinId = await getOrCreateBusinessTwin(business.id);
   const roster = await getBusinessCastRoster(business);
@@ -23,7 +23,7 @@ export default async function CreativeStudioVoicePage({ params }: { params: Prom
   // Bu karakter gerçekten bu işletmenin mi — değilse (başka işletmenin id'si, yazım
   // hatası vb.) sessizce kendi Twin'ine geri dön.
   const active = roster.find((r) => r.id === characterId);
-  if (!active) redirect(`${VOICE_BASE_PATH}/${twinId}`);
+  if (!active) redirect({ href: `${VOICE_BASE_PATH}/${twinId}`, locale });
 
   const { data: profile } = await supabaseAdmin
     .from('character_profiles')
@@ -57,7 +57,7 @@ export default async function CreativeStudioVoicePage({ params }: { params: Prom
         <CastRoomTabs characters={roster} basePath={VOICE_BASE_PATH} showAdd={false} />
         <BeiweVoiceClient
           characterId={characterId}
-          characterName={active.name}
+          characterName={active!.name}
           initialVoiceUrl={profile?.voice_url ?? null}
           initialVoiceStatus={profile?.voice_status ?? 'none'}
           initialMinimaxVoiceId={profile?.minimax_voice_id ?? null}
