@@ -1512,6 +1512,12 @@
     "doneSub": "Head to the dashboard to customize your design and publish.",
     "doneBtn": "Go to dashboard",
     "skipped": "Skipped",
+    "previewLink": "Preview your page",
+    "signupGate": {
+      "title": "Your page is ready!",
+      "sub": "Create your account to publish it and keep editing — your page stays exactly as it is.",
+      "submitBtn": "Create my account"
+    },
     "langOffer": {
       "title": "Translate your content",
       "sub": "Saule auto-translates your page content. It costs credits, but your 100 welcome credits are ready to use.",

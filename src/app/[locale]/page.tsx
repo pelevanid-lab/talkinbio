@@ -570,7 +570,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
                 {/* Input box form */}
                 <div className="pt-2 flex justify-center lg:justify-start animate-fade-up delay-200">
-                  <form action="/register" method="GET" className="hero-input-container">
+                  <form action="/onboarding" method="GET" className="hero-input-container">
                     <span className="hero-input-prefix">talkinbio.com/</span>
                     <input 
                       type="text" 

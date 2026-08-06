@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, Circle, Loader2, Plus, Trash2, ChevronRight, Globe } from 'lucide-react';
+import { CheckCircle2, Circle, Loader2, Plus, Trash2, ChevronRight, Globe, ExternalLink, Mail, Lock } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { ColoredTextField } from '@/utils/coloredText';
 import MediaUploader from '@/components/MediaUploader';
@@ -21,8 +21,11 @@ interface StepState {
 
 // ─── Yardımcı fonksiyonlar ────────────────────────────────────────────────────
 
-function generateUsername(name: string): string {
-  const base = name
+function generateUsername(name: string, desired?: string): string {
+  // Hero'daki input'tan gelen istenen kullanıcı adı (desired) varsa öncelik
+  // onda — landing'de kullanıcının yazdığı adres öyle görünsün diye.
+  const source = (desired?.trim() ? desired : name);
+  const base = source
     .toLowerCase()
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
@@ -448,32 +451,76 @@ function ContactForm({ data, onChange, t }: { data: any; onChange: (d: any) => v
 
 export default function OnboardingPage() {
   const t = useTranslations('Wizard');
+  const tReg = useTranslations('Register');
   const locale = useLocale();
   const router = useRouter();
   const supabase = createClient();
 
-  const [phase, setPhase] = useState<'loading' | 'category-select' | 'wizard' | 'done'>('loading');
+  const [phase, setPhase] = useState<'loading' | 'category-select' | 'wizard' | 'signup' | 'done'>('loading');
+  // Landing'deki hero input'undan gelen istenen adres (bkz. page.tsx hero formu).
+  // useSearchParams yerine window.location — Suspense boundary gerektirmez
+  // (bkz. register/page.tsx aynı yaklaşım).
+  const [desiredUsername, setDesiredUsername] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<WizardCategory | null>(null);
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
   const [businessId, setBusinessId] = useState<string | null>(null);
+  const [previewUsername, setPreviewUsername] = useState<string | null>(null);
   const [stepStates, setStepStates] = useState<Record<string, StepState>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ── Sihirbaz sonu: hesap oluşturma kapısı (anonim → kalıcı hesap) ─────────
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [signupLoading, setSignupLoading] = useState(false);
+  const [signupError, setSignupError] = useState('');
+  const [signupEmailSent, setSignupEmailSent] = useState(false);
 
   // ── Dil ekleme (done ekranı) ──────────────────────────────────────────────
   const [langPhase, setLangPhase] = useState<LangPhase>('offer');
   const [targetLang, setTargetLang] = useState<'en' | 'ru'>('en');
   const [translatedCount, setTranslatedCount] = useState(0);
 
+  // ── Sihirbaz bitti: anonimse hesap kapısına, kalıcıysa bitiş ekranına ─────
+  const finishWizardOrGate = useCallback(async (bizId: string, user: { id: string; is_anonymous?: boolean }) => {
+    if (user.is_anonymous) {
+      setPhase('signup');
+      return;
+    }
+    // Kalıcı kullanıcı — kurulumu tamamlanmış say ve anonim aşamada verilen
+    // düşük başlangıç kredisini (bkz. handleSave/header) tam bakiyeye tamamla.
+    const { data: bizRow } = await supabase.from('businesses').select('credit_balance').eq('id', bizId).single();
+    const updates: Record<string, any> = { setup_completed: true };
+    if ((bizRow?.credit_balance ?? 0) < 100) updates.credit_balance = 100;
+    await supabase.from('businesses').update(updates).eq('id', bizId);
+    setPhase('done');
+  }, [supabase]);
+
+  useEffect(() => {
+    const username = new URLSearchParams(window.location.search).get('username');
+    if (username) setDesiredUsername(username);
+  }, []);
+
   // ── Yükleme: oturum + mevcut işletme kontrolü ─────────────────────────────
   useEffect(() => {
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace(`/${locale}/login`); return; }
+      let { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        // Hesapsız ziyaretçi — sihirbazı denemesi için gerçek bir uid'ye sahip
+        // anonim bir Supabase oturumu açılır. Sihirbaz sonunda bu oturum, aynı
+        // owner_id korunarak kalıcı hesaba dönüştürülür (bkz. handleClaim*).
+        const { data: anon, error: anonErr } = await supabase.auth.signInAnonymously();
+        if (anonErr || !anon.user) {
+          setError(t('errors.generic'));
+          setPhase('category-select');
+          return;
+        }
+        user = anon.user;
+      }
 
       const { data: biz } = await supabase
         .from('businesses')
-        .select('id, setup_completed, category_id')
+        .select('id, username, setup_completed, category_id, credit_balance')
         .eq('owner_id', user.id)
         .maybeSingle();
 
@@ -485,6 +532,7 @@ export default function OnboardingPage() {
       if (biz && !biz.setup_completed) {
         // Yarım kalmış wizard — mevcut blokları kontrol ederek durumu yükle
         setBusinessId(biz.id);
+        setPreviewUsername(biz.username);
         const cat = biz.category_id ? getCategoryById(biz.category_id) : null;
         if (cat) {
           setSelectedCategory(cat);
@@ -505,9 +553,17 @@ export default function OnboardingPage() {
             }
           });
           setStepStates(initial);
-          // İlk tamamlanmamış adıma git
           const firstPending = cat.steps.findIndex((s) => initial[s.id].status === 'pending');
-          setCurrentStepIdx(firstPending >= 0 ? firstPending : cat.steps.length - 1);
+
+          if (firstPending === -1) {
+            // Tüm adımlar zaten kayıtlı — bu, e-posta onayı/Google linkIdentity
+            // dönüşünden sonra tekrar yüklenen bir sayfa olabilir. Kullanıcı hâlâ
+            // anonimse hesap kapısına, kalıcıysa bitiş ekranına geçilir.
+            await finishWizardOrGate(biz.id, user);
+            return;
+          }
+
+          setCurrentStepIdx(firstPending);
           setPhase('wizard');
           return;
         }
@@ -602,7 +658,7 @@ export default function OnboardingPage() {
         // İşletme oluştur
         const name = (data.name || '').trim();
         if (!name) { setError(t('errors.nameRequired')); setIsSaving(false); return; }
-        const username = generateUsername(name);
+        const username = generateUsername(name, desiredUsername);
         const tagline = (data.tagline || '').trim();
 
         const { data: biz, error: bizErr } = await supabase
@@ -614,7 +670,10 @@ export default function OnboardingPage() {
             category: t(selectedCategory.labelKey as any) || selectedCategory.id,
             category_id: selectedCategory.id,
             ...(tagline ? { tagline: { [locale]: tagline } } : {}),
-            credit_balance: 100,
+            // Hesapsız (anonim) aşamada düşük bir başlangıç kredisi — e-posta bile
+            // istemeyen bir akışta AI maliyeti sınırlı kalsın. Hesap kalıcı hale
+            // gelince (bkz. finishWizardOrGate) 100'e tamamlanır.
+            credit_balance: 20,
             setup_completed: false,
           })
           .select()
@@ -622,6 +681,7 @@ export default function OnboardingPage() {
 
         if (bizErr || !biz) throw new Error(t('errors.createFailed'));
         setBusinessId(biz.id);
+        setPreviewUsername(biz.username);
 
       } else if (step.blockType === 'contact') {
         // İletişim bilgisini işletmeye yaz
@@ -687,11 +747,14 @@ export default function OnboardingPage() {
     if (!selectedCategory) return;
     const nextIdx = currentStepIdx + 1;
     if (nextIdx >= selectedCategory.steps.length) {
-      // Sihirbaz bitti — setup_completed = true
+      // Sihirbaz bitti — anonim ziyaretçiyse hesap kapısına, kalıcı kullanıcıysa
+      // doğrudan bitiş ekranına geç.
       if (businessId) {
-        await supabase.from('businesses').update({ setup_completed: true }).eq('id', businessId);
+        const { data: { user } } = await supabase.auth.getUser();
+        await finishWizardOrGate(businessId, user ?? { id: '', is_anonymous: false });
+      } else {
+        setPhase('done');
       }
-      setPhase('done');
     } else {
       setCurrentStepIdx(nextIdx);
     }
@@ -708,11 +771,173 @@ export default function OnboardingPage() {
     setError(null);
   };
 
+  // ── Hesap kapısı: anonim oturumu e-posta/şifre ile kalıcı hesaba dönüştür ─
+  // NOT: signUp DEĞİL, updateUser — aynı owner_id (dolayısıyla business/blocks
+  // sahipliği) korunur. Google için de aynı nedenle signInWithOAuth değil,
+  // linkIdentity kullanılır (bkz. handleClaimGoogle).
+  const handleClaimEmailPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSignupLoading(true);
+    setSignupError('');
+    try {
+      const { data, error: updErr } = await supabase.auth.updateUser(
+        { email: signupEmail, password: signupPassword },
+        { emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/${locale}/onboarding` }
+      );
+      if (updErr) throw updErr;
+
+      if (data.user && !data.user.is_anonymous) {
+        // E-posta onayı kapalıysa dönüşüm anında tamamlanır — beklemeden devam et.
+        if (businessId) await finishWizardOrGate(businessId, data.user);
+      } else {
+        // Onay e-postası gönderildi — kullanıcı linke tıklayınca /onboarding'e
+        // geri dönecek ve init() akışı kaldığı yerden devam edecek.
+        setSignupEmailSent(true);
+      }
+    } catch (err: any) {
+      setSignupError(err.message || t('errors.generic'));
+    } finally {
+      setSignupLoading(false);
+    }
+  };
+
+  const handleClaimGoogle = async () => {
+    setSignupLoading(true);
+    setSignupError('');
+    try {
+      const { error: linkErr } = await supabase.auth.linkIdentity({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/api/auth/callback?next=/${locale}/onboarding` },
+      });
+      if (linkErr) throw linkErr;
+      // Başarılıysa tarayıcı Google'a yönlendirilir; dönüşte init() devam eder.
+    } catch (err: any) {
+      setSignupError(err.message || t('errors.generic'));
+      setSignupLoading(false);
+    }
+  };
+
   // ─── Render: loading ──────────────────────────────────────────────────────
   if (phase === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--page-bg,#f7f7f5)]">
         <Loader2 className="w-8 h-8 text-[var(--coral)] animate-spin" />
+      </div>
+    );
+  }
+
+  // ─── Render: signup (hesap kapısı) ────────────────────────────────────────
+  if (phase === 'signup') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--page-bg,#f7f7f5)] p-4">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-green-100 text-[var(--teal)] rounded-full flex items-center justify-center mx-auto mb-5">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+            <h1 className="text-2xl font-bold text-[var(--ink)] mb-2">{t('signupGate.title')}</h1>
+            <p className="text-slate-500 text-sm">{t('signupGate.sub')}</p>
+          </div>
+
+          {previewUsername && (
+            <a
+              href={`/${locale}/${previewUsername}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 text-sm font-medium text-[var(--coral)] hover:brightness-95 mb-6"
+            >
+              {t('previewLink')} <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
+
+          {signupEmailSent ? (
+            <div className="bg-green-50 text-green-700 p-4 rounded-lg text-sm border border-green-200 text-center">
+              {tReg('successMessage')}
+            </div>
+          ) : (
+            <>
+              {signupError && (
+                <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-4 text-sm border border-red-200">
+                  {signupError}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleClaimGoogle}
+                disabled={signupLoading}
+                className="w-full bg-white border border-slate-300 text-slate-700 rounded-lg px-4 py-2.5 font-medium hover:bg-slate-50 transition flex items-center justify-center gap-2 mb-4 disabled:opacity-50"
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                  <path d="M1 1h22v22H1z" fill="none"/>
+                </svg>
+                {tReg('googleRegister')}
+              </button>
+
+              <div className="relative mb-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-slate-500">Veya</span>
+                </div>
+              </div>
+
+              <form onSubmit={handleClaimEmailPassword} className="space-y-4">
+                <div>
+                  <label htmlFor="signup-email" className="block text-sm font-medium text-slate-700 mb-1">{tReg('emailLabel')}</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Mail className="h-5 w-5" />
+                    </div>
+                    <input
+                      id="signup-email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={signupEmail}
+                      onChange={(e) => setSignupEmail(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[var(--coral)] focus:border-transparent focus:outline-none"
+                      placeholder={tReg('emailPlaceholder')}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="signup-password" className="block text-sm font-medium text-slate-700 mb-1">{tReg('passwordLabel')}</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Lock className="h-5 w-5" />
+                    </div>
+                    <input
+                      id="signup-password"
+                      type="password"
+                      autoComplete="new-password"
+                      required
+                      value={signupPassword}
+                      onChange={(e) => setSignupPassword(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[var(--coral)] focus:border-transparent focus:outline-none"
+                      placeholder={tReg('passwordPlaceholder')}
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={signupLoading || !signupEmail || !signupPassword}
+                  className="w-full bg-[var(--coral)] text-white rounded-lg px-4 py-2 mt-1 font-medium hover:bg-[#E55A4D] disabled:opacity-50 flex items-center justify-center transition"
+                >
+                  {signupLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {signupLoading ? tReg('loading') : t('signupGate.submitBtn')}
+                </button>
+              </form>
+            </>
+          )}
+        </div>
       </div>
     );
   }
@@ -895,11 +1120,23 @@ export default function OnboardingPage() {
               <span className="text-sm font-bold text-[var(--ink)]">{t('setupTitle')}</span>
               <span className="text-xs text-slate-400 tabular-nums">{savedCount} / {totalSteps}</span>
             </div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-lg">{selectedCategory.emoji}</span>
-              <span className="text-xs font-semibold" style={{ color: selectedCategory.color }}>
-                {t(selectedCategory.labelKey as any)}
-              </span>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{selectedCategory.emoji}</span>
+                <span className="text-xs font-semibold" style={{ color: selectedCategory.color }}>
+                  {t(selectedCategory.labelKey as any)}
+                </span>
+              </div>
+              {previewUsername && (
+                <a
+                  href={`/${locale}/${previewUsername}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-[var(--coral)] transition"
+                >
+                  {t('previewLink')} <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
             </div>
             <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
               <div

@@ -1512,6 +1512,12 @@
     "doneSub": "Dashboard'a geç, sayfanı özelleştir ve yayınla.",
     "doneBtn": "Dashboard'a git",
     "skipped": "Atlandı",
+    "previewLink": "Sayfanı önizle",
+    "signupGate": {
+      "title": "Sayfan hazır!",
+      "sub": "Yayınlamak ve düzenlemeye devam etmek için hesabını oluştur — sayfan aynı şekilde kalacak.",
+      "submitBtn": "Hesabımı oluştur"
+    },
     "langOffer": {
       "title": "İçeriğini başka dile çevir",
       "sub": "Saule, sayfandaki metinleri otomatik çevirir. Kredi harcar ama ilk çeviride 100 hediye kredinini kullanabilirsin.",

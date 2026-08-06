@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { createClient } from '@/utils/supabase/client';
@@ -13,8 +13,13 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [nextPath, setNextPath] = useState('/onboarding');
   const supabase = createClient();
-  const nextPath = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('next') || '/onboarding' : '/onboarding';
+
+  useEffect(() => {
+    const next = new URLSearchParams(window.location.search).get('next') || '/onboarding';
+    setNextPath(next);
+  }, []);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();

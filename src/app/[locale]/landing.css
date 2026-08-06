@@ -1091,36 +1091,41 @@
 }
 
 @media (max-width: 767px) {
+  /* Phone visual box = padding(10*2) + phone-screen-inner height(580) = 600px.
+     The details card overlays only the bottom 30% of that box, so the phone
+     itself stays ~70% visible above it instead of being fully covered. */
   #landing-page .phone-container {
     flex-direction: column !important;
     align-items: center !important;
+    justify-content: flex-start !important;
     max-width: 340px !important;
-    gap: 16px !important;
+    gap: 0 !important;
+    position: relative !important;
+    height: 600px !important;
   }
   #landing-page .phone-mockup {
-    transform: scale(0.8) !important;
-    transform-origin: top center !important;
-    margin-top: 10px !important;
-    margin-bottom: -110px !important;
+    margin: 0 auto !important;
+    position: relative !important;
+    z-index: 1 !important;
   }
   #landing-page .interactive-details-card {
-    position: fixed !important;
-    bottom: 0 !important;
+    position: absolute !important;
     left: 0 !important;
     right: 0 !important;
+    top: 70% !important;
+    bottom: auto !important;
     width: 100% !important;
     max-width: 100% !important;
-    height: auto !important;
-    max-height: 48vh !important;
+    height: 260px !important;
+    max-height: 260px !important;
     border-radius: 24px 24px 0 0 !important;
-    z-index: 1000 !important;
+    z-index: 2 !important;
     box-shadow: 0 -10px 40px rgba(20, 35, 31, 0.15) !important;
     animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-    padding: 20px 20px 28px !important; /* spacing for mobile home bar */
+    padding: 16px 18px 18px !important;
     border-bottom: none !important;
   }
   #landing-page .interactive-card-body {
-    max-height: calc(48vh - 75px) !important;
     overflow-y: auto !important;
   }
 }
