@@ -473,6 +473,10 @@
       "variantNumberedList": "Изящный нумерованный список",
       "variantFeatureSplit": "Крупное изображение и текст рядом",
       "variantPriceTable": "Классическое меню/прайс-лист",
+      "coverMediaLabel": "Обложка: фото / видео (опционально)",
+      "coverMediaHint": "Показывается в самом верху, перед заголовком блока.",
+      "introLabel": "Вступительный текст ({lang}) - опционально",
+      "introPlaceholder": "Короткий текст перед списком (опционально)...",
       "namePlaceholder": "Название услуги",
       "descriptionPlaceholder": "Описание",
       "pricePlaceholder": "Цена (напр.: 4000 ₽)",
@@ -1059,10 +1063,10 @@
   "MediaUploader": {
     "defaultLabel": "Выберите или перетащите изображение",
     "errorInvalidType": "Можно загружать только фото или видео.",
-    "errorFileSize": "Размер файла должен быть меньше 150 МБ.",
+    "errorFileSize": "Размер файла должен быть меньше 300 МБ.",
     "errorGeneric": "Ошибка при загрузке файла.",
     "uploadingLabel": "Загрузка...",
-    "maxSizeHint": "До 150 МБ"
+    "maxSizeHint": "До 300 МБ"
   },
   "SetPasswordModal": {
     "passwordTooShort": "Пароль должен содержать не менее 6 символов.",

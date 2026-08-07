@@ -202,6 +202,14 @@ export default function BlockEditorModal({
       case 'extra_services':
         return (
           <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">{t('services.coverMediaLabel')}</label>
+              <MediaUploader
+                value={content.mediaUrl || ''}
+                onChange={(url) => setContent({...content, mediaUrl: url})}
+              />
+              <p className="text-xs text-slate-400 mt-1">{t('services.coverMediaHint')}</p>
+            </div>
             <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
               <label className="block text-sm font-medium mb-1 text-[var(--ink)]">{t('layoutVariantLabel')}</label>
               <select
@@ -215,6 +223,16 @@ export default function BlockEditorModal({
                 <option value="feature-split">{t('services.variantFeatureSplit')}</option>
                 <option value="price-table">{t('services.variantPriceTable')}</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-[var(--ink)]">{t('services.introLabel', { lang: activeLang.toUpperCase() })}</label>
+              <ColoredTextField
+                multiline
+                value={content[activeLang]?.intro || ''}
+                onChange={(v) => setContent({ ...content, [activeLang]: { ...content[activeLang], intro: v } })}
+                className="w-full p-3 border border-slate-200 rounded-lg h-20 focus:border-[var(--coral)] focus:outline-none"
+                placeholder={t('services.introPlaceholder')}
+              />
             </div>
             {(content.items || []).map((item: any, idx: number) => {
               const itemLoc = item[activeLang] || item;

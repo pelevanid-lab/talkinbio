@@ -470,6 +470,10 @@
       "variantNumberedList": "Elegant Numbered List",
       "variantFeatureSplit": "Large Image + Text, Side by Side",
       "variantPriceTable": "Classic Menu/Price List",
+      "coverMediaLabel": "Cover Photo / Video (optional)",
+      "coverMediaHint": "Shown at the very top, before the block title.",
+      "introLabel": "Intro Text ({lang}) - optional",
+      "introPlaceholder": "A short intro shown before the list (optional)...",
       "namePlaceholder": "Service Name",
       "descriptionPlaceholder": "Description",
       "pricePlaceholder": "Price (e.g. $40)",
@@ -1056,10 +1060,10 @@
   "MediaUploader": {
     "defaultLabel": "Choose or Drag an Image",
     "errorInvalidType": "You can only upload photos or videos.",
-    "errorFileSize": "File size must be under 150MB.",
+    "errorFileSize": "File size must be under 300MB.",
     "errorGeneric": "An error occurred while uploading the file.",
     "uploadingLabel": "Uploading...",
-    "maxSizeHint": "Up to 150MB"
+    "maxSizeHint": "Up to 300MB"
   },
   "SetPasswordModal": {
     "passwordTooShort": "Your password must be at least 6 characters.",

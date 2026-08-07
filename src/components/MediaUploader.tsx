@@ -109,10 +109,10 @@ export default function MediaUploader({ value, onChange, label, bucket = "media"
 
       const processedFile = await compressImageIfNeeded(file);
 
-      // Max size: 150MB — mainly a backstop for video (never compressed here) and for images
+      // Max size: 300MB — mainly a backstop for video (never compressed here) and for images
       // the browser couldn't decode/compress (e.g. HEIC in browsers with no HEIC codec, which
       // makes compressImageIfNeeded throw and fall back to the original file untouched).
-      if (processedFile.size > 150 * 1024 * 1024) {
+      if (processedFile.size > 300 * 1024 * 1024) {
         throw new Error(t('errorFileSize'));
       }
 

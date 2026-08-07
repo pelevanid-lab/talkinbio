@@ -1,4 +1,5 @@
 import { createHash } from 'crypto';
+import { getLocalizedValue } from '@/config/blockTypes';
 
 export type SemanticEntry = {
   id: string; // Unique hash or combined id
@@ -191,7 +192,17 @@ export function compilePageSemanticEntries(business: any, blocks: any[], knowled
       if (!block.is_visible) continue;
       if (block.type === 'settings' || block.type === 'published_snapshot' || block.type === 'published_semantic_index') continue;
 
-      const blockTitle = block.content?.title?.[locale] || block.content?.title?.tr || block.title || '';
+      // Block content is locale-nested as content[locale].title / content[locale].intro (or
+      // .text for about/contact/custom) — NOT content.title[locale]. getLocalizedValue handles
+      // both shapes (plus flat-string legacy data), so reuse it here instead of guessing the
+      // nesting by hand, which previously read the wrong key and silently produced an empty
+      // blockTitle/description for every block (see block_item fix below for the same class of bug).
+      const blockTitle = getLocalizedValue(block.content, locale, 'title') || block.title || '';
+      const blockDescription =
+        getLocalizedValue(block.content, locale, 'intro') ||
+        getLocalizedValue(block.content, locale, 'text') ||
+        getLocalizedValue(block.content, locale, 'description') ||
+        '';
 
       // Block-level entry (General navigation fallback)
       const blockEntry = compileSemanticEntry({
@@ -200,7 +211,7 @@ export function compilePageSemanticEntries(business: any, blocks: any[], knowled
         sourceType: 'block',
         sourceId: block.id,
         title: blockTitle,
-        description: block.content?.description?.[locale] || block.content?.description?.tr || '',
+        description: blockDescription,
         action: { type: 'open_block', blockId: block.type },
         blockType: block.type
       });
@@ -209,8 +220,8 @@ export function compilePageSemanticEntries(business: any, blocks: any[], knowled
       // 2. Process sub-items of block (e.g. Services, FAQ items)
       if (block.type === 'faq' && block.content?.items) {
         for (const item of block.content.items) {
-          const q = item.question?.[locale] || item.question?.tr || item.question || '';
-          const a = item.answer?.[locale] || item.answer?.tr || item.answer || '';
+          const q = getLocalizedValue(item, locale, 'question');
+          const a = getLocalizedValue(item, locale, 'answer');
           const faqEntry = compileSemanticEntry({
             businessId: business.id,
             locale,
@@ -227,10 +238,15 @@ export function compilePageSemanticEntries(business: any, blocks: any[], knowled
         }
       }
 
-      if (block.type === 'services' && block.content?.items) {
+      // 'extra_services' is a repeatable sibling of 'services' with the identical items shape
+      // (item[locale].title / item[locale].description — see BlockEditorModal's shared editor
+      // case for both types). It was previously skipped entirely here, so any business with a
+      // second services-like block (e.g. "Eğitim" in one, "Danışmanlık" in another) never had
+      // that second block's individual items indexed — only the generic block-level entry above.
+      if ((block.type === 'services' || block.type === 'extra_services') && block.content?.items) {
         for (const item of block.content.items) {
-          const t = item.title?.[locale] || item.title?.tr || item.title || '';
-          const d = item.description?.[locale] || item.description?.tr || item.description || '';
+          const t = getLocalizedValue(item, locale, 'title');
+          const d = getLocalizedValue(item, locale, 'description');
           const servEntry = compileSemanticEntry({
             businessId: business.id,
             locale,
@@ -239,8 +255,8 @@ export function compilePageSemanticEntries(business: any, blocks: any[], knowled
             sourceItemId: item.id || t,
             title: t,
             description: d,
-            action: { type: 'open_block', blockId: 'services', itemId: item.id },
-            blockType: 'services'
+            action: { type: 'open_block', blockId: block.type, itemId: item.id },
+            blockType: block.type
           });
           if (servEntry) entries.push(servEntry);
         }

@@ -470,6 +470,10 @@
       "variantNumberedList": "Numaralı Zarif Liste",
       "variantFeatureSplit": "Sağ-Sol Büyük Görsel+Metin",
       "variantPriceTable": "Klasik Menü/Fiyat Listesi",
+      "coverMediaLabel": "Ön Foto / Video (opsiyonel)",
+      "coverMediaHint": "Blok başlığından önce, en üstte gösterilir.",
+      "introLabel": "Ön Açıklama ({lang}) - opsiyonel",
+      "introPlaceholder": "Liste başlamadan önce görünecek kısa bir giriş metni (opsiyonel)...",
       "namePlaceholder": "Hizmet Adı",
       "descriptionPlaceholder": "Açıklama",
       "pricePlaceholder": "Fiyat (Örn: 400 TL)",
@@ -1056,10 +1060,10 @@
   "MediaUploader": {
     "defaultLabel": "Görsel Seç veya Sürükle",
     "errorInvalidType": "Sadece fotoğraf veya video yükleyebilirsiniz.",
-    "errorFileSize": "Dosya boyutu 150MB'dan küçük olmalıdır.",
+    "errorFileSize": "Dosya boyutu 300MB'dan küçük olmalıdır.",
     "errorGeneric": "Dosya yüklenirken bir hata oluştu.",
     "uploadingLabel": "Yükleniyor...",
-    "maxSizeHint": "150MB'a kadar"
+    "maxSizeHint": "300MB'a kadar"
   },
   "SetPasswordModal": {
     "passwordTooShort": "Şifreniz en az 6 karakter olmalıdır.",

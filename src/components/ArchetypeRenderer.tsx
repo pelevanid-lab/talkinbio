@@ -69,6 +69,13 @@ function blockTitleOf(block: any, locale: string) {
   return block.content?.[locale]?.title || defaultTitleFor(block.type, locale) || block.title || block.type;
 }
 
+// Optional short paragraph shown between a block's title and its item list — currently used by
+// services/extra_services to let an owner explain the category (e.g. "Masaj" with sub-services
+// listed as items below it) before the list starts. Per-locale like title; empty means no render.
+function blockIntroOf(block: any, locale: string): string {
+  return block.content?.[locale]?.intro || '';
+}
+
 function blockEyebrow(block: any, locale: string): string {
   const labels: Record<string, Record<string, string>> = {
     about: { tr: 'Tanıtım', en: 'Intro', ru: 'Обзор' },
@@ -349,8 +356,28 @@ function itemFocusClass(item: any, ctx: RenderCtx) {
 function renderServices(block: any, ctx: RenderCtx) {
   const { locale, radiusClass, headingFont, theme, onOrderNowClick } = ctx;
   const blockTitle = blockTitleOf(block, locale);
+  const blockIntro = blockIntroOf(block, locale);
   const layoutVariant = block.content?.layoutVariant || 'grid-cards';
   const items: any[] = getLocalizedItems(block, locale);
+
+  const IntroText = blockIntro ? (
+    <p className="text-sm mb-6 -mt-4 opacity-80 whitespace-pre-line" style={{ color: 'var(--text-muted)' }}>
+      {renderColoredSegments(blockIntro)}
+    </p>
+  ) : null;
+
+  // Block-level cover photo/video (distinct from each item's own mediaUrl below) — always shown
+  // first, before the title, so an owner can lead with e.g. a video of the service in action.
+  const coverMedia = block.content?.mediaUrl;
+  const CoverMedia = coverMedia ? (
+    <div className={`overflow-hidden shadow-sm mb-6 ${radiusClass}`}>
+      {isVideoUrl(coverMedia) ? (
+        <video src={coverMedia} className="w-full max-h-96 object-cover" controls />
+      ) : (
+        <img src={coverMedia} alt={blockTitle} className="w-full max-h-96 object-cover" />
+      )}
+    </div>
+  ) : null;
 
   // Rendered next to a service's price in every layout variant below, when a click behavior is
   // configured and resolvable (see buildOrderNowHandler) — hidden entirely otherwise rather than
@@ -372,7 +399,9 @@ function renderServices(block: any, ctx: RenderCtx) {
   if (layoutVariant === 'numbered-list') {
     inner = (
       <>
+        {CoverMedia}
         <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
+        {IntroText}
         <div className="space-y-6">
           {items.map((item, idx) => {
             const itemLoc = item[locale] || item;
@@ -404,7 +433,9 @@ function renderServices(block: any, ctx: RenderCtx) {
   } else if (layoutVariant === 'feature-split') {
     inner = (
       <>
+        {CoverMedia}
         <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
+        {IntroText}
         <div className="flex flex-col gap-8">
           {items.map((item, idx) => {
             const itemLoc = item[locale] || item;
@@ -443,7 +474,9 @@ function renderServices(block: any, ctx: RenderCtx) {
   } else if (layoutVariant === 'price-table') {
     inner = (
       <>
+        {CoverMedia}
         <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
+        {IntroText}
         <div className="space-y-1">
           {items.map((item, idx) => {
             const itemLoc = item[locale] || item;
@@ -469,7 +502,9 @@ function renderServices(block: any, ctx: RenderCtx) {
   } else {
     inner = (
       <>
+        {CoverMedia}
         <h2 className={`text-2xl mb-6 font-bold ${headingFont}`}>{renderColoredSegments(blockTitle)}</h2>
+        {IntroText}
         <div className={layoutVariant === 'grid-cards' ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : "space-y-4"}>
           {items.map((item: any, idx: number) => {
             const itemLoc = item[locale] || item;
