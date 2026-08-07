@@ -5,10 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 // aynı mantık) — gerçek maliyet Faz 4.2'nin usage_events verisiyle değiştikçe
 // kod değişikliği gerekmeden kalibre edilebilsin diye.
 export const SAULE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE) || 1;
-export const SAULE_VOICE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_VOICE) || 51;
 export const SAULE_STUDIO_UPDATE_CREDIT_COST = Number(process.env.CREDIT_COST_SAULE_STUDIO_UPDATE) || 60;
-export const CUE_PACK_STANDARD_CREDIT_COST = Number(process.env.CREDIT_COST_CUE_PACK_STANDARD) || 20;
-export const CUE_PACK_CUSTOM_CREDIT_COST = Number(process.env.CREDIT_COST_CUE_PACK_CUSTOM) || 60;
 
 export const CREDIT_COST_MENU = [
   {
@@ -22,16 +19,6 @@ export const CREDIT_COST_MENU = [
     },
   },
   {
-    id: 'saule_voice_input_session',
-    agent: 'saule',
-    credits: SAULE_VOICE_CREDIT_COST,
-    label: {
-      tr: 'Sesli oturum (STT dahil, ek 50 kredi, 20 soruya kadar)',
-      en: 'Voice session (STT included, additional 50 credits, up to 20 questions)',
-      ru: 'Голосовая сессия (STT включён, дополнительно 50 кредитов, до 20 вопросов)',
-    },
-  },
-  {
     id: 'saule_studio_update',
     agent: 'saule',
     credits: SAULE_STUDIO_UPDATE_CREDIT_COST,
@@ -39,26 +26,6 @@ export const CREDIT_COST_MENU = [
       tr: 'Tek alanı AI ile güncelleme',
       en: 'Update one field with AI',
       ru: 'Обновление одного поля с AI',
-    },
-  },
-  {
-    id: 'cue_standard',
-    agent: 'voice',
-    credits: CUE_PACK_STANDARD_CREDIT_COST,
-    label: {
-      tr: 'Standart hazır ses cue paketi',
-      en: 'Standard ready-made voice cue pack',
-      ru: 'Стандартный пакет голосовых подсказок',
-    },
-  },
-  {
-    id: 'cue_custom',
-    agent: 'voice',
-    credits: CUE_PACK_CUSTOM_CREDIT_COST,
-    label: {
-      tr: 'Özel/markaya uyarlanmış ses cue paketi',
-      en: 'Custom/brand-adapted voice cue pack',
-      ru: 'Индивидуальный голосовой пакет под бренд',
     },
   },
 ] as const;

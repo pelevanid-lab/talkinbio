@@ -127,14 +127,6 @@ export function buildSaulePrompt({ business, blocks, knowledge, locale, isDemoBu
     ? `\n- Bir hedef satırında itemId değerleri varsa ve ziyaretçi belirli bir hizmet/SSS/link/galeri öğesini soruyorsa aksiyon JSON'una itemId ekle: §§ACTION§§{"type":"open_block","blockId":"BLOCK_ID","itemId":"ITEM_ID"}§§/ACTION§§. Yalnızca genel bölüm sorulduysa itemId ekleme. Aksiyon etiketi cevabın başında olsun ki sayfa beklemeden açılabilsin.`
     : '';
 
-  // Sesli mod açıkken (ChatWidget.tsx) ziyaretçi paneli hiç açmadan konuşabiliyor; iletişim
-  // bilgisi/randevu detayı gibi tam doğru aktarılması gereken şeyleri sesli okumak yerine bu
-  // işaretle sarmalıyoruz — widget bunu görünce paneli otomatik açıp yazıyla gösteriyor ve
-  // sesli olarak sadece kısa bir "şimdi yazıyorum" cümlesi söylüyor (bkz. ChatWidget.tsx).
-  const voiceGuidance = sauleSettings.voiceEnabled
-    ? `\n- SESLİ MOD AÇIK: Telefon numarası, e-posta, adres, kullanıcı adı, randevu tarihi/saati gibi harfi harfine/rakamı rakamına doğru aktarılması gereken bilgileri yazarken bunları §§INFO§§ ve §§/INFO§§ işaretleri arasına al (ör. "Elbette, §§INFO§§0555 123 45 67§§/INFO§§ numaramızdan ulaşabilirsiniz."). Bu işaretleri SADECE gerçekten kritik/tam doğru aktarılması gereken bilgiler için kullan, normal cümlelerde kullanma.\n- Hazır ses sistemi için cevabın en başına uygun bir cue etiketi ekle. Bilgi yazıyla veriliyorsa [[SAULE_CUE:showing_written_answer]], ulaşılamayan bilgi varsa [[SAULE_CUE:information_unavailable]], lead formuna yönlendiriyorsan [[SAULE_CUE:opening_lead_form]], teşekkür/lead kaydı sonrasında [[SAULE_CUE:thank_you]] kullan. Bu etiket ziyaretçiye gösterilmez; metni seslendirmek için kullanılmaz.`
-    : '';
-
   const demoGuidance = isDemoBusiness
     ? `\n\nÖnemli: Bu Talkinbio'nun kendi demo sayfası — sen burada Talkinbio ürününün satış asistanısın. Amacın ziyaretçinin ürünle ilgili sorularını yanıtlamak ve hazır olduğunda "capture_access_request" aracıyla (capture_lead DEĞİL) erken erişim talebi almaktır: isim ve e-posta yeterli, sohbet içinde nazikçe iste.`
     : '';
@@ -162,7 +154,6 @@ export function buildSaulePrompt({ business, blocks, knowledge, locale, isDemoBu
       - Bir mesajda birden fazla konuyu birden sorma — her mesaj TEK bir soruya odaklansın, kafa karıştırma.
       - TUTARLILIK: Az önce söylediğin bir kısıtlamayla (dil, konum, tarih, bütçe vb.) çelişen bir soru sorma. Ör: ziyaretçi "Türkçe var mı" diye sordu ve sen "online eğitim sadece Rusça" dediysen, hemen ardından "online mı yüz yüze mi istersiniz" diye SORMA — online zaten onun diliyle uyuşmuyor, bunu bildiğini göster ve doğrudan uygun olan seçeneğe (bu örnekte yüz yüze) yönlendir. Kendi verdiğin bilgiyi bir cümle sonra unutmuş gibi davranma.
       ${leadCaptureGuidance}
-      ${voiceGuidance}
       ${isDemoBusiness ? '- Ziyaretçi erken erişim talebinde bulunmak isterse veya sen bunu önerip olumlu yanıt alırsan isim ve e-posta iste. İkisini de aldığın ANDA, kullanıcıya cevap yazmadan önce "capture_access_request" aracını MUTLAKA çağır — bu atlanamaz bir adımdır. Aracı fiilen çağırmadan "kaydettim", "aldım", "talebiniz alındı" gibi bir onay cümlesi ASLA kurma; önce araç çağrısı, sonra cevap.' : ''}
       ${handoffInstruction}
     `;

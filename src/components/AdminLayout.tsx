@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { Link, routing } from '@/i18n/routing';
-import { LayoutDashboard, Inbox, BarChart3, CreditCard, TrendingUp, Sparkles, Volume2, Type, Film, Users, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Inbox, BarChart3, CreditCard, TrendingUp, Sparkles, Type, Film, Users, type LucideIcon } from 'lucide-react';
 
 type NavItem = {
   label: string;
@@ -33,13 +33,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { label: 'Abonelikler', href: '/admin/subscriptions', icon: CreditCard },
     {
       label: 'Talkinbio Lab',
-      href: '/admin/beiwe-lab/saule-voice-packages',
+      href: '/admin/beiwe-lab/twin',
       icon: Sparkles,
       // Lab iki namespace'e yayılıyor: eski oda `/admin/characters`, yeni katmanlar
       // `/admin/beiwe-lab`. Grup, ikisinde de vurgulu kalsın.
       matchPrefixes: ['/admin/characters', '/admin/beiwe-lab', '/admin/talkinbio-lab'],
       children: [
-        { label: 'Saule Ses Paketleri', href: '/admin/beiwe-lab/saule-voice-packages', icon: Volume2 },
         { label: 'Post', href: '/admin/beiwe-lab/post', icon: Type },
         { label: 'Motion', href: '/admin/beiwe-lab/motion', icon: Film },
         { label: 'Yardımcı Oyuncular', href: '/admin/beiwe-lab/cast', icon: Users },

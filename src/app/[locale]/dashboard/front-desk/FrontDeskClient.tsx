@@ -6,7 +6,6 @@ import { useLocale, useTranslations } from 'next-intl';
 import {
   CheckCircle2,
   Loader2,
-  Volume2,
   ExternalLink,
   Mail,
   Clock,
@@ -31,7 +30,7 @@ export default function FrontDeskClient({ business, initialKnowledge }: { busine
   const tEditor = useTranslations('Editor');
   const locale = useLocale();
 
-  const [settingsSection, setSettingsSection] = useState<'behavior' | 'capture' | 'voice' | 'knowledge'>('behavior');
+  const [settingsSection, setSettingsSection] = useState<'behavior' | 'capture' | 'knowledge'>('behavior');
   const [settings, setSettings] = useState(business.saule_settings || {});
   const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -181,11 +180,10 @@ export default function FrontDeskClient({ business, initialKnowledge }: { busine
             })()}
           </div>
 
-          <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-2 bg-[#F4F2ED] p-2 rounded-2xl">
+          <div className="mb-6 grid grid-cols-3 gap-2 bg-[#F4F2ED] p-2 rounded-2xl">
             {([
               ['behavior', t('settingsSectionBehavior')],
               ['capture', t('settingsSectionCapture')],
-              ['voice', t('settingsSectionVoice')],
               ['knowledge', t('settingsSectionKnowledge')],
             ] as const).map(([key, label]) => (
               <button
@@ -472,93 +470,6 @@ export default function FrontDeskClient({ business, initialKnowledge }: { busine
                 </div>
               </>
             )}
-
-            {settingsSection === 'voice' && (() => {
-              const creditBalance = business.credit_balance ?? 0;
-              const hasEnoughVoiceCredits = creditBalance >= 200;
-              return (
-                <div className="py-4 border-t border-[rgba(20,35,31,0.10)]">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#FFEDE9] text-[#FF6A5C] flex items-center justify-center shrink-0">
-                        <Volume2 className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-base font-semibold text-[#14231F]">{t('voiceTitle')}</h3>
-                          {!hasEnoughVoiceCredits && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-800">
-                              Yetersiz Kredi
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-[#4B5A55] max-w-2xl mt-0.5 whitespace-pre-line">{t('voiceDesc')}</p>
-                        
-                        {!hasEnoughVoiceCredits && (
-                          <p className="text-xs text-rose-600 font-semibold mt-1.5 flex items-center gap-1.5">
-                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
-                            Ses özelliğini aktif edebilmek için hesabınızda en az 200 kredi bulunmalıdır. Mevcut bakiye: {creditBalance} Kredi.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
-                      <input
-                        type="checkbox"
-                        className="sr-only peer"
-                        checked={hasEnoughVoiceCredits && !!settings.voiceEnabled}
-                        disabled={!hasEnoughVoiceCredits}
-                        onChange={(e) => {
-                          if (!hasEnoughVoiceCredits) return;
-                          setSettings({ ...settings, voiceEnabled: e.target.checked });
-                        }}
-                      />
-                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FF6A5C] peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
-                    </label>
-                  </div>
-
-                  {hasEnoughVoiceCredits && settings.voiceEnabled && (
-                    <div className="bg-[#F4F2ED] p-4 rounded-xl mt-4 animate-in fade-in slide-in-from-top-2 flex flex-col gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-[#8A8880] mb-2 font-mono uppercase tracking-wider">{t('voiceWelcomeLabel')}</label>
-                      <div className="space-y-3">
-                        {[
-                          {
-                            localeKey: 'tr' as const,
-                            label: 'Türkçe',
-                            text: 'Hoşgeldiniz, size nasıl yardımcı olabilirim?',
-                          },
-                          {
-                            localeKey: 'en' as const,
-                            label: 'English',
-                            text: 'Welcome, how can I help you?',
-                          },
-                          {
-                            localeKey: 'ru' as const,
-                            label: 'Русский',
-                            text: 'Добро пожаловать, чем я могу вам помочь?',
-                          },
-                        ].map(({ localeKey, label, text }) => (
-                          <div key={localeKey} className="bg-white p-3.5 rounded-xl border border-[rgba(20,35,31,0.10)]">
-                            <div className="flex items-center justify-between mb-1.5">
-                              <span className="text-xs font-bold text-[#FF6A5C] font-mono uppercase tracking-wider">{label}</span>
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[#FFEDE9] text-[#FF6A5C]">
-                                <Volume2 className="w-3.5 h-3.5" />
-                                Hazir cue
-                              </span>
-                            </div>
-                            <p className="text-sm text-[#14231F] font-medium leading-relaxed bg-[#F4F2ED]/60 p-2.5 rounded-lg border border-[rgba(20,35,31,0.05)]">
-                              "{text}"
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  )}
-                </div>
-              );
-            })()}
 
             {settingsSection === 'knowledge' && (
               <KnowledgeBasePanel businessId={business.id} initialKnowledge={initialKnowledge} />

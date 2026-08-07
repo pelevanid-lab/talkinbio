@@ -13,7 +13,7 @@ import { getPageActionTargets, withContactPageActionTarget } from '@/utils/pageA
 import { resolvePublishedRuntimeData } from '@/utils/publishedSnapshot';
 import { localizedPath, localizedUrl, hreflangPaths } from '@/utils/localizedUrl';
 
-// Her ziyarette taze saule_settings (voiceEnabled dahil) çekilsin
+// Her ziyarette taze saule_settings çekilsin
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: any) {
@@ -146,11 +146,6 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
   const sauleSettings = pageBusiness.saule_settings || {};
   const creditBalance = business.credit_balance ?? 0;
   const isFrontDeskActive = (sauleSettings.frontDeskEnabled !== false) && (creditBalance >= 20);
-  // NOT: "voice cue manifest" DB'den çekilip settings'e eklenirdi ama ChatWidget bunu hiç
-  // okumuyordu (yalnızca voiceEnabled bayrağını okuyor) — her ziyarette 2 gereksiz sorgu
-  // atıyordu. Kaldırıldı; sesli girişin açık olup olmadığını doğrudan bayrak belirliyor.
-  const isVoiceEnabled = !!sauleSettings.voiceEnabled && (creditBalance >= 200);
-  const chatSauleSettings = { ...sauleSettings, voiceEnabled: isVoiceEnabled };
   const customGreeting = sauleSettings.customGreetingEnabled && sauleSettings.customGreeting
     ? sauleSettings.customGreeting
     : null;
@@ -259,7 +254,7 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
       {isFrontDeskActive && (
         <div className="shrink-0 relative z-50" style={{ background: 'var(--tb-page-bg-sticky)' }}>
           <div className="max-w-md mx-auto w-full relative">
-            <ChatWidget businessId={business.id} locale={locale} customGreeting={customGreeting} sauleSettings={chatSauleSettings} preview={isOwner} />
+            <ChatWidget businessId={business.id} locale={locale} customGreeting={customGreeting} sauleSettings={sauleSettings} preview={isOwner} />
           </div>
         </div>
       )}

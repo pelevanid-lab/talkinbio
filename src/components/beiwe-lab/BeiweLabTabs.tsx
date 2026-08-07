@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
-import { Users, Sparkles, Mic, Clapperboard, Film, Scissors, Type, Volume2 } from 'lucide-react';
+import { Users, Sparkles, Mic, Clapperboard, Film, Scissors, Type } from 'lucide-react';
 
 // ContinuousImprovementTabs ile aynı sekme deseni. Fark: Lab'ın katmanları sıralı bir
 // üretim hattı, o yüzden henüz yazılmamış olanlar da görünür ama tıklanamaz — hattın
@@ -22,7 +22,6 @@ const tabs = [
   { label: 'Motion', href: '/admin/beiwe-lab/motion', icon: Film, ready: true },
   { label: 'Studio', href: '/admin/beiwe-lab/studio', icon: Scissors, ready: true },
   { label: 'Post', href: '/admin/beiwe-lab/post', icon: Type, ready: true },
-  { label: 'Saule Ses Paketleri', href: '/admin/beiwe-lab/saule-voice-packages', icon: Volume2, ready: true },
 ];
 
 export default function BeiweLabTabs() {

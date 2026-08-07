@@ -798,7 +798,6 @@
     "noMatchLead": "Я не смог найти эту тему на странице. Однако, если вы оставите свои контактные данные, мы свяжемся с вами в ближайшее время:",
     "noMatchContact": "Я не смог найти тему. Для получения подробной информации вы можете связаться с нами напрямую:",
     "noMatchFallback": "В настоящее время я не могу найти то, что вы ищете. Пожалуйста, изучите другие разделы страницы.",
-    "listening": "Слушаю...",
     "chatPlaceholder": "Напишите сообщение...",
     "viewFullPage": "Смотреть всю страницу ↗",
     "backAriaLabel": "Назад",
@@ -816,10 +815,6 @@
       "error": "Произошла ошибка, попробуйте позже.",
       "successTitle": "Заявка получена!",
       "successBody": "Мы свяжемся с вами в ближайшее время. Спасибо!"
-    },
-    "mic": {
-      "tooltip": "Микрофон (удерживайте, чтобы говорить)",
-      "permissionDenied": "Требуется доступ к микрофону."
     }
   },
   "Metadata": {
@@ -965,23 +960,9 @@
     "greetingTitle": "Персональное приветствие",
     "greetingDesc": "Задайте первое сообщение сами.",
     "greetingHint": "Показывается в зависимости от языка, на котором посетитель просматривает страницу; для языка, который вы оставите пустым, используется приветствие Saule по умолчанию.",
-    "voiceTitle": "Голосовое общение (Beta)",
-    "voiceDesc": "Посетители могут задавать вопросы с микрофона; ассистент отвечает готовыми короткими аудио-cue и письменной/страничной навигацией. При включении списывается дополнительно 50 кредитов за каждую сессию пользователя.\n\nАвтоматически отключается, если ваш баланс падает ниже 200 кредитов.",
-    "voiceToggleLabel": "Включить голосовое общение",
-    "voiceModelLabel": "Голос ассистента",
-    "voiceWelcomeLabel": "Готовые голосовые cue Saule",
-    "voiceWelcomeHint": "Аудио берется из утвержденных пакетов Talkinbio Lab; текст ответа не отправляется в динамический TTS.",
     "settingsSectionBehavior": "Поведение",
     "settingsSectionCapture": "Заявки и контакты",
-    "settingsSectionVoice": "Голос",
     "settingsSectionKnowledge": "Знания",
-    "voiceWelcomePlaceholderTr": "Напр.: Merhaba! Uliana Pehlivan sayfasına hoş geldiniz. Size nasıl yardımcı olabilirim?",
-    "voiceWelcomePlaceholderEn": "Напр.: Hello! Welcome to Uliana Pehlivan's page. How can I help you?",
-    "voiceWelcomePlaceholderRu": "Напр.: Здравствуйте! Добро пожаловать на страницу Uliana Pehlivan. Чем могу вам помочь?",
-    "voiceModelAlloy": "Alloy (Нейтральный)",
-    "voiceModelNova": "Nova (Женский)",
-    "voiceModelEcho": "Echo (Мужской)",
-    "voiceModelShimmer": "Shimmer (Тёплый)",
     "footerTextBeforeEmail": "Talkinbio — постоянно развивающееся приложение. Если у вас есть отзывы, пожелания или жалобы, вы можете написать нам на ",
     "footerTextAfterEmail": ".",
     "conversations": {

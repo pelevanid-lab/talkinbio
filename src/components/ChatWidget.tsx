@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { Send, Mic, Square, Loader2 } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { useOptionalPublicPageRuntime } from './PublicPageRuntime';
 
 type LocalizedGreeting = Partial<Record<'tr' | 'en' | 'ru', string>>;
@@ -182,94 +182,6 @@ export default function ChatWidget({
     }
   };
 
-  // Voice recording & transcription (utilizing Wizper API)
-  const isVoiceInputEnabled = !!sauleSettings?.voiceEnabled;
-  const [isRecording, setIsRecording] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const recordingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pressActiveRef = useRef(false);
-
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const supportedMimeType = ['audio/webm', 'audio/mp4', 'audio/ogg'].find(
-        (type) => typeof MediaRecorder.isTypeSupported === 'function' && MediaRecorder.isTypeSupported(type)
-      );
-      const mediaRecorder = supportedMimeType ? new MediaRecorder(stream, { mimeType: supportedMimeType }) : new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = async () => {
-        const usedMimeType = mediaRecorder.mimeType || 'audio/webm';
-        const audioBlob = new Blob(audioChunksRef.current, { type: usedMimeType });
-        const extension = usedMimeType.includes('mp4') ? 'm4a' : usedMimeType.includes('ogg') ? 'ogg' : 'webm';
-        stream.getTracks().forEach((track) => track.stop());
-        setIsRecording(false);
-        setIsTranscribing(true);
-
-        try {
-          const formData = new FormData();
-          formData.append('audio', audioBlob, `recording.${extension}`);
-          formData.append('businessId', businessId);
-
-          const res = await fetch('/api/chat/voice/transcribe', {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (!res.ok) throw new Error();
-          const { text } = await res.json();
-
-          if (text?.trim()) {
-            processQuery(text.trim());
-          }
-        } catch (err) {
-          console.error('Voice transcription error:', err);
-        } finally {
-          setIsTranscribing(false);
-        }
-      };
-
-      mediaRecorder.start();
-      recordingTimeoutRef.current = setTimeout(() => stopRecording(), 8 * 60 * 1000);
-      setIsRecording(true);
-      if (!pressActiveRef.current) {
-        stopRecording();
-      }
-    } catch (err) {
-      console.error('Mic access denied:', err);
-      alert(t('mic.permissionDenied'));
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-    }
-    if (recordingTimeoutRef.current) {
-      clearTimeout(recordingTimeoutRef.current);
-      recordingTimeoutRef.current = null;
-    }
-  };
-
-  const handleMicPressStart = () => {
-    pressActiveRef.current = true;
-    startRecording();
-  };
-
-  const handleMicPressEnd = () => {
-    pressActiveRef.current = false;
-    stopRecording();
-  };
-
   // Mesaj kutusu sadece henüz hiçbir şey sorulmamış karşılama/blok-listesi görünümünde
   // görünür. Bir blok tam sayfa açıldığında (activeBlockId) YA DA Saule bir soruya
   // cevap verdiğinde (sauleQuestion) kaybolur — geri dönünce (ikisi de sıfırlanınca)
@@ -284,7 +196,7 @@ export default function ChatWidget({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (!input.trim() || isRecording || isTranscribing) return;
+          if (!input.trim()) return;
           processQuery(input);
           setInput('');
           if (textareaRef.current) {
@@ -293,34 +205,6 @@ export default function ChatWidget({
         }}
         className="flex relative items-center gap-2"
       >
-        {isVoiceInputEnabled && (
-          <button
-            type="button"
-            onClick={(e) => e.stopPropagation()}
-            onPointerDown={(e) => { e.stopPropagation(); handleMicPressStart(); }}
-            onPointerUp={(e) => { e.stopPropagation(); handleMicPressEnd(); }}
-            onPointerLeave={(e) => { e.stopPropagation(); handleMicPressEnd(); }}
-            onPointerCancel={(e) => { e.stopPropagation(); handleMicPressEnd(); }}
-            onContextMenu={(e) => e.preventDefault()}
-            disabled={isTranscribing}
-            className={`touch-none w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all shadow-sm ${
-              isRecording
-                ? 'bg-red-500 text-white animate-pulse ring-4 ring-red-200'
-                : isTranscribing
-                ? 'bg-amber-100 text-amber-600'
-                : 'bg-[var(--paper)] text-[var(--ink-soft)] hover:bg-[var(--coral-tint)] hover:text-[var(--coral)]'
-            }`}
-            title={t('mic.tooltip')}
-          >
-            {isTranscribing ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : isRecording ? (
-              <Square className="w-4 h-4 fill-white" />
-            ) : (
-              <Mic className="w-5 h-5" />
-            )}
-          </button>
-        )}
         <div className="relative flex-1">
           <textarea
             ref={textareaRef}
@@ -332,15 +216,14 @@ export default function ChatWidget({
                 e.currentTarget.form?.requestSubmit();
               }
             }}
-            placeholder={isRecording ? t('listening') : t('chatPlaceholder')}
-            disabled={isRecording || isTranscribing}
+            placeholder={t('chatPlaceholder')}
             rows={1}
             style={{ height: '46px' }}
             className="w-full pl-4 pr-12 py-[11px] bg-white/95 backdrop-blur border border-[rgba(20,35,31,0.10)] rounded-[23px] text-sm placeholder-[var(--muted)] shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--coral)]/20 focus:border-[var(--coral)] resize-none max-h-[150px] overflow-y-auto block leading-relaxed text-[var(--ink)]"
           />
           <button
             type="submit"
-            disabled={!input.trim() || isRecording || isTranscribing}
+            disabled={!input.trim()}
             className="absolute right-1 bottom-1 w-[38px] h-[38px] bg-[var(--coral)] text-white rounded-full flex items-center justify-center disabled:opacity-50 transition-colors shadow-sm"
           >
             <Send className="w-4 h-4 ml-0.5" />

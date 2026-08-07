@@ -69,7 +69,7 @@ const canvas = {
   ],
   costStructure: [
     "Claude API: Sonnet 4.5 (sohbet + standart kurulum gÃ¶revleri). GERÃ‡EK Ã–LÃ‡ÃœM: mesaj $0,026, gÃ¼ncelleme $0,121, kurulum $0,147 â€” sabit ~18-19K token sistem prompt yÃ¼kÃ¼ kÃ¼Ã§Ã¼k iÅŸlemleri de pahalÄ± kÄ±lÄ±yor, prompt caching + baÄŸlam diyeti Ã¶nceliklidir.",
-    'Sesli cevap: Faz 6 ile dinamik TTS kapatıldı; Saule yalnızca cueKey döndürür, ChatWidget onaylı hazır ses dosyasını çalar. Runtime standart paket ücretsiz; üretim/onay admin Talkinbio Lab → Saule Ses Paketleri altında yapılır.',
+    'Not (2026-08-07): Front Desk "Sesli İletişim (Beta)" özelliği tamamen kaldırıldı — mikrofon/STT girişi çalışıyordu ama sesli cevap (cue oynatma) ChatWidget\'a hiç bağlanmamıştı, açık olduğunda ziyaretçiye ham [[SAULE_CUE:...]] etiketi sızdırma riski vardı; talep sinyali de yoktu (bkz. proje hafızası).',
     'Kredisiz onboarding\'in API maliyeti mÃ¼ÅŸteri edinme maliyetine (CAC) yazÄ±lÄ±r.',
     'AltyapÄ±: Vercel + Supabase; Ã¶deme saÄŸlayÄ±cÄ±sÄ± Shopier (entegre, canlÄ±) â€” komisyon payÄ± kredi fiyatÄ±na yansÄ±tÄ±lmalÄ±, ÅŸu an ayrÄ±ca kalemlendirilmiyor.',
     'GeliÅŸtirme/destek â€” tek kurucu bant geniÅŸliÄŸi (bkz. ROADMAP riskler).',
@@ -79,7 +79,7 @@ const canvas = {
     'Ek kredi paketi: $5 â†’ 100 kredi.',
     '1 kredi = $0,05 (CREDIT_VALUE_USD, src/config/pricing.ts); AI Ã¼retim iÅŸlemleri gerÃ§ek maliyetin en az 2 katÄ± fiyatla krediye Ã§evrilir (creditsForCost, marj Ã§arpanÄ± 2x).',
     'AÃ§Ä±k madde: kodda hÃ¢lÃ¢ duran $0,10 â†’ 10 kredilik bir "TEST_PACK" var â€” kredi baÅŸÄ± $0,01, yani $0,05 varsayÄ±mÄ±nÄ±n 5\'te biri. KalÄ±cÄ± bir paket mi, unutulmuÅŸ bir test artÄ±ÄŸÄ± mÄ± â€” karara baÄŸlanmalÄ±.',
-    'Ziyaretçi sohbeti oturum bazlı: 50 mesaja kadar metin oturumu = 1 kredi. Mikrofon/STT kullanılan sesli oturum = 5 kredi ve 8 dakika sınırı vardır; cevap tarafında dinamik TTS maliyeti yoktur.',
+    'Ziyaretçi sohbeti oturum bazlı: 50 mesaja kadar metin oturumu = 1 kredi.',
     'Kredi bitince asistan kapanmaz â€” sayfa + "mesaj bÄ±rakÄ±n" modu yaÅŸar (fiilen kalÄ±cÄ± Ã¼cretsiz katman etkisi; Ã¼cretsiz kayÄ±t kredisi 20\'dir, sonrasÄ±nda sayfa gÃ¶rÃ¼nÃ¼r kalÄ±r).',
     'Birim ekonomi henÃ¼z gerÃ§ek Ã¶deyen mÃ¼ÅŸteri verisiyle doÄŸrulanmadÄ± â€” 0/10 (bkz. Ã‡ekim GÃ¼cÃ¼ Yol HaritasÄ±).',
   ],

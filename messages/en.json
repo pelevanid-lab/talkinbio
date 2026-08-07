@@ -795,7 +795,6 @@
     "noMatchLead": "I could not find the exact topic on the page. However, if you leave your contact details, we will get back to you as soon as possible:",
     "noMatchContact": "I could not find the topic. For detailed information, you can contact us directly:",
     "noMatchFallback": "I could not find what you are looking for at the moment. Please explore other sections of the page.",
-    "listening": "Listening...",
     "chatPlaceholder": "Write a message...",
     "viewFullPage": "View Full Page ↗",
     "backAriaLabel": "Go Back",
@@ -813,10 +812,6 @@
       "error": "An error occurred, please try again later.",
       "successTitle": "Request Received!",
       "successBody": "We will get back to you as soon as possible. Thank you!"
-    },
-    "mic": {
-      "tooltip": "Microphone (Hold to Speak)",
-      "permissionDenied": "Microphone access permission is required."
     }
   },
   "Metadata": {
@@ -962,23 +957,9 @@
     "greetingTitle": "Custom Greeting",
     "greetingDesc": "Set the first message yourself.",
     "greetingHint": "Shown based on the language the visitor is viewing the page in; for any language you leave blank, Saule's default greeting is used.",
-    "voiceTitle": "Voice Communication (Beta)",
-    "voiceDesc": "Let visitors ask by microphone; the assistant responds with approved short voice cues plus written/page guidance. When enabled, an additional 50 credits are deducted for each user session.\n\nIt turns off automatically if your balance falls below 200 credits.",
-    "voiceToggleLabel": "Enable Voice Communication",
-    "voiceModelLabel": "Assistant Voice",
-    "voiceWelcomeLabel": "Approved Saule Voice Cues",
-    "voiceWelcomeHint": "Audio plays from approved Talkinbio Lab cue packs; answer text is not sent to dynamic TTS.",
     "settingsSectionBehavior": "Behavior",
     "settingsSectionCapture": "Lead & Contact",
-    "settingsSectionVoice": "Voice",
     "settingsSectionKnowledge": "Knowledge",
-    "voiceWelcomePlaceholderTr": "E.g.: Merhaba! Uliana Pehlivan sayfasına hoş geldiniz. Size nasıl yardımcı olabilirim?",
-    "voiceWelcomePlaceholderEn": "E.g.: Hello! Welcome to Uliana Pehlivan's page. How can I help you?",
-    "voiceWelcomePlaceholderRu": "E.g.: Здравствуйте! Добро пожаловать на страницу Uliana Pehlivan. Чем могу вам помочь?",
-    "voiceModelAlloy": "Alloy (Neutral)",
-    "voiceModelNova": "Nova (Female)",
-    "voiceModelEcho": "Echo (Male)",
-    "voiceModelShimmer": "Shimmer (Warm)",
     "footerTextBeforeEmail": "Talkinbio is a constantly evolving app. If you have feedback, requests, or complaints, you can reach us at ",
     "footerTextAfterEmail": ".",
     "conversations": {

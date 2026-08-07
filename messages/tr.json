@@ -795,7 +795,6 @@
     "noMatchLead": "Aradığınız konuyu doğrudan sayfa üzerinde bulamadım. Ancak bana bilgilerinizi iletirseniz size en kısa sürede geri dönüş sağlayabiliriz:",
     "noMatchContact": "Aradığınız konuyu bulamadım. Detaylı bilgi almak için bizimle doğrudan iletişime geçebilirsiniz:",
     "noMatchFallback": "Aradığınız konuyu şu anda bulamadım. Lütfen sayfa üzerindeki diğer bölümleri inceleyin.",
-    "listening": "Dinliyorum...",
     "chatPlaceholder": "Bir mesaj yazın...",
     "viewFullPage": "Tam Sayfada Gör ↗",
     "backAriaLabel": "Geri Dön",
@@ -813,10 +812,6 @@
       "error": "Bir hata oluştu, lütfen daha sonra tekrar deneyin.",
       "successTitle": "Talebiniz Alındı!",
       "successBody": "Size en kısa sürede geri dönüş sağlayacağız. Teşekkürler!"
-    },
-    "mic": {
-      "tooltip": "Mikrofon (Basılı Tut ve Konuş)",
-      "permissionDenied": "Mikrofon erişimi izni gerekli."
     }
   },
   "Metadata": {
@@ -962,23 +957,9 @@
     "greetingTitle": "Özel Karşılama",
     "greetingDesc": "İlk mesajı siz belirleyin.",
     "greetingHint": "Ziyaretçinin sayfayı görüntülediği dile göre gösterilir; boş bıraktığınız dilde Saule'nin varsayılan karşılaması kullanılır.",
-    "voiceTitle": "Sesli İletişim (Beta)",
-    "voiceDesc": "Ziyaretçileriniz mikrofonla soru sorabilsin; asistan yanıtı hazır kısa ses cue'ları ve yazılı/sayfa yönlendirmesiyle verir. Açıldığında her bir kullanıcı oturumu için ek 50 kredi düşer.\n\nBakiyeniz 200 kredi altına düştüğünde kendiliğinden kapanır.",
-    "voiceToggleLabel": "Sesli İletişimi Etkinleştir",
-    "voiceModelLabel": "Asistan Sesi",
-    "voiceWelcomeLabel": "Hazır Saule Ses Cue'ları",
-    "voiceWelcomeHint": "Sesler Talkinbio Lab altında onaylanan hazır paketlerden çalınır; cevap metni dinamik TTS'e gönderilmez.",
     "settingsSectionBehavior": "Davranış",
     "settingsSectionCapture": "Lead & İletişim",
-    "settingsSectionVoice": "Ses",
     "settingsSectionKnowledge": "Bilgi",
-    "voiceWelcomePlaceholderTr": "Örn: Merhaba! Uliana Pehlivan sayfasına hoş geldiniz. Size nasıl yardımcı olabilirim?",
-    "voiceWelcomePlaceholderEn": "E.g.: Hello! Welcome to Uliana Pehlivan's page. How can I help you?",
-    "voiceWelcomePlaceholderRu": "Напр.: Здравствуйте! Добро пожаловать на страницу Uliana Pehlivan. Чем могу вам помочь?",
-    "voiceModelAlloy": "Alloy (Nötr)",
-    "voiceModelNova": "Nova (Kadın)",
-    "voiceModelEcho": "Echo (Erkek)",
-    "voiceModelShimmer": "Shimmer (Sıcak)",
     "footerTextBeforeEmail": "Talkinbio sürekli gelişen bir uygulama. Geri bildiriminiz, istekleriniz veya şikayetleriniz varsa bize ",
     "footerTextAfterEmail": " adresinden ulaşabilirsiniz.",
     "conversations": {
