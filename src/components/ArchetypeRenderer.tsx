@@ -13,6 +13,7 @@ import { iconForLinkUrl } from '@/utils/linkIcon';
 import { hasRealContentForLocale, isItemVisibleInLocale, getLocalizedValue } from '@/config/blockTypes';
 import { SauleIcon } from './AgentIcons';
 import { stableItemId } from '@/utils/pageActionTargets';
+import { supabaseThumbnailUrl } from '@/utils/imageTransform';
 import { useOptionalPublicPageRuntime } from './PublicPageRuntime';
 
 type RenderCtx = {
@@ -353,6 +354,7 @@ function getLocalizedItems(block: any, locale: string) {
       description: getLocalizedValue(item, locale, 'description'),
       caption: getLocalizedValue(item, locale, 'caption'),
       quote: getLocalizedValue(item, locale, 'quote'),
+      role: getLocalizedValue(item, locale, 'role'),
       question: getLocalizedValue(item, locale, 'question'),
       answer: getLocalizedValue(item, locale, 'answer'),
       label: getLocalizedValue(item, locale, 'label'),
@@ -1358,7 +1360,13 @@ export default function ArchetypeRenderer({
                           {isVideoUrl(previewMedia) ? (
                             <video src={previewMedia} className="w-full h-full object-cover" muted playsInline />
                           ) : (
-                            <img src={previewMedia} alt="" className="w-full h-full object-cover" />
+                            <img
+                              src={supabaseThumbnailUrl(previewMedia, { width: 96 }) ?? previewMedia}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                              className="w-full h-full object-cover"
+                            />
                           )}
                         </span>
                       )}
