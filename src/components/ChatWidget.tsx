@@ -270,6 +270,11 @@ export default function ChatWidget({
     stopRecording();
   };
 
+  // Bir blok tam sayfa (web görünümü) açıldığında mesaj kutusu kaybolur — o görünüm artık
+  // sitenin kendisi, Saule diyaloğu değil. Geri dönünce (activeBlockId null'a düşünce)
+  // dock kendiliğinden geri gelir.
+  if (pageRuntime?.activeBlockId) return null;
+
   return (
     <div className={variant === 'sheet' ? 'w-full p-4 flex flex-col justify-end group' : 'w-full p-3 flex flex-col justify-end group shrink-0'}>
 
