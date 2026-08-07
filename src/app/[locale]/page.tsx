@@ -67,21 +67,6 @@ const landingCopy = {
         },
       ]
     },
-    splitShare: {
-      title: 'Her yerde paylaş.',
-      desc: 'Benzersiz Talkinbio adresini tüm sosyal medya hesaplarına, web sitene, e-posta imzalarına ve offline materyallerine ekle.',
-      cta: 'Ücretsiz sayfanı oluştur'
-    },
-    splitStats: {
-      title: 'Ziyaretçilerini tanı. Neyin işe yaradığını gör.',
-      cta: 'Analitik özellikleri keşfet',
-      labels: {
-        visits: 'Toplam Görüntülenme',
-        clicks: 'Saule ile Konuşma',
-        leads: 'Yeni Talep',
-        sales: 'İletişime Geçme'
-      }
-    },
     splitDiscover: {
       title: 'Sayfanı istediğin an güncelle.',
       desc: 'Panelindeki AI destekli editörle metnini değiştir, yeni bölüm ekle, temanı yenile — kod yazmadan, dakikalar içinde.',
@@ -198,21 +183,6 @@ const landingCopy = {
         },
       ]
     },
-    splitShare: {
-      title: 'Share everywhere.',
-      desc: 'Add your unique Talkinbio link to all your social media accounts, website, email signatures and offline materials.',
-      cta: 'Create your free page'
-    },
-    splitStats: {
-      title: 'Know your visitors. See what works.',
-      cta: 'Discover analytics features',
-      labels: {
-        visits: 'Total Views',
-        clicks: 'Conversations with Saule',
-        leads: 'New Leads',
-        sales: 'Contact Requests'
-      }
-    },
     splitDiscover: {
       title: 'Update your page anytime.',
       desc: 'Change your text, add a new section, refresh your theme — all with the AI-powered editor in your dashboard, no code required.',
@@ -328,21 +298,6 @@ const landingCopy = {
           desc: 'Фиксируйте каждый визит, клик и запрос. Видите, что работает — усиливайте стратегию.',
         },
       ]
-    },
-    splitShare: {
-      title: 'Делитесь везде.',
-      desc: 'Добавьте ссылку Talkinbio во все профили соцсетей, подписи писем или печатные QR-коды.',
-      cta: 'Создать страницу бесплатно'
-    },
-    splitStats: {
-      title: 'Знайте своих гостей. Видьте эффективность.',
-      cta: 'Открыть функции аналитики',
-      labels: {
-        visits: 'Всего просмотров',
-        clicks: 'Разговоры с Saule',
-        leads: 'Новые заявки',
-        sales: 'Обращения'
-      }
     },
     splitDiscover: {
       title: 'Обновляйте страницу в любой момент.',
@@ -676,109 +631,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   )}
                 </div>
               ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Section 5: Split Row Card Panels (Share & Stats) */}
-        <section className="split-row-section">
-          <div className="wrap">
-            <div className="split-container">
-              {/* Left card: Her yerde paylaş */}
-              <div className="split-card bg-white">
-                <div>
-                  <h2>{copy.splitShare.title}</h2>
-                  <p className="card-desc">{copy.splitShare.desc}</p>
-                  
-                  {/* Social Circles Row */}
-                  <div className="flex gap-4 items-center my-6">
-                    <span className="w-11 h-11 rounded-full bg-[#FFEAE6] text-[#EA5E3E] flex items-center justify-center font-bold">
-                      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.79.073 7.151.014 8.43 0 8.839 0 12s.014 3.77.072 5.049c.2 4.363 2.615 6.88 6.975 7.08 1.28.058 1.688.072 4.953.072s3.673-.014 4.953-.072c4.354-.2 6.782-2.718 6.975-7.08.058-1.28.072-1.687.072-5.049s-.014-3.77-.072-5.049c-.2-4.364-2.615-6.88-6.975-7.08C15.673.014 15.264 0 12 0z"/></svg>
-                    </span>
-                    <span className="w-11 h-11 rounded-full bg-[#E5F7FF] text-[#3498DB] flex items-center justify-center font-bold">
-                      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12.29 14.298a1.29 1.29 0 010-1.824l1.37-1.37a4.93 4.93 0 00-.03-.13 1.29 1.29 0 011.854-1.69 1.34 1.34 0 01.127.15l.39-.391a1.29 1.29 0 011.825 0 1.29 1.29 0 010 1.824l-3.321 3.322a1.29 1.29 0 01-1.825 0l-.39-.391zM24 12c0 6.627-5.373 12-12 12S0 19.627 0 12 5.373 0 12 0s12 5.373 12 12zm-3.5 0a8.5 8.5 0 10-17 0 8.5 8.5 0 0017 0z"/></svg>
-                    </span>
-                    <span className="w-11 h-11 rounded-full bg-[#E8F8F2] text-[#23A470] flex items-center justify-center font-bold">
-                      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.248 8.477 3.517 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.739-1.45L0 24zm6.59-4.846c1.666.988 3.313 1.477 5.318 1.478 5.4 0 9.795-4.39 9.798-9.789.002-2.615-1.012-5.074-2.861-6.927C17.052 2.062 14.595 1.045 12 1.044c-5.402 0-9.798 4.392-9.802 9.791-.001 2.023.52 3.655 1.517 5.197L2.73 19.65l3.917-1.026z"/></svg>
-                    </span>
-
-                    {/* QR Code Icon Graphic */}
-                    <div className="ml-auto w-16 h-16 border border-[var(--border)] rounded-xl p-2 bg-[var(--paper)]">
-                      <svg width="100%" height="100%" viewBox="0 0 44 44" fill="currentColor" className="text-[var(--ink)]">
-                        <path d="M2 2h12v12H2V2zm2 2v8h8V4H4zm1.5 1.5h5v5h-5v-5zM2 30h12v12H2V30zm2 2v8h8V4h-8v28zm1.5 1.5h5v5h-5v-5zM30 2h12v12H30V2zm2 2v8h8V4H4h-8V4zm1.5 1.5h5v5h-5v-5zm3.5 12.5h2v2h-2zm-6 2h2v2h-2zm4 2h2v2H30v-2zm2 2h2v2h-2zm2-4h2v2h-2zm4 4h2v2h-2zm-6 2h2v2h-2zm4-6h2v2h-2zm-12 10h2v2h-2zm2 2h2v2h-2zm2-2h2v2h-2zm2 2h2v2h-2zm-8 4h2v2h-2zm4 0h2v2h-2zm4-4h2v2h-2zm2 4h2v2h-2z"/>
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="pt-2">
-                  <Link href="/register" className="btn btn-coral" style={{ background: '#E85B4E', width: '100%' }}>
-                    {copy.splitShare.cta}
-                  </Link>
-                </div>
-              </div>
-
-              {/* Right card: Ziyaretçilerini tanı */}
-              <div className="split-card bg-white">
-                <div>
-                  <h2>{copy.splitStats.title}</h2>
-                  
-                  {/* Stats Grid mockup */}
-                  <div className="stats-mockup-grid">
-                    {/* Stat 1 */}
-                    <div className="stat-box">
-                      <span className="stat-box-title">{copy.splitStats.labels.visits}</span>
-                      <div className="stat-box-val-row">
-                        <span className="stat-box-val">24.8K</span>
-                        <span className="stat-box-badge badge-red">-3%</span>
-                      </div>
-                      {/* Mini Sparkline Chart */}
-                      <svg className="w-full h-8 mt-2" viewBox="0 0 100 30">
-                        <path className="sparkline-path stroke-red-500" d="M0,25 Q15,10 30,18 T60,5 T90,22 T100,20" stroke="#EF4444" />
-                      </svg>
-                    </div>
-                    {/* Stat 2 */}
-                    <div className="stat-box">
-                      <span className="stat-box-title">{copy.splitStats.labels.clicks}</span>
-                      <div className="stat-box-val-row">
-                        <span className="stat-box-val">18.6K</span>
-                        <span className="stat-box-badge badge-green">+9%</span>
-                      </div>
-                      <svg className="w-full h-8 mt-2" viewBox="0 0 100 30">
-                        <path className="sparkline-path stroke-green-500" d="M0,20 Q15,25 30,15 T60,25 T90,8 T100,5" stroke="#10B981" />
-                      </svg>
-                    </div>
-                    {/* Stat 3 */}
-                    <div className="stat-box">
-                      <span className="stat-box-title">{copy.splitStats.labels.leads}</span>
-                      <div className="stat-box-val-row">
-                        <span className="stat-box-val">312</span>
-                        <span className="stat-box-badge badge-green">+16%</span>
-                      </div>
-                      <svg className="w-full h-8 mt-2" viewBox="0 0 100 30">
-                        <path className="sparkline-path stroke-green-500" d="M0,22 Q15,12 30,18 T60,10 T90,5 T100,2" stroke="#10B981" />
-                      </svg>
-                    </div>
-                    {/* Stat 4 */}
-                    <div className="stat-box">
-                      <span className="stat-box-title">{copy.splitStats.labels.sales}</span>
-                      <div className="stat-box-val-row">
-                        <span className="stat-box-val">128</span>
-                        <span className="stat-box-badge badge-green">+22%</span>
-                      </div>
-                      <svg className="w-full h-8 mt-2" viewBox="0 0 100 30">
-                        <path className="sparkline-path stroke-green-500" d="M0,28 Q15,22 30,25 T60,12 T90,6 T100,2" stroke="#10B981" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <Link href="/register" className="btn btn-coral" style={{ background: '#E85B4E', width: '100%' }}>
-                    {copy.splitStats.cta}
-                  </Link>
-                </div>
-              </div>
             </div>
           </div>
         </section>
