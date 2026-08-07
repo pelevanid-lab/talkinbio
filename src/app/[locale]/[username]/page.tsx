@@ -262,6 +262,22 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
           </div>
         </div>
       )}
+
+      {/* talkinbio wordmark artık başlığın sol üstünde değil — sayfanın en altında, mesaj
+          kutusunun (ChatWidget) altında, daha görünür bir "Powered by talkinbio" rozeti
+          olarak duruyor. Sohbet kapalıysa da (isFrontDeskActive false) attribution kaybolmasın
+          diye bu blok isFrontDeskActive'e bağlı değil. */}
+      <div className="shrink-0 relative z-50 pb-2 pt-1 text-center" style={{ background: 'var(--tb-page-bg-sticky)' }}>
+        <a
+          href="https://talkinbio.com/?utm_source=widget&utm_medium=profile_footer&utm_campaign=attribution"
+          target="_blank"
+          rel="noreferrer"
+          className="text-xs font-bold tracking-tight opacity-70 hover:opacity-100 transition"
+          style={{ color: resolvedColors.text }}
+        >
+          Powered by talkinbio
+        </a>
+      </div>
       </PublicPageRuntimeProvider>
     </div>
   );

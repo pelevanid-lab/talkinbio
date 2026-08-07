@@ -188,20 +188,11 @@ export default function ProfileHeader({
               border-radius: inherit;
             }
           `}</style>
-          {/* Sol slot — avatar üst kenarına hizalı */}
+          {/* Sol slot — avatar üst kenarına hizalı. talkinbio wordmark artık burada değil,
+              sayfa altında "Powered by talkinbio" olarak daha görünür şekilde duruyor
+              (bkz. [locale]/[username]/page.tsx footer). */}
           <div className="absolute left-0 top-0 flex items-center gap-2" style={{ color: c.text, zIndex: 30 }}>
             {topLeft}
-            {!topLeft && (
-              <a
-                href="https://talkinbio.com/?utm_source=widget&utm_medium=profile_logo&utm_campaign=attribution"
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs font-bold tracking-tight hover:opacity-100 transition"
-                style={{ color: c.textMuted, opacity: 0.5, fontFamily: `"${theme.headingFont}", sans-serif` }}
-              >
-                talkinbio
-              </a>
-            )}
           </div>
 
           {/* Morphing Avatar / Saule Speech Bubble Container.
