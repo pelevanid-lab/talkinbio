@@ -3,6 +3,7 @@ import { cookies, headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import type { CSSProperties } from 'react';
 import ChatWidget from '@/components/ChatWidget';
+import PoweredByFooter from '@/components/PoweredByFooter';
 import ProfilePageBody from '@/components/ProfilePageBody';
 import { PublicPageRuntimeProvider } from '@/components/PublicPageRuntime';
 import { createClient } from '@/utils/supabase/server';
@@ -263,21 +264,11 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
         </div>
       )}
 
-      {/* talkinbio wordmark artık başlığın sol üstünde değil — sayfanın en altında, mesaj
-          kutusunun (ChatWidget) altında, daha görünür bir "Powered by talkinbio" rozeti
-          olarak duruyor. Sohbet kapalıysa da (isFrontDeskActive false) attribution kaybolmasın
-          diye bu blok isFrontDeskActive'e bağlı değil. */}
-      <div className="shrink-0 relative z-50 pb-2 pt-1 text-center" style={{ background: 'var(--tb-page-bg-sticky)' }}>
-        <a
-          href="https://talkinbio.com/?utm_source=widget&utm_medium=profile_footer&utm_campaign=attribution"
-          target="_blank"
-          rel="noreferrer"
-          className="text-xs font-bold tracking-tight opacity-70 hover:opacity-100 transition"
-          style={{ color: resolvedColors.text }}
-        >
-          Powered by talkinbio
-        </a>
-      </div>
+      {/* Karşılama/blok-listesi görünümünde talkinbio wordmark üstte (bkz. ProfileHeader).
+          Bir blok açıldığında veya Saule bir soruya cevap verdiğinde üstteki kaybolur, bu daha
+          görünür "Powered by talkinbio" alt satırı devralır (bkz. PoweredByFooter — kendi
+          içinde activeBlockId/sauleQuestion'a göre gösterip gösterilmeyeceğine karar veriyor). */}
+      <PoweredByFooter textColor={resolvedColors.text} />
       </PublicPageRuntimeProvider>
     </div>
   );

@@ -270,10 +270,12 @@ export default function ChatWidget({
     stopRecording();
   };
 
-  // Bir blok tam sayfa (web görünümü) açıldığında mesaj kutusu kaybolur — o görünüm artık
-  // sitenin kendisi, Saule diyaloğu değil. Geri dönünce (activeBlockId null'a düşünce)
-  // dock kendiliğinden geri gelir.
-  if (pageRuntime?.activeBlockId) return null;
+  // Mesaj kutusu sadece henüz hiçbir şey sorulmamış karşılama/blok-listesi görünümünde
+  // görünür. Bir blok tam sayfa açıldığında (activeBlockId) YA DA Saule bir soruya
+  // cevap verdiğinde (sauleQuestion) kaybolur — geri dönünce (ikisi de sıfırlanınca)
+  // dock kendiliğinden geri gelir. Önerilen soru kartları (suggestions) ve "geri" oku
+  // bu kutuya ihtiyaç duymadan çalışmaya devam eder.
+  if (pageRuntime?.activeBlockId || pageRuntime?.sauleQuestion) return null;
 
   return (
     <div className={variant === 'sheet' ? 'w-full p-4 flex flex-col justify-end group' : 'w-full p-3 flex flex-col justify-end group shrink-0'}>
