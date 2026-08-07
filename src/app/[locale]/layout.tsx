@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
+import { localizedPath, hreflangPaths } from '@/utils/localizedUrl';
 import { Inter, Bricolage_Grotesque, IBM_Plex_Mono } from "next/font/google";
 import "../globals.css";
 
@@ -41,18 +42,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     description: meta.description,
     metadataBase: new URL('https://talkinbio.com'),
     alternates: {
-      canonical: `/${locale}`,
-      languages: {
-        'en': '/en',
-        'tr': '/tr',
-        'ru': '/ru',
-        'x-default': '/en',
-      },
+      // Default locale (tr) is served with no /tr prefix — see src/utils/localizedUrl.ts.
+      // Hardcoding `/${locale}` here (as before) pointed the tr canonical/hreflang at a
+      // URL that immediately 30x-redirects back to the unprefixed one.
+      canonical: localizedPath(locale, ''),
+      languages: hreflangPaths(''),
     },
     openGraph: {
       title: meta.title,
       description: meta.description,
-      url: `/${locale}`,
+      url: localizedPath(locale, ''),
       siteName: 'Talkinbio',
       locale,
       type: 'website',

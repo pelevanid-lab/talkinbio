@@ -10,6 +10,7 @@ import { DEFAULT_THEME, resolvePageCanvases, resolveThemeColors } from '@/config
 import { googleFontsHref } from '@/utils/googleFonts';
 import { getPageActionTargets, withContactPageActionTarget } from '@/utils/pageActionTargets';
 import { resolvePublishedRuntimeData } from '@/utils/publishedSnapshot';
+import { localizedPath, localizedUrl, hreflangPaths } from '@/utils/localizedUrl';
 
 // Her ziyarette taze saule_settings (voiceEnabled dahil) çekilsin
 export const dynamic = 'force-dynamic';
@@ -47,18 +48,16 @@ export async function generateMetadata({ params }: any) {
     title,
     description,
     alternates: {
-      canonical: `/${locale}${path}`,
-      languages: {
-        en: `/en${path}`,
-        tr: `/tr${path}`,
-        ru: `/ru${path}`,
-        'x-default': `/en${path}`,
-      },
+      // Default locale (tr) has no /tr prefix on this site — see src/utils/localizedUrl.ts.
+      // Hardcoding `/${locale}${path}` here (as before) made the tr canonical/hreflang
+      // point at a URL that immediately 30x-redirects back to the unprefixed one.
+      canonical: localizedPath(locale, path),
+      languages: hreflangPaths(path),
     },
     openGraph: {
       title,
       description,
-      url: `/${locale}${path}`,
+      url: localizedPath(locale, path),
       siteName: 'Talkinbio',
       locale,
       type: 'profile',
@@ -164,13 +163,17 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
   const { getCategoryById: getWizardCategory } = await import('@/config/wizardCategories');
   const wizardCat = business.category_id ? getWizardCategory(business.category_id) : null;
   const schemaType = wizardCat?.schemaType ?? 'LocalBusiness';
+  // Same locale-prefix rule as generateMetadata above (tr has no /tr prefix), plus the
+  // bare (non-www) domain that robots.txt/sitemap.xml actually serve from — this used to
+  // hardcode `www.talkinbio.com/${locale}/...` for every locale, which both redirected
+  // (tr) and pointed at a different host than the page's real URL.
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': schemaType,
     name: business.name,
-    url: `https://www.talkinbio.com/${locale}/${business.username}`,
+    url: localizedUrl(locale, `/${business.username}`),
     description: pageBusiness.category,
-    '@id': `https://www.talkinbio.com/${locale}/${business.username}#entity`
+    '@id': `${localizedUrl(locale, `/${business.username}`)}#entity`
   };
 
   // Koyu modda tüm viewport (header satırı dahil) koyu zemine uyar — ArchetypeRenderer'ın kendi
@@ -239,6 +242,7 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
             pageTitle={pageBusiness.page_title || pageBusiness.name}
             tagline={pageBusiness.tagline}
             category={pageBusiness.category}
+            categoryId={business.category_id}
             contactMethod={pageBusiness.contact_method}
             contactValue={pageBusiness.contact_value}
             orderNowBehavior={pageBusiness.saule_settings?.orderNowBehavior}

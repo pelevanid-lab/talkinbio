@@ -1,29 +1,24 @@
 import { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { localizedUrl, hreflangUrls } from '@/utils/localizedUrl';
 
-const baseUrl = 'https://talkinbio.com';
-const locales = ['tr', 'en', 'ru'];
-
-// Helper to generate hreflang alternates
-function generateAlternates(path: string) {
-  const languages: Record<string, string> = {};
-  locales.forEach(locale => {
-    languages[locale] = `${baseUrl}/${locale}${path}`;
-  });
-  // x-default goes to English
-  languages['x-default'] = `${baseUrl}/en${path}`;
-  
-  return { languages };
-}
+// sitemap.ts is a cached Route Handler by default in Next 16 (see node_modules/next/dist/docs/
+// .../metadata/sitemap.md) — without a revalidate/dynamic config it snapshots once at build time
+// and never re-queries Supabase again. That's exactly what happened in production: the sitemap
+// was frozen with 0 published businesses (built before any went live) and never picked up new
+// ones since, including this business — Search Console's "4 pages discovered" matched the 4
+// static routes exactly, with every business page silently missing. Revalidate hourly so newly
+// published businesses reach the live sitemap without needing a fresh deploy.
+export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 1. Static Routes
   const staticRoutes = ['', '/legal', '/stakeholders', '/pricing'].map(route => ({
-    url: `${baseUrl}/en${route}`, // Use 'en' as the default canonical for the base URL in the sitemap listing
+    url: localizedUrl('en', route), // Use 'en' as the default canonical for the base URL in the sitemap listing
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,
     priority: route === '' ? 1 : 0.8,
-    alternates: generateAlternates(route)
+    alternates: { languages: hreflangUrls(route) }
   }));
 
   // 2. Dynamic Routes (Published Businesses)
@@ -38,11 +33,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .eq('is_published', true);
 
   const dynamicRoutes = (businesses || []).map(business => ({
-    url: `${baseUrl}/en/${business.username}`,
+    url: localizedUrl('en', `/${business.username}`),
     lastModified: business.updated_at ? new Date(business.updated_at) : new Date(),
     changeFrequency: 'daily' as const,
     priority: 0.9,
-    alternates: generateAlternates(`/${business.username}`)
+    alternates: { languages: hreflangUrls(`/${business.username}`) }
   }));
 
   return [...staticRoutes, ...dynamicRoutes];

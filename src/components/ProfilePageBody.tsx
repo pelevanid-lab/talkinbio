@@ -70,7 +70,7 @@ type LocalizedText = Partial<Record<'tr' | 'en' | 'ru', string>> | null;
 
 // Owns activeBlockId so the "back" control can live in the same header (ProfileHeader) as the
 // avatar/name/language switcher instead of floating inside the scrollable block content below.
-export default function ProfilePageBody({ blocks, theme, businessName, pageTitle, tagline, category, contactMethod, contactValue, orderNowBehavior, locale }: { blocks: any[], theme?: Theme | null, businessName: string, pageTitle: string, tagline?: LocalizedText, category?: string | null, contactMethod?: string | null, contactValue?: string | null, orderNowBehavior?: string | null, locale: 'tr' | 'en' | 'ru' }) {
+export default function ProfilePageBody({ blocks, theme, businessName, pageTitle, tagline, category, categoryId, contactMethod, contactValue, orderNowBehavior, locale }: { blocks: any[], theme?: Theme | null, businessName: string, pageTitle: string, tagline?: LocalizedText, category?: string | null, categoryId?: string | null, contactMethod?: string | null, contactValue?: string | null, orderNowBehavior?: string | null, locale: 'tr' | 'en' | 'ru' }) {
   const t = useTranslations('PublicPage');
   const [localActiveBlockId, setLocalActiveBlockId] = useState<string | null>(null);
   const pageRuntime = useOptionalPublicPageRuntime();
@@ -140,6 +140,7 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
               blocks={matchedBlocks}
               theme={resolvedTheme}
               businessName={businessName}
+              categoryId={categoryId}
               activeBlockId={pageRuntime!.sauleMatchedBlock!.blockId}
               activeItemId={pageRuntime!.sauleMatchedBlock!.itemId ?? null}
               activeOpenSequence={pageRuntime!.openSequence ?? 0}
@@ -159,6 +160,7 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
               blocks={blocks}
               theme={theme}
               businessName={businessName}
+              categoryId={categoryId}
               activeBlockId={activeBlockId}
               activeItemId={pageRuntime?.activeItemId ?? null}
               activeOpenSequence={pageRuntime?.openSequence ?? 0}

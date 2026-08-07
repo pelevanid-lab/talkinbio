@@ -28,6 +28,9 @@ type RenderCtx = {
   // configured behavior has no usable target — renderServices hides the button in that case.
   onOrderNowClick: ((message: string) => void) | null;
   businessName: string;
+  // business.category_id (config/wizardCategories.ts) — drives the "Order Now" button's wording
+  // (orderNowLabel). null/undefined falls back to the neutral default label.
+  categoryId?: string | null;
   activeItemId?: string | null;
   // Sıfır sürtünmeli niyet takibi (bkz. PublicPageRuntime.recordEngagementClick) — sayfa
   // sahibi kendi önizlemesindeyken veya PublicPageRuntimeProvider yokken (editör mockup'ı)
@@ -55,7 +58,19 @@ const CONTACT_METHOD_LABELS: Record<string, Record<string, string>> = {
 
 // "Order Now" button next to a service's price (renderServices) — label and the message it
 // hands to Saule when the configured behavior is 'saule' (see buildOrderNowHandler below).
-const ORDER_NOW_LABEL: Record<string, string> = { tr: 'Sipariş Ver', en: 'Order Now', ru: 'Заказать' };
+// Wording follows the business's wizard category (config/wizardCategories.ts) rather than one
+// fixed label for everyone — "Sipariş Ver" (Order Now) reads like an e-commerce checkout and
+// felt wrong on an appointment-based services page (masaj/diyetisyen/kuaför, category 'hizmet').
+// Falls back to a neutral label for categories with no specific mapping.
+const ORDER_NOW_LABEL_BY_CATEGORY: Record<string, Record<string, string>> = {
+  hizmet: { tr: 'Randevu Al', en: 'Book Now', ru: 'Записаться' },
+  urun: { tr: 'Sipariş Ver', en: 'Order Now', ru: 'Заказать' },
+};
+const ORDER_NOW_LABEL_DEFAULT: Record<string, string> = { tr: 'Bilgi Al', en: 'Get Info', ru: 'Узнать больше' };
+function orderNowLabel(categoryId: string | null | undefined, locale: string): string {
+  const map = (categoryId && ORDER_NOW_LABEL_BY_CATEGORY[categoryId]) || ORDER_NOW_LABEL_DEFAULT;
+  return map[locale] || map.tr;
+}
 function orderNowMessage(itemTitle: string, locale: string): string {
   if (locale === 'en') return `I'd like to order: ${itemTitle}`;
   if (locale === 'ru') return `Я хочу заказать: ${itemTitle}`;
@@ -354,7 +369,7 @@ function itemFocusClass(item: any, ctx: RenderCtx) {
 }
 
 function renderServices(block: any, ctx: RenderCtx) {
-  const { locale, radiusClass, headingFont, theme, onOrderNowClick } = ctx;
+  const { locale, radiusClass, headingFont, theme, onOrderNowClick, categoryId } = ctx;
   const blockTitle = blockTitleOf(block, locale);
   const blockIntro = blockIntroOf(block, locale);
   const layoutVariant = block.content?.layoutVariant || 'grid-cards';
@@ -390,7 +405,7 @@ function renderServices(block: any, ctx: RenderCtx) {
         className="text-xs font-semibold px-3 py-1 rounded-full border shrink-0 whitespace-nowrap transition hover:scale-105"
         style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
       >
-        {ORDER_NOW_LABEL[locale] || ORDER_NOW_LABEL.tr}
+        {orderNowLabel(categoryId, locale)}
       </button>
     ) : null;
 
@@ -1105,6 +1120,7 @@ export default function ArchetypeRenderer({
   contactMethod,
   contactValue,
   orderNowBehavior,
+  categoryId,
 }: {
   blocks: any[],
   theme?: Theme | null,
@@ -1122,6 +1138,8 @@ export default function ArchetypeRenderer({
   contactValue?: string | null,
   // business.saule_settings.orderNowBehavior — see buildOrderNowHandler.
   orderNowBehavior?: string | null,
+  // business.category_id — see RenderCtx.categoryId / orderNowLabel.
+  categoryId?: string | null,
 }) {
   const [internalActiveBlockId, setInternalActiveBlockId] = useState<string | null>(null);
   const activeBlockId = controlledActiveBlockId !== undefined ? controlledActiveBlockId : internalActiveBlockId;
@@ -1237,7 +1255,7 @@ export default function ArchetypeRenderer({
   const bodyFont = 'tb-body';
   const cardWrap = theme.layoutStyle === 'card-heavy';
   const sectionGapClass = SECTION_GAP_CLASS[theme.layoutStyle] || 'gap-10';
-  const renderCtx: RenderCtx = { locale, radiusClass, headingFont, theme, cardWrap, onOrderNowClick, businessName, activeItemId, onEngagementClick };
+  const renderCtx: RenderCtx = { locale, radiusClass, headingFont, theme, cardWrap, onOrderNowClick, businessName, categoryId, activeItemId, onEngagementClick };
 
   const renderBlock = (block: any) => {
     const renderFn = BLOCK_RENDERERS[block.type];
