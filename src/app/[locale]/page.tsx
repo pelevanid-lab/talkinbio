@@ -67,19 +67,6 @@ const landingCopy = {
         },
       ]
     },
-    apps: {
-      title: 'İhtiyacın olan uygulamaları ekle.',
-      subtitle: 'Temel Talkinbio sayfası ücretsizdir. Daha fazlasına ihtiyaç duyduğunda yalnızca kullanacağın uygulamaları eklersin.',
-      cta: 'Uygulamaları keşfet',
-      list: [
-        { title: 'Content Studio', desc: 'İçeriklerini planla, üret ve paylaş.', icon: 'pencil' },
-        { title: 'Booking', desc: 'Randevularını yönet ve takvimini bağla.', icon: 'calendar' },
-        { title: 'Survey', desc: 'Anketler ve formlar oluştur, yanıtları topla.', icon: 'survey' },
-        { title: 'Waitlist', desc: 'Bekleyen müşterilerini ve doluluk durumunu yönet.', icon: 'waitlist' },
-        { title: 'Mailing', desc: 'Abone listeni büyüt ve e-postalarını gönder.', icon: 'mailing' },
-        { title: 'Integrations', desc: 'Kullandığın araçları Talkinbio\'ya bağla.', icon: 'integrations' }
-      ]
-    },
     splitShare: {
       title: 'Her yerde paylaş.',
       desc: 'Benzersiz Talkinbio adresini tüm sosyal medya hesaplarına, web sitene, e-posta imzalarına ve offline materyallerine ekle.',
@@ -89,16 +76,16 @@ const landingCopy = {
       title: 'Ziyaretçilerini tanı. Neyin işe yaradığını gör.',
       cta: 'Analitik özellikleri keşfet',
       labels: {
-        visits: 'Toplam Ziyaret',
-        clicks: 'Bağlantı Tıklamaları',
-        leads: 'İletişim Talepleri',
-        sales: 'Satış Dönüşümleri'
+        visits: 'Toplam Görüntülenme',
+        clicks: 'Saule ile Konuşma',
+        leads: 'Yeni Talep',
+        sales: 'İletişime Geçme'
       }
     },
     splitDiscover: {
-      title: 'Sadece paylaşma. Keşfedil.',
-      desc: 'Talkinbio kullanıcılarının profilleri, ürünleri ve hizmetleri merkezi keşif alanında bulunabilir. İnsanlar ihtiyaç duyduğu kişiyi, ürünü veya hizmeti Talkinbio\'da arayabilir.',
-      linkText: 'Talkinbio Discover hakkında daha fazla bilgi'
+      title: 'Sayfanı istediğin an güncelle.',
+      desc: 'Panelindeki AI destekli editörle metnini değiştir, yeni bölüm ekle, temanı yenile — kod yazmadan, dakikalar içinde.',
+      linkText: 'Editörü keşfet'
     },
     splitFree: {
       title: 'Ücretsiz başla. İhtiyacın oldukça geliştir.',
@@ -109,10 +96,7 @@ const landingCopy = {
         'Harici satış bağlantıları',
         'Temel soru yönlendirmesi',
         'Temel Analitik'
-      ],
-      teaserTitle: 'İsteğe bağlı uygulamalar',
-      teaserDesc: 'İhtiyacın olan uygulamaları App Store\'dan seç ve sayfana ekle.',
-      badgeText: 'Yakında: Talkinbio Discover çok yakında kullanımda!'
+      ]
     },
     faq: {
       title: 'Sıkça sorulan sorular',
@@ -134,16 +118,8 @@ const landingCopy = {
           a: 'Ziyaretçileriniz soru sorduğunda, Talkinbio sayfanızdaki ilgili bölümü açar veya doğrudan bilgi tabanındaki notlardan cevap üretir.'
         },
         {
-          q: 'Uygulamalar nasıl satın alınıyor?',
-          a: 'Sayfanıza eklemek istediğiniz Booking veya Mailing gibi uygulamaları panelinizdeki uygulama mağazasından tek tıkla kiralayabilir veya satın alabilirsiniz.'
-        },
-        {
           q: 'Kendi ödeme veya randevu sistemimi kullanabilir miyim?',
           a: 'Kesinlikle! Mevcut ödeme veya randevu sistemi bağlantılarınızı kolayca Talkinbio butonlarına ve detay sayfalarına entegre edebilirsiniz.'
-        },
-        {
-          q: 'Talkinbio Discover nedir?',
-          a: 'Talkinbio kullanıcılarının profillerinin, sunduğu hizmetlerin ve ürünlerin listelendiği, insanların arama yapıp yeni uzmanlar keşfettiği ortak dizindir.'
         },
         {
           q: 'Sayfamı nerelerde paylaşabilirim?',
@@ -157,7 +133,7 @@ const landingCopy = {
       newsletterPlaceholder: 'E-posta adresinizi girin',
       rights: '© 2026 talkinbio. Tüm hakları saklıdır.',
       cols: {
-        products: { title: 'Ürünler', links: ['Sayfa Oluşturucu', 'Uygulamalar', 'Şablonlar', 'Fiyatlandırma'] },
+        products: { title: 'Ürünler', links: ['Sayfa Oluşturucu', 'Fiyatlandırma'] },
         company: { title: 'Şirket', links: ['Hakkımızda', 'Blog', 'Kariyer', 'İletişim'] },
         resources: { title: 'Kaynaklar', links: ['Yardım Merkezi', 'Kılavuzlar', 'Geliştiriciler'] },
         legal: { title: 'Yasal', links: ['Kullanım Koşulları', 'Gizlilik Politikası', 'Çerez Politikası'] }
@@ -222,19 +198,6 @@ const landingCopy = {
         },
       ]
     },
-    apps: {
-      title: 'Add the applications you need.',
-      subtitle: 'The basic Talkinbio page is free. When you need more, you only add and pay for the applications you actually use.',
-      cta: 'Explore applications',
-      list: [
-        { title: 'Content Studio', desc: 'Plan, produce and share your content.', icon: 'pencil' },
-        { title: 'Booking', desc: 'Manage your appointments and connect your calendar.', icon: 'calendar' },
-        { title: 'Survey', desc: 'Create surveys and forms, collect responses.', icon: 'survey' },
-        { title: 'Waitlist', desc: 'Manage your waiting customers and availability status.', icon: 'waitlist' },
-        { title: 'Mailing', desc: 'Grow your subscriber list and send your emails.', icon: 'mailing' },
-        { title: 'Integrations', desc: 'Connect the tools you already use to Talkinbio.', icon: 'integrations' }
-      ]
-    },
     splitShare: {
       title: 'Share everywhere.',
       desc: 'Add your unique Talkinbio link to all your social media accounts, website, email signatures and offline materials.',
@@ -244,16 +207,16 @@ const landingCopy = {
       title: 'Know your visitors. See what works.',
       cta: 'Discover analytics features',
       labels: {
-        visits: 'Total Visits',
-        clicks: 'Link Clicks',
-        leads: 'Contact Leads',
-        sales: 'Sales Conversions'
+        visits: 'Total Views',
+        clicks: 'Conversations with Saule',
+        leads: 'New Leads',
+        sales: 'Contact Requests'
       }
     },
     splitDiscover: {
-      title: 'Don\'t just share. Be discovered.',
-      desc: 'Talkinbio user profiles, products and services can be found in our central discover space. People can search for the experts or services they need.',
-      linkText: 'Learn more about Talkinbio Discover'
+      title: 'Update your page anytime.',
+      desc: 'Change your text, add a new section, refresh your theme — all with the AI-powered editor in your dashboard, no code required.',
+      linkText: 'Explore the editor'
     },
     splitFree: {
       title: 'Start for free. Scale as you need.',
@@ -264,10 +227,7 @@ const landingCopy = {
         'External sales connections',
         'Basic question routing',
         'Basic Analytics'
-      ],
-      teaserTitle: 'Optional applications',
-      teaserDesc: 'Select the applications you need from the App Store and add them.',
-      badgeText: 'Coming Soon: Talkinbio Discover is launch ready soon!'
+      ]
     },
     faq: {
       title: 'Frequently asked questions',
@@ -289,16 +249,8 @@ const landingCopy = {
           a: 'When visitors ask a question, Talkinbio opens the relevant section on your page or answers directly from your knowledge base notes.'
         },
         {
-          q: 'How do I purchase applications?',
-          a: 'You can rent or purchase applications like Booking or Mailing with a single click from the App Store inside your dashboard.'
-        },
-        {
           q: 'Can I use my own payment or booking system?',
           a: 'Absolutely! You can easily integrate your existing payment or booking platform links into Talkinbio buttons.'
-        },
-        {
-          q: 'What is Talkinbio Discover?',
-          a: 'It is a public directory listing Talkinbio user profiles, services, and products, where people can search and discover new experts.'
         },
         {
           q: 'Where can I share my page?',
@@ -312,7 +264,7 @@ const landingCopy = {
       newsletterPlaceholder: 'Enter your email address',
       rights: '© 2026 talkinbio. All rights reserved.',
       cols: {
-        products: { title: 'Products', links: ['Page Builder', 'Applications', 'Templates', 'Pricing'] },
+        products: { title: 'Products', links: ['Page Builder', 'Pricing'] },
         company: { title: 'Company', links: ['About Us', 'Blog', 'Careers', 'Contact'] },
         resources: { title: 'Resources', links: ['Help Center', 'Guides', 'Developers'] },
         legal: { title: 'Legal', links: ['Terms of Use', 'Privacy Policy', 'Cookie Policy'] }
@@ -377,19 +329,6 @@ const landingCopy = {
         },
       ]
     },
-    apps: {
-      title: 'Добавляйте нужные приложения.',
-      subtitle: 'Базовая страница Talkinbio бесплатна. Если вам нужно больше, вы платите только за те приложения, которые добавляете.',
-      cta: 'Обзор приложений',
-      list: [
-        { title: 'Content Studio', desc: 'Планируйте, создавайте и делитесь контентом.', icon: 'pencil' },
-        { title: 'Booking', desc: 'Управляйте записями и подключите календарь.', icon: 'calendar' },
-        { title: 'Survey', desc: 'Создавайте опросы и формы, собирайте ответы.', icon: 'survey' },
-        { title: 'Waitlist', desc: 'Управляйте списком ожидания и доступностью.', icon: 'waitlist' },
-        { title: 'Mailing', desc: 'Растите базу подписчиков и делайте рассылки.', icon: 'mailing' },
-        { title: 'Integrations', desc: 'Интегрируйте привычные инструменты в Talkinbio.', icon: 'integrations' }
-      ]
-    },
     splitShare: {
       title: 'Делитесь везде.',
       desc: 'Добавьте ссылку Talkinbio во все профили соцсетей, подписи писем или печатные QR-коды.',
@@ -399,16 +338,16 @@ const landingCopy = {
       title: 'Знайте своих гостей. Видьте эффективность.',
       cta: 'Открыть функции аналитики',
       labels: {
-        visits: 'Всего визитов',
-        clicks: 'Клики по ссылкам',
-        leads: 'Запросы контактов',
-        sales: 'Конверсии продаж'
+        visits: 'Всего просмотров',
+        clicks: 'Разговоры с Saule',
+        leads: 'Новые заявки',
+        sales: 'Обращения'
       }
     },
     splitDiscover: {
-      title: 'Не просто делитесь. Будьте на виду.',
-      desc: 'Профили пользователей, услуги и продукты будут доступны в общем каталоге, где люди смогут находить нужных экспертов.',
-      linkText: 'Подробнее о Talkinbio Discover'
+      title: 'Обновляйте страницу в любой момент.',
+      desc: 'Меняйте текст, добавляйте новый блок, обновляйте тему — прямо в редакторе с AI в панели управления, без кода.',
+      linkText: 'Посмотреть редактор'
     },
     splitFree: {
       title: 'Начните бесплатно. Развивайте по мере роста.',
@@ -419,10 +358,7 @@ const landingCopy = {
         'Внешние платежные ссылки',
         'Базовая маршрутизация вопросов',
         'Базовая аналитика'
-      ],
-      teaserTitle: 'Дополнительные приложения',
-      teaserDesc: 'Выбирайте приложения из магазина приложений и добавляйте их на страницу.',
-      badgeText: 'Скоро: Talkinbio Discover готовится к запуску!'
+      ]
     },
     faq: {
       title: 'Часто задаваемые вопросы',
@@ -444,16 +380,8 @@ const landingCopy = {
           a: 'Когда гость спрашивает, Talkinbio открывает нужный блок на странице или дает ответ из базы знаний.'
         },
         {
-          q: 'Как приобретаются приложения?',
-          a: 'Вы можете подключить Booking или Mailing в один клик из магазина приложений в панели управления.'
-        },
-        {
           q: 'Могу ли я использовать свою систему записи/оплаты?',
           a: 'Конечно! Вы можете легко подключить ссылки на сторонние платформы записи или оплаты к кнопкам.'
-        },
-        {
-          q: 'Что такое Talkinbio Discover?',
-          a: 'Это общий каталог профилей, услуг и товаров пользователей Talkinbio, созданный для поиска экспертов.'
         },
         {
           q: 'Где я могу поделиться ссылкой?',
@@ -467,7 +395,7 @@ const landingCopy = {
       newsletterPlaceholder: 'Введите адрес эл. почты',
       rights: '© 2026 talkinbio. Все права защищены.',
       cols: {
-        products: { title: 'Продукты', links: ['Конструктор страниц', 'Приложения', 'Шаблоны', 'Тарифы'] },
+        products: { title: 'Продукты', links: ['Конструктор страниц', 'Тарифы'] },
         company: { title: 'Компания', links: ['О нас', 'Блог', 'Вакансии', 'Контакты'] },
         resources: { title: 'Ресурсы', links: ['Центр помощи', 'Руководства', 'Разработчикам'] },
         legal: { title: 'Юридические', links: ['Условия использования', 'Политика конфиденциальности', 'Куки'] }
@@ -752,79 +680,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
         </section>
 
-        {/* Section 4: Apps Teaser Section */}
-        <section id="uygulamalar" className="apps-section">
-          <div className="wrap">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-              <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-28">
-                <h2 className="font-extrabold text-[var(--ink)] leading-tight">{copy.apps.title}</h2>
-                <p className="sub text-[var(--ink-soft)] leading-relaxed">{copy.apps.subtitle}</p>
-                <div className="pt-4">
-                  <Link href="/register" className="btn btn-coral" style={{ background: '#E85B4E' }}>
-                    {copy.apps.cta}
-                  </Link>
-                </div>
-              </div>
-
-              <div className="lg:col-span-8">
-                <div className="app-card-grid">
-                  {copy.apps.list.map((app: any, idx: number) => (
-                    <div key={idx} className="app-item-card">
-                      <div className={`app-icon-box bg-app-${app.icon}`}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          {app.icon === 'pencil' && <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z"/>}
-                          {app.icon === 'calendar' && (
-                            <>
-                              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                              <line x1="16" y1="2" x2="16" y2="6"/>
-                              <line x1="8" y1="2" x2="8" y2="6"/>
-                              <line x1="3" y1="10" x2="21" y2="10"/>
-                            </>
-                          )}
-                          {app.icon === 'survey' && (
-                            <>
-                              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                              <polyline points="14 2 14 8 20 8"/>
-                              <line x1="16" y1="13" x2="8" y2="13"/>
-                              <line x1="16" y1="17" x2="8" y2="17"/>
-                              <polyline points="10 9 9 9 8 9"/>
-                            </>
-                          )}
-                          {app.icon === 'waitlist' && (
-                            <>
-                              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-                              <circle cx="9" cy="7" r="4"/>
-                              <path d="M23 21v-2a4 4 0 00-3-3.87"/>
-                              <path d="M16 3.13a4 4 0 010 7.75"/>
-                            </>
-                          )}
-                          {app.icon === 'mailing' && (
-                            <>
-                              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                              <polyline points="22,6 12,13 2,6"/>
-                            </>
-                          )}
-                          {app.icon === 'integrations' && (
-                            <>
-                              <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
-                              <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
-                            </>
-                          )}
-                        </svg>
-                      </div>
-                      <h4>{app.title}</h4>
-                      <p>{app.desc}</p>
-                      <Link href="/register" className="tiny-link">
-                        {locale === 'tr' ? 'Detayları gör' : locale === 'ru' ? 'Подробнее' : 'See details'} →
-                      </Link>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Section 5: Split Row Card Panels (Share & Stats) */}
         <section className="split-row-section">
           <div className="wrap">
@@ -974,30 +829,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                       ))}
                     </div>
                   </div>
-
-                  {/* App store quick teaser row */}
-                  <div className="border-t border-[var(--border)] pt-4 mt-2">
-                    <p className="text-[11px] font-bold uppercase text-[var(--muted)] mb-2">{copy.splitFree.teaserTitle}</p>
-                    <p className="text-[12px] text-[var(--ink-soft)] mb-3 leading-normal">{copy.splitFree.teaserDesc}</p>
-                    <div className="flex gap-2 items-center flex-wrap">
-                      <span className="w-8 h-8 rounded-lg bg-app-pencil flex items-center justify-center text-xs font-bold">✎</span>
-                      <span className="w-8 h-8 rounded-lg bg-app-mailing flex items-center justify-center text-xs font-bold">✉</span>
-                      <span className="w-8 h-8 rounded-lg bg-app-calendar flex items-center justify-center text-xs font-bold">📅</span>
-                      <span className="w-8 h-8 rounded-lg bg-app-survey flex items-center justify-center text-xs font-bold">📝</span>
-                      <span className="w-8 h-8 rounded-lg bg-app-waitlist flex items-center justify-center text-xs font-bold">👥</span>
-                      <span className="w-8 h-8 rounded-lg border border-dashed border-[var(--muted)] flex items-center justify-center text-xs font-bold text-[var(--muted)]">+</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Coming soon teaser banner */}
-                <div className="mt-6 p-4 rounded-xl border border-dashed border-[rgba(232,91,78,0.25)] bg-[var(--coral-tint)] flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[var(--coral)] shadow-sm">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                  </div>
-                  <span className="text-[11px] font-bold text-[#E85B4E] leading-normal">{copy.splitFree.badgeText}</span>
                 </div>
               </div>
             </div>
@@ -1011,7 +842,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <div className="faq-grid">
               {/* Left Column FAQs */}
               <div className="space-y-4">
-                {copy.faq.items.slice(0, 4).map((item: any, idx: number) => (
+                {copy.faq.items.slice(0, 3).map((item: any, idx: number) => (
                   <details key={idx} className="faq-item">
                     <summary className="faq-trigger">
                       <span>{item.q}</span>
@@ -1028,7 +859,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
               {/* Right Column FAQs */}
               <div className="space-y-4">
-                {copy.faq.items.slice(4, 8).map((item: any, idx: number) => (
+                {copy.faq.items.slice(3, 6).map((item: any, idx: number) => (
                   <details key={idx} className="faq-item">
                     <summary className="faq-trigger">
                       <span>{item.q}</span>
@@ -1106,7 +937,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <div className="footer-col-title">{copy.footer.cols.legal.title}</div>
               <div className="footer-links-list">
                 {copy.footer.cols.legal.links.map((link: string, i: number) => (
-                  <Link key={i} href="/register">{link}</Link>
+                  <Link key={i} href="/legal">{link}</Link>
                 ))}
               </div>
             </div>
