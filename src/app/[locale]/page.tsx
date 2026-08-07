@@ -26,7 +26,7 @@ const landingCopy = {
       title: 'Profilindeki bağlantı senin yerine konuşsun.',
       subtitle: 'İnteraktif sayfanı dakikalar içinde tasarla.',
       inputPlaceholder: 'kullanıcıadı',
-      playDemo: 'Canlı örneği dene',
+      playDemo: 'Talkinbio ile yaratılmış sayfaları gör',
       trustCue: 'Ücretsiz yayınla. Kredi kartı gerekmez.'
     },
     interaction: {
@@ -142,7 +142,7 @@ const landingCopy = {
       title: 'A link in bio talking for you.',
       subtitle: 'Design your interactive page in minutes.',
       inputPlaceholder: 'username',
-      playDemo: 'Try live example',
+      playDemo: 'See pages made with Talkinbio',
       trustCue: 'Publish for free. No credit card required.'
     },
     interaction: {
@@ -258,7 +258,7 @@ const landingCopy = {
       title: 'Пусть ссылка в био говорит за вас.',
       subtitle: 'Создайте интерактивную страницу за минуты.',
       inputPlaceholder: 'имяпользователя',
-      playDemo: 'Попробовать демо',
+      playDemo: 'Смотреть страницы, созданные в Talkinbio',
       trustCue: 'Публикация бесплатна. Карта не требуется.'
     },
     interaction: {
@@ -481,9 +481,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
                 {/* Try play button */}
                 <div className="pt-5 flex justify-center lg:justify-start animate-fade-up delay-300">
-                  <a 
-                    href="https://talkinbio.com/talkinbio" 
-                    target="_blank" 
+                  <a
+                    href="https://talkinbio.com/ulianapehlivan"
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-4 text-sm font-bold text-[var(--ink-soft)] hover:text-[var(--ink)] transition-colors group"
                   >
@@ -492,10 +492,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                         <path d="M1.5 1.634a1 1 0 011.5-.866l5.5 3.175a1 1 0 010 1.732l-5.5 3.175a1 1 0 01-1.5-.866V1.634z"/>
                       </svg>
                     </span>
-                    <span className="flex flex-col items-start leading-snug">
-                      <span className="text-[15px] font-extrabold tracking-tight text-[var(--ink)] group-hover:text-[var(--coral)] transition-colors">{copy.hero.playDemo}</span>
-                      <span className="text-xs text-[var(--ink-soft)] font-mono font-medium mt-0.5">talkinbio.com/talkinbio</span>
-                    </span>
+                    <span className="text-[15px] font-extrabold tracking-tight text-[var(--ink)] group-hover:text-[var(--coral)] transition-colors">{copy.hero.playDemo}</span>
                   </a>
                 </div>
               </div>
