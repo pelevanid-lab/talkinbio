@@ -25,6 +25,23 @@ export function computeHash(text: string): string {
   return createHash('sha256').update(text).digest('hex');
 }
 
+// Which id to route an "open_block" action to. Most block types are singletons (one
+// 'services', one 'pricing', one 'faq' per business), so routing by block.type is
+// unambiguous and matches how route.ts's fail-safe heuristics already look candidates up
+// (e.g. `e.action?.blockId === 'pricing'`). 'extra_services' is different: EditorClient.tsx
+// marks it repeatable — a business can have several (verified live: Uliana has "Masaj Yağı
+// Face & Harmony" AND "Masaj Seansı Randevusu" as separate extra_services blocks). Routing
+// those by block.type collapses them all onto the literal string 'extra_services', and
+// PublicPageRuntime.openBlock's `targets.find(t => t.blockId === blockId || t.type === blockId)`
+// then resolves to whichever matching block happens to come first on the page — which is how
+// "masaj yaptırmak istiyorum" ended up opening the massage-oil block instead of the actual
+// booking block. Route repeatable types by the block's real (unique) id instead, matching
+// pageActionTargets.ts's own `blockId: block.id`, so the id-match branch resolves the exact
+// block instance and never falls through to the ambiguous type-fallback.
+function openBlockId(block: { id: string; type: string }): string {
+  return block.type === 'extra_services' ? block.id : block.type;
+}
+
 // System templates to enrich the semantic context based on component type and locale
 const INTENT_DESCRIPTIONS: Record<string, Record<'tr' | 'en' | 'ru', string>> = {
   about: {
@@ -212,7 +229,7 @@ export function compilePageSemanticEntries(business: any, blocks: any[], knowled
         sourceId: block.id,
         title: blockTitle,
         description: blockDescription,
-        action: { type: 'open_block', blockId: block.type },
+        action: { type: 'open_block', blockId: openBlockId(block) },
         blockType: block.type
       });
       if (blockEntry) entries.push(blockEntry);
@@ -263,7 +280,7 @@ export function compilePageSemanticEntries(business: any, blocks: any[], knowled
             sourceItemId: item.id || t,
             title: t,
             description: d,
-            action: { type: 'open_block', blockId: block.type, itemId: item.id },
+            action: { type: 'open_block', blockId: openBlockId(block), itemId: item.id },
             blockType: block.type
           });
           if (servEntry) entries.push(servEntry);
