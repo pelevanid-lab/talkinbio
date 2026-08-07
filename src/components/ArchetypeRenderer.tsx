@@ -558,7 +558,7 @@ function renderServices(block: any, ctx: RenderCtx) {
                     )}
                   </div>
                   {item.price && (
-                    <div className={`flex items-center gap-3 flex-wrap ${layoutVariant === 'list' ? 'mt-3 sm:mt-0 sm:ml-auto shrink-0' : 'shrink-0'}`}>
+                    <div className={`flex items-center gap-3 flex-wrap ${layoutVariant === 'list' ? 'mt-10 sm:mt-0 sm:ml-auto shrink-0' : 'shrink-0'}`}>
                       <span
                         className="font-mono font-medium px-3 py-1 rounded-full text-sm whitespace-nowrap inline-block"
                         style={{ background: 'var(--primary-fill)', color: '#fff' }}
