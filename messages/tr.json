@@ -790,6 +790,7 @@
   },
   "PublicPage": {
     "unpublishedBanner": "Profiliniz henüz ziyaretçilere kapalı. Yayınlamak için eksikleri tamamlayın.",
+    "claimBanner": "Bu senin için hazırlanmış bir örnek sayfa. Sahiplenip düzenlemeye devam etmek için tıkla.",
     "greetingFallback": "Hoşgeldiniz, size nasıl yardımcı olabilirim?",
     "matchingBlock": "İlgili bölümü açıyorum:\n\n✨ {title}",
     "noMatchLead": "Aradığınız konuyu doğrudan sayfa üzerinde bulamadım. Ancak bana bilgilerinizi iletirseniz size en kısa sürede geri dönüş sağlayabiliriz:",
@@ -1539,7 +1540,13 @@
     "signupGate": {
       "title": "Sayfan hazır!",
       "sub": "Yayınlamak ve düzenlemeye devam etmek için hesabını oluştur — sayfan aynı şekilde kalacak.",
-      "submitBtn": "Hesabımı oluştur"
+      "submitBtn": "Hesabımı oluştur",
+      "backToSteps": "Adımlara geri dön"
+    },
+    "claimGate": {
+      "title": "Bu sayfa senin için hazırlandı!",
+      "sub": "Sahiplenip düzenlemeye devam etmek için hesabını oluştur — sayfa aynı şekilde kalacak, sadece artık senin.",
+      "submitBtn": "Sayfayı devral"
     },
     "langOffer": {
       "title": "İçeriğini başka dile çevir",

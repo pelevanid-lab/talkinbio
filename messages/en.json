@@ -790,6 +790,7 @@
   },
   "PublicPage": {
     "unpublishedBanner": "Your profile isn't open to visitors yet. Complete the missing steps to publish it.",
+    "claimBanner": "This is a sample page made for you. Tap to claim it and keep editing.",
     "greetingFallback": "Welcome, how can I help you?",
     "matchingBlock": "Opening the relevant section:\n\n✨ {title}",
     "noMatchLead": "I could not find the exact topic on the page. However, if you leave your contact details, we will get back to you as soon as possible:",
@@ -1539,7 +1540,13 @@
     "signupGate": {
       "title": "Your page is ready!",
       "sub": "Create your account to publish it and keep editing — your page stays exactly as it is.",
-      "submitBtn": "Create my account"
+      "submitBtn": "Create my account",
+      "backToSteps": "Back to steps"
+    },
+    "claimGate": {
+      "title": "This page was made for you!",
+      "sub": "Create your account to claim it and keep editing — the page stays exactly as it is, it's just yours now.",
+      "submitBtn": "Claim this page"
     },
     "langOffer": {
       "title": "Translate your content",

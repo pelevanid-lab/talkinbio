@@ -48,6 +48,10 @@ export async function generateMetadata({ params }: any) {
   return {
     title,
     description,
+    // Yayınlanmamış sayfalar artık notFound() ile engellenmiyor (linki bilen
+    // herkes görebiliyor, bkz. devral akışı) — bu yüzden arama motorlarının bu
+    // taslakları indekslemesini burada ayrıca kapatmak gerekiyor.
+    ...(business.is_published ? {} : { robots: { index: false, follow: false } }),
     alternates: {
       // Default locale (tr) has no /tr prefix on this site — see src/utils/localizedUrl.ts.
       // Hardcoding `/${locale}${path}` here (as before) made the tr canonical/hreflang
@@ -91,10 +95,17 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
   // Check publication status
   const { data: userData } = await supabase.auth.getUser();
   const isOwner = userData?.user?.id === business.owner_id;
+  // Anonim demo oturumu (sihirbazı bitirip hesap kapısını henüz geçmemiş) mı, yoksa
+  // kalıcı hesap mı — banner'ın tıklama hedefini belirler (bkz. aşağıda unpublishedBanner).
+  const isAnonymousOwner = isOwner && !!userData?.user?.is_anonymous;
 
-  if (!business.is_published && !isOwner) {
-    notFound();
-  }
+  // NOT: yayınlanmamış sayfalar artık linki bilen HERKESE açık (notFound() ile
+  // engellenmiyor) — concierge kurulum akışı: kullanıcı adı zaten tahmin
+  // edilemeyecek rastgele bir string, "linke sahip olan görür" modeli burada
+  // Google Docs paylaşımına benzer kabul edildi. Sahibi olmayan bir ziyaretçi
+  // aşağıdaki banner'dan sayfayı devralıp kendi hesabına bağlayabilir
+  // (bkz. /api/businesses/claim). generateMetadata'daki robots:noindex, arama
+  // motorlarının yayınlanmamış taslakları indekslemesini ayrıca engelliyor.
 
   // Faz 3.3: haftalık özet e-postasının ön koşulu — günlük tekilleştirilmiş sayfa
   // görüntülenme sayacı. Sahibin kendi ziyaretleri sayılmaz.
@@ -209,10 +220,17 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link href={googleFontsHref(theme.headingFont, theme.bodyFont)} rel="stylesheet" />
-      {!business.is_published && isOwner && (
-        <div className="w-full bg-[var(--coral)] text-white text-center py-2 text-sm font-medium shadow-sm z-50">
-          {t('unpublishedBanner')}
-        </div>
+      {!business.is_published && (
+        <a
+          href={
+            isOwner
+              ? localizedPath(locale, isAnonymousOwner ? '/onboarding' : '/dashboard/editor')
+              : localizedPath(locale, `/onboarding?claim=${encodeURIComponent(business.username)}`)
+          }
+          className="w-full block bg-[var(--coral)] text-white text-center py-2 text-sm font-medium shadow-sm z-50 hover:brightness-95 underline underline-offset-2 decoration-white/60"
+        >
+          {isOwner ? t('unpublishedBanner') : t('claimBanner')}
+        </a>
       )}
       
       <PublicPageRuntimeProvider

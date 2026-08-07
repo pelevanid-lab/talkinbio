@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, Circle, Loader2, Plus, Trash2, ChevronRight, Globe, ExternalLink, Mail, Lock } from 'lucide-react';
+import { CheckCircle2, Circle, Loader2, Plus, Trash2, ChevronRight, ChevronLeft, Globe, ExternalLink, Mail, Lock } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { ColoredTextField } from '@/utils/coloredText';
 import MediaUploader from '@/components/MediaUploader';
@@ -26,7 +26,16 @@ interface StepState {
 
 // ─── Yardımcı fonksiyonlar ────────────────────────────────────────────────────
 
-function generateUsername(name: string, desired?: string): string {
+// Önce çıplak (suffix'siz) adı dener — boştaysa kullanıcı gerçekten yazdığı/istediği
+// kullanıcı adını alır (bkz. Zara Bekar testi: "zarabekar" yazıp "zarabekar7439"
+// almak kafa karıştırıyordu). Sadece çakışma varsa rastgele 4 haneli suffix'li
+// varyantlar denenir; DB'ye birkaç ardışık sorgu pahasına gerçek bir kullanıcı adı
+// üretir. supabase parametresi gerekiyor çünkü artık uniqueness DB'den kontrol ediliyor.
+async function generateUsername(
+  supabase: ReturnType<typeof createClient>,
+  name: string,
+  desired?: string
+): Promise<string> {
   // Hero'daki input'tan gelen istenen kullanıcı adı (desired) varsa öncelik
   // onda — landing'de kullanıcının yazdığı adres öyle görünsün diye.
   const source = (desired?.trim() ? desired : name);
@@ -34,8 +43,15 @@ function generateUsername(name: string, desired?: string): string {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]/g, '');
-  return (base || 'user') + Math.floor(Math.random() * 9000 + 1000);
+    .replace(/[^a-z0-9]/g, '') || 'user';
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const candidate = attempt === 0 ? base : base + Math.floor(Math.random() * 9000 + 1000);
+    const { data: existing } = await supabase.from('businesses').select('id').eq('username', candidate).maybeSingle();
+    if (!existing) return candidate;
+  }
+  // Son çare — pratikte hiç çakışmayacak kadar benzersiz bir suffix.
+  return base + Date.now().toString().slice(-6);
 }
 
 function buildBlockContent(blockType: string, data: any, locale: string): any {
@@ -404,6 +420,12 @@ export default function OnboardingPage() {
   const [signupError, setSignupError] = useState('');
   const [signupEmailSent, setSignupEmailSent] = useState(false);
 
+  // ── Paylaşılan demo linkinden "devral" (?claim=username) ─────────────────
+  // Bu tarayıcı o business'ı hiç oluşturmadı — sadece linki aldı. Dolu ise
+  // hesap kapısı ekranı "kendi sihirbazını bitir" yerine "bu sayfayı devral"
+  // moduna geçer (bkz. handleClaimEmailPassword/handleClaimGoogle/runClaim).
+  const [claimUsername, setClaimUsername] = useState<string | null>(null);
+
   // ── Dil ekleme (done ekranı) ──────────────────────────────────────────────
   const [langPhase, setLangPhase] = useState<LangPhase>('offer');
   const [targetLang, setTargetLang] = useState<'en' | 'ru'>('en');
@@ -424,6 +446,28 @@ export default function OnboardingPage() {
     setPhase('done');
   }, [supabase]);
 
+  // ── Devral: sunucudaki /api/businesses/claim'e istek atıp owner_id'yi bu
+  // (artık kalıcı) kullanıcıya taşır — RLS "owner_id = auth.uid()" olduğu için
+  // client tarafından doğrudan yapılamaz, service-role gerektirir.
+  const runClaim = useCallback(async (username: string) => {
+    try {
+      const res = await fetch('/api/businesses/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || t('errors.generic'));
+      setBusinessId(json.businessId || null);
+      setPreviewUsername(username);
+      setPhase('done');
+    } catch (err: any) {
+      setSignupError(err.message || t('errors.generic'));
+    } finally {
+      setSignupLoading(false);
+    }
+  }, [t]);
+
   useEffect(() => {
     const username = new URLSearchParams(window.location.search).get('username');
     if (username) setDesiredUsername(username);
@@ -432,6 +476,8 @@ export default function OnboardingPage() {
   // ── Yükleme: oturum + mevcut işletme kontrolü ─────────────────────────────
   useEffect(() => {
     const init = async () => {
+      const claim = new URLSearchParams(window.location.search).get('claim');
+
       let { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         // Hesapsız ziyaretçi — sihirbazı denemesi için gerçek bir uid'ye sahip
@@ -444,6 +490,21 @@ export default function OnboardingPage() {
           return;
         }
         user = anon.user;
+      }
+
+      if (claim) {
+        // Paylaşılan demo linkinden geldi — bu oturumun kendi business'ı yok,
+        // hedef username'i devralması gerekiyor. Zaten kalıcı bir hesabı varsa
+        // (linke başka bir Talkinbio hesabıyla girilmiş) direkt devral, anonimse
+        // önce hesap kapısını (aşağıdaki 'signup' fazı, devral modunda) göster.
+        setClaimUsername(claim);
+        setPreviewUsername(claim);
+        if (!user.is_anonymous) {
+          await runClaim(claim);
+        } else {
+          setPhase('signup');
+        }
+        return;
       }
 
       const { data: biz } = await supabase
@@ -620,7 +681,7 @@ export default function OnboardingPage() {
             .eq('id', businessId);
           if (updErr) throw new Error(t('errors.createFailed'));
         } else {
-          const username = generateUsername(name, desiredUsername);
+          const username = await generateUsername(supabase, name, desiredUsername);
           const { data: biz, error: bizErr } = await supabase
             .from('businesses')
             .insert({
@@ -755,6 +816,11 @@ export default function OnboardingPage() {
   // NOT: signUp DEĞİL, updateUser — aynı owner_id (dolayısıyla business/blocks
   // sahipliği) korunur. Google için de aynı nedenle signInWithOAuth değil,
   // linkIdentity kullanılır (bkz. handleClaimGoogle).
+  // Onay e-postası/Google dönüşü sonrası tekrar /onboarding'e düşüldüğünde
+  // devral modunun (?claim=...) unutulmaması için next path'e geri ekleniyor.
+  const nextOnboardingPath = () =>
+    `/${locale}/onboarding${claimUsername ? `?claim=${encodeURIComponent(claimUsername)}` : ''}`;
+
   const handleClaimEmailPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setSignupLoading(true);
@@ -762,13 +828,14 @@ export default function OnboardingPage() {
     try {
       const { data, error: updErr } = await supabase.auth.updateUser(
         { email: signupEmail, password: signupPassword },
-        { emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/${locale}/onboarding` }
+        { emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(nextOnboardingPath())}` }
       );
       if (updErr) throw updErr;
 
       if (data.user && !data.user.is_anonymous) {
         // E-posta onayı kapalıysa dönüşüm anında tamamlanır — beklemeden devam et.
-        if (businessId) await finishWizardOrGate(businessId, data.user);
+        if (claimUsername) await runClaim(claimUsername);
+        else if (businessId) await finishWizardOrGate(businessId, data.user);
       } else {
         // Onay e-postası gönderildi — kullanıcı linke tıklayınca /onboarding'e
         // geri dönecek ve init() akışı kaldığı yerden devam edecek.
@@ -787,7 +854,7 @@ export default function OnboardingPage() {
     try {
       const { error: linkErr } = await supabase.auth.linkIdentity({
         provider: 'google',
-        options: { redirectTo: `${window.location.origin}/api/auth/callback?next=/${locale}/onboarding` },
+        options: { redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(nextOnboardingPath())}` },
       });
       if (linkErr) throw linkErr;
       // Başarılıysa tarayıcı Google'a yönlendirilir; dönüşte init() devam eder.
@@ -811,12 +878,28 @@ export default function OnboardingPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--page-bg,#f7f7f5)] p-4">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+          {/* Devral modunda (?claim=...) bu tarayıcı hiç wizard adımı doldurmadı —
+              selectedCategory boş, "adımlara dön" burada geçersiz. */}
+          {!claimUsername && (
+            <button
+              type="button"
+              onClick={() => { setStepListOpen(true); setPhase('wizard'); }}
+              className="flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-[var(--ink)] mb-4 -ml-1"
+            >
+              <ChevronLeft className="w-4 h-4" /> {t('signupGate.backToSteps')}
+            </button>
+          )}
+
           <div className="text-center mb-6">
             <div className="w-16 h-16 bg-green-100 text-[var(--teal)] rounded-full flex items-center justify-center mx-auto mb-5">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h1 className="text-2xl font-bold text-[var(--ink)] mb-2">{t('signupGate.title')}</h1>
-            <p className="text-slate-500 text-sm">{t('signupGate.sub')}</p>
+            <h1 className="text-2xl font-bold text-[var(--ink)] mb-2">
+              {claimUsername ? t('claimGate.title') : t('signupGate.title')}
+            </h1>
+            <p className="text-slate-500 text-sm">
+              {claimUsername ? t('claimGate.sub') : t('signupGate.sub')}
+            </p>
           </div>
 
           {previewUsername && (
@@ -912,7 +995,7 @@ export default function OnboardingPage() {
                   className="w-full bg-[var(--coral)] text-white rounded-lg px-4 py-2 mt-1 font-medium hover:bg-[#E55A4D] disabled:opacity-50 flex items-center justify-center transition"
                 >
                   {signupLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  {signupLoading ? tReg('loading') : t('signupGate.submitBtn')}
+                  {signupLoading ? tReg('loading') : (claimUsername ? t('claimGate.submitBtn') : t('signupGate.submitBtn'))}
                 </button>
               </form>
             </>
