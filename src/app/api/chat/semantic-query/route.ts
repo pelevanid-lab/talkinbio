@@ -337,18 +337,36 @@ export async function POST(request: Request) {
     });
 
     // 6. LAYER 5: Gemini 2.5 Flash Retrieval-Augmented Generation (RAG)
+    // Diversify by source block before slicing: a single services-shaped block can
+    // contribute its block-level entry PLUS one entry per item, so on broad "what do you
+    // offer" queries every one of those near-duplicate entries can outscore other,
+    // equally-relevant blocks (verified: a block with 3 items monopolized all 4 slots
+    // ahead of a "Danışmanlık" note ranked #7 and an "Eğitim Formatı" block ranked #8,
+    // so Gemini never saw either). Cap how many entries any single sourceId can place,
+    // and widen the slot count a little now that duplicates can't hog it.
+    const MAX_PER_SOURCE = 2;
+    const RAG_CONTEXT_SIZE = 6;
+    const seenPerSource = new Map<string, number>();
     const topCandidates = (matchResult.debug?.scores || [])
       .filter((sc: any) => !sc.isEliminated && sc.finalScore >= 0.35)
-      .slice(0, 4)
       .map((sc: any) => {
         const fullEntry = entries.find((e) => e.id === sc.id);
         return {
           ...sc,
+          sourceId: fullEntry?.sourceId,
           title: fullEntry?.searchText.split('.')[0] || '',
           answer: fullEntry?.answer || fullEntry?.searchText || '',
           action: fullEntry?.action || null
         };
-      });
+      })
+      .filter((cand: any) => {
+        const key = cand.sourceId || cand.id;
+        const count = seenPerSource.get(key) || 0;
+        if (count >= MAX_PER_SOURCE) return false;
+        seenPerSource.set(key, count + 1);
+        return true;
+      })
+      .slice(0, RAG_CONTEXT_SIZE);
 
     let finalResult = {
       type: 'match',

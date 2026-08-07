@@ -247,6 +247,14 @@ export function compilePageSemanticEntries(business: any, blocks: any[], knowled
         for (const item of block.content.items) {
           const t = getLocalizedValue(item, locale, 'title');
           const d = getLocalizedValue(item, locale, 'description');
+          // Items with no real title/description for this locale (e.g. a placeholder row
+          // the owner added but only filled in for a different language) would otherwise
+          // still get indexed on the generic INTENT_DESCRIPTIONS boilerplate alone —
+          // producing several near-identical, content-free entries that outscore genuinely
+          // useful ones on lexical/semantic similarity to the boilerplate text and crowd
+          // them out of the RAG top-K in semantic-query/route.ts. Skip them; the parent
+          // block-level entry already covers this block for retrieval.
+          if (!t.trim() && !d.trim()) continue;
           const servEntry = compileSemanticEntry({
             businessId: business.id,
             locale,
