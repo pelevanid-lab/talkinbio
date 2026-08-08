@@ -547,6 +547,58 @@ export async function enhanceAudio(params: EnhanceAudioParams): Promise<EnhanceA
   };
 }
 
+/**
+ * Dublaj süresi tahmin edilemiyor (transkript+çeviri+TTS videonun tamamı için) — bir
+ * dakikalık bir klip birkaç dakika sürebilir. `MOTION_POLL_TIMEOUT_MS` ile aynı gerekçe:
+ * Vercel'de `maxDuration` yine devreye girip bunu geçersiz kılacak, bu sadece local test
+ * için cömert bir üst sınır.
+ */
+const DUB_POLL_TIMEOUT_MS = 600_000;
+
+export type DubVideoParams = {
+  videoUrl: string;
+  /** ISO 639-1 hedef dil kodu (ör. 'en', 'ru'). */
+  targetLang: string;
+  /** Verilmezse fal otomatik algılar. */
+  sourceLang?: string;
+};
+
+export type DubVideoResult = {
+  videoUrl: string;
+  requestId: string;
+};
+
+/**
+ * `fal-ai/elevenlabs/dubbing` — Düzenle → Redub. Transkripsiyon, çeviri ve orijinal
+ * konuşmacının ses karakterini koruyan TTS'i TEK çağrıda yapıyor; ayrı bir ses klonu
+ * adımına (MiniMax `custom_voice_id`) bağımlı DEĞİL. $/dk fiyatı DOĞRULANMADI — bkz.
+ * `STUDIO_DUB_COST_USD_PER_MINUTE` (config/beiweLab.ts) yorumu.
+ */
+export async function dubVideo(params: DubVideoParams): Promise<DubVideoResult> {
+  const { videoUrl, targetLang, sourceLang } = params;
+
+  const { result, requestId } = await submitAndPoll<{ video?: { url?: string } }>(
+    'fal-ai/elevenlabs/dubbing',
+    {
+      video_url: videoUrl,
+      target_lang: targetLang,
+      ...(sourceLang ? { source_lang: sourceLang } : {}),
+    },
+    {
+      timeoutMs: DUB_POLL_TIMEOUT_MS,
+      timeoutMessage: 'fal.ai video dublajı zaman aşımına uğradı.',
+      failMessage: 'fal.ai videoyu dublajlayamadı.',
+    },
+  );
+
+  const dubbedUrl = result?.video?.url;
+  if (!dubbedUrl) {
+    throw new FalError('fal.ai dublajlı video döndürmedi.', `requestId=${requestId} ${JSON.stringify(result)}`);
+  }
+
+  return { videoUrl: dubbedUrl, requestId };
+}
+
 /* ------------------------------------------------------------------ */
 /* Obje/arka plan kesme — Beiwe Post                                    */
 /* ------------------------------------------------------------------ */

@@ -104,6 +104,24 @@ export const IDENTITY_ANALYSIS_COST_USD = 0.02;
 export const ESTIMATED_VOICE_COST_PER_1K_CHARS_USD = 0.1;
 
 /**
+ * `fal-ai/elevenlabs/dubbing` (Düzenle → Redub: video/ses + hedef dil → orijinal
+ * konuşmacının ses karakteri korunarak dublajlı video) — TAHMİN, DOĞRULANMADI. fal'ın
+ * kendi model/fiyat sayfalarında (2026-08-08 taraması) net bir $/dk rakamı yoktu;
+ * üçüncü parti bir kaynak $0.90/dk bildiriyor. Prod'a açmadan önce fal.ai hesabından
+ * (Billing/Usage) gerçek faturayla DOĞRULANMALI — bu muhafazakar bir üst sınır.
+ */
+export const STUDIO_DUB_COST_USD_PER_MINUTE = 0.9;
+
+/**
+ * Altyazı çevirisi (Düzenle → çok dilli altyazı) — Whisper transkriptinin `text`
+ * alanlarını hedef dile çeviren tek bir LLM çağrısı (zaman damgaları değişmiyor,
+ * bkz. `captionTranslate.ts`). ElevenLabs GEREKMİYOR — mevcut `generateOnce`/Gemini
+ * flash altyapısı yeterli. TAHMİN — `IDENTITY_ANALYSIS_COST_USD` mertebesinde küçük
+ * bir Gemini çağrısı, gerçek kullanım sonrası gözden geçirilmeli.
+ */
+export const STUDIO_CAPTION_TRANSLATE_COST_USD = 0.01;
+
+/**
  * Yeni bir `custom_voice_id`, gerçek bir TTS çağrısında kullanılmazsa 7 gün içinde
  * fal/MiniMax tarafında siliniyor. Klonlama sırasındaki önizleme bunu saymıyor —
  * o yüzden `cloneMinimaxVoice` önizlemeyi atlıyor (`text: null`); kimliği mühürleyen

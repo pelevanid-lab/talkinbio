@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { FalError, enhanceAudio } from '@/utils/fal';
+import { recordUsageEvent } from '@/agents/shared/usage';
 import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { motionAudioMime, MOTION_AUDIO_EXTENSIONS } from '@/config/motionModels';
 import { AUDIO_ENHANCE_COST_USD } from '@/config/beiweLab';
@@ -70,7 +71,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
     const enhanced = await enhanceAudio({ audioUrl });
 
     if (auth.mode === 'business') {
-      await deductForGeneration(auth.business.id, AUDIO_ENHANCE_COST_USD);
+      const { creditsCharged } = await deductForGeneration(auth.business.id, AUDIO_ENHANCE_COST_USD);
+      await recordUsageEvent(supabaseAdmin, {
+        businessId: auth.business.id,
+        agent: 'beiwe',
+        channel: 'web',
+        model: 'fal-ai/deepfilternet3',
+        usage: {},
+        creditsCharged,
+      });
     }
 
     return NextResponse.json({ audioUrl: enhanced.audioUrl });

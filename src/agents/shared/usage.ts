@@ -2,7 +2,12 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Faz 4.2 kullanım ölçümü: framework-agnostik (Faz 2 taşınabilirlik kuralına uygun).
 
-export type UsageAgent = 'saule' | 'analysis';
+// 'beiwe' — Stüdyo hub (Planla/Düzenle/Üret) ve Creative Studio'nun tüm fal.ai/LLM
+// eylemleri (redub, ses klonu, görsel/video üretimi, altyazı çevirisi, fikir üretimi vb.).
+// 'saule' YALNIZCA gerçek ziyaretçi-sohbet oturumları için — ikisini karıştırmak
+// `/dashboard/billing`'de "Redub"un "İnteraktif Sayfa Oturumu" gibi görünmesine yol
+// açıyordu (bulunan hata, 2026-08-08).
+export type UsageAgent = 'saule' | 'beiwe' | 'analysis';
 
 export type UsageLike = {
   inputTokens?: number;

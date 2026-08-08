@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/utils/supabase/admin';
 import { FalError, transcribeAudioWords } from '@/utils/fal';
+import { recordUsageEvent } from '@/agents/shared/usage';
 import { STUDIO_TRANSCRIBE_COST_USD } from '@/config/beiweLab';
 import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
@@ -42,7 +44,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
   try {
     const { words } = await transcribeAudioWords({ audioUrl });
     if (auth.mode === 'business') {
-      await deductForGeneration(auth.business.id, STUDIO_TRANSCRIBE_COST_USD);
+      const { creditsCharged } = await deductForGeneration(auth.business.id, STUDIO_TRANSCRIBE_COST_USD);
+      await recordUsageEvent(supabaseAdmin, {
+        businessId: auth.business.id,
+        agent: 'beiwe',
+        channel: 'web',
+        model: 'fal-ai/whisper',
+        usage: {},
+        creditsCharged,
+      });
     }
     return NextResponse.json({ words });
   } catch (err) {

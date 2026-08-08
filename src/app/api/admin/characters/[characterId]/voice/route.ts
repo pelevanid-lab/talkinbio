@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { generateCharacterVoice, transcribeReferenceAudio } from '@/utils/fal';
+import { recordUsageEvent } from '@/agents/shared/usage';
 import { STUDIO_TRANSCRIBE_COST_USD } from '@/config/beiweLab';
 import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
@@ -48,7 +49,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
         console.warn('[voice] hazır referans deşifresi çıkarılamadı, üretimde tekrar denenecek:', err);
       }
       if (auth.mode === 'business') {
-        await deductForGeneration(auth.business.id, STUDIO_TRANSCRIBE_COST_USD);
+        const { creditsCharged } = await deductForGeneration(auth.business.id, STUDIO_TRANSCRIBE_COST_USD);
+        await recordUsageEvent(supabaseAdmin, {
+          businessId: auth.business.id,
+          agent: 'beiwe',
+          channel: 'web',
+          model: 'fal-ai/whisper',
+          usage: {},
+          creditsCharged,
+        });
       }
 
       const { error: profileError } = await supabaseAdmin
@@ -102,7 +111,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
         console.warn('[voice] referans deşifresi çıkarılamadı, üretimde tekrar denenecek:', err);
       }
       if (auth.mode === 'business') {
-        await deductForGeneration(auth.business.id, STUDIO_TRANSCRIBE_COST_USD);
+        const { creditsCharged } = await deductForGeneration(auth.business.id, STUDIO_TRANSCRIBE_COST_USD);
+        await recordUsageEvent(supabaseAdmin, {
+          businessId: auth.business.id,
+          agent: 'beiwe',
+          channel: 'web',
+          model: 'fal-ai/whisper',
+          usage: {},
+          creditsCharged,
+        });
       }
 
       // Profili güncelle.

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { generateOnce } from '@/agents/shared/generateOnce';
+import { recordUsageEvent } from '@/agents/shared/usage';
 import { buildScenePrompt } from '@/agents/shared/characterScenePrompt';
 import { FalError, generateCharacterImage, publicImageAsDataUri } from '@/utils/fal';
 import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
@@ -270,7 +271,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
     // Kredi düşümü SADECE gerçekten teslim edilen kare sayısı üzerinden — indirilemeyen
     // görseller (rows.length < numImages) için ücretlendirme yapılmaz.
     if (auth.mode === 'business') {
-      await deductForGeneration(auth.business.id, ESTIMATED_COST_PER_IMAGE_USD * rows.length);
+      const { creditsCharged } = await deductForGeneration(auth.business.id, ESTIMATED_COST_PER_IMAGE_USD * rows.length);
+      await recordUsageEvent(supabaseAdmin, { businessId: auth.business.id, agent: 'beiwe', channel: 'web', model, usage: {}, creditsCharged });
     }
 
     return NextResponse.json({ shots: inserted });

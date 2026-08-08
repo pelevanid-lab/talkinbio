@@ -89,27 +89,58 @@ export type CharacterAuthResult =
   | { mode: 'business'; business: Business };
 
 /**
- * Twin route'larının ortak dual-mode auth kapısı: paylaşımlı admin şifresi (mevcut
- * davranış, karakter kısıtı yok — admin her şeye erişir) VEYA işletme sahibi oturumu
- * (yalnız kendi karakterine). `characterId` yoksa (ör. scene-ref — henüz bir karaktere
- * bağlanmamış genel bir yükleme) yalnız "kim istiyor" kontrol edilir, sahiplik atlanır.
+ * Twin route'larının ortak dual-mode auth kapısı: paylaşımlı admin şifresi VEYA işletme
+ * sahibi oturumu (yalnız kendi karakterine).
+ *
+ * KREDİ KURALI (2026-08-08, kurucu kararı — önceki davranışı değiştiriyor): admin çerezi
+ * artık "kredi düşmez" anlamına GELMİYOR eğer erişilen karakter bir işletmeye aitse.
+ * Eskiden admin çerezi her zaman önce kontrol edilip `mode:'admin'` (ücretsiz) dönüyordu —
+ * bu, aynı tarayıcıda admin paneline de giriş yapmış bir işletme sahibinin KENDİ hesabındaki
+ * işlemlerinin sessizce ücretsiz geçmesine yol açıyordu (bkz. proje geçmişi, 2026-08-08
+ * bulunan hata). Şimdi öncelik SAHİPLİĞE göre: `characterId` bir işletmeye aitse (`business_id`
+ * dolu) kredi HER ZAMAN o işletmeden düşer — admin çerezi yalnızca "business oturumu yoksa
+ * destek amaçlı erişime izin ver" işlevi görür, ücretsizlik sağlamaz. Admin çerezi yalnızca
+ * hiçbir işletmeye ait OLMAYAN karakterlerde (statik saule/beiwe/enes, admin'in kendi
+ * `business_id`'siz cast karakterleri) gerçekten ücretsiz erişim sağlar. `characterId` hiç
+ * yoksa (ör. scene-ref — henüz bir karaktere bağlanmamış genel bir yükleme) eski davranış
+ * korunur — sahiplenilecek bir karakter olmadığı için ücretlendirme sorusu yok.
  */
 export async function authorizeCharacterRequest(characterId?: string): Promise<CharacterAuthResult | null> {
   const cookieStore = await cookies();
-  if (cookieStore.get('admin_session')?.value === process.env.ADMIN_PASSWORD) {
-    return { mode: 'admin' };
-  }
-
-  const business = await getBusinessFromRequest();
-  if (!business) return null;
+  const hasAdminCookie = cookieStore.get('admin_session')?.value === process.env.ADMIN_PASSWORD;
 
   if (characterId) {
-    try {
-      await assertOwnsCharacter(business.id, characterId);
-    } catch {
+    const { data: profile } = await supabaseAdmin
+      .from('character_profiles')
+      .select('business_id')
+      .eq('id', characterId)
+      .maybeSingle();
+
+    if (profile?.business_id) {
+      const business = await getBusinessFromRequest();
+      if (business && business.id === profile.business_id) {
+        return { mode: 'business', business };
+      }
+      // Business oturumu yok/eşleşmiyor — admin çerezi destek amaçlı erişime izin verir
+      // AMA yine de bu işletmeden ücretlendirilir (mode:'admin' DEĞİL, mode:'business').
+      if (hasAdminCookie) {
+        const { data: owningBusiness } = await supabaseAdmin
+          .from('businesses')
+          .select('*')
+          .eq('id', profile.business_id)
+          .single();
+        if (owningBusiness) return { mode: 'business', business: owningBusiness as Business };
+      }
       return null;
     }
+
+    // business_id yok — statik/admin karakteri, yalnızca admin çerezi erişebilir (ücretsiz).
+    return hasAdminCookie ? { mode: 'admin' } : null;
   }
 
-  return { mode: 'business', business };
+  if (hasAdminCookie) {
+    return { mode: 'admin' };
+  }
+  const business = await getBusinessFromRequest();
+  return business ? { mode: 'business', business } : null;
 }

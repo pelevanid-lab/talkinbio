@@ -12,6 +12,7 @@ import {
   ExternalLink,
   LogOut,
   Menu,
+  Wand2,
   X,
   Settings,
   type LucideIcon,
@@ -20,7 +21,7 @@ import CreditBadge from '@/components/CreditBadge';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { FEATURES } from '@/config/features';
 
-export type DashboardSection = 'setup' | 'leads' | 'analytics' | 'billing' | 'creative-studio' | 'front-desk';
+export type DashboardSection = 'setup' | 'leads' | 'analytics' | 'billing' | 'creative-studio' | 'front-desk' | 'studio';
 
 type NavItem = {
   key: DashboardSection;
@@ -52,6 +53,9 @@ export default function DashboardShell({ business, active, children }: { busines
     ...(FEATURES.creativeStudio
       ? [{ key: 'creative-studio' as const, label: t('navCreativeStudio'), href: '/dashboard/creative-studio', icon: Sparkles }]
       : []),
+    // Stüdyo hub'ı (Planla/Düzenle/Üret) — `creativeStudio`'dan AYRI flag, bkz. features.ts.
+    // İkisi aynı anda açık olabilir, birbirini etkilemez.
+    ...(FEATURES.studioHub ? [{ key: 'studio' as const, label: t('navStudio'), href: '/dashboard/studio', icon: Wand2 }] : []),
     { key: 'leads', label: t('headerTitle'), href: '/dashboard/leads', icon: Inbox },
     { key: 'analytics', label: t('navAnalytics'), href: '/dashboard/analytics', icon: BarChart3 },
     { key: 'billing', label: t('navBilling'), href: '/dashboard/billing', icon: Coins },

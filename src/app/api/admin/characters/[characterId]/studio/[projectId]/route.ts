@@ -14,11 +14,12 @@ async function authorizeProject(projectId: string) {
   return authorizeCharacterRequest(project.character_id);
 }
 
-type Body = { name?: string; timeline?: unknown; outputUrl?: string | null };
+type Body = { name?: string; timeline?: unknown; outputUrl?: string | null; thumbnailUrl?: string | null };
 
-/** Ad, zaman çizelgesi ve/veya export çıktı URL'i günceller. `outputUrl` akışı: export tarayıcıda
- * bitince blob `studio-asset` route'una yüklenir, dönen URL buraya PATCH edilir — export'un
- * kendisi için ayrı bir yükleme uç noktası yok, mevcut asset akışı yeniden kullanılıyor. */
+/** Ad, zaman çizelgesi, export çıktı URL'i ve/veya kapak URL'i günceller. `outputUrl`/
+ * `thumbnailUrl` AYNI akış: tarayıcıda üretilen blob `studio-asset` route'una yüklenir,
+ * dönen URL buraya PATCH edilir — export'un/kapağın kendisi için ayrı bir yükleme uç
+ * noktası yok, mevcut asset akışı yeniden kullanılıyor. */
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ characterId: string; projectId: string }> },
@@ -41,6 +42,9 @@ export async function PATCH(
   }
   if (body.outputUrl !== undefined) {
     patch.output_url = body.outputUrl;
+  }
+  if (body.thumbnailUrl !== undefined) {
+    patch.thumbnail_url = body.thumbnailUrl;
   }
 
   if (Object.keys(patch).length === 0) {

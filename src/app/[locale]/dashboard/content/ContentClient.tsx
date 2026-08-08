@@ -67,7 +67,20 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-export default function ContentClient({ business, blocks }: { business: any; blocks: any[] }) {
+export default function ContentClient({
+  business,
+  blocks,
+  embedded = false,
+}: {
+  business: any;
+  blocks: any[];
+  /** Stüdyo hub'ının (`/dashboard/studio/planla`) içine gömülü mü — öyleyse kendi
+   *  header'ını (Panel/Editör/Analiz mini-nav'ı) HİÇ basma, DashboardShell zaten aynı
+   *  navigasyonu sidebar'da sağlıyor; ikisi üst üste bindiğinde çift başlık/kutu
+   *  görünüyordu (bkz. bulunan hata). Eski bağımsız `/dashboard/content` sayfası bu
+   *  prop'u hiç GEÇMİYOR — davranışı birebir korunuyor, [[canli-sayfalara-dokunma]]. */
+  embedded?: boolean;
+}) {
   const t = useTranslations('ContentStudio');
   const sourceOptions = useMemo(() => buildSourceOptions(business, blocks, t), [business, blocks, t]);
   const [selectedKey, setSelectedKey] = useState(sourceOptions[0]?.key || '');
@@ -115,32 +128,8 @@ export default function ContentClient({ business, blocks }: { business: any; blo
     }
   };
 
-  return (
-    <div className="min-h-screen bg-[#F4F2ED]">
-      <header className="bg-white border-b border-[rgba(20,35,31,0.10)] sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-          <div>
-            <h1 className="text-xl font-[800] tracking-[-0.02em] text-[#14231F] flex items-center gap-2">
-              <FileText className="w-5 h-5" /> {t('pageTitle')}
-            </h1>
-            <p className="text-sm text-[#4B5A55] font-['Inter']">{business.name}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <CreditBadge balance={business.credit_balance ?? 0} />
-            <a href="/dashboard/leads" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap flex items-center gap-1.5">
-              <Inbox className="w-4 h-4" /> {t('navPanel')}
-            </a>
-            <a href="/dashboard/editor" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
-              {t('navEditor')}
-            </a>
-            <a href="/dashboard/analytics" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
-              {t('navAnalytics')}
-            </a>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
+  const content = (
+    <div className={embedded ? 'flex flex-col gap-6' : 'max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6'}>
         <div className="bg-white rounded-2xl border border-[rgba(20,35,31,0.10)] p-5 flex flex-col gap-4">
           <div>
             <label className="text-sm font-semibold text-[#14231F] block mb-2">{t('sourceQuestion')}</label>
@@ -200,7 +189,36 @@ export default function ContentClient({ business, blocks }: { business: any; blo
             ))}
           </div>
         )}
-      </main>
+    </div>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <div className="min-h-screen bg-[#F4F2ED]">
+      <header className="bg-white border-b border-[rgba(20,35,31,0.10)] sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+          <div>
+            <h1 className="text-xl font-[800] tracking-[-0.02em] text-[#14231F] flex items-center gap-2">
+              <FileText className="w-5 h-5" /> {t('pageTitle')}
+            </h1>
+            <p className="text-sm text-[#4B5A55] font-['Inter']">{business.name}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <CreditBadge balance={business.credit_balance ?? 0} />
+            <a href="/dashboard/leads" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap flex items-center gap-1.5">
+              <Inbox className="w-4 h-4" /> {t('navPanel')}
+            </a>
+            <a href="/dashboard/editor" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
+              {t('navEditor')}
+            </a>
+            <a href="/dashboard/analytics" className="text-sm text-[#14231F] font-medium bg-[#F4F2ED] px-4 py-2 rounded-full hover:bg-[rgba(20,35,31,0.08)] transition whitespace-nowrap">
+              {t('navAnalytics')}
+            </a>
+          </div>
+        </div>
+      </header>
+      <main>{content}</main>
     </div>
   );
 }

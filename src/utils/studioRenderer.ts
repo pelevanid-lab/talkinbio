@@ -37,6 +37,9 @@ import {
   Output,
 } from 'mediabunny';
 import {
+  applyCaptionSpeed,
+  groupCaptions,
+  resolveReframePoint,
   sequenceClipDuration,
   sequenceDuration,
   resolveSequencePosition,
@@ -96,6 +99,12 @@ function drawMediaFitted(
  * için: ör. `y:0, height:50, overlayFit:'cover'` üst yarıyı kaplayan bir dikdörtgen kutu.
  * 'cover' taşan kısmı KIRPAR (canvas'ın aksine kutu keyfi bir yerde olabildiği için elle
  * clip gerekiyor); 'contain' `drawMediaFitted` ile aynı merkezleme mantığı, sadece ofsetli.
+ *
+ * `centerX`/`centerY` (0-100, varsayılan 50/50 = eski davranışla BİREBİR aynı) — sadece
+ * 'cover' modunda anlamlı: kırpılan/taşan medyanın HANGİ odak noktasının kutunun ortasına
+ * denk geleceğini seçer (0 = medyanın sol/üst kenarı görünür, 100 = sağ/alt kenarı). Bkz.
+ * `resolveReframePoint` (studio.ts) — Yeniden Kadraj özelliği bunu zamana göre kaydırıyor.
+ * 'contain' modunda hiçbir şey kırpılmadığı için yok sayılır (her zaman ortalanır).
  */
 function drawMediaFittedBox(
   ctx: CanvasRenderingContext2D,
@@ -105,6 +114,8 @@ function drawMediaFittedBox(
   boxWidth: number,
   boxHeight: number,
   fit: StudioFit,
+  centerX = 50,
+  centerY = 50,
 ) {
   const { width: mw, height: mh } = mediaNaturalSize(media);
   if (!mw || !mh) return;
@@ -112,8 +123,8 @@ function drawMediaFittedBox(
   const scale = fit === 'cover' ? Math.max(boxWidth / mw, boxHeight / mh) : Math.min(boxWidth / mw, boxHeight / mh);
   const drawWidth = mw * scale;
   const drawHeight = mh * scale;
-  const dx = x + (boxWidth - drawWidth) / 2;
-  const dy = y + (boxHeight - drawHeight) / 2;
+  const dx = fit === 'cover' ? x + (boxWidth - drawWidth) * (centerX / 100) : x + (boxWidth - drawWidth) / 2;
+  const dy = fit === 'cover' ? y + (boxHeight - drawHeight) * (centerY / 100) : y + (boxHeight - drawHeight) / 2;
 
   if (fit === 'cover') {
     ctx.save();
@@ -485,6 +496,12 @@ export type DrawFrameParams = {
   assets: Map<string, HTMLImageElement>;
   /** Video-overlay'lerin canlı <video> elementleri, assetUrl ile anahtarlanmış (bkz. `syncVideoOverlays`). */
   videoOverlays: Map<string, HTMLVideoElement>;
+  /**
+   * YENİ — Düzenle'de bir çeviri locale'i seçiliyken `timeline.captions` (kaynak dil)
+   * YERİNE bu dizi çizilir (bkz. `timeline.translatedCaptions`, config/studio.ts).
+   * Verilmezse davranış eskisiyle birebir aynı — mevcut tüm çağrı yerleri değişmeden çalışır.
+   */
+  captionsOverride?: StudioCaption[];
 };
 
 /**
@@ -492,7 +509,7 @@ export type DrawFrameParams = {
  * Görsel henüz önbellekte yoksa (yükleme bitmemiş) o katman sessizce atlanır; çökme yerine
  * eksik kare tercih edildi.
  */
-export function drawFrame({ ctx, timeline, time, sequenceVideos, assets, videoOverlays }: DrawFrameParams): void {
+export function drawFrame({ ctx, timeline, time, sequenceVideos, assets, videoOverlays, captionsOverride }: DrawFrameParams): void {
   const canvas = ctx.canvas;
   const width = canvas.width;
   const height = canvas.height;
@@ -563,16 +580,19 @@ export function drawFrame({ ctx, timeline, time, sequenceVideos, assets, videoOv
       // Sekansın o anki elemanı — video ya da sabit görsel. Bkz. `resolveSequencePosition`.
       const active = resolveSequencePosition(timeline.sequence, time, liveDurations);
       if (active) {
+        // SADECE ana sekans klibi Yeniden Kadraj'dan etkilenir — cutaway/overlay kendi
+        // x/y/width/height'iyle zaten konumlanıyor, reframe'in odak kaydırması onlara uygulanmaz.
+        const reframePoint = resolveReframePoint(timeline.reframe, time);
         if (active.clip.kind === 'video') {
           const el = sequenceVideos.get(active.clip.id);
           if (el) {
-            drawMediaFittedBox(ctx, el, boxX, boxY, boxWidth, boxHeight, active.clip.fit);
+            drawMediaFittedBox(ctx, el, boxX, boxY, boxWidth, boxHeight, active.clip.fit, reframePoint.x, reframePoint.y);
             drawnMedia = true;
           }
         } else {
           const img = assets.get(active.clip.assetUrl);
           if (img) {
-            drawMediaFittedBox(ctx, img, boxX, boxY, boxWidth, boxHeight, active.clip.fit);
+            drawMediaFittedBox(ctx, img, boxX, boxY, boxWidth, boxHeight, active.clip.fit, reframePoint.x, reframePoint.y);
             drawnMedia = true;
           }
         }
@@ -605,7 +625,11 @@ export function drawFrame({ ctx, timeline, time, sequenceVideos, assets, videoOv
 
   // Altyazı bilerek zoom transformunun DIŞINDA: konuşmayı temsil eden bir UI katmanı,
   // kamera yakınlaşmasıyla birlikte büyüyüp okunaksızlaşmamalı/kaymamalı.
-  const activeCaption = timeline.captions.find((c) => time >= c.startTime && time < c.endTime);
+  const captionSource = applyCaptionSpeed(
+    groupCaptions(captionsOverride ?? timeline.captions, timeline.captionStyle.groupSize),
+    timeline.captionStyle.speed,
+  );
+  const activeCaption = captionSource.find((c) => time >= c.startTime && time < c.endTime);
   if (activeCaption) {
     drawCaptionItem(ctx, activeCaption, timeline.captionStyle, width, height);
   }
@@ -786,6 +810,9 @@ export type ExportParams = {
    */
   loudnessGain?: number;
   onProgress?: (fraction: number) => void;
+  /** bkz. `DrawFrameParams.captionsOverride` — export edilen videoya kaynak yerine bir
+   *  çeviri locale'inin altyazısı yakılır. Verilmezse `timeline.captions` (eskisi gibi). */
+  captionsOverride?: StudioCaption[];
 };
 
 export type ExportResult = { blob: Blob; mimeType: string };
@@ -812,6 +839,7 @@ export async function exportTimeline({
   enhancedAudio,
   loudnessGain = 1,
   onProgress,
+  captionsOverride,
 }: ExportParams): Promise<ExportResult> {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas oluşturulamadı.');
@@ -1083,7 +1111,7 @@ export async function exportTimeline({
         if (useEnhancedAudio && enhancedAudio && currentEl && Math.abs(enhancedAudio.currentTime - currentEl.currentTime) > 0.15) {
           enhancedAudio.currentTime = currentEl.currentTime;
         }
-        drawFrame({ ctx, timeline, time: masterTime, sequenceVideos, assets, videoOverlays });
+        drawFrame({ ctx, timeline, time: masterTime, sequenceVideos, assets, videoOverlays, captionsOverride });
         onProgress?.(Math.min(1, Math.max(0, (masterTime - masterStart) / totalMasterDuration)));
       }
 
@@ -1334,6 +1362,7 @@ export async function exportTimelineFast({
   enhancedAudio,
   loudnessGain = 1,
   onProgress,
+  captionsOverride,
 }: FastExportParams): Promise<ExportResult> {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas oluşturulamadı.');
@@ -1401,7 +1430,7 @@ export async function exportTimelineFast({
       const masterTime = masterStart + frame * frameDuration;
       await seekSequenceToTime(timeline.sequence, masterTime, sequenceVideos, liveDurations);
       await seekOverlaysToTime(timeline.overlays, masterTime, videoOverlays);
-      drawFrame({ ctx, timeline, time: masterTime, sequenceVideos, assets, videoOverlays });
+      drawFrame({ ctx, timeline, time: masterTime, sequenceVideos, assets, videoOverlays, captionsOverride });
       await videoSource.add(masterTime - masterStart, frameDuration);
       onProgress?.(Math.min(1, (frame + 1) / totalFrames));
     }

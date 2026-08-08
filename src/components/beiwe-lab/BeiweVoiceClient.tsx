@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Check,
   Fingerprint,
+  Info,
   Loader2,
   Mic,
   Play,
@@ -340,14 +341,15 @@ export default function BeiweVoiceClient({
         </div>
       </div>
 
+      <div className="flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-blue-800">
+        <Info className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-400" />
+        <span>{t('voiceCloneScopeNotice')}</span>
+      </div>
+
       {!twinVerified && (
         <div className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
           <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-slate-400" />
-          <span>
-            Bu karakterin görsel twin&apos;i henüz doğrulanmadı. Ses katmanı bağımsız
-            çalışır, ama konuşan video üretmek için ikisi de gerekli — sırayı bozmamak
-            için önce Beiwe Twin&apos;i bitirmek daha sağlıklı.
-          </span>
+          <span>{t('voiceTwinNotVerifiedNotice')}</span>
         </div>
       )}
 

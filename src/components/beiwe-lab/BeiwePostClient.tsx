@@ -38,6 +38,24 @@ const EMPTY_TEXTS: Record<OverlayLocale, PostTexts> = {
   ru: { headline: '', subline: '', items: EMPTY_ITEMS() },
 };
 
+/**
+ * Düzenle'nin (Stüdyo hub) çıktıları — bitmiş export'lar (`character_studio_projects.
+ * output_url`) ve redub'lar (`timeline.dubs[]`) — Üret'in galerisinde 4. bir kategori
+ * olarak görünsün diye (bkz. `pickGalleryEdit`). Yalnızca `/dashboard/studio/uret`
+ * sayfası dolduruyor; eski `creative-studio/post` bu prop'u hiç GEÇMİYOR (verilmezse
+ * `[]`, davranış eskisiyle birebir aynı) — [[canli-sayfalara-dokunma]].
+ */
+export type PostGalleryEdit = {
+  id: string;
+  url: string;
+  label: string;
+  kind: 'export' | 'dub';
+  locale?: OverlayLocale;
+  /** Stüdyo'da elle seçilen kapak karesi (bkz. StudioEditor "Bu kareyi kapak yap") —
+   *  verilmezse `<video>` kendi ilk karesini/varsayılan posterini kullanır. */
+  thumbnailUrl?: string;
+};
+
 type Props = {
   /** Twin + Yardımcı Oyuncular'ın (Saule/Beiwe/eklenen sanal karakterler) TÜMÜNÜN kare
    *  galerisi — tek karaktere kilitli değil, bkz. beiweLabScope.ts. */
@@ -48,6 +66,8 @@ type Props = {
    *  sonuçlarının düştüğü havuz (bkz. removeBackground/saveToLibrary). Bu ikisi olmadan
    *  üretilen görsel hiçbir yerde görünmüyordu — bkz. proje geçmişi, bulunan hata. */
   assets: StudioAsset[];
+  /** bkz. `PostGalleryEdit` yorumu. Verilmezse `[]`. */
+  edits?: PostGalleryEdit[];
   /** Kaydedilen gönderilerin yükleneceği karakter kapsamı — Beiwe Studio'nun asset
    *  kütüphanesiyle (character_studio_assets) AYNI kapsam, bkz. saveToLibrary yorumu. */
   characterId: string;
@@ -55,13 +75,17 @@ type Props = {
   hideCost?: boolean;
 };
 
-export default function BeiwePostClient({ shots, clips, assets: initialAssets, characterId, hideCost = false }: Props) {
+export default function BeiwePostClient({ shots, clips, assets: initialAssets, edits = [], characterId, hideCost = false }: Props) {
   // Sunucudan gelen ilk listeye "Arka planı kaldır"/"Stüdyo kütüphanesine kaydet" sonuçları
   // CANLI ekleniyor — sayfa yenilenmeden galeri güncel kalsın diye (bkz. removeBackground/saveToLibrary).
   const t = useTranslations('BeiweLab');
   const [libraryAssets, setLibraryAssets] = useState<StudioAsset[]>(initialAssets);
   const [templateId, setTemplateId] = useState<PostTemplateId>('ekran');
   const [formatId, setFormatId] = useState(POST_FORMATS[0].id);
+  // "Tüm formatları da indir" — yalnızca `downloadAll`'ı etkiler (video/hareketli export'un
+  // MediaRecorder yolu bunu KAPSAMIYOR, bkz. o fonksiyonun yorumu — mevcut bir sınır, bu
+  // özellik onu genişletmiyor).
+  const [downloadAllFormats, setDownloadAllFormats] = useState(false);
   const [locale, setLocale] = useState<OverlayLocale>('tr');
   const [texts, setTexts] = useState<Record<OverlayLocale, PostTexts>>(EMPTY_TEXTS);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -122,13 +146,13 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
   // setState'i buraya koymuyoruz: efekt gövdesinde senkron setState zincirleme
   // render tetikliyor (react-hooks/set-state-in-effect).
   const paint = useCallback(
-    async (targetLocale: OverlayLocale, elapsedMs?: number) => {
+    async (targetLocale: OverlayLocale, elapsedMs?: number, formatOverride?: PostFormat) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
       await renderPost({
         canvas,
         template,
-        format,
+        format: formatOverride ?? format,
         texts: texts[targetLocale],
         mediaObj: needsImage ? mediaObj : null,
         elapsedMs,
@@ -333,6 +357,21 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
     uploadedFileRef.current = null;
     setPreviousImageUrl(null);
     setImageUrl(clip.video_url);
+    setIsVideo(true);
+    setUploadedName(null);
+    setShowGallery(false);
+  };
+
+  /** Düzenle'nin bir çıktısını (export ya da redub) seçer — `pickGalleryClip` ile AYNI akış,
+   * yalnızca kaynak `CharacterClip` değil düz bir url (bkz. `PostGalleryEdit`). */
+  const pickGalleryEdit = (url: string) => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+    uploadedFileRef.current = null;
+    setPreviousImageUrl(null);
+    setImageUrl(url);
     setIsVideo(true);
     setUploadedName(null);
     setShowGallery(false);
@@ -585,17 +624,23 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
   };
 
   // Tek üretimden üç dil: metin katman olduğu için görseli yeniden üretmeye gerek yok.
+  // `downloadAllFormats` işaretliyse `POST_FORMATS`'ın da üstünde döner (3 format × 3 dile
+  // kadar = 9 dosya) — `paint`'in `formatOverride` parametresi sayesinde `formatId` state'ini
+  // hiç değiştirmeden (dolayısıyla ekrandaki seçili formatı bozmadan) her kombinasyonu basar.
   const downloadAll = async () => {
     setDownloading(true);
     setError(null);
     try {
       const canvas = canvasRef.current;
       if (!canvas) return;
-      for (const l of OVERLAY_LOCALES) {
-        if (!texts[l].headline.trim() && !texts[l].subline.trim()) continue;
-        await paint(l);
-        const blob = await canvasToPng(canvas);
-        downloadBlob(blob, `talkinbio-${template.id}-${format.id}-${l}.png`);
+      const formats = downloadAllFormats ? POST_FORMATS : [format];
+      for (const f of formats) {
+        for (const l of OVERLAY_LOCALES) {
+          if (!texts[l].headline.trim() && !texts[l].subline.trim()) continue;
+          await paint(l, undefined, f);
+          const blob = await canvasToPng(canvas);
+          downloadBlob(blob, `talkinbio-${template.id}-${f.id}-${l}.png`);
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'İndirilemedi.');
@@ -772,7 +817,7 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
 
               {uploadedName && <p className="text-xs text-slate-500 mt-2">{uploadedName}</p>}
 
-              {showGallery && (shots.length > 0 || clips.length > 0 || libraryAssets.length > 0) && (
+              {showGallery && (shots.length > 0 || clips.length > 0 || libraryAssets.length > 0 || edits.length > 0) && (
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-3 max-h-56 overflow-y-auto pr-1">
                   {/* Twin + Yardımcı Oyuncular'ın TÜM kadrosu — tek karaktere kilitli değil,
                       bkz. BeiwePostPage'teki getAllBeiweLabCharacterIds. */}
@@ -810,6 +855,21 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={asset.url} alt="" className="w-full aspect-square object-contain block" />
+                    </button>
+                  ))}
+                  {/* Düzenle'nin çıktıları (bitmiş export + redub) — "önceki üretimi son
+                      haline getirme": bkz. `PostGalleryEdit`. */}
+                  {edits.map((edit) => (
+                    <button
+                      key={edit.id}
+                      onClick={() => pickGalleryEdit(edit.url)}
+                      className="relative rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-400 transition-colors bg-black"
+                      title={edit.label}
+                    >
+                      <video src={edit.url} poster={edit.thumbnailUrl} muted className="w-full aspect-square object-cover block" />
+                      <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] font-semibold px-1 py-0.5 rounded">
+                        {edit.kind === 'dub' && edit.locale ? edit.locale.toUpperCase() : t('postGalleryEditBadge')}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -1077,15 +1137,24 @@ export default function BeiwePostClient({ shots, clips, assets: initialAssets, c
                 <Check className="w-3.5 h-3.5" /> {savedMessage}
               </p>
             )}
-            {filledLocales.length > 1 && (
+            {(filledLocales.length > 1 || downloadAllFormats) && (
               <>
+                <label className="flex items-center gap-1.5 text-xs text-slate-600 -mb-1">
+                  <input
+                    type="checkbox"
+                    checked={downloadAllFormats}
+                    onChange={(e) => setDownloadAllFormats(e.target.checked)}
+                    className="rounded border-slate-300"
+                  />
+                  {t('postDownloadAllFormatsLabel')}
+                </label>
                 <button
                   onClick={downloadAll}
                   disabled={downloading}
                   className="flex items-center justify-center gap-2 border border-slate-300 text-slate-700 rounded-lg px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50"
                 >
                   <Download className="w-4 h-4" />
-                  {t('postDownloadAllBtn', { count: filledLocales.length })}
+                  {t('postDownloadAllBtn', { count: filledLocales.length * (downloadAllFormats ? POST_FORMATS.length : 1) })}
                 </button>
                 {(isVideo || animated) && (
                   <p className="text-[11px] text-slate-400 -mt-1">{t('postDownloadAllNotice')}</p>

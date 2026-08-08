@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { createZip } from '@/utils/zip';
+import { recordUsageEvent } from '@/agents/shared/usage';
 import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
 import { LORA_TRAINING_COST_USD } from '@/config/beiweLab';
@@ -177,7 +178,15 @@ export async function POST(
 
   // fal kuyruğu isteği kabul etti — eğitim gerçekten başladı, kredi burada düşülür.
   if (auth.mode === 'business') {
-    await deductForGeneration(auth.business.id, LORA_TRAINING_COST_USD);
+    const { creditsCharged } = await deductForGeneration(auth.business.id, LORA_TRAINING_COST_USD);
+    await recordUsageEvent(supabaseAdmin, {
+      businessId: auth.business.id,
+      agent: 'beiwe',
+      channel: 'web',
+      model: LORA_TRAINING_MODEL,
+      usage: {},
+      creditsCharged,
+    });
   }
 
   return NextResponse.json({

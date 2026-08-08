@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { FalError, generateCharacterMotion, enhanceAudio } from '@/utils/fal';
+import { recordUsageEvent } from '@/agents/shared/usage';
 import { isKnownCharacterId } from '@/utils/knownCharacter';
 import {
   findMotionModel,
@@ -203,7 +204,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
     if (insertError) throw insertError;
 
     if (auth.mode === 'business') {
-      await deductForGeneration(auth.business.id, motionCostUsd);
+      const { creditsCharged } = await deductForGeneration(auth.business.id, motionCostUsd);
+      await recordUsageEvent(supabaseAdmin, {
+        businessId: auth.business.id,
+        agent: 'beiwe',
+        channel: 'web',
+        model: model.id,
+        usage: {},
+        creditsCharged,
+      });
     }
 
     return NextResponse.json({ motion: inserted });

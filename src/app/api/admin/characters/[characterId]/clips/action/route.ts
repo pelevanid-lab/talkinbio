@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { FalError, generateCharacterImage, generateCharacterPerformance, generateSceneVideo, publicImageAsDataUri } from '@/utils/fal';
+import { recordUsageEvent } from '@/agents/shared/usage';
 import { CHARACTERS, ESTIMATED_COST_PER_IMAGE_USD, buildNegativePrompt, isCharacterId } from '@/config/characters';
 import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { FULL_BODY_MOTION_MODELS, SCENE_VIDEO_MODELS, findFullBodyMotionModel, findSceneVideoModel } from '@/config/clips';
@@ -272,7 +273,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
     if (insertError) throw insertError;
 
     if (auth.mode === 'business') {
-      await deductForGeneration(auth.business.id, totalCostUsd);
+      const { creditsCharged } = await deductForGeneration(auth.business.id, totalCostUsd);
+      await recordUsageEvent(supabaseAdmin, {
+        businessId: auth.business.id,
+        agent: 'beiwe',
+        channel: 'web',
+        model: usedModel,
+        usage: {},
+        creditsCharged,
+      });
     }
 
     return NextResponse.json({ clip: inserted });

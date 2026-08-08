@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { Reorder } from 'framer-motion';
@@ -6,12 +6,15 @@ import {
   ArrowLeft,
   Captions,
   Download,
+  Globe,
   ImageIcon,
+  Languages,
   Loader2,
   Music,
   Pause,
   Play,
   Save,
+  Scissors,
   Sparkles,
   Timer,
   Trash2,
@@ -20,12 +23,18 @@ import {
   Video,
 } from 'lucide-react';
 import type { CharacterClip } from '@/config/clips';
-import { OVERLAY_FONTS, type OverlayFont } from '@/config/characters';
-import { AUDIO_ENHANCE_COST_USD, STUDIO_TRANSCRIBE_COST_USD } from '@/config/beiweLab';
+import { OVERLAY_FONTS, OVERLAY_LOCALES, type OverlayFont, type OverlayLocale } from '@/config/characters';
+import {
+  AUDIO_ENHANCE_COST_USD,
+  STUDIO_CAPTION_TRANSLATE_COST_USD,
+  STUDIO_DUB_COST_USD_PER_MINUTE,
+  STUDIO_TRANSCRIBE_COST_USD,
+} from '@/config/beiweLab';
 import { creditsForCost } from '@/config/pricing';
 import {
   MAX_CAPTIONS,
   MAX_CUTAWAYS,
+  MAX_DUBS,
   MAX_OVERLAYS,
   MAX_OVERLAY_TEXT_LENGTH,
   MAX_PROJECT_NAME_LENGTH,
@@ -33,6 +42,7 @@ import {
   MAX_SEQUENCE_CLIPS,
   MAX_SEQUENCE_LAYOUTS,
   MAX_ZOOMS,
+  MAX_REFRAME_POINTS,
   MIN_COUNTDOWN_STEPS,
   STUDIO_ASPECT_RATIOS,
   DEFAULT_COLOR_GRADE,
@@ -50,6 +60,7 @@ import {
   type StudioColorGrade,
   type StudioCountdown,
   type StudioCutaway,
+  type StudioDub,
   type StudioFit,
   type StudioImageOverlay,
   type StudioProject,
@@ -59,7 +70,14 @@ import {
   type StudioTimeline,
   type StudioVideoOverlay,
   type StudioZoom,
+  type StudioReframePoint,
+  type StudioCutRange,
+  CAPTION_STYLE_PRESETS,
+  FILLER_WORDS_TR,
+  findSilenceCuts,
+  groupCaptions,
   parseStudioTimeline,
+  removeCutRanges,
 } from '@/config/studio';
 import { countdownPlan, scheduleCountdownBeeps } from '@/utils/countdown';
 import { downloadBlob } from '@/utils/imageOverlay';
@@ -79,7 +97,7 @@ import {
   syncVideoOverlays,
 } from '@/utils/studioRenderer';
 
-type Selection = { type: 'cutaway' | 'overlay' | 'zoom'; id: string } | null;
+type Selection = { type: 'cutaway' | 'overlay' | 'zoom' | 'reframe'; id: string } | null;
 
 type Props = {
   characterId: string;
@@ -95,6 +113,9 @@ type Props = {
 };
 
 const clampPct = (v: number) => Math.min(100, Math.max(0, v));
+
+/** Redub hedef dili + altyazı locale şeridi için kısa etiketler. */
+const CAPTION_LOCALE_LABEL: Record<OverlayLocale, string> = { tr: 'TR', en: 'EN', ru: 'RU' };
 
 export default function StudioEditor({
   characterId,
@@ -138,6 +159,8 @@ export default function StudioEditor({
   });
   const [projectId, setProjectId] = useState<string | null>(project?.id ?? null);
   const [projectName, setProjectName] = useState(project?.name ?? 'Adsız proje');
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(project?.thumbnail_url ?? null);
+  const [savingThumbnail, setSavingThumbnail] = useState(false);
 
   const [currentTime, setCurrentTime] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -153,6 +176,25 @@ export default function StudioEditor({
   const [error, setError] = useState<string | null>(null);
   const [transcribing, setTranscribing] = useState(false);
   const [enhancingAudio, setEnhancingAudio] = useState(false);
+  const [dubbing, setDubbing] = useState(false);
+  // Sessizlik/dolgu kelime temizliği — "Sessizlikleri bul" tarama sonucunu bir ÖNİZLEME
+  // listesi olarak tutar (null = henüz taranmadı), her aday kendi checkbox'ıyla `selected`
+  // taşır ki kullanıcı "Uygula"dan önce istemediğini işaretini kaldırabilsin (kör otomatik
+  // silme YOK — Redub'daki Önizle/İşle ile aynı iki-adımlı güvenlik deseni).
+  const [silenceThreshold, setSilenceThreshold] = useState(0.6);
+  const [cutFillerWords, setCutFillerWords] = useState(false);
+  const [silenceCandidates, setSilenceCandidates] = useState<(StudioCutRange & { selected: boolean })[] | null>(null);
+  const [dubTargetLocale, setDubTargetLocale] = useState<OverlayLocale>('en');
+  const [translatingLocale, setTranslatingLocale] = useState<OverlayLocale | null>(null);
+  // Önizleme/export hangi altyazı dilini yakıyor — 'source' = timeline.captions (whisper
+  // transkripti), bir locale ise timeline.translatedCaptions[locale] (bkz. redraw/exportArgs).
+  const [activeCaptionLocale, setActiveCaptionLocale] = useState<OverlayLocale | 'source'>('source');
+  // rAF döngüsündeki `redraw` render-dışı bir closure — `playingRef` ile AYNI gerekçe,
+  // state'i doğrudan değil ref'ten okumalı yoksa dil değişimi canlı önizlemeye yansımaz.
+  const activeCaptionLocaleRef = useRef(activeCaptionLocale);
+  useEffect(() => {
+    activeCaptionLocaleRef.current = activeCaptionLocale;
+  }, [activeCaptionLocale]);
   // Son export'un hangi yolla (WebCodecs/gerçek-zamanlı) ve ne kadar sürede tamamlandığı —
   // proje planındaki "gerçek kazancı sayıyla doğrula" maddesinin karşılığı, kurucu iki yolu
   // gözle kıyaslayabilsin diye.
@@ -240,6 +282,19 @@ export default function StudioEditor({
   const masterStart = Math.min(0, timeline.intro?.offset ?? 0);
   const masterEnd = Math.max(sourceDuration, sourceDuration + (timeline.outro?.offset ?? 0));
 
+  // Redub `motion.video_url`'i (ham kaynak) hedefliyor — trim/sekans DEĞİL, `transcribe`/
+  // `enhanceMotionAudio` ile AYNI basitleştirme (bkz. o fonksiyonların yorumları). Süre
+  // tahmini için önce o klibin GERÇEK metadata süresi denenir (`sequenceDurations`), yoksa
+  // tüm sekansın süresine düşülür — maliyet dakikaya YUKARI yuvarlandığı için hafif bir
+  // fazla tahmin zararsız (asla eksik faturalamaz).
+  const dubSourceClip = timeline.sequence.find((c) => c.kind === 'video' && c.assetUrl === motion.video_url);
+  const dubDurationSeconds = (dubSourceClip && sequenceDurations.get(dubSourceClip.id)) || sourceDuration || 0;
+
+  // "Böl" butonu sadece playhead gerçekten bir VİDEO klibin içindeyse aktif — image
+  // klipte veya intro/outro/boşlukta (resolveSequencePosition null döner) devre dışı.
+  const splitCandidate = resolveSequencePosition(timeline.sequence, currentTime, sequenceDurations);
+  const canSplitAtPlayhead = splitCandidate?.clip.kind === 'video';
+
   const updateTimeline = (patch: Partial<StudioTimeline>) => setTimeline((prev) => ({ ...prev, ...patch }));
 
   /** Önizleme bipleri için AudioContext'i ilk ihtiyaçta açar (kullanıcı etkileşimi öncesi açmak tarayıcı tarafından engelleniyor). */
@@ -293,6 +348,7 @@ export default function StudioEditor({
     const isPlaying = playingRef.current;
     syncSequenceVideos(timelineRef.current.sequence, time, isPlaying, sequenceVideoElsRef.current);
     syncVideoOverlays(timelineRef.current.overlays, time, isPlaying, videoOverlayElsRef.current);
+    const captionLocale = activeCaptionLocaleRef.current;
     drawFrame({
       ctx,
       timeline: timelineRef.current,
@@ -300,6 +356,7 @@ export default function StudioEditor({
       sequenceVideos: sequenceVideoElsRef.current,
       assets: imageCacheRef.current,
       videoOverlays: videoOverlayElsRef.current,
+      captionsOverride: captionLocale === 'source' ? undefined : timelineRef.current.translatedCaptions[captionLocale],
     });
   };
 
@@ -641,6 +698,29 @@ export default function StudioEditor({
     if (selected?.type === 'zoom' && selected.id === id) setSelected(null);
   };
 
+  // --- Yeniden kadraj (akıllı pan) — Zoom ile AYNI ekleme deseni, ama noktalar `time`'a
+  // göre SIRALI kalmalı (bkz. resolveReframePoint yorumu) — her ekleme/düzenlemede yeniden sort. ---
+
+  const addReframePoint = () => {
+    if (timeline.reframe.length >= MAX_REFRAME_POINTS) {
+      setError(`En fazla ${MAX_REFRAME_POINTS} yeniden kadraj noktası eklenebilir.`);
+      return;
+    }
+    const item: StudioReframePoint = { id: crypto.randomUUID(), time: currentTime, x: 50, y: 50 };
+    updateTimeline({ reframe: [...timeline.reframe, item].sort((a, b) => a.time - b.time) });
+    setSelected({ type: 'reframe', id: item.id });
+  };
+
+  const updateReframePoint = (id: string, patch: Partial<StudioReframePoint>) =>
+    updateTimeline({
+      reframe: timeline.reframe.map((p) => (p.id === id ? { ...p, ...patch } : p)).sort((a, b) => a.time - b.time),
+    });
+
+  const removeReframePoint = (id: string) => {
+    updateTimeline({ reframe: timeline.reframe.filter((p) => p.id !== id) });
+    if (selected?.type === 'reframe' && selected.id === id) setSelected(null);
+  };
+
   // --- Sekans (film rulosu) düzenleme yardımcıları ---
 
   /** Ortak klip havuzundan bir video sekansın SONUNA eklenir — süresi bilinmediği için
@@ -692,6 +772,38 @@ export default function StudioEditor({
     sequenceVideoElsRef.current.delete(id);
   };
 
+  /** Playhead'deki sekans klibini ikiye böler. `resolveSequencePosition` klip-içi
+   *  `localTime`'ı çözüyor ({@link ResolvedSequencePosition}), `sourceStart + localTime`
+   *  kesim noktası oluyor. Sekans KÜMÜLATİF/cursor tabanlı (bkz. resolveSequencePosition
+   *  yorumu, studio.ts) — bir klip kısaldığında sonraki klipler otomatik kayıyor, elle
+   *  zaman kaydırma GEREKMİYOR. Sadece `kind:'video'` için: image'ın "kaynak zamanı" yok,
+   *  bölünecek bir şey yok (çağıran taraf UI'da image klipte butonu disabled bırakıyor). */
+  const splitSequenceClipAtTime = (masterTime: number) => {
+    const pos = resolveSequencePosition(timeline.sequence, masterTime, sequenceDurations);
+    if (!pos || pos.clip.kind !== 'video') return;
+    if (timeline.sequence.length >= MAX_SEQUENCE_CLIPS) {
+      setError(`En fazla ${MAX_SEQUENCE_CLIPS} sekans elemanı eklenebilir.`);
+      return;
+    }
+    const clip = pos.clip;
+    const duration = sequenceClipDuration(clip, sequenceDurations);
+    const MIN_PIECE_SECONDS = 0.2;
+    if (pos.localTime < MIN_PIECE_SECONDS || duration - pos.localTime < MIN_PIECE_SECONDS) {
+      setError('Bölme noktası klibin başına/sonuna çok yakın.');
+      return;
+    }
+    const cutSourceTime = clip.sourceStart + pos.localTime;
+    const first: StudioSequenceClip = { ...clip, sourceEnd: cutSourceTime };
+    // `id` yeni — aynı assetUrl'i ikinci kez süren AYRI bir <video> elemanı gerekiyor
+    // (bkz. sequenceVideoElsRef yorumu: aynı video farklı kırpmayla sekansta iki kez
+    // yer alabilir). `transitionIn: DEFAULT_TRANSITION` (hard cut) — bölünmüş iki
+    // parçanın arasında crossfade beklenmez.
+    const second: StudioSequenceClip = { ...clip, id: crypto.randomUUID(), sourceStart: cutSourceTime, transitionIn: DEFAULT_TRANSITION };
+    const next = [...timeline.sequence];
+    next.splice(pos.index, 1, first, second);
+    updateTimeline({ sequence: next });
+  };
+
   /** Ana videoyu belirli bir aralıkta bir kutuya sığdıran split-screen segmenti ekler —
    * `addCutaway`/`addZoom` ile AYNI desen (oynatma başlığından başlar, ~3 sn sürer).
    * Varsayılan ALT yarı: overlay'in "Split ekran" açılışı ÜST yarıyı varsayılan aldığı için
@@ -723,9 +835,28 @@ export default function StudioEditor({
     updateTimeline({ sequenceLayouts: timeline.sequenceLayouts.filter((l) => l.id !== id) });
 
   // Whisper marka/uydurma kelimeleri (ör. "talkinbio") bilmediği en yakın gerçek kelimeye
-  // ("Tolkien") yuvarlayabiliyor — metni elle düzeltebilmek gerekiyor.
-  const updateCaption = (id: string, patch: Partial<StudioCaption>) =>
-    updateTimeline({ captions: timeline.captions.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
+  // ("Tolkien") yuvarlayabiliyor — metni elle düzeltebilmek gerekiyor. Çeviri metinlerinde de
+  // AYNI sorun var (model bazen yanlış çevirir) — bu yüzden `locale` parametreli: 'source'
+  // kaynak `timeline.captions`'ı, bir `OverlayLocale` ise `translatedCaptions[locale]`'ı
+  // düzenler. Zaman damgaları hiçbir zaman burada değişmiyor (kasıtlı — bkz. captionTranslate.ts).
+  //
+  // `memberIds` alıyor (tek id de olabilir) çünkü "Kelimeleri düzenle" listesi
+  // `captionStyle.groupSize` > 1 iken `groupCaptions` ile birleştirilmiş satırlar gösteriyor
+  // (bkz. groupCaptions yorumu) — bir grup satırı düzenlendiğinde yazılan METİN TAMAMI
+  // grubun İLK id'sine yazılır, gruptaki diğer id'ler boşaltılır (görüntüleme zaten hepsini
+  // birleştirip gösterdiği için veri kaybı yok, sadece hangi id'nin ne tuttuğu değişiyor).
+  // groupSize=1'de her grup tek id'li olduğundan bu, düz "tek kelime düzenle" ile AYNI davranır.
+  const updateCaptionGroupText = (locale: OverlayLocale | 'source', memberIds: string[], text: string) => {
+    const [firstId, ...restIds] = memberIds;
+    const apply = (c: StudioCaption) =>
+      c.id === firstId ? { ...c, text } : restIds.includes(c.id) ? { ...c, text: '' } : c;
+    if (locale === 'source') {
+      updateTimeline({ captions: timeline.captions.map(apply) });
+    } else {
+      const list = timeline.translatedCaptions[locale] ?? [];
+      updateTimeline({ translatedCaptions: { ...timeline.translatedCaptions, [locale]: list.map(apply) } });
+    }
+  };
 
   const addCutaway = (assetUrl: string) => {
     if (timeline.cutaways.length >= MAX_CUTAWAYS) {
@@ -926,6 +1057,103 @@ export default function StudioEditor({
     }
   };
 
+  /** `timeline.captions`'daki kelime boşluklarını (+ istenirse dolgu kelimeleri) tarar,
+   *  sonucu bir önizleme listesine koyar — hiçbir şeyi HENÜZ uygulamaz (bkz. UI'daki
+   *  "Uygula" butonu / applySilenceCuts). */
+  const scanSilences = () => {
+    const cuts = findSilenceCuts(timeline.captions, silenceThreshold, cutFillerWords ? FILLER_WORDS_TR : undefined);
+    setSilenceCandidates(cuts.map((c) => ({ ...c, selected: true })));
+  };
+
+  const toggleSilenceCandidate = (index: number) =>
+    setSilenceCandidates((prev) => prev && prev.map((c, i) => (i === index ? { ...c, selected: !c.selected } : c)));
+
+  /** Önizlemede işaretli aralıkları `removeCutRanges` ile timeline'a uygular — sekans VE
+   *  tüm master-time dizileri (captions, cutaways, zooms, overlays, sequenceLayouts) tek
+   *  seferde tutarlı şekilde kesilip kayar (bkz. removeCutRanges yorumu, config/studio.ts). */
+  const applySilenceCuts = () => {
+    if (!silenceCandidates) return;
+    const ranges = silenceCandidates.filter((c) => c.selected).map(({ start, end }) => ({ start, end }));
+    if (!ranges.length) return;
+    const result = removeCutRanges(timeline, ranges, sequenceDurations);
+    if (result.sequence.length > MAX_SEQUENCE_CLIPS) {
+      setError(`Bu kesim sekansı ${MAX_SEQUENCE_CLIPS} elemanlık sınırın üstüne çıkarıyor — daha az aralık seç.`);
+      return;
+    }
+    updateTimeline(result);
+    setSilenceCandidates(null);
+  };
+
+  // --- Redub / çok dilli altyazı (Düzenle) ---
+
+  /** `fal-ai/elevenlabs/dubbing`'i sarar — ayrı bir ses klonu adımına bağımlı DEĞİL,
+   *  orijinal konuşmacının sesini kendi başına koruyor (bkz. dubVideo yorumu, fal.ts). */
+  const redubVideo = async () => {
+    if (!(dubDurationSeconds > 0)) {
+      setError('Video süresi henüz bilinmiyor, birazdan tekrar dene.');
+      return;
+    }
+    setDubbing(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/characters/${characterId}/studio/redub`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videoUrl: motion.video_url,
+          targetLang: dubTargetLocale,
+          durationSeconds: dubDurationSeconds,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Video yeniden seslendirilemedi.');
+      const dub = data.dub as StudioDub;
+      updateTimeline({ dubs: [...timeline.dubs, dub].slice(-MAX_DUBS) });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Video yeniden seslendirilemedi.');
+    } finally {
+      setDubbing(false);
+    }
+  };
+
+  /** "İşle" — bir dublaj sonucunu ANA videoya uygular: `dubSourceClip` (sekanstaki
+   *  `motion.video_url`'e sahip eleman) `assetUrl`'ini dublajlı videoya çevirir.
+   *  `clipId: null` — dublaj `character_clips` havuzundan gelmiyor, bağımsız bir dosya
+   *  (bkz. StudioDub yorumu). `sourceStart/End` 0/0 sentinel'ine sıfırlanır çünkü dublajlı
+   *  videonun süresi kaynaktan (kırpma noktalarından) FARKLI olabilir — "tamamını kullan"
+   *  güvenli varsayılan, `sequenceDurations` gerçek süreyi metadata yüklenince çözüyor. */
+  const applyDubToMainVideo = (dub: StudioDub) => {
+    if (!dubSourceClip) {
+      setError('Ana video sekansta bulunamadı, dublaj uygulanamadı.');
+      return;
+    }
+    updateSequenceClip(dubSourceClip.id, { assetUrl: dub.videoUrl, clipId: null, sourceStart: 0, sourceEnd: 0 });
+  };
+
+  /** Kaynak `timeline.captions`'ın `text`'ini hedef dile çevirir — zaman damgaları asla
+   *  modele gönderilmez, kaynaktan aynen kopyalanır (bkz. captionTranslate.ts). ElevenLabs
+   *  GEREKMİYOR, mevcut whisper transkripti + bir LLM çağrısı yeterli. */
+  const translateCaptionsToLocale = async (targetLocale: OverlayLocale) => {
+    if (timeline.captions.length === 0) return;
+    setTranslatingLocale(targetLocale);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/characters/${characterId}/studio/captions/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ captions: timeline.captions, targetLocale }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Altyazı çevrilemedi.');
+      updateTimeline({ translatedCaptions: { ...timeline.translatedCaptions, [targetLocale]: data.captions } });
+      setActiveCaptionLocale(targetLocale);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Altyazı çevrilemedi.');
+    } finally {
+      setTranslatingLocale(null);
+    }
+  };
+
   const saveProject = async () => {
     setSaving(true);
     setError(null);
@@ -952,6 +1180,38 @@ export default function StudioEditor({
       setError(err instanceof Error ? err.message : 'Kaydedilemedi.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  /** Playhead'de canvas'ta o an görünen kareyi proje kapağı yapar — `outputUrl`'ün export
+   *  akışıyla AYNI desen (bkz. handleExport'taki uploadAsset+PATCH çağrısı): canvas'tan
+   *  blob alınır, mevcut `uploadAsset('image')` ile yüklenir, dönen URL PATCH edilir. Export'un
+   *  aksine OTOMATİK değil — kullanıcı ayrı bir eylemle tetikliyor, `saveProject`nin `onProjectSaved`
+   *  bildirimi burada KASITLI OLARAK tetiklenmiyor (outputUrl PATCH'i de tetiklemiyor, aynı tutarlılık). */
+  const captureThumbnail = async () => {
+    if (!projectId) {
+      setError('Kapak seçmeden önce projeyi bir kez kaydet.');
+      return;
+    }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    setSavingThumbnail(true);
+    setError(null);
+    try {
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+      if (!blob) throw new Error('Kare yakalanamadı.');
+      const uploaded = await uploadAsset(new File([blob], `cover-${Date.now()}.jpg`, { type: 'image/jpeg' }), 'image');
+      if (!uploaded) return; // uploadAsset kendi hatasını zaten setError ile gösterdi
+      await fetch(`/api/admin/characters/${characterId}/studio/${projectId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ thumbnailUrl: uploaded.url }),
+      });
+      setThumbnailUrl(uploaded.url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Kapak kaydedilemedi.');
+    } finally {
+      setSavingThumbnail(false);
     }
   };
 
@@ -1043,6 +1303,7 @@ export default function StudioEditor({
         musicAudio: musicAudioRef.current || undefined,
         enhancedAudio: enhancedAudioRef.current || undefined,
         loudnessGain,
+        captionsOverride: activeCaptionLocale === 'source' ? undefined : timeline.translatedCaptions[activeCaptionLocale],
         onProgress: (fraction: number) => {
           const pct = Math.round(Math.min(1, fraction) * 100);
           if (progressFillRef.current) progressFillRef.current.style.width = `${pct}%`;
@@ -1148,6 +1409,7 @@ export default function StudioEditor({
                 updateVideoOverlay={updateVideoOverlay}
                 updateTextOverlay={updateTextOverlay}
                 updateZoom={updateZoom}
+                updateReframePoint={updateReframePoint}
                 imageCache={imageCache}
                 videoOverlayAspects={videoOverlayAspects}
                 onDropAsset={(url, kind, x, y) => {
@@ -1277,6 +1539,14 @@ export default function StudioEditor({
             <span className="text-xs text-slate-500 tabular-nums w-24 text-right shrink-0">
               {currentTime.toFixed(1)}s / {masterEnd.toFixed(1)}s
             </span>
+            <button
+              onClick={() => splitSequenceClipAtTime(currentTime)}
+              disabled={!canSplitAtPlayhead}
+              title="Klibi bu noktada ikiye böl"
+              className="p-2 text-slate-500 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+            >
+              <Scissors className="w-4 h-4" />
+            </button>
           </div>
 
           <TimelineStrip
@@ -1288,6 +1558,22 @@ export default function StudioEditor({
             selected={selected}
             onSelect={setSelected}
           />
+
+          <div className="flex items-center gap-2">
+            {thumbnailUrl && (
+              // eslint-disable-next-line @next/next/no-img-element -- Supabase storage URL'i, next/image loader'ı gerekmiyor
+              <img src={thumbnailUrl} alt="Kapak karesi" className="w-10 h-10 rounded object-cover border border-slate-300 shrink-0" />
+            )}
+            <button
+              onClick={captureThumbnail}
+              disabled={savingThumbnail || !projectId}
+              title={projectId ? "Şu anki kareyi proje kapağı yap" : 'Kapak seçmeden önce projeyi kaydet'}
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs font-medium text-slate-600 hover:border-slate-400 disabled:opacity-50"
+            >
+              {savingThumbnail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+              {thumbnailUrl ? 'Kapağı bu kareyle değiştir' : 'Bu kareyi kapak yap'}
+            </button>
+          </div>
 
           <div className="pt-2 border-t border-slate-200 space-y-2">
             {exporting && exportStage === 'recording' && (
@@ -1324,6 +1610,478 @@ export default function StudioEditor({
                 {lastExportInfo.elapsedSeconds.toFixed(1)} sn sürdü ({lastExportInfo.contentSeconds.toFixed(0)} sn&apos;lik içerik için).
               </p>
             )}
+          </div>
+          <div className="space-y-5 pt-4 mt-1 border-t border-slate-200">
+          <div>
+            <div className="flex items-baseline justify-between mb-1.5">
+              <h3 className="text-sm font-semibold text-slate-900">Renk &amp; Efekt</h3>
+              {(timeline.grade.brightness ||
+                timeline.grade.contrast ||
+                timeline.grade.saturation ||
+                timeline.grade.temperature ||
+                timeline.grade.grain ||
+                timeline.grade.vignette) && (
+                <button
+                  onClick={() => updateTimeline({ grade: DEFAULT_COLOR_GRADE })}
+                  className="text-xs text-slate-400 hover:text-slate-700"
+                >
+                  Sıfırla
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-slate-400 mb-2">
+              Tüm sekansa uygulanır — grain/vignette metin ve overlay&apos;lerin üstünde bir lens
+              katmanı gibi durur, renk düzeltmesi sadece görüntüye (sekans/cutaway) uygulanır.
+            </p>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+              {(
+                [
+                  ['brightness', 'Parlaklık', -100, 100],
+                  ['contrast', 'Kontrast', -100, 100],
+                  ['saturation', 'Doygunluk', -100, 100],
+                  ['temperature', 'Sıcaklık', -100, 100],
+                  ['grain', 'Film dokusu', 0, 1],
+                  ['vignette', 'Vinyet', 0, 1],
+                ] as [keyof StudioColorGrade, string, number, number][]
+              ).map(([key, label, min, max]) => (
+                <label key={key} className="text-xs text-slate-600 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span>{label}</span>
+                    <span className="text-slate-400 tabular-nums">{timeline.grade[key].toFixed(max <= 1 ? 2 : 0)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={min}
+                    max={max}
+                    step={max <= 1 ? 0.02 : 1}
+                    value={timeline.grade[key]}
+                    onChange={(e) => updateTimeline({ grade: { ...timeline.grade, [key]: Number(e.target.value) } })}
+                    className="w-full"
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 mb-2">Anlatım Sesi</h3>
+            <label className="flex items-center gap-2 text-xs text-slate-500 mb-3">
+              Ses seviyesi
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={timeline.videoVolume}
+                onChange={(e) => updateTimeline({ videoVolume: Number(e.target.value) })}
+                className="flex-1"
+              />
+            </label>
+            {timeline.enhancedAudioUrl ? (
+              <div className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                <span className="text-xs text-emerald-700 font-medium flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                  Ses iyileştirildi
+                </span>
+                <button
+                  onClick={() => updateTimeline({ enhancedAudioUrl: null })}
+                  className="text-xs text-slate-500 hover:text-red-600 shrink-0"
+                >
+                  Geri al
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={enhanceMotionAudio}
+                disabled={enhancingAudio}
+                className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs font-medium text-slate-600 hover:border-slate-400 disabled:opacity-50"
+              >
+                {enhancingAudio ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                {enhancingAudio ? 'İyileştiriliyor…' : `Sesi iyileştir (gürültü temizle) · ≈${creditsForCost(AUDIO_ENHANCE_COST_USD)} kredi`}
+              </button>
+            )}
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 mb-2">Müzik</h3>
+            {timeline.music ? (
+              <div className="rounded-lg border border-slate-200 p-2 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-slate-600 truncate flex items-center gap-1.5">
+                    <Music className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    {timeline.music.assetUrl.split('/').pop()}
+                  </span>
+                  <button onClick={() => updateTimeline({ music: null })} className="p-1 text-slate-400 hover:text-red-600 shrink-0">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-slate-500">
+                  Ses seviyesi
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={timeline.music.volume}
+                    onChange={(e) => updateTimeline({ music: { ...timeline.music!, volume: Number(e.target.value) } })}
+                    className="flex-1"
+                  />
+                </label>
+              </div>
+            ) : (
+              <AssetPicker
+                kind="audio"
+                assets={assets}
+                uploading={uploading}
+                onUpload={(f) =>
+                  uploadAsset(f, 'audio').then((a) => a && updateTimeline({ music: { assetUrl: a.url, volume: 0.5 } }))
+                }
+                onPick={(a) => updateTimeline({ music: { assetUrl: a.url, volume: 0.5 } })}
+              />
+            )}
+          </div>
+
+          <div>
+            <div className="flex items-baseline justify-between mb-1.5">
+              <h3 className="text-sm font-semibold text-slate-900">Altyazı (karaoke)</h3>
+              {timeline.captions.length > 0 && (
+                <span className="text-xs text-slate-400">{timeline.captions.length} kelime</span>
+              )}
+            </div>
+            <p className="text-xs text-slate-400 mb-2">
+              Sesi otomatik yazıya döker, tek tek kelimeleri ekrana vurgulu şekilde (TikTok/Reels tarzı) düşürür.
+            </p>
+            <div className="flex items-center gap-2 mb-3">
+              <button
+                onClick={transcribeCaptions}
+                disabled={transcribing}
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs font-medium text-slate-600 hover:border-slate-400 disabled:opacity-50"
+              >
+                {transcribing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Captions className="w-3.5 h-3.5" />}
+                {transcribing
+                  ? 'Çıkarılıyor…'
+                  : `${timeline.captions.length > 0 ? 'Yeniden oluştur' : 'Altyazıları oluştur'} · ≈${creditsForCost(STUDIO_TRANSCRIBE_COST_USD)} kredi`}
+              </button>
+              {timeline.captions.length > 0 && (
+                <button
+                  onClick={() => updateTimeline({ captions: [] })}
+                  className="p-2 text-slate-400 hover:text-red-600 shrink-0"
+                  title="Altyazıları temizle"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {timeline.captions.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {CAPTION_STYLE_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      onClick={() => updateTimeline({ captionStyle: { ...timeline.captionStyle, ...preset.style } })}
+                      className="px-2 py-1 rounded-full text-[11px] font-medium border border-slate-300 text-slate-600 hover:border-slate-400"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
+                  <NumberField
+                    label="X%"
+                    value={timeline.captionStyle.x}
+                    min={0}
+                    step={1}
+                    onChange={(v) => updateTimeline({ captionStyle: { ...timeline.captionStyle, x: clampPct(v) } })}
+                    compact
+                  />
+                  <NumberField
+                    label="Y%"
+                    value={timeline.captionStyle.y}
+                    min={0}
+                    step={1}
+                    onChange={(v) => updateTimeline({ captionStyle: { ...timeline.captionStyle, y: clampPct(v) } })}
+                    compact
+                  />
+                  <NumberField
+                    label="Punto%"
+                    value={timeline.captionStyle.fontSize}
+                    min={1}
+                    step={0.5}
+                    onChange={(v) => updateTimeline({ captionStyle: { ...timeline.captionStyle, fontSize: v } })}
+                    compact
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={timeline.captionStyle.font}
+                    onChange={(e) =>
+                      updateTimeline({ captionStyle: { ...timeline.captionStyle, font: e.target.value as OverlayFont } })
+                    }
+                    className="rounded border border-slate-300 px-1.5 py-1 text-xs"
+                  >
+                    {OVERLAY_FONTS.map((f) => (
+                      <option key={f.value} value={f.value}>
+                        {f.label}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="color"
+                    value={timeline.captionStyle.color}
+                    onChange={(e) => updateTimeline({ captionStyle: { ...timeline.captionStyle, color: e.target.value } })}
+                    className="w-7 h-7 rounded border border-slate-300 bg-white"
+                  />
+                </div>
+
+                <label className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                  Hız
+                  <select
+                    value={timeline.captionStyle.speed}
+                    onChange={(e) =>
+                      updateTimeline({ captionStyle: { ...timeline.captionStyle, speed: Number(e.target.value) } })
+                    }
+                    className="rounded border border-slate-300 px-1.5 py-1 text-xs"
+                  >
+                    <option value={1}>1x · normal</option>
+                    <option value={1.25}>1.25x · yavaş</option>
+                    <option value={1.5}>1.5x · daha yavaş</option>
+                    <option value={1.75}>1.75x</option>
+                    <option value={2}>2x · en yavaş</option>
+                  </select>
+                  <span className="text-slate-400">— kelimeler ekranda daha uzun kalır</span>
+                </label>
+
+                <label className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                  Kelime grubu
+                  <select
+                    value={timeline.captionStyle.groupSize}
+                    onChange={(e) =>
+                      updateTimeline({ captionStyle: { ...timeline.captionStyle, groupSize: Number(e.target.value) } })
+                    }
+                    className="rounded border border-slate-300 px-1.5 py-1 text-xs"
+                  >
+                    <option value={1}>1 kelime</option>
+                    <option value={2}>2 kelime</option>
+                    <option value={3}>3 kelime</option>
+                    <option value={4}>4 kelime</option>
+                  </select>
+                  <span className="text-slate-400">— aynı anda kaç kelime birlikte gösterilsin</span>
+                </label>
+
+                <div className="pt-2 border-t border-slate-100">
+                  <h4 className="text-xs font-semibold text-slate-700 mb-1">Sessizlik / dolgu kelime temizliği</h4>
+                  <p className="text-[11px] text-slate-400 mb-2">
+                    Kelimeler arası uzun boşlukları (ve istersen dolgu kelimeleri) bulur — önizlemede
+                    onayladıklarını sekanstan keser.
+                  </p>
+                  <div className="flex items-center gap-3 flex-wrap mb-2">
+                    <NumberField label="Eşik (sn)" value={silenceThreshold} min={0.2} step={0.1} onChange={setSilenceThreshold} compact />
+                    <label className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                      <input
+                        type="checkbox"
+                        checked={cutFillerWords}
+                        onChange={(e) => setCutFillerWords(e.target.checked)}
+                        className="rounded border-slate-300"
+                      />
+                      Dolgu kelimeleri de kes (şey, yani, ıı…)
+                    </label>
+                  </div>
+                  <button
+                    onClick={scanSilences}
+                    disabled={timeline.captions.length === 0}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs font-medium text-slate-600 hover:border-slate-400 disabled:opacity-50"
+                  >
+                    <Scissors className="w-3.5 h-3.5" />
+                    Sessizlikleri bul
+                  </button>
+
+                  {silenceCandidates &&
+                    (silenceCandidates.length === 0 ? (
+                      <p className="text-[11px] text-slate-400 mt-2">Eşiği aşan bir boşluk bulunamadı.</p>
+                    ) : (
+                      <div className="mt-2 space-y-1.5">
+                        <div className="max-h-40 overflow-y-auto space-y-1 pr-1">
+                          {silenceCandidates.map((c, i) => (
+                            <label key={i} className="flex items-center gap-2 text-[11px] text-slate-600">
+                              <input
+                                type="checkbox"
+                                checked={c.selected}
+                                onChange={() => toggleSilenceCandidate(i)}
+                                className="rounded border-slate-300"
+                              />
+                              {c.start.toFixed(1)}s – {c.end.toFixed(1)}s ({(c.end - c.start).toFixed(1)}sn)
+                            </label>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={applySilenceCuts}
+                            disabled={!silenceCandidates.some((c) => c.selected)}
+                            className="flex-1 rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                          >
+                            Uygula ({silenceCandidates.filter((c) => c.selected).length})
+                          </button>
+                          <button
+                            onClick={() => setSilenceCandidates(null)}
+                            className="px-3 py-2 text-xs text-slate-500 hover:text-slate-700"
+                          >
+                            Vazgeç
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+
+                <div className="pt-1">
+                  <p className="text-[11px] text-slate-400 mb-1.5">Önizleme/export dili — çevrilmemiş bir dile tıklamak çeviriyi başlatır.</p>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      onClick={() => setActiveCaptionLocale('source')}
+                      className={`px-2 py-1 rounded-full text-[11px] font-medium border transition-colors ${
+                        activeCaptionLocale === 'source'
+                          ? 'bg-slate-900 text-white border-slate-900'
+                          : 'border-slate-300 text-slate-600 hover:border-slate-400'
+                      }`}
+                    >
+                      Kaynak
+                    </button>
+                    {OVERLAY_LOCALES.map((loc) => {
+                      const translated = timeline.translatedCaptions[loc];
+                      const hasTranslation = Boolean(translated?.length);
+                      const isActive = activeCaptionLocale === loc;
+                      const isTranslating = translatingLocale === loc;
+                      return (
+                        <button
+                          key={loc}
+                          onClick={() => (hasTranslation ? setActiveCaptionLocale(loc) : translateCaptionsToLocale(loc))}
+                          disabled={isTranslating}
+                          title={hasTranslation ? undefined : `Bu dile çevir · ≈${creditsForCost(STUDIO_CAPTION_TRANSLATE_COST_USD)} kredi`}
+                          className={`px-2 py-1 rounded-full text-[11px] font-medium border flex items-center gap-1 transition-colors disabled:opacity-50 ${
+                            isActive
+                              ? 'bg-slate-900 text-white border-slate-900'
+                              : 'border-slate-300 text-slate-600 hover:border-slate-400'
+                          }`}
+                        >
+                          {isTranslating ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : !hasTranslation ? (
+                            <Languages className="w-3 h-3" />
+                          ) : null}
+                          {CAPTION_LOCALE_LABEL[loc]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <details className="pt-1">
+                  <summary className="text-xs text-slate-500 cursor-pointer select-none hover:text-slate-700">
+                    Kelimeleri düzenle
+                    {activeCaptionLocale !== 'source' && ` (${CAPTION_LOCALE_LABEL[activeCaptionLocale]})`}
+                  </summary>
+                  <div className="mt-2 max-h-56 overflow-y-auto space-y-1 pr-1">
+                    {groupCaptions(
+                      activeCaptionLocale === 'source' ? timeline.captions : timeline.translatedCaptions[activeCaptionLocale] ?? [],
+                      timeline.captionStyle.groupSize,
+                    ).map((g) => (
+                      <div key={g.id} className="flex items-center gap-2">
+                        <span className="text-[10px] text-slate-400 w-9 shrink-0 tabular-nums text-right">
+                          {g.startTime.toFixed(1)}s
+                        </span>
+                        <input
+                          value={g.text}
+                          onChange={(e) => updateCaptionGroupText(activeCaptionLocale, g.memberIds, e.target.value)}
+                          className="flex-1 rounded border border-slate-300 px-1.5 py-0.5 text-xs"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <div className="flex items-baseline justify-between mb-1.5">
+              <h3 className="text-sm font-semibold text-slate-900">Redub — başka dilde seslendir</h3>
+              {timeline.dubs.length > 0 && <span className="text-xs text-slate-400">{timeline.dubs.length} sürüm</span>}
+            </div>
+            <p className="text-xs text-slate-400 mb-2">
+              Orijinal konuşmacının ses karakterini koruyarak videoyu seçtiğin dilde yeniden seslendirir.
+            </p>
+            <div className="flex items-center gap-2 mb-2">
+              <select
+                value={dubTargetLocale}
+                onChange={(e) => setDubTargetLocale(e.target.value as OverlayLocale)}
+                className="rounded border border-slate-300 px-2 py-2 text-xs"
+              >
+                {OVERLAY_LOCALES.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {CAPTION_LOCALE_LABEL[loc]}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={redubVideo}
+                disabled={dubbing || !(dubDurationSeconds > 0)}
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs font-medium text-slate-600 hover:border-slate-400 disabled:opacity-50"
+              >
+                {dubbing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />}
+                {dubbing
+                  ? 'Seslendiriliyor…'
+                  : `Seslendir · ≈${creditsForCost(Math.ceil((dubDurationSeconds || 1) / 60) * STUDIO_DUB_COST_USD_PER_MINUTE)} kredi`}
+              </button>
+            </div>
+            {timeline.dubs.length > 0 && (
+              <div className="space-y-1.5">
+                {timeline.dubs.map((d) => (
+                  <div key={d.id} className="rounded-lg border border-slate-200 p-1.5 text-xs space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium shrink-0">
+                        {CAPTION_LOCALE_LABEL[d.locale]}
+                      </span>
+                      <span className="flex-1 truncate text-slate-400">{new Date(d.createdAt).toLocaleString('tr-TR')}</span>
+                      <button
+                        onClick={() => updateTimeline({ dubs: timeline.dubs.filter((x) => x.id !== d.id) })}
+                        className="p-0.5 text-slate-400 hover:text-red-600 shrink-0"
+                        title="Sil"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <a
+                        href={d.videoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex-1 text-center rounded border border-slate-300 px-2 py-1 text-slate-600 hover:border-slate-400"
+                      >
+                        Önizle
+                      </a>
+                      <button
+                        onClick={() => applyDubToMainVideo(d)}
+                        title="Ana videoyu bu dublajla değiştir"
+                        className="flex-1 rounded bg-slate-900 px-2 py-1 text-white hover:bg-slate-800"
+                      >
+                        İşle
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={timeline.wordmark}
+              onChange={(e) => updateTimeline({ wordmark: e.target.checked })}
+              className="rounded border-slate-300"
+            />
+            talkinbio.com imzası
+          </label>
           </div>
         </div>
 
@@ -1876,6 +2634,51 @@ export default function StudioEditor({
 
           <div>
             <div className="flex items-baseline justify-between mb-1.5">
+              <h3 className="text-sm font-semibold text-slate-900">Yeniden Kadraj</h3>
+              <span className="text-xs text-slate-400">
+                {timeline.reframe.length}/{MAX_REFRAME_POINTS}
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mb-2">
+              Kaynak video hedef en-boy oranından farklıysa (ör. yatay çekim dikey formata),
+              sabit merkez kırpma özneyi kadraj dışı bırakabilir. Birkaç noktada odak
+              noktasını işaretle, aralarda otomatik kayar (pan) — kaynak/hedef oran
+              AYNIYSA etkisi olmaz. Eklendikten (ya da bir satıra tıklandıktan) sonra
+              önizlemede yeşil kare belirir, onu sürükle/tıkla.
+            </p>
+            <button
+              onClick={addReframePoint}
+              disabled={timeline.reframe.length >= MAX_REFRAME_POINTS}
+              className="text-xs font-medium rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-slate-500 hover:border-slate-400 disabled:opacity-50"
+            >
+              + Nokta ekle (şu an)
+            </button>
+            <div className="mt-3 space-y-2">
+              {timeline.reframe.map((p) => (
+                <div
+                  key={p.id}
+                  onClick={() => setSelected({ type: 'reframe', id: p.id })}
+                  className={`rounded-lg border p-2 cursor-pointer ${
+                    selected?.type === 'reframe' && selected.id === p.id ? 'border-blue-400 bg-blue-50' : 'border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 flex flex-wrap gap-x-3 gap-y-1">
+                      <NumberField label="Zaman" value={p.time} min={0} step={0.1} onChange={(v) => updateReframePoint(p.id, { time: Math.max(0, v) })} compact />
+                      <NumberField label="X%" value={p.x} min={0} step={1} onChange={(v) => updateReframePoint(p.id, { x: clampPct(v) })} compact />
+                      <NumberField label="Y%" value={p.y} min={0} step={1} onChange={(v) => updateReframePoint(p.id, { y: clampPct(v) })} compact />
+                    </div>
+                    <button onClick={() => removeReframePoint(p.id)} className="p-1.5 text-slate-400 hover:text-red-600 shrink-0">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-baseline justify-between mb-1.5">
               <h3 className="text-sm font-semibold text-slate-900">Overlay&apos;ler</h3>
               <span className="text-xs text-slate-400">
                 {timeline.overlays.length}/{MAX_OVERLAYS}
@@ -2087,250 +2890,6 @@ export default function StudioEditor({
               ))}
             </div>
           </div>
-
-          <div>
-            <div className="flex items-baseline justify-between mb-1.5">
-              <h3 className="text-sm font-semibold text-slate-900">Renk &amp; Efekt</h3>
-              {(timeline.grade.brightness ||
-                timeline.grade.contrast ||
-                timeline.grade.saturation ||
-                timeline.grade.temperature ||
-                timeline.grade.grain ||
-                timeline.grade.vignette) && (
-                <button
-                  onClick={() => updateTimeline({ grade: DEFAULT_COLOR_GRADE })}
-                  className="text-xs text-slate-400 hover:text-slate-700"
-                >
-                  Sıfırla
-                </button>
-              )}
-            </div>
-            <p className="text-xs text-slate-400 mb-2">
-              Tüm sekansa uygulanır — grain/vignette metin ve overlay&apos;lerin üstünde bir lens
-              katmanı gibi durur, renk düzeltmesi sadece görüntüye (sekans/cutaway) uygulanır.
-            </p>
-            <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-              {(
-                [
-                  ['brightness', 'Parlaklık', -100, 100],
-                  ['contrast', 'Kontrast', -100, 100],
-                  ['saturation', 'Doygunluk', -100, 100],
-                  ['temperature', 'Sıcaklık', -100, 100],
-                  ['grain', 'Film dokusu', 0, 1],
-                  ['vignette', 'Vinyet', 0, 1],
-                ] as [keyof StudioColorGrade, string, number, number][]
-              ).map(([key, label, min, max]) => (
-                <label key={key} className="text-xs text-slate-600 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span>{label}</span>
-                    <span className="text-slate-400 tabular-nums">{timeline.grade[key].toFixed(max <= 1 ? 2 : 0)}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={min}
-                    max={max}
-                    step={max <= 1 ? 0.02 : 1}
-                    value={timeline.grade[key]}
-                    onChange={(e) => updateTimeline({ grade: { ...timeline.grade, [key]: Number(e.target.value) } })}
-                    className="w-full"
-                  />
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-2">Anlatım Sesi</h3>
-            <label className="flex items-center gap-2 text-xs text-slate-500 mb-3">
-              Ses seviyesi
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.05}
-                value={timeline.videoVolume}
-                onChange={(e) => updateTimeline({ videoVolume: Number(e.target.value) })}
-                className="flex-1"
-              />
-            </label>
-            {timeline.enhancedAudioUrl ? (
-              <div className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
-                <span className="text-xs text-emerald-700 font-medium flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                  Ses iyileştirildi
-                </span>
-                <button
-                  onClick={() => updateTimeline({ enhancedAudioUrl: null })}
-                  className="text-xs text-slate-500 hover:text-red-600 shrink-0"
-                >
-                  Geri al
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={enhanceMotionAudio}
-                disabled={enhancingAudio}
-                className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs font-medium text-slate-600 hover:border-slate-400 disabled:opacity-50"
-              >
-                {enhancingAudio ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                {enhancingAudio ? 'İyileştiriliyor…' : `Sesi iyileştir (gürültü temizle) · ≈${creditsForCost(AUDIO_ENHANCE_COST_USD)} kredi`}
-              </button>
-            )}
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-2">Müzik</h3>
-            {timeline.music ? (
-              <div className="rounded-lg border border-slate-200 p-2 space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-slate-600 truncate flex items-center gap-1.5">
-                    <Music className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    {timeline.music.assetUrl.split('/').pop()}
-                  </span>
-                  <button onClick={() => updateTimeline({ music: null })} className="p-1 text-slate-400 hover:text-red-600 shrink-0">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <label className="flex items-center gap-2 text-xs text-slate-500">
-                  Ses seviyesi
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    value={timeline.music.volume}
-                    onChange={(e) => updateTimeline({ music: { ...timeline.music!, volume: Number(e.target.value) } })}
-                    className="flex-1"
-                  />
-                </label>
-              </div>
-            ) : (
-              <AssetPicker
-                kind="audio"
-                assets={assets}
-                uploading={uploading}
-                onUpload={(f) =>
-                  uploadAsset(f, 'audio').then((a) => a && updateTimeline({ music: { assetUrl: a.url, volume: 0.5 } }))
-                }
-                onPick={(a) => updateTimeline({ music: { assetUrl: a.url, volume: 0.5 } })}
-              />
-            )}
-          </div>
-
-          <div>
-            <div className="flex items-baseline justify-between mb-1.5">
-              <h3 className="text-sm font-semibold text-slate-900">Altyazı (karaoke)</h3>
-              {timeline.captions.length > 0 && (
-                <span className="text-xs text-slate-400">{timeline.captions.length} kelime</span>
-              )}
-            </div>
-            <p className="text-xs text-slate-400 mb-2">
-              Sesi otomatik yazıya döker, tek tek kelimeleri ekrana vurgulu şekilde (TikTok/Reels tarzı) düşürür.
-            </p>
-            <div className="flex items-center gap-2 mb-3">
-              <button
-                onClick={transcribeCaptions}
-                disabled={transcribing}
-                className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs font-medium text-slate-600 hover:border-slate-400 disabled:opacity-50"
-              >
-                {transcribing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Captions className="w-3.5 h-3.5" />}
-                {transcribing
-                  ? 'Çıkarılıyor…'
-                  : `${timeline.captions.length > 0 ? 'Yeniden oluştur' : 'Altyazıları oluştur'} · ≈${creditsForCost(STUDIO_TRANSCRIBE_COST_USD)} kredi`}
-              </button>
-              {timeline.captions.length > 0 && (
-                <button
-                  onClick={() => updateTimeline({ captions: [] })}
-                  className="p-2 text-slate-400 hover:text-red-600 shrink-0"
-                  title="Altyazıları temizle"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {timeline.captions.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex flex-wrap gap-x-3 gap-y-1">
-                  <NumberField
-                    label="X%"
-                    value={timeline.captionStyle.x}
-                    min={0}
-                    step={1}
-                    onChange={(v) => updateTimeline({ captionStyle: { ...timeline.captionStyle, x: clampPct(v) } })}
-                    compact
-                  />
-                  <NumberField
-                    label="Y%"
-                    value={timeline.captionStyle.y}
-                    min={0}
-                    step={1}
-                    onChange={(v) => updateTimeline({ captionStyle: { ...timeline.captionStyle, y: clampPct(v) } })}
-                    compact
-                  />
-                  <NumberField
-                    label="Punto%"
-                    value={timeline.captionStyle.fontSize}
-                    min={1}
-                    step={0.5}
-                    onChange={(v) => updateTimeline({ captionStyle: { ...timeline.captionStyle, fontSize: v } })}
-                    compact
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <select
-                    value={timeline.captionStyle.font}
-                    onChange={(e) =>
-                      updateTimeline({ captionStyle: { ...timeline.captionStyle, font: e.target.value as OverlayFont } })
-                    }
-                    className="rounded border border-slate-300 px-1.5 py-1 text-xs"
-                  >
-                    {OVERLAY_FONTS.map((f) => (
-                      <option key={f.value} value={f.value}>
-                        {f.label}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="color"
-                    value={timeline.captionStyle.color}
-                    onChange={(e) => updateTimeline({ captionStyle: { ...timeline.captionStyle, color: e.target.value } })}
-                    className="w-7 h-7 rounded border border-slate-300 bg-white"
-                  />
-                </div>
-
-                <details className="pt-1">
-                  <summary className="text-xs text-slate-500 cursor-pointer select-none hover:text-slate-700">
-                    Kelimeleri düzenle
-                  </summary>
-                  <div className="mt-2 max-h-56 overflow-y-auto space-y-1 pr-1">
-                    {timeline.captions.map((c) => (
-                      <div key={c.id} className="flex items-center gap-2">
-                        <span className="text-[10px] text-slate-400 w-9 shrink-0 tabular-nums text-right">
-                          {c.startTime.toFixed(1)}s
-                        </span>
-                        <input
-                          value={c.text}
-                          onChange={(e) => updateCaption(c.id, { text: e.target.value })}
-                          className="flex-1 rounded border border-slate-300 px-1.5 py-0.5 text-xs"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </details>
-              </div>
-            )}
-          </div>
-
-          <label className="flex items-center gap-2 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              checked={timeline.wordmark}
-              onChange={(e) => updateTimeline({ wordmark: e.target.checked })}
-              className="rounded border-slate-300"
-            />
-            talkinbio.com imzası
-          </label>
         </div>
       </fieldset>
     </div>
@@ -2550,6 +3109,7 @@ function InteractiveOverlayLayer({
   updateVideoOverlay,
   updateTextOverlay,
   updateZoom,
+  updateReframePoint,
   onDropAsset,
   imageCache,
   videoOverlayAspects,
@@ -2563,6 +3123,7 @@ function InteractiveOverlayLayer({
   updateVideoOverlay: (id: string, patch: any) => void;
   updateTextOverlay: (id: string, patch: any) => void;
   updateZoom: (id: string, patch: Partial<StudioZoom>) => void;
+  updateReframePoint: (id: string, patch: Partial<StudioReframePoint>) => void;
   onDropAsset: (url: string, kind: string, x: number, y: number) => void;
   imageCache: Map<string, HTMLImageElement>;
   videoOverlayAspects: Map<string, number>;
@@ -2588,9 +3149,11 @@ function InteractiveOverlayLayer({
   };
 
   const activeOverlays = timeline.overlays.filter((o) => currentTime >= o.startTime && currentTime < o.endTime);
-  // Zoom hedefi, overlay'lerin aksine SADECE aktifse değil seçiliyken her zaman gösterilir —
-  // kullanıcı hangi zamanda olursa olsun hedefi görüp konumlandırabilsin diye.
+  // Zoom/Reframe hedefi, overlay'lerin aksine SADECE aktifse değil seçiliyken her zaman
+  // gösterilir — kullanıcı hangi zamanda olursa olsun hedefi görüp konumlandırabilsin diye.
   const selectedZoom = selected?.type === 'zoom' ? timeline.zooms.find((z) => z.id === selected.id) : undefined;
+  const selectedReframePoint =
+    selected?.type === 'reframe' ? timeline.reframe.find((p) => p.id === selected.id) : undefined;
 
   return (
     <div
@@ -2605,6 +3168,13 @@ function InteractiveOverlayLayer({
           const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
           const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
           updateZoom(selectedZoom.id, { x, y });
+          return;
+        }
+        if (selectedReframePoint) {
+          const rect = layerRef.current.getBoundingClientRect();
+          const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+          const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+          updateReframePoint(selectedReframePoint.id, { x, y });
           return;
         }
         onSelect(null);
@@ -2630,6 +3200,13 @@ function InteractiveOverlayLayer({
           zoom={selectedZoom}
           containerRef={layerRef}
           onDrag={(x, y) => updateZoom(selectedZoom.id, { x, y })}
+        />
+      )}
+      {selectedReframePoint && (
+        <ReframeTargetMarker
+          point={selectedReframePoint}
+          containerRef={layerRef}
+          onDrag={(x, y) => updateReframePoint(selectedReframePoint.id, { x, y })}
         />
       )}
     </div>
@@ -2684,6 +3261,48 @@ function ZoomTargetMarker({
       }}
       onPointerDown={handlePointerDown}
       title="Yakınlaşma hedefi — sürükle ya da önizlemeye tıkla"
+    >
+      <div className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-white shadow" />
+    </div>
+  );
+}
+
+/** `ZoomTargetMarker` ile AYNI sürükle-bırak deseni — ama `scale` yok (Reframe bir kutu
+ *  değil, TEK odak noktası), boyut sabit küçük bir daire. */
+function ReframeTargetMarker({
+  point,
+  containerRef,
+  onDrag,
+}: {
+  point: StudioReframePoint;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  onDrag: (x: number, y: number) => void;
+}) {
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    const container = containerRef.current;
+    if (!container) return;
+
+    const move = (moveEvent: PointerEvent) => {
+      const rect = container.getBoundingClientRect();
+      const x = Math.max(0, Math.min(100, ((moveEvent.clientX - rect.left) / rect.width) * 100));
+      const y = Math.max(0, Math.min(100, ((moveEvent.clientY - rect.top) / rect.height) * 100));
+      onDrag(x, y);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <div
+      className="absolute w-8 h-8 rounded-full border-2 border-emerald-400 bg-emerald-400/10 cursor-move flex items-center justify-center"
+      style={{ left: `${point.x}%`, top: `${point.y}%`, transform: 'translate(-50%, -50%)' }}
+      onPointerDown={handlePointerDown}
+      title="Kadraj odağı — sürükle ya da önizlemeye tıkla"
     >
       <div className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-white shadow" />
     </div>

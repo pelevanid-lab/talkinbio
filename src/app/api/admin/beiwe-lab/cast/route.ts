@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { generateOnce } from '@/agents/shared/generateOnce';
+import { recordUsageEvent } from '@/agents/shared/usage';
 import { FalError, generateCharacterImage } from '@/utils/fal';
 import { STYLE_PROMPT, buildNegativePrompt, ESTIMATED_COST_PER_IMAGE_USD } from '@/config/characters';
 import { getBusinessFromRequest, type Business } from '@/utils/businessAuth';
@@ -88,7 +89,7 @@ Kurallar:
 
 SADECE İngilizce kimlik paragrafını döndür. Açıklama, başlık, tırnak veya markdown ekleme.`;
 
-    const { text } = await generateOnce({
+    const { text, model: promptModel, usage } = await generateOnce({
       task: 'characterPrompt',
       system,
       prompt: `Türkçe karakter tarifi: ${persona}`,
@@ -140,7 +141,10 @@ SADECE İngilizce kimlik paragrafını döndür. Açıklama, başlık, tırnak v
     if (insertError) throw insertError;
 
     if (auth.mode === 'business') {
-      await deductForGeneration(auth.business.id, ESTIMATED_COST_PER_IMAGE_USD);
+      const { creditsCharged } = await deductForGeneration(auth.business.id, ESTIMATED_COST_PER_IMAGE_USD);
+      // Kimlik metni (LLM) + avatar (fal-ai/nano-banana-pro) tek maliyette birleşik —
+      // `usage_events`'in `model` alanı tek bir sütun, LLM tarafını (gerçek token'ı olan) tercih ediyoruz.
+      await recordUsageEvent(supabaseAdmin, { businessId: auth.business.id, agent: 'beiwe', channel: 'web', model: promptModel, usage, creditsCharged });
     }
 
     return NextResponse.json({ id, name });

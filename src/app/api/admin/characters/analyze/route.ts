@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { generateText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { recordUsageEvent } from '@/agents/shared/usage';
 import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
 import { IDENTITY_ANALYSIS_COST_USD } from '@/config/beiweLab';
@@ -63,7 +64,7 @@ Important instructions:
       },
     ];
 
-    const { text: identityPrompt } = await generateText({
+    const { text: identityPrompt, usage } = await generateText({
       model: google('gemini-2.5-pro'),
       messages,
     });
@@ -84,7 +85,15 @@ Important instructions:
     if (dbError) throw dbError;
 
     if (auth.mode === 'business') {
-      await deductForGeneration(auth.business.id, IDENTITY_ANALYSIS_COST_USD);
+      const { creditsCharged } = await deductForGeneration(auth.business.id, IDENTITY_ANALYSIS_COST_USD);
+      await recordUsageEvent(supabaseAdmin, {
+        businessId: auth.business.id,
+        agent: 'beiwe',
+        channel: 'web',
+        model: 'gemini-2.5-pro',
+        usage,
+        creditsCharged,
+      });
     }
 
     return NextResponse.json({ identityPrompt });

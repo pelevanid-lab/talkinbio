@@ -52,6 +52,7 @@ export default async function BillingDashboardPage({ params }: { params: Promise
       id: e.id,
       type: 'usage',
       agent: e.agent,
+      model: e.model,
       amount: -e.credits_charged,
       created_at: e.created_at,
     }));

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { FalError, removeImageBackground } from '@/utils/fal';
+import { recordUsageEvent } from '@/agents/shared/usage';
 import { ESTIMATED_BG_REMOVAL_COST_USD } from '@/config/post';
 import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
@@ -134,7 +135,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ charact
     }
 
     if (auth.mode === 'business') {
-      await deductForGeneration(auth.business.id, ESTIMATED_BG_REMOVAL_COST_USD);
+      const { creditsCharged } = await deductForGeneration(auth.business.id, ESTIMATED_BG_REMOVAL_COST_USD);
+      await recordUsageEvent(supabaseAdmin, {
+        businessId: auth.business.id,
+        agent: 'beiwe',
+        channel: 'web',
+        model: 'fal-ai/imageutils/rembg',
+        usage: {},
+        creditsCharged,
+      });
     }
 
     return NextResponse.json({ url: publicUrl, saved: true, asset });

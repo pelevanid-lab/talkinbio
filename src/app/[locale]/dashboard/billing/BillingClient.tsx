@@ -13,6 +13,7 @@ const NUMBER_LOCALES: Record<string, string> = { tr: 'tr-TR', en: 'en-US', ru: '
 
 const AGENT_ICON: Record<string, typeof MessageCircle> = {
   saule: MessageCircle,
+  beiwe: Wrench,
   analysis: BarChart3,
 };
 
@@ -22,10 +23,28 @@ const AGENT_LABEL_KEY: Record<string, string> = {
   analysis: 'agent.analysis',
 };
 
+/** `model` (usage_events.model — fal/LLM model id) tanınıyorsa genel "Stüdyo İşlemi"
+ *  etiketi yerine EYLEME özel bir başlık gösterir (ör. "Redub", "Ses Klonu") — bulunan
+ *  hata: her Creative Studio eylemi `agent.beiwe`nin tek genel adıyla görünüyordu.
+ *  Tanınmayan bir model (ör. dinamik görsel/video üretim modelleri) sessizce genel
+ *  etikete düşer — hepsini burada listelemeye gerek yok. */
+const MODEL_LABEL_KEY: Record<string, string> = {
+  'fal-ai/elevenlabs/dubbing': 'model.fal-ai/elevenlabs/dubbing',
+  'fal-ai/whisper': 'model.fal-ai/whisper',
+  'fal-ai/deepfilternet3': 'model.fal-ai/deepfilternet3',
+  'fal-ai/elevenlabs/audio-isolation': 'model.fal-ai/elevenlabs/audio-isolation',
+  'fal-ai/minimax/voice-clone': 'model.fal-ai/minimax/voice-clone',
+  'fal-ai/minimax/speech-02-hd': 'model.fal-ai/minimax/speech-02-hd',
+  'fal-ai/imageutils/rembg': 'model.fal-ai/imageutils/rembg',
+  'fal-ai/flux-lora-fast-training': 'model.fal-ai/flux-lora-fast-training',
+  'gemini-2.5-pro': 'model.gemini-2-5-pro',
+};
+
 type Transaction = {
   id: string;
   type: 'usage' | 'reload';
   agent?: string;
+  model?: string;
   planName?: string;
   amount: number;
   created_at: string;
@@ -228,7 +247,10 @@ export default function BillingClient({ business, transactions, ownerEmail }: { 
               {transactions.map((event) => {
                 const isReload = event.type === 'reload';
                 const Icon = isReload ? Coins : (AGENT_ICON[event.agent || ''] || MessageCircle);
-                const title = isReload ? `Kredi Yükleme (${event.planName})` : t(AGENT_LABEL_KEY[event.agent || ''] || 'agent.saule');
+                const modelLabelKey = event.model ? MODEL_LABEL_KEY[event.model] : undefined;
+                const title = isReload
+                  ? `Kredi Yükleme (${event.planName})`
+                  : t(modelLabelKey || AGENT_LABEL_KEY[event.agent || ''] || 'agent.saule');
                 
                 return (
                   <div key={event.id} className="flex items-center justify-between py-2.5 border-b border-[rgba(20,35,31,0.06)] last:border-0">

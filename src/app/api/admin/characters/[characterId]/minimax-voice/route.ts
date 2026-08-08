@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase/admin';
 import { isKnownCharacterId } from '@/utils/knownCharacter';
 import { FalError, cloneMinimaxVoice, generateMinimaxSpeech } from '@/utils/fal';
+import { recordUsageEvent } from '@/agents/shared/usage';
 import { MINIMAX_CLONE_COST_USD, ESTIMATED_VOICE_COST_PER_1K_CHARS_USD } from '@/config/beiweLab';
 import { authorizeCharacterRequest } from '@/utils/creativeStudioScope';
 import { assertSufficientCredits, deductForGeneration, InsufficientCreditsError } from '@/utils/creativeStudioCredits';
@@ -88,7 +89,15 @@ export async function POST(
         );
 
       if (auth.mode === 'business') {
-        await deductForGeneration(auth.business.id, MINIMAX_CLONE_COST_USD);
+        const { creditsCharged } = await deductForGeneration(auth.business.id, MINIMAX_CLONE_COST_USD);
+        await recordUsageEvent(supabaseAdmin, {
+          businessId: auth.business.id,
+          agent: 'beiwe',
+          channel: 'web',
+          model: 'fal-ai/minimax/voice-clone',
+          usage: {},
+          creditsCharged,
+        });
       }
 
       return NextResponse.json({ voiceId: customVoiceId, status: 'active' });
@@ -159,7 +168,15 @@ export async function POST(
         );
 
       if (auth.mode === 'business') {
-        await deductForGeneration(auth.business.id, speakCostUsd);
+        const { creditsCharged } = await deductForGeneration(auth.business.id, speakCostUsd);
+        await recordUsageEvent(supabaseAdmin, {
+          businessId: auth.business.id,
+          agent: 'beiwe',
+          channel: 'web',
+          model: 'fal-ai/minimax/speech-02-hd',
+          usage: {},
+          creditsCharged,
+        });
       }
 
       return NextResponse.json({ audioUrl: result.audioUrl, durationMs: result.durationMs });

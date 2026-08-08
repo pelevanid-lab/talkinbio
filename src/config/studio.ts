@@ -8,7 +8,7 @@
 // DOM tipleri (HTMLCanvasElement, HTMLVideoElement) kullanıyor ve bu dosyanın sunucuda
 // da import edilebilir (tip-only) kalması gerekiyor.
 
-import type { OverlayFont } from './characters';
+import { OVERLAY_LOCALES, type OverlayFont, type OverlayLocale } from './characters';
 
 export type StudioAssetKind = 'image' | 'video' | 'audio';
 
@@ -136,6 +136,25 @@ export type StudioZoom = {
   scale: number;
   /** Zoom-in/zoom-out geçiş süresi (saniye), başta ve sonda simetrik uygulanır. */
   transition: number;
+};
+
+/**
+ * Yeniden kadraj (akıllı pan) — Zoom'la AYNI fikir (canvas'ta tıkla-konumlandır) ama farklı
+ * davranış: Zoom bir ARALIKTA "blip" yapar (büyüt-küçült, aralık dışında etkisiz), Reframe
+ * SIRALI noktalar arasında SÜREKLİ pan — ana sekans klibinin (video/görsel) `fit:'cover'`
+ * kırpmasının odak noktasını zamana göre kaydırır. Kaynak video hedef en-boy oranından
+ * FARKLIYSA (ör. 16:9 ham çekim 9:16 hedefe) sabit merkez-kırpma öznenin kadraj dışı
+ * kalmasına yol açabiliyor — bu, o kaymayı elle (yüz takibi OLMADAN) düzeltme aracı.
+ * Bkz. `resolveReframePoint` (interpolasyon) ve `drawMediaFittedBox`'ın `centerX/centerY`
+ * parametreleri (studioRenderer.ts).
+ */
+export type StudioReframePoint = {
+  id: string;
+  /** Master-timeline zamanı (saniye) — Zoom'un aksine bir ARALIK değil TEK an. */
+  time: number;
+  /** Odak noktası, canvas yüzdesi (0-100). */
+  x: number;
+  y: number;
 };
 
 /** Ortak zaman/konum alanları — hem görsel hem metin overlay'i bunu taşır. */
@@ -266,6 +285,30 @@ export function resolveSequencePosition(
   return null;
 }
 
+/**
+ * `points` (zamana göre sıralı VARSAYILIR — çağıran taraf ekleme/düzenlemede sıralı tutar)
+ * arasında `time` anındaki odak noktasını lineer interpolasyonla çözer. Boşsa sabit
+ * %50/%50 (bugünkü merkez-kırpma davranışı DEĞİŞMEZ). Tek noktaysa/`time` ilk noktadan
+ * önce/son noktadan sonraysa o UÇ noktada sabit kalır — pan SADECE noktalar ARASINDA var,
+ * uçlarda "hold" davranışı Zoom'un `transition`'ından FARKLI olarak burada zaten
+ * kesintisiz (ayrı bir geçiş süresi parametresi yok, iki nokta arası mesafe pan hızını belirler).
+ */
+export function resolveReframePoint(points: StudioReframePoint[], time: number): { x: number; y: number } {
+  if (!points.length) return { x: 50, y: 50 };
+  if (points.length === 1 || time <= points[0].time) return { x: points[0].x, y: points[0].y };
+  const last = points[points.length - 1];
+  if (time >= last.time) return { x: last.x, y: last.y };
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i];
+    const b = points[i + 1];
+    if (time >= a.time && time <= b.time) {
+      const t = b.time === a.time ? 0 : (time - a.time) / (b.time - a.time);
+      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+    }
+  }
+  return { x: last.x, y: last.y };
+}
+
 export const MAX_SEQUENCE_CLIPS = 30;
 
 /**
@@ -321,7 +364,56 @@ export type StudioCaptionStyle = {
   fontSize: number;
   color: string;
   font: OverlayFont;
+  /**
+   * Kelime akış hızı çarpanı — 1 = whisper'ın orijinal zamanlaması (kaynak konuşma hızı).
+   * >1 her kelimeyi ekranda daha uzun tutar (bkz. `applyCaptionSpeed`). Çeviri metinleri
+   * genelde kaynaktan daha uzun/yavaş okunduğu için (zaman damgaları kaynaktan AYNEN
+   * kopyalanıyor, bkz. `StudioTranslatedCaptions` yorumu) bu ayar özellikle çeviri
+   * altyazılarını okunur kılmak için var — ama global (locale'e özel değil), çünkü
+   * `captionStyle` tek, tüm locale'ler paylaşıyor.
+   */
+  speed: number;
+  /**
+   * Aynı anda ekranda gösterilecek ardışık kelime SAYISI — 1 = whisper'ın verdiği gibi tek
+   * tek (varsayılan). >1, `groupCaptions` ile ardışık N parçayı TEK bir görüntüleme birimine
+   * birleştirir (metinleri boşlukla birleştirilir, zamanlama ilkin başlangıcı/sonuncunun
+   * bitişini alır). Çeviri parçaları artık kaynak kelimeyle birebir eşleşmek zorunda değil
+   * (bkz. captionTranslate.ts, 2026-08-08) — bu bazı parçaların boş kalmasına yol açabiliyor;
+   * gruplama bu boş/parçalı satırları da doğal olarak eritiyor.
+   */
+  groupSize: number;
 };
+
+/** `groupSize` için izin verilen aralık — `parseCaptionStyle` ve StudioEditor'daki seçenek
+ *  listesi bununla sınırlı. Üstü tek satırda okunamayacak kadar uzun metin biriktirir. */
+export const CAPTION_GROUP_SIZE_RANGE = { min: 1, max: 4 } as const;
+
+/**
+ * Çok dilli altyazı — Düzenle → "Bu dile çevir". Kaynak `StudioTimeline.captions`
+ * (whisper transkripti) YERİNE geçmez, yanında yaşar: çeviri yalnızca `text`'i
+ * değiştirir, `startTime`/`endTime` kaynak diziden AYNEN kopyalanır (bkz.
+ * `captionTranslate.ts` — LLM'e zaman damgası değil sadece metin gönderiliyor).
+ * Bu yüzden `Partial<Record<OverlayLocale, StudioCaption[]>>` — henüz çevrilmemiş
+ * bir dilin anahtarı hiç yok, `{}`  eski projeler için güvenli varsayılan.
+ */
+export type StudioTranslatedCaptions = Partial<Record<OverlayLocale, StudioCaption[]>>;
+
+/**
+ * Düzenle → Redub çıktısı — `fal-ai/elevenlabs/dubbing` sonucu. `sourceUrl` hangi
+ * videodan türetildiğini işaretler (proje birden fazla redub deneyebilir, ör. önce
+ * TR kaynaktan EN, sonra aynı kaynaktan RU); `videoUrl` her zaman fal'ın kalıcı
+ * depolamasında (7 gün sınırı YOK — MiniMax klonundaki `custom_voice_id` süresiyle
+ * karıştırılmasın, bu düz bir dosya).
+ */
+export type StudioDub = {
+  id: string;
+  locale: OverlayLocale;
+  sourceUrl: string;
+  videoUrl: string;
+  createdAt: string;
+};
+
+export const MAX_DUBS = 6;
 
 /**
  * Ana sekansın (+ üstüne binen cutaway/intro/outro) belli bir ZAMAN ARALIĞINDA ekranda
@@ -363,8 +455,13 @@ export type StudioTimeline = {
   cutaways: StudioCutaway[];
   overlays: StudioOverlay[];
   zooms: StudioZoom[];
+  /** YENİ — yeniden kadraj (akıllı pan). Boşsa/tek noktaysa bugünkü sabit merkez-kırpma
+   *  davranışı (%50/%50) DEĞİŞMEZ, bkz. `resolveReframePoint`. */
+  reframe: StudioReframePoint[];
   captions: StudioCaption[];
   captionStyle: StudioCaptionStyle;
+  /** YENİ — çok dilli altyazı, bkz. tip yorumu. Boş `{}` = hiç çeviri yok (eski proje). */
+  translatedCaptions: StudioTranslatedCaptions;
   intro: StudioIntroOutro | null;
   outro: StudioIntroOutro | null;
   music: StudioMusic | null;
@@ -375,11 +472,14 @@ export type StudioTimeline = {
   wordmark: boolean;
   /** YENİ — global renk/efekt katmanı. */
   grade: StudioColorGrade;
+  /** YENİ — Redub çıktıları, bkz. `StudioDub`. Boş `[]` = hiç redub yapılmamış. */
+  dubs: StudioDub[];
 };
 
 export const MAX_CUTAWAYS = 12;
 export const MAX_OVERLAYS = 12;
 export const MAX_ZOOMS = 8;
+export const MAX_REFRAME_POINTS = 8;
 // Cutaway/overlay'den çok daha yüksek: bir dakikalık konuşma kolayca 150+ kelime üretir,
 // bunlar tek tek elle eklenmiyor, whisper'dan toplu geliyor.
 export const MAX_CAPTIONS = 600;
@@ -414,7 +514,273 @@ export const DEFAULT_CAPTION_STYLE: StudioCaptionStyle = {
   fontSize: 7,
   color: '#FFFFFF',
   font: 'bricolage',
+  speed: 1,
+  groupSize: 1,
 };
+
+/** Altyazı hız çarpanı için izin verilen aralık — `parseCaptionStyle` ve StudioEditor'daki
+ *  seçenek listesi bununla sınırlı. Üstü, kelimeler arası boşluğu absürt uzatır. */
+export const CAPTION_SPEED_RANGE = { min: 0.5, max: 2.5 } as const;
+
+/**
+ * Tek tık altyazı stil şablonları — X/Y/punto/font/renk'i tek tek elle ayarlamak yerine
+ * hazır bir görünüm uygular. `speed`/`groupSize` KASITLI OLARAK dahil değil — kullanıcının
+ * ayrı ayarladığı bu tercihler bir stil şablonu seçmekle sıfırlanmamalı.
+ */
+export const CAPTION_STYLE_PRESETS: { id: string; label: string; style: Partial<StudioCaptionStyle> }[] = [
+  { id: 'tiktok-bold', label: 'TikTok Kalın', style: { font: 'bricolage', fontSize: 9, color: '#FFEB3B', x: 50, y: 72 } },
+  { id: 'minimal', label: 'Temiz Minimal', style: { font: 'inter', fontSize: 5, color: '#FFFFFF', x: 50, y: 88 } },
+  { id: 'center-pop', label: 'Ortada Vurgu', style: { font: 'bricolage', fontSize: 11, color: '#FFFFFF', x: 50, y: 50 } },
+  { id: 'typewriter', label: 'Daktilo', style: { font: 'mono', fontSize: 6, color: '#FFFFFF', x: 50, y: 80 } },
+];
+
+/**
+ * Kelime zamanlamasını `speed` çarpanı kadar esnetir — ilk kelimenin `startTime`'ı sabit
+ * pivot, sonraki her kelimenin başlangıç/bitişi bu pivottan olan mesafesi `speed` ile
+ * çarpılarak yeniden hesaplanır. speed=1 → değişiklik yok (kaynak whisper zamanlaması).
+ * speed=1.5 → her kelime ekranda %50 daha uzun kalır VE aralarındaki boşluk da orantılı
+ * büyür (kelimeler sesin "gerisinde" kalmaya başlar — bu, okunabilirlik için kabul edilen
+ * bir görsel/ses kayması, `drawFrame` sadece görsel katmanı çiziyor, sesi etkilemiyor).
+ * Saf fonksiyon — hem önizleme hem export AYNI `drawFrame` çağrısından geçtiği için tek
+ * bir uygulama noktası yeterli (bkz. studioRenderer.ts).
+ */
+export function applyCaptionSpeed(captions: StudioCaption[], speed: number): StudioCaption[] {
+  if (!captions.length || !isFiniteNumber(speed) || speed === 1) return captions;
+  const t0 = captions[0].startTime;
+  return captions.map((c) => ({
+    ...c,
+    startTime: t0 + (c.startTime - t0) * speed,
+    endTime: t0 + (c.endTime - t0) * speed,
+  }));
+}
+
+/** `groupCaptions`'ın çıktısı — normal `StudioCaption` alanlarına ek olarak, StudioEditor'ün
+ *  "Kelimeleri düzenle" listesi bir grup satırını düzenlerken hangi ORİJİNAL id'lere
+ *  yazacağını bilsin diye `memberIds` taşır (bkz. groupSize yorumu, StudioCaptionStyle). */
+export type StudioCaptionGroup = StudioCaption & { memberIds: string[] };
+
+/**
+ * Ardışık `groupSize` kadar kelime parçasını TEK bir görüntüleme birimine birleştirir —
+ * karaoke ekranında aynı anda kaç kelimenin gösterileceğini kontrol eder. groupSize<=1 →
+ * değişiklik yok, her parça kendi başına (memberIds tek elemanlı). groupSize=2 → ardışık
+ * ikişer parça birleşir: startTime ilkin başlangıcı, endTime sonuncunun bitişi, text ise
+ * aradaki BOŞ OLMAYAN metinlerin boşlukla birleşimi — bu son kısım özellikle çeviri
+ * altyazılarında işe yarıyor: `captionTranslate.ts` artık her parçayı kaynak kelimeyle
+ * birebir eşlemiyor (2026-08-08), bu da bazı parçaları boş bırakabiliyor; gruplama bu
+ * boş/parçalı satırları doğal olarak eritip tek okunabilir bir metne dönüştürüyor.
+ */
+export function groupCaptions(captions: StudioCaption[], groupSize: number): StudioCaptionGroup[] {
+  const size = Math.max(1, Math.round(isFiniteNumber(groupSize) ? groupSize : 1));
+  if (size <= 1) return captions.map((c) => ({ ...c, memberIds: [c.id] }));
+  const groups: StudioCaptionGroup[] = [];
+  for (let i = 0; i < captions.length; i += size) {
+    const chunk = captions.slice(i, i + size);
+    groups.push({
+      id: chunk[0].id,
+      startTime: chunk[0].startTime,
+      endTime: chunk[chunk.length - 1].endTime,
+      text: chunk
+        .map((c) => c.text.trim())
+        .filter(Boolean)
+        .join(' '),
+      memberIds: chunk.map((c) => c.id),
+    });
+  }
+  return groups;
+}
+
+// --- Sessizlik / dolgu kelime otomatik kesme --------------------------------------------
+//
+// `timeline.captions` (whisper kelime zaman damgaları) ZATEN master-timeline koordinatında
+// (bkz. StudioEditor'daki transcribeCaptions yorumu ve drawFrame'in `time >= c.startTime`
+// karşılaştırması — zooms/cutaways/overlays ile AYNI koordinat sistemi). Bu yüzden kelimeler
+// arası boşluklar doğrudan [start,end) master-time kesim aralığı olarak kullanılabiliyor,
+// ayrı bir koordinat dönüşümüne gerek yok.
+
+export type StudioCutRange = { start: number; end: number };
+
+/** Konservatif, sabit bir TR dolgu kelime listesi — `findSilenceCuts`'a opsiyonel olarak
+ *  geçiliyor (varsayılan KAPALI, dil/bağlam riskli). Noktalama ayıklanıp küçük harfe
+ *  çevrilmiş metinle eşleştirilir (bkz. findSilenceCuts). */
+export const FILLER_WORDS_TR = new Set(['şey', 'yani', 'ıı', 'ııı', 'eee', 'hıı', 'aa']);
+
+/** Üst üste binen/bitişik kesim aralıklarını tek aralığa birleştirir, artan sıraya dizer —
+ *  hem `findSilenceCuts`'ın kendi çıktısı hem `removeCutRanges`'a kullanıcının UI'da
+ *  işaretlediği (sırasız/çakışabilir) alt küme için savunmacı bir ön adım. */
+function mergeCutRanges(ranges: StudioCutRange[]): StudioCutRange[] {
+  const sorted = [...ranges].sort((a, b) => a.start - b.start);
+  const merged: StudioCutRange[] = [];
+  for (const r of sorted) {
+    const last = merged[merged.length - 1];
+    if (last && r.start <= last.end) {
+      last.end = Math.max(last.end, r.end);
+    } else {
+      merged.push({ ...r });
+    }
+  }
+  return merged;
+}
+
+/**
+ * Kelimeler arası boşlukları (>= `minGapSeconds`) kesim adayı olarak bulur. `fillerWords`
+ * verilirse o kelimelerin KENDİ span'ları da eklenir (komşu boşluklarla `mergeCutRanges`
+ * otomatik birleşir). Saf/salt-okunur — hiçbir şeyi uygulamaz, sadece aday listesi döner;
+ * çağıran taraf (StudioEditor) kullanıcıya önizleme olarak gösterip onaylatır.
+ */
+export function findSilenceCuts(
+  captions: StudioCaption[],
+  minGapSeconds: number,
+  fillerWords?: Set<string>,
+): StudioCutRange[] {
+  if (!captions.length) return [];
+  const sorted = [...captions].sort((a, b) => a.startTime - b.startTime);
+  const ranges: StudioCutRange[] = [];
+  for (let i = 0; i < sorted.length; i++) {
+    const c = sorted[i];
+    if (fillerWords) {
+      const normalized = c.text.trim().toLocaleLowerCase('tr').replace(/[.,!?;:…]/g, '');
+      if (fillerWords.has(normalized)) ranges.push({ start: c.startTime, end: c.endTime });
+    }
+    if (i > 0) {
+      const prev = sorted[i - 1];
+      const gap = c.startTime - prev.endTime;
+      if (gap >= minGapSeconds) ranges.push({ start: prev.endTime, end: c.startTime });
+    }
+  }
+  return mergeCutRanges(ranges);
+}
+
+/**
+ * Verilen `t` (kesimler UYGULANMADAN ÖNCEKİ, orijinal master-time) anını kesimler
+ * uygulandıktan SONRAKİ konumuna eşler — NLE'lerdeki "ripple delete" ile aynı fikir tek bir
+ * fonksiyona sıkıştırılmış: kesimden önce değişmez, bir kesimin İÇİNDEKİ her an o kesimin
+ * başlangıcına "çöker" (üstündeki öğe `remapRange`'de start===end kontrolüyle düşürülür),
+ * kesimden sonrası o ana kadarki TOPLAM kesilmiş süre kadar geri kayar. `sortedCuts`
+ * ÖNCEDEN `mergeCutRanges` ile birleştirilmiş/sıralanmış olmalı.
+ */
+function mapTimeAfterCuts(t: number, sortedCuts: StudioCutRange[]): number {
+  let removed = 0;
+  for (const cut of sortedCuts) {
+    if (t <= cut.start) break;
+    if (t < cut.end) return cut.start - removed;
+    removed += cut.end - cut.start;
+  }
+  return t - removed;
+}
+
+/** `startTime`/`endTime` taşıyan herhangi bir master-time öğesini (caption/cutaway/zoom/
+ *  overlay/sequenceLayout) kesimlere göre yeniden konumlandırır — tamamen bir kesimin
+ *  içindeyse (yeniden konumlanmış start===end) `null` (düşür). */
+function remapRange<T extends { startTime: number; endTime: number }>(
+  item: T,
+  sortedCuts: StudioCutRange[],
+): T | null {
+  const startTime = mapTimeAfterCuts(item.startTime, sortedCuts);
+  const endTime = mapTimeAfterCuts(item.endTime, sortedCuts);
+  if (endTime <= startTime) return null;
+  return { ...item, startTime, endTime };
+}
+
+/**
+ * `timeline.sequence`'e kesimleri uygular. Sekans DİĞER dizilerin aksine KÜMÜLATİF/cursor
+ * tabanlı (bkz. `resolveSequencePosition` yorumu) — klipler kendi mutlak zamanını taşımaz,
+ * konumu önceki kliplerin toplam süresinden türer. Bu yüzden `remapRange`/`mapTimeAfterCuts`
+ * BURADA uygulanmıyor: bunun yerine her klibin ORİJİNAL [clipStart,clipEnd) aralığı kesimlerle
+ * kesiştirilip HAYATTA KALAN alt parçalar (varsa birden fazla — aynı klip içinde birden fazla
+ * sessizlik olabilir) yeni klipler olarak üretiliyor; klip TAMAMEN bir kesimin içindeyse hiç
+ * parça üretilmiyor (düşer). Kalan kliplerin konumu zaten cursor'dan otomatik türeyeceği için
+ * ayrıca kaydırma GEREKMİYOR.
+ */
+function removeCutsFromSequence(
+  sequence: StudioSequenceClip[],
+  sortedCuts: StudioCutRange[],
+  liveDurations?: Map<string, number>,
+): StudioSequenceClip[] {
+  const MIN_PIECE_SECONDS = 0.05;
+  const result: StudioSequenceClip[] = [];
+  let cursor = 0;
+  for (const clip of sequence) {
+    const duration = sequenceClipDuration(clip, liveDurations);
+    const clipStart = cursor;
+    const clipEnd = cursor + duration;
+    cursor = clipEnd;
+
+    const overlapping = sortedCuts.filter((c) => c.end > clipStart && c.start < clipEnd);
+    if (!overlapping.length) {
+      result.push(clip);
+      continue;
+    }
+
+    let pos = clipStart; // orijinal master-time koordinatında
+    let firstPiece = true;
+    const pushPiece = (segStart: number, segEnd: number) => {
+      if (segEnd - segStart <= MIN_PIECE_SECONDS) return;
+      const id = firstPiece ? clip.id : crypto.randomUUID();
+      if (clip.kind === 'image') {
+        result.push({ ...clip, id, holdDuration: segEnd - segStart });
+      } else {
+        result.push({
+          ...clip,
+          id,
+          sourceStart: clip.sourceStart + (segStart - clipStart),
+          sourceEnd: clip.sourceStart + (segEnd - clipStart),
+        });
+      }
+      firstPiece = false;
+    };
+
+    for (const cut of overlapping) {
+      pushPiece(pos, Math.max(pos, cut.start));
+      pos = Math.max(pos, cut.end);
+    }
+    pushPiece(pos, clipEnd);
+  }
+  return result;
+}
+
+/**
+ * Kesim aralıklarını TÜM zamanlanmış timeline verisine uygular: sekans (özel — bkz.
+ * `removeCutsFromSequence`) + mutlak master-time dizileri (captions, translatedCaptions'ın
+ * her locale'i, cutaways, zooms, overlays, sequenceLayouts — hepsi `remapRange` ile) +
+ * reframe (tek `time` alanı olduğu için ayrı, bkz. altındaki satır). Saf fonksiyon,
+ * `timeline`'ı MUTATE etmez. `findSilenceCuts`'ın çıktısı zaten birleşik/sıralı ama çağıran
+ * taraf kullanıcının önizlemede işaretlediği ALT KÜMEYİ gönderdiği için burada yeniden
+ * `mergeCutRanges` uygulanıyor (savunmacı).
+ */
+export function removeCutRanges(
+  timeline: StudioTimeline,
+  ranges: StudioCutRange[],
+  liveDurations?: Map<string, number>,
+): StudioTimeline {
+  const cuts = mergeCutRanges(ranges.filter((r) => r.end > r.start));
+  if (!cuts.length) return timeline;
+
+  const remapList = <T extends { startTime: number; endTime: number }>(items: T[]): T[] =>
+    items.map((item) => remapRange(item, cuts)).filter((x): x is T => x !== null);
+
+  const translatedCaptions: StudioTranslatedCaptions = {};
+  for (const locale of OVERLAY_LOCALES) {
+    const list = timeline.translatedCaptions[locale];
+    if (list?.length) {
+      const next = remapList(list);
+      if (next.length) translatedCaptions[locale] = next;
+    }
+  }
+
+  return {
+    ...timeline,
+    sequence: removeCutsFromSequence(timeline.sequence, cuts, liveDurations),
+    captions: remapList(timeline.captions),
+    translatedCaptions,
+    cutaways: remapList(timeline.cutaways),
+    zooms: remapList(timeline.zooms),
+    overlays: remapList(timeline.overlays),
+    sequenceLayouts: remapList(timeline.sequenceLayouts),
+    // reframe noktalarının SÜRESİ yok (tek `time`), `remapList` (start/end) uygulanamaz —
+    // bir kesimin İÇİNE düşen nokta o kesimin başlangıcına "çöker" (mapTimeAfterCuts), DÜŞMEZ.
+    reframe: timeline.reframe.map((p) => ({ ...p, time: mapTimeAfterCuts(p.time, cuts) })),
+  };
+}
 
 export const DEFAULT_TIMELINE: StudioTimeline = {
   aspectRatio: '9:16',
@@ -425,8 +791,10 @@ export const DEFAULT_TIMELINE: StudioTimeline = {
   cutaways: [],
   overlays: [],
   zooms: [],
+  reframe: [],
   captions: [],
   captionStyle: DEFAULT_CAPTION_STYLE,
+  translatedCaptions: {},
   intro: null,
   outro: null,
   music: null,
@@ -434,6 +802,7 @@ export const DEFAULT_TIMELINE: StudioTimeline = {
   enhancedAudioUrl: null,
   wordmark: true,
   grade: DEFAULT_COLOR_GRADE,
+  dubs: [],
 };
 
 const OVERLAY_FONTS_SET = new Set<OverlayFont>(['bricolage', 'inter', 'mono']);
@@ -485,6 +854,18 @@ function parseZoom(value: unknown): StudioZoom | null {
     y: clamp(isFiniteNumber(v.y) ? v.y : 50, 0, 100),
     scale: clamp(isFiniteNumber(v.scale) ? v.scale : 1.6, 1, 4),
     transition: clamp(isFiniteNumber(v.transition) ? v.transition : 0.4, 0, 3),
+  };
+}
+
+function parseReframePoint(value: unknown): StudioReframePoint | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const v = value as Record<string, unknown>;
+  if (!isFiniteNumber(v.time)) return null;
+  return {
+    id: typeof v.id === 'string' ? v.id : crypto.randomUUID(),
+    time: Math.max(0, v.time),
+    x: clamp(isFiniteNumber(v.x) ? v.x : 50, 0, 100),
+    y: clamp(isFiniteNumber(v.y) ? v.y : 50, 0, 100),
   };
 }
 
@@ -601,6 +982,39 @@ function parseCaption(value: unknown): StudioCaption | null {
   };
 }
 
+function isOverlayLocale(value: unknown): value is OverlayLocale {
+  return typeof value === 'string' && (OVERLAY_LOCALES as string[]).includes(value);
+}
+
+/** `translatedCaptions` — her locale anahtarı altında `parseCaption` ile AYNI kurallarla
+ *  doğrulanan bir dizi. Tanınmayan/bozuk bir locale anahtarı ya da boş dizi sessizce atlanır. */
+function parseTranslatedCaptions(value: unknown): StudioTranslatedCaptions {
+  if (typeof value !== 'object' || value === null) return {};
+  const v = value as Record<string, unknown>;
+  const result: StudioTranslatedCaptions = {};
+  for (const locale of OVERLAY_LOCALES) {
+    const raw = v[locale];
+    if (!Array.isArray(raw)) continue;
+    const captions = (raw.map(parseCaption).filter(Boolean) as StudioCaption[]).slice(0, MAX_CAPTIONS);
+    if (captions.length > 0) result[locale] = captions;
+  }
+  return result;
+}
+
+function parseDub(value: unknown): StudioDub | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const v = value as Record<string, unknown>;
+  if (!isOverlayLocale(v.locale)) return null;
+  if (!isHttpUrl(v.sourceUrl) || !isHttpUrl(v.videoUrl)) return null;
+  return {
+    id: typeof v.id === 'string' ? v.id : crypto.randomUUID(),
+    locale: v.locale,
+    sourceUrl: v.sourceUrl,
+    videoUrl: v.videoUrl,
+    createdAt: typeof v.createdAt === 'string' ? v.createdAt : new Date().toISOString(),
+  };
+}
+
 function parseTransition(value: unknown): StudioTransition {
   if (typeof value !== 'object' || value === null) return DEFAULT_TRANSITION;
   const v = value as Record<string, unknown>;
@@ -692,6 +1106,18 @@ function parseCaptionStyle(value: unknown): StudioCaptionStyle {
     fontSize: clamp(isFiniteNumber(v.fontSize) ? v.fontSize : DEFAULT_CAPTION_STYLE.fontSize, 1, 20),
     color: typeof v.color === 'string' ? v.color : DEFAULT_CAPTION_STYLE.color,
     font,
+    speed: clamp(
+      isFiniteNumber(v.speed) ? v.speed : DEFAULT_CAPTION_STYLE.speed,
+      CAPTION_SPEED_RANGE.min,
+      CAPTION_SPEED_RANGE.max,
+    ),
+    groupSize: Math.round(
+      clamp(
+        isFiniteNumber(v.groupSize) ? v.groupSize : DEFAULT_CAPTION_STYLE.groupSize,
+        CAPTION_GROUP_SIZE_RANGE.min,
+        CAPTION_GROUP_SIZE_RANGE.max,
+      ),
+    ),
   };
 }
 
@@ -732,12 +1158,26 @@ export function parseStudioTimeline(value: unknown, fallback?: StudioTimelineFal
     ? (v.zooms.map(parseZoom).filter(Boolean) as StudioZoom[]).slice(0, MAX_ZOOMS)
     : [];
 
+  // `resolveReframePoint` sıralı olduğunu VARSAYAR — tek doğrulama noktası burası, editördeki
+  // ekleme akışı zaten kronolojik ekliyor ama bozuk/elle düzenlenmiş bir kayıt için savunmacı.
+  const reframe = Array.isArray(v.reframe)
+    ? (v.reframe.map(parseReframePoint).filter(Boolean) as StudioReframePoint[])
+        .sort((a, b) => a.time - b.time)
+        .slice(0, MAX_REFRAME_POINTS)
+    : [];
+
   const sequenceLayouts = Array.isArray(v.sequenceLayouts)
     ? (v.sequenceLayouts.map(parseSequenceLayout).filter(Boolean) as StudioSequenceLayout[]).slice(0, MAX_SEQUENCE_LAYOUTS)
     : [];
 
   const captions = Array.isArray(v.captions)
     ? (v.captions.map(parseCaption).filter(Boolean) as StudioCaption[]).slice(0, MAX_CAPTIONS)
+    : [];
+
+  const translatedCaptions = parseTranslatedCaptions(v.translatedCaptions);
+
+  const dubs = Array.isArray(v.dubs)
+    ? (v.dubs.map(parseDub).filter(Boolean) as StudioDub[]).slice(0, MAX_DUBS)
     : [];
 
   let sequence = Array.isArray(v.sequence)
@@ -768,8 +1208,10 @@ export function parseStudioTimeline(value: unknown, fallback?: StudioTimelineFal
     cutaways,
     overlays,
     zooms,
+    reframe,
     captions,
     captionStyle: parseCaptionStyle(v.captionStyle),
+    translatedCaptions,
     intro: parseIntroOutro(v.intro),
     outro: parseIntroOutro(v.outro),
     music: v.music ? parseMusic(v.music) : null,
@@ -777,6 +1219,7 @@ export function parseStudioTimeline(value: unknown, fallback?: StudioTimelineFal
     enhancedAudioUrl: isHttpUrl(v.enhancedAudioUrl) ? v.enhancedAudioUrl : null,
     wordmark: v.wordmark !== false,
     grade: parseColorGrade(v.grade),
+    dubs,
   };
 }
 
@@ -788,6 +1231,9 @@ export interface StudioProject {
   name: string;
   timeline: StudioTimeline;
   output_url: string | null;
+  /** Kapak/thumbnail karesi — export'un aksine tarayıcıda ayrıca bir "Bu kareyi kapak yap"
+   *  eylemiyle üretilir (bkz. StudioEditor), otomatik değil. Eski projelerde yok (null). */
+  thumbnail_url: string | null;
   created_at: string;
   updated_at: string;
 }
