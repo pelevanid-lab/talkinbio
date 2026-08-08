@@ -93,7 +93,7 @@ export default function DashboardShell({ business, active, children }: { busines
           );
         })}
         <div className="pt-6 px-3 text-[#8A8880]">
-          <LanguageSwitcher />
+          <LanguageSwitcher scope="app" />
         </div>
       </nav>
 

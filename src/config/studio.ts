@@ -217,7 +217,7 @@ export type StudioOverlay = StudioImageOverlay | StudioTextOverlay | StudioVideo
  * onları şimdilik 'cut' gibi ele alır (bkz. studioRenderer.ts). Tip önden genişletiliyor
  * ki editör UI'ı ve kayıtlı projeler render mantığı yetişmeden önce kırılmasın.
  */
-export type StudioTransition = { kind: 'cut' | 'crossfade' | 'dip-to-black'; duration: number };
+export type StudioTransition = { kind: 'cut' | 'crossfade' | 'dip-to-black' | 'pixelate'; duration: number };
 
 export const DEFAULT_TRANSITION: StudioTransition = { kind: 'cut', duration: 0 };
 

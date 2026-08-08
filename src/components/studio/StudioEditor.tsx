@@ -2183,6 +2183,43 @@ export default function StudioEditor({
                         />
                       </div>
                     )}
+                    {index > 0 && (
+                      <div className="flex items-center gap-3 mt-2 pt-2 border-t border-slate-100">
+                        <select
+                          value={clip.transitionIn?.kind || 'cut'}
+                          onChange={(e) =>
+                            updateSequenceClip(clip.id, {
+                              transitionIn: {
+                                kind: e.target.value as any,
+                                duration: clip.transitionIn?.duration || 0.3,
+                              },
+                            })
+                          }
+                          className="flex-1 rounded border border-slate-300 px-2 py-1.5 text-xs"
+                        >
+                          <option value="cut">Kesme</option>
+                          <option value="crossfade">Solma</option>
+                          <option value="dip-to-black">Siyah-Solma</option>
+                          <option value="pixelate">Karıncalanma (Pixelate)</option>
+                        </select>
+                        <NumberField
+                          label="Süre (sn)"
+                          value={clip.transitionIn?.duration || 0.3}
+                          min={0.05}
+                          max={2}
+                          step={0.05}
+                          onChange={(v) =>
+                            updateSequenceClip(clip.id, {
+                              transitionIn: {
+                                kind: clip.transitionIn?.kind || 'cut',
+                                duration: Math.max(0.05, Math.min(2, v)),
+                              },
+                            })
+                          }
+                          compact
+                        />
+                      </div>
+                    )}
                   </Reorder.Item>
                 );
               })}

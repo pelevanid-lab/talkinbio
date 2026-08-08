@@ -719,6 +719,7 @@
     "loginButton": "Log In",
     "loginButtonLoading": "Logging in...",
     "googleLogin": "Continue with Google",
+    "oauthDivider": "Or",
     "sendLinkButton": "Send Link",
     "sendLinkButtonLoading": "Sending...",
     "backToLogin": "Back to login",
@@ -1162,6 +1163,7 @@
     "buttonText": "Create Account",
     "loading": "Creating...",
     "googleRegister": "Continue with Google",
+    "oauthDivider": "Or",
     "loginLink": "Already have an account? Log in",
     "successMessage": "Registration successful! Please check your email to confirm your account."
   },

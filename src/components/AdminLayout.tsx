@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { Link, routing } from '@/i18n/routing';
-import { LayoutDashboard, Inbox, BarChart3, CreditCard, TrendingUp, Sparkles, Type, Film, Users, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Inbox, BarChart3, CreditCard, Sparkles, Type, Film, Users, type LucideIcon } from 'lucide-react';
 
 type NavItem = {
   label: string;
@@ -44,7 +44,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         { label: 'Yardımcı Oyuncular', href: '/admin/beiwe-lab/cast', icon: Users },
       ],
     },
-    { label: 'Sürekli Gelişim', href: '/admin/continuous-improvement', icon: TrendingUp },
   ];
 
   return (

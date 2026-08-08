@@ -106,7 +106,7 @@ export default function RegisterPage() {
             <div className="w-full border-t border-slate-200"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-slate-500">Veya</span>
+            <span className="px-2 bg-white text-slate-500">{t('oauthDivider')}</span>
           </div>
         </div>
 

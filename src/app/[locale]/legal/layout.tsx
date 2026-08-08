@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { localizedPath, hreflangPaths } from '@/utils/localizedUrl';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -11,18 +12,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     title,
     description,
     alternates: {
-      canonical: `/${locale}${path}`,
-      languages: {
-        en: `/en${path}`,
-        tr: `/tr${path}`,
-        ru: `/ru${path}`,
-        'x-default': `/en${path}`,
-      },
+      canonical: localizedPath(locale, path),
+      languages: hreflangPaths(path),
     },
     openGraph: {
       title,
       description,
-      url: `/${locale}${path}`,
+      url: localizedPath(locale, path),
       siteName: 'Talkinbio',
       locale,
       type: 'website',

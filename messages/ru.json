@@ -722,6 +722,7 @@
     "loginButton": "Войти",
     "loginButtonLoading": "Выполняется вход...",
     "googleLogin": "Продолжить с Google",
+    "oauthDivider": "Или",
     "sendLinkButton": "Отправить ссылку",
     "sendLinkButtonLoading": "Отправка...",
     "backToLogin": "Вернуться к входу",
@@ -1165,6 +1166,7 @@
     "buttonText": "Создать аккаунт",
     "loading": "Создание...",
     "googleRegister": "Продолжить с Google",
+    "oauthDivider": "Или",
     "loginLink": "Уже есть аккаунт? Войти",
     "successMessage": "Регистрация прошла успешно! Пожалуйста, проверьте почту для подтверждения."
   },

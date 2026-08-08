@@ -1,10 +1,12 @@
 import { defineRouting } from 'next-intl/routing';
 import { createNavigation } from 'next-intl/navigation';
+import { DEFAULT_LOCALE, ROUTING_LOCALES } from './locales';
 
 export const routing = defineRouting({
-  locales: ['tr', 'en', 'ru'],
-  defaultLocale: 'tr',
-  localePrefix: 'as-needed' // We don't prefix the default locale if we don't want to, but standard next-intl often uses 'always' or 'as-needed'
+  locales: ROUTING_LOCALES,
+  defaultLocale: DEFAULT_LOCALE,
+  localePrefix: 'as-needed',
+  localeDetection: false
 });
 
 // Lightweight wrappers around Next.js' navigation APIs

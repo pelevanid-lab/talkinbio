@@ -514,7 +514,7 @@ export default function OnboardingPage() {
         .maybeSingle();
 
       if (biz?.setup_completed) {
-        router.replace(`/${locale}/dashboard/editor`);
+        router.replace('/dashboard/editor');
         return;
       }
 
@@ -1007,7 +1007,7 @@ export default function OnboardingPage() {
 
   // ─── Render: done ─────────────────────────────────────────────────────────
   if (phase === 'done') {
-    const toDashboard = () => router.push(`/${locale}/dashboard/editor`);
+    const toDashboard = () => router.push('/dashboard/editor');
 
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--page-bg,#f7f7f5)] p-4">

@@ -65,3 +65,43 @@ export function drawVignette(ctx: CanvasRenderingContext2D, vignette: number, wi
   ctx.fillRect(0, 0, width, height);
   ctx.restore();
 }
+
+/**
+ * Pixelation/karıncalanma efekti — 0 (efekt yok) ile 1 (maksimum) arasında.
+ * Geçişler sırasında kullanılır; pixelSize dinamik olarak hesaplanır (0.1-20px arasında).
+ */
+export function drawPixelation(ctx: CanvasRenderingContext2D, amount: number, width: number, height: number) {
+  if (!amount || amount <= 0) return;
+
+  // pixelSize: amount 0-1 ise 0.1-20px arasında değişir
+  // amount < 0.5: çıkış (0 -> 10px)
+  // amount >= 0.5: giriş (10px -> 0)
+  let normalizedAmount: number;
+  if (amount < 0.5) {
+    normalizedAmount = amount * 2; // 0 -> 1
+  } else {
+    normalizedAmount = (1 - amount) * 2; // 1 -> 0
+  }
+
+  const pixelSize = Math.round(normalizedAmount * 20);
+  if (pixelSize <= 0) return;
+
+  const scaledWidth = Math.ceil(width / pixelSize);
+  const scaledHeight = Math.ceil(height / pixelSize);
+
+  // Geçici bir canvas'a küçültülmüş versiyonu çiz
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = scaledWidth;
+  tempCanvas.height = scaledHeight;
+  const tempCtx = tempCanvas.getContext('2d')!;
+
+  // imageSmoothingEnabled=false ile nearest-neighbor kullanılır
+  tempCtx.imageSmoothingEnabled = false;
+  tempCtx.drawImage(ctx.canvas, 0, 0, width, height, 0, 0, scaledWidth, scaledHeight);
+
+  // Geri büyüt
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(tempCanvas, 0, 0, scaledWidth, scaledHeight, 0, 0, width, height);
+  ctx.restore();
+}

@@ -25,7 +25,7 @@
 //    gerçek zamandan hızlı ses üretimi ancak offline render ile mümkün.
 
 import { countdownPlan, drawCountdownDots, scheduleCountdownBeeps } from './countdown';
-import { drawGrain, drawVignette } from './canvasEffects';
+import { drawGrain, drawVignette, drawPixelation } from './canvasEffects';
 import { drawTextBlock, drawWordmark, loadImage, PADDING_RATIO, resolveFontFamily } from './imageOverlay';
 import {
   AudioBufferSource,
@@ -406,6 +406,49 @@ function computeZoomState(zoom: StudioZoom, time: number): ZoomState {
   };
 }
 
+/**
+ * Sekans klipleri arasındaki geçişleri hesapla ve uygula (pixelate, crossfade vs).
+ * Mevcut zaman hangi klip aralığında ve sonraki klipte ne tür geçiş varsa buna göre efekt.
+ */
+function applySequenceTransition(
+  ctx: CanvasRenderingContext2D,
+  sequence: any[],
+  time: number,
+  liveDurations: Map<string, number>,
+  width: number,
+  height: number,
+) {
+  if (!sequence.length) return;
+
+  // Klip zamanlamalarını hesapla
+  let cursor = 0;
+  for (let i = 0; i < sequence.length; i++) {
+    const clip = sequence[i];
+    const duration = sequenceClipDuration(clip, liveDurations);
+    const clipStart = cursor;
+    const clipEnd = cursor + duration;
+
+    if (time >= clipStart && time < clipEnd) {
+      // Mevcut klip bulundu
+      const nextClip = sequence[i + 1];
+      if (nextClip && nextClip.transitionIn?.kind === 'pixelate') {
+        const transitionDuration = nextClip.transitionIn.duration || 0.3;
+        const timeUntilEnd = clipEnd - time;
+
+        // Geçiş, mevcut klip sonundan `transitionDuration` süre önce başlar
+        if (timeUntilEnd <= transitionDuration && timeUntilEnd > 0) {
+          // Geçişin ne kadarı tamamlanmış (0-1)
+          const transitionProgress = 1 - timeUntilEnd / transitionDuration;
+          drawPixelation(ctx, transitionProgress, width, height);
+        }
+      }
+      return;
+    }
+
+    cursor += duration;
+  }
+}
+
 /** Verilen merkez noktası etrafında büyütür — sonraki tüm çizimler bu dönüşümden etkilenir, çağıran taraf ctx.save/restore ile sınırlamalı. */
 function applyZoomTransform(ctx: CanvasRenderingContext2D, state: ZoomState, width: number, height: number) {
   if (state.scale <= 1.0001) return;
@@ -637,6 +680,10 @@ export function drawFrame({ ctx, timeline, time, sequenceVideos, assets, videoOv
   if (timeline.wordmark) {
     ctx.drawImage(getWordmarkLayer(width, height), 0, 0);
   }
+
+  // Sekans geçişi — mevcut klip bitiyorsa ve sonraki klipte pixelate geçişi varsa,
+  // o zaman pixelation efektini zamanlamaya göre uygula.
+  applySequenceTransition(ctx, timeline.sequence, time, liveDurations, width, height);
 }
 
 /**

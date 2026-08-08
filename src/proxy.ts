@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
+import { APP_LOCALE_COOKIE, DEFAULT_LOCALE, isRoutingLocale, resolveProductLocale } from './i18n/locales';
 import { createServerClient } from '@supabase/ssr';
 
 // Next 16'da `middleware` dosya konvansiyonu kullanımdan kalktı ve `proxy` olarak
@@ -9,18 +10,62 @@ import { createServerClient } from '@supabase/ssr';
 // fonksiyonu kendi API'si — o adı değiştirmiyoruz.
 const intlMiddleware = createIntlMiddleware(routing);
 
+function permanentRedirect(url: URL) {
+  return NextResponse.redirect(url, 308);
+}
+
+function stripLocale(pathname: string): string {
+  const parts = pathname.split('/');
+  const first = parts[1];
+  if (!isRoutingLocale(first)) return pathname;
+  const rest = parts.slice(2).join('/');
+  return rest ? `/${rest}` : '/';
+}
+
+function isDashboardPath(pathname: string): boolean {
+  const unlocalized = stripLocale(pathname);
+  return unlocalized === '/dashboard' || unlocalized.startsWith('/dashboard/');
+}
+
+function productLocalePath(pathname: string, locale: string): string {
+  const unlocalized = stripLocale(pathname);
+  return locale === DEFAULT_LOCALE ? unlocalized : `/${locale}${unlocalized === '/' ? '' : unlocalized}`;
+}
+
 export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const firstSegment = pathname.split('/')[1];
+
+  if (firstSegment === 'en') {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = stripLocale(pathname);
+    return permanentRedirect(redirectUrl);
+  }
+
+  if (isDashboardPath(pathname)) {
+    const appLocale = resolveProductLocale(
+      request.cookies.get(APP_LOCALE_COOKIE)?.value,
+      request.headers.get('accept-language')
+    );
+    const expectedPath = productLocalePath(pathname, appLocale);
+    if (pathname !== expectedPath) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = expectedPath;
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
   // Intercept auth code from Supabase (e.g. password resets).
   // We redirect to the CLIENT-SIDE callback page so the browser Supabase client
   // can exchange the code using its own PKCE code verifier (stored in browser cookies).
-  if (request.nextUrl.searchParams.has('code')) {
+  if (request.nextUrl.searchParams.has('code') && stripLocale(request.nextUrl.pathname) !== '/auth/callback') {
     const callbackUrl = request.nextUrl.clone();
     // Use the locale from the URL if present and valid, otherwise default to defaultLocale
     const possibleLocale = request.nextUrl.pathname.split('/')[1];
-    const locale = routing.locales.includes(possibleLocale as (typeof routing.locales)[number])
+    const locale = isRoutingLocale(possibleLocale)
       ? possibleLocale
       : routing.defaultLocale;
-    callbackUrl.pathname = `/${locale}/auth/callback`;
+    callbackUrl.pathname = locale === DEFAULT_LOCALE ? '/auth/callback' : `/${locale}/auth/callback`;
     // keep ?code= param intact
     return NextResponse.redirect(callbackUrl);
   }

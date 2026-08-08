@@ -719,6 +719,7 @@
     "loginButton": "Giriş Yap",
     "loginButtonLoading": "Giriş Yapılıyor...",
     "googleLogin": "Google ile Giriş Yap",
+    "oauthDivider": "Veya",
     "sendLinkButton": "Bağlantıyı Gönder",
     "sendLinkButtonLoading": "Gönderiliyor...",
     "backToLogin": "Giriş ekranına dön",
@@ -1162,6 +1163,7 @@
     "buttonText": "Hesap Oluştur",
     "loading": "Oluşturuluyor...",
     "googleRegister": "Google ile Kayıt Ol",
+    "oauthDivider": "Veya",
     "loginLink": "Zaten hesabınız var mı? Giriş yapın",
     "successMessage": "Kayıt başarılı! Lütfen e-posta adresinize gelen onay bağlantısına tıklayın."
   },
