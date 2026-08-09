@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation';
 import { cookies, headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import type { CSSProperties } from 'react';
-import ChatWidget from '@/components/ChatWidget';
 import PoweredByFooter from '@/components/PoweredByFooter';
 import ProfilePageBody from '@/components/ProfilePageBody';
 import { PublicPageRuntimeProvider } from '@/components/PublicPageRuntime';
@@ -170,8 +169,6 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
   const { business: pageBusiness, blocks: pageBlocks } = resolvePublishedRuntimeData(business, blocks || [], isOwner);
   const theme = pageBusiness.theme || DEFAULT_THEME;
   const sauleSettings = pageBusiness.saule_settings || {};
-  const creditBalance = business.credit_balance ?? 0;
-  const isFrontDeskActive = (sauleSettings.frontDeskEnabled !== false) && (creditBalance >= 20);
   const customGreeting = sauleSettings.customGreetingEnabled && sauleSettings.customGreeting
     ? sauleSettings.customGreeting
     : null;
@@ -227,7 +224,11 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] relative" style={pageStyle}>
+    <div className="min-h-[100dvh] flex justify-center sm:items-center sm:px-6 sm:py-6 relative" style={pageStyle}>
+      <div
+        className="relative flex h-[100dvh] w-full max-w-md flex-col overflow-hidden sm:h-[860px] sm:max-h-[calc(100dvh-48px)] sm:rounded-[34px] sm:border sm:shadow-[0_30px_90px_rgba(15,23,42,0.16)]"
+        style={{ ...pageStyle, borderColor: 'rgba(20,35,31,0.10)' }}
+      >
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -262,7 +263,7 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
           dock below. Blocks scroll within here; the last block ends above Saule and can never
           slide under it (no magic pb-[…] needed). */}
       <main className="flex-1 min-h-0 overflow-y-auto">
-        <div className="max-w-md mx-auto w-full px-4 pt-4 pb-8">
+        <div className="max-w-md mx-auto h-full w-full">
 
           <ProfilePageBody
             blocks={pageBlocks || []}
@@ -284,20 +285,13 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
       {/* Saule dock — an in-flow flex child (NOT fixed), so it reserves its own vertical space and
           the block area above shrinks to fit. Overlap with blocks is structurally impossible.
           The expanded chat sheet still opens as a fixed 85dvh overlay from inside ChatWidget. */}
-      {isFrontDeskActive && (
-        <div className="shrink-0 relative z-50" style={{ background: 'var(--tb-page-bg-sticky)' }}>
-          <div className="max-w-md mx-auto w-full relative">
-            <ChatWidget businessId={business.id} locale={locale} customGreeting={customGreeting} sauleSettings={sauleSettings} preview={isOwner} />
-          </div>
-        </div>
-      )}
-
       {/* Karşılama/blok-listesi görünümünde talkinbio wordmark üstte (bkz. ProfileHeader).
           Bir blok açıldığında veya Saule bir soruya cevap verdiğinde üstteki kaybolur, bu daha
           görünür "Powered by talkinbio" alt satırı devralır (bkz. PoweredByFooter — kendi
           içinde activeBlockId/sauleQuestion'a göre gösterip gösterilmeyeceğine karar veriyor). */}
       <PoweredByFooter textColor={resolvedColors.text} />
       </PublicPageRuntimeProvider>
+      </div>
     </div>
   );
 }

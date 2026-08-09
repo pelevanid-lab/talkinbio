@@ -559,8 +559,8 @@
   },
   "Pricing": {
     "eyebrow": "Pricing",
-    "title": "Create your page for free. Start with 200 visitor credits.",
-    "intro": "Create, edit, and publish your Talkinbio page for free. Each real visitor uses 1 visitor credit, so your page can keep talking as your audience grows. No credit card required to start.",
+    "title": "Create your page for free.",
+    "intro": "Create, edit, and publish your Talkinbio page for free. Upgrade by adding credits as your page talks more. No credit card required to start.",
     "badge_1": "Free page",
     "badge_2": "Free publishing",
     "badge_3": "1 visitor = 1 credit",

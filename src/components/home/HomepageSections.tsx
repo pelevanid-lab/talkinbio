@@ -636,9 +636,9 @@ export function PricingSection({ active, onCreateClick }: { active: boolean; onC
         <span className={styles.sectionNumber}>{sectionMeta.pricing.eyebrow}</span>
         <h2 id="pricing-title">Create your page for free.</h2>
         <p>
-          Start with 200 visitor credits.
+          Upgrade by adding credits as your page talks more.
           <br />
-          Upgrade when your page starts talking more.
+          No credit card required to start.
         </p>
       </div>
       <Link href="/pricing" className={styles.secondaryButton}>

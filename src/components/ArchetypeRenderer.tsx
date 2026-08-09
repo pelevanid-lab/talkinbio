@@ -117,6 +117,80 @@ function blockPreviewMedia(block: any): string | null {
   return mediaItem?.mediaUrl || mediaItem?.url || null;
 }
 
+type EntryAction = {
+  blockId: string;
+  itemId?: string | null;
+  label: string;
+  eyebrow: string;
+  mediaUrl?: string | null;
+};
+
+const ENTRY_COPY: Record<string, Record<string, string>> = {
+  openProfile: { tr: 'Profili A\u00e7', en: 'Open Profile', ru: '\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043f\u0440\u043e\u0444\u0438\u043b\u044c' },
+  choosePath: { tr: 'Ne ar\u0131yorsun?', en: 'What are you looking for?', ru: '\u0427\u0442\u043e \u0432\u044b \u0438\u0449\u0435\u0442\u0435?' },
+  interactive: { tr: 'Sayfa senin se\u00e7imine g\u00f6re de\u011fi\u015fir.', en: 'The page changes with your choice.', ru: '\u0421\u0442\u0440\u0430\u043d\u0438\u0446\u0430 \u043c\u0435\u043d\u044f\u0435\u0442\u0441\u044f \u043f\u043e \u0432\u0430\u0448\u0435\u043c\u0443 \u0432\u044b\u0431\u043e\u0440\u0443.' },
+  keepTalking: { tr: 'Bu sayfa konu\u015fmaya devam eder.', en: 'This page keeps talking.', ru: '\u042d\u0442\u0430 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0430 \u043f\u0440\u043e\u0434\u043e\u043b\u0436\u0430\u0435\u0442 \u0433\u043e\u0432\u043e\u0440\u0438\u0442\u044c.' },
+  otherPaths: { tr: 'Ba\u015fka bir yol se\u00e7', en: 'Choose another path', ru: '\u0412\u044b\u0431\u0440\u0430\u0442\u044c \u0434\u0440\u0443\u0433\u043e\u0439 \u043f\u0443\u0442\u044c' },
+};
+
+function entryCopy(key: keyof typeof ENTRY_COPY, locale: string): string {
+  return ENTRY_COPY[key]?.[locale] || ENTRY_COPY[key]?.en || '';
+}
+
+function collectEntryActions(visibleBlocks: any[], locale: string): EntryAction[] {
+  const out: EntryAction[] = [];
+  const candidateTypes = new Set(['services', 'extra_services', 'pricing']);
+  for (const block of visibleBlocks) {
+    if (!candidateTypes.has(block.type)) continue;
+    out.push({
+      blockId: block.id,
+      itemId: null,
+      label: blockTitleOf(block, locale),
+      eyebrow: blockEyebrow(block, locale),
+      mediaUrl: blockPreviewMedia(block),
+    });
+    if (out.length >= 3) return out;
+  }
+
+  for (const block of visibleBlocks) {
+    if (!candidateTypes.has(block.type)) continue;
+    const items = getLocalizedItems(block, locale);
+    for (const item of items) {
+      const label = item.title || item.label || item.caption;
+      if (!label) continue;
+      out.push({
+        blockId: block.id,
+        itemId: item.__tbItemId,
+        label,
+        eyebrow: blockEyebrow(block, locale),
+        mediaUrl: item.mediaUrl || blockPreviewMedia(block),
+      });
+      if (out.length >= 3) return out;
+    }
+  }
+
+  for (const block of visibleBlocks) {
+    if (block.type === 'about' || block.type === 'faq' || block.type === 'contact') continue;
+    out.push({
+      blockId: block.id,
+      itemId: null,
+      label: blockTitleOf(block, locale),
+      eyebrow: blockEyebrow(block, locale),
+      mediaUrl: blockPreviewMedia(block),
+    });
+    if (out.length >= 3) return out;
+  }
+  return out;
+}
+
+function firstAboutBlock(visibleBlocks: any[]) {
+  return visibleBlocks.find((block) => block.type === 'about') || visibleBlocks[0] || null;
+}
+
+function actionKey(action: EntryAction) {
+  return `${action.blockId}:${action.itemId || ''}`;
+}
+
 // Wraps bare content in a surface card when the archetype's layoutStyle calls for it (see RenderCtx.cardWrap).
 function withCardWrap(content: React.ReactNode, blockId: string, ctx: RenderCtx) {
   if (!ctx.cardWrap) {
@@ -368,6 +442,144 @@ function itemDataProps(item: any) {
 
 function itemFocusClass(item: any, ctx: RenderCtx) {
   return item.__tbItemId && item.__tbItemId === ctx.activeItemId ? 'tb-focused-item' : '';
+}
+
+function ProfileEntryCard({
+  visibleBlocks,
+  businessName,
+  locale,
+  theme,
+  openEntry,
+}: {
+  visibleBlocks: any[];
+  businessName: string;
+  locale: string;
+  theme: Theme;
+  openEntry: (blockId: string, itemId?: string | null) => void;
+}) {
+  const aboutBlock = firstAboutBlock(visibleBlocks);
+  const actions = collectEntryActions(visibleBlocks, locale);
+  const coverImage = (aboutBlock && (blockPreviewMedia(aboutBlock) || aboutBlock.content?.backgroundImage)) || actions.find((a) => a.mediaUrl)?.mediaUrl || null;
+  const c = resolveThemeColors(theme);
+
+  return (
+    <section className="flex h-full min-h-full">
+      <div
+        className="relative flex w-full flex-col justify-between overflow-hidden bg-[#111] text-white shadow-[0_24px_60px_rgba(15,23,42,0.16)] sm:rounded-[34px]"
+        style={{ borderColor: 'color-mix(in srgb, var(--primary) 32%, transparent)' }}
+      >
+        {coverImage ? (
+          isVideoUrl(coverImage) ? (
+            <video src={coverImage} className="absolute inset-0 w-full h-full object-cover opacity-75" autoPlay loop muted playsInline />
+          ) : (
+            <img
+              src={supabaseThumbnailUrl(coverImage, { width: 720 }) ?? coverImage}
+              alt=""
+              loading="eager"
+              decoding="async"
+              className="absolute inset-0 w-full h-full object-cover opacity-75"
+            />
+          )
+        ) : (
+          <div className="absolute inset-0" style={{ background: `linear-gradient(145deg, ${c.primary}, #111)` }} />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/45 to-black/88" />
+
+        <button
+          type="button"
+          onClick={() => aboutBlock && openEntry(aboutBlock.id)}
+          className="relative z-10 w-full flex-1 px-5 py-5 flex flex-col justify-between text-left group"
+        >
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-white/90" />
+            <span className="w-1.5 h-1.5 rounded-full bg-white/55" />
+            <span className="w-1.5 h-1.5 rounded-full bg-white/55" />
+          </span>
+          <span>
+            <span className="block text-[10px] font-mono uppercase tracking-[0.18em] text-white/65 mb-2">
+              {entryCopy('openProfile', locale)}
+            </span>
+            <span className="block text-3xl leading-none font-bold tb-heading">{renderColoredSegments(businessName)}</span>
+          </span>
+        </button>
+
+        <div className="relative z-10 px-4 pb-4">
+          <div className="mb-2 flex items-center justify-between gap-3 text-[10px] font-mono uppercase tracking-[0.16em] text-white/62">
+            <span>{entryCopy('choosePath', locale)}</span>
+            <span>{entryCopy('interactive', locale)}</span>
+          </div>
+          <div className="space-y-2">
+            {actions.map((action) => (
+              <button
+                key={actionKey(action)}
+                type="button"
+                onClick={() => openEntry(action.blockId, action.itemId)}
+                className="group w-full rounded-full border border-white/18 bg-black/42 px-3 py-2.5 text-left backdrop-blur-sm transition hover:border-white/45 hover:bg-black/58"
+              >
+                <span className="flex items-center justify-between gap-3">
+                  <span className="min-w-0">
+                    <span className="block text-[9px] font-mono uppercase tracking-[0.14em] text-white/45">{action.eyebrow}</span>
+                    <span className="block truncate text-sm font-bold text-white">{renderColoredSegments(action.label)}</span>
+                  </span>
+                  <ArrowRight className="w-4 h-4 shrink-0 text-white/75 transition group-hover:translate-x-0.5" />
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function InteractiveBridge({
+  actions,
+  activeBlockId,
+  activeItemId,
+  locale,
+  openEntry,
+}: {
+  actions: EntryAction[];
+  activeBlockId: string;
+  activeItemId?: string | null;
+  locale: string;
+  openEntry: (blockId: string, itemId?: string | null) => void;
+}) {
+  const others = actions
+    .filter((action) => action.blockId !== activeBlockId || (activeItemId && action.itemId !== activeItemId))
+    .slice(0, 3);
+  if (others.length === 0) return null;
+
+  return (
+    <div className="my-2 rounded-2xl border px-4 py-3" style={{ borderColor: 'var(--border)', backgroundColor: 'color-mix(in srgb, var(--primary) 5%, var(--surface))' }}>
+      <div className="flex items-start gap-3">
+        <span className="flex gap-1 pt-1.5 shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--primary)' }} />
+          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--primary)' }} />
+          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--primary)' }} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-mono font-bold leading-relaxed" style={{ color: 'var(--text)' }}>
+            {entryCopy('keepTalking', locale)}
+          </p>
+          <div className="mt-3 flex flex-col gap-2">
+            {others.map((action) => (
+              <button
+                key={actionKey(action)}
+                type="button"
+                onClick={() => openEntry(action.blockId, action.itemId)}
+                className="flex items-center justify-between gap-2 rounded-full border px-3 py-2 text-left text-xs font-bold transition hover:-translate-y-0.5"
+                style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text)' }}
+              >
+                <span className="truncate">{renderColoredSegments(action.label)}</span>
+                <ArrowRight className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--primary)' }} />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function renderServices(block: any, ctx: RenderCtx) {
@@ -1160,17 +1372,16 @@ export default function ArchetypeRenderer({
   // than isolating just that block — so visitors can still scroll up/down to the neighboring
   // sections from there. This ref+effect jumps to the tapped section right after it mounts.
   const activeBlockNodeRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    if (activeBlockId && activeBlockNodeRef.current) {
-      activeBlockNodeRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
-    }
-  }, [activeBlockId]);
-
+  const lastFocusedTargetRef = useRef<string>('');
   useEffect(() => {
     if (!activeBlockId || !activeItemId || !activeBlockNodeRef.current) return;
+    const targetKey = `${activeBlockId}:${activeItemId}:${activeOpenSequence}`;
+    if (lastFocusedTargetRef.current === targetKey) return;
+    lastFocusedTargetRef.current = targetKey;
+    activeBlockNodeRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
     const node = activeBlockNodeRef.current.querySelector(`[data-tb-item-id="${CSS.escape(activeItemId)}"]`);
     node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, [activeBlockId, activeItemId]);
+  });
 
   const theme = themeProp || DEFAULT_THEME;
 
@@ -1235,6 +1446,15 @@ export default function ArchetypeRenderer({
     };
   }, [rawOrderNowClick, onEngagementClick, orderNowBehavior]);
 
+  const entryActions = useMemo(() => collectEntryActions(visibleBlocks, locale), [visibleBlocks, locale]);
+  const openEntry = useCallback(
+    (blockId: string, itemId?: string | null) => {
+      if (pageRuntime?.openBlock(blockId, itemId).ok) return;
+      setActiveBlockId(blockId);
+    },
+    [pageRuntime, setActiveBlockId]
+  );
+
   const styleVars = useMemo(() => {
     const c = resolveThemeColors(theme);
     return {
@@ -1272,7 +1492,7 @@ export default function ArchetypeRenderer({
 
   return (
     <div
-      className={`min-h-full pb-20 ${bodyFont}`}
+      className={`${activeBlockId ? 'min-h-full pb-20' : 'h-full min-h-full pb-0'} ${bodyFont}`}
       style={{
         ...styleVars,
         background: 'var(--tb-page-bg, var(--bg))',
@@ -1340,63 +1560,36 @@ export default function ArchetypeRenderer({
         }
       `}</style>
 
-      <div className="flex flex-col gap-10">
+      <div className={activeBlockId ? 'flex flex-col gap-10' : 'flex h-full flex-col'}>
         {!activeBlockId && (
-          <div className="flex flex-col gap-3 mt-2">
-            {visibleBlocks.map(block => {
-              const blockTitle = blockTitleOf(block, locale);
-              const previewMedia = blockPreviewMedia(block);
-              return (
-                <button
-                  key={block.id}
-                  onClick={() => setActiveBlockId(block.id)}
-                  className="tb-linktree-tile group w-full py-4 pl-5 pr-4 rounded-2xl text-left border transition duration-200 hover:-translate-y-0.5"
-                  style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                >
-                  <span className="flex items-center justify-between gap-3">
-                    <span className="flex items-center gap-3 min-w-0">
-                      {previewMedia && (
-                        <span className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg)' }}>
-                          {isVideoUrl(previewMedia) ? (
-                            <video src={previewMedia} className="w-full h-full object-cover" muted playsInline />
-                          ) : (
-                            <img
-                              src={supabaseThumbnailUrl(previewMedia, { width: 96 }) ?? previewMedia}
-                              alt=""
-                              loading="lazy"
-                              decoding="async"
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                        </span>
-                      )}
-                      <span className="min-w-0">
-                        <span className="block text-[10px] font-semibold uppercase opacity-45 mb-0.5">{blockEyebrow(block, locale)}</span>
-                        <span className="block text-base font-bold leading-snug">{renderColoredSegments(blockTitle)}</span>
-                      </span>
-                    </span>
-                    <span
-                      className="w-9 h-9 rounded-full border flex items-center justify-center shrink-0 transition group-hover:translate-x-0.5"
-                      style={{ borderColor: 'var(--border)', color: 'var(--primary)', backgroundColor: 'color-mix(in srgb, var(--primary) 8%, var(--surface))' }}
-                    >
-                      <ArrowRight className="w-4 h-4" />
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <ProfileEntryCard
+            visibleBlocks={visibleBlocks}
+            businessName={businessName}
+            locale={locale}
+            theme={theme}
+            openEntry={openEntry}
+          />
         )}
 
         {activeBlockId && (
           <div className={`flex flex-col ${sectionGapClass}`}>
             {visibleBlocks.map(block => (
-              <div
-                key={block.id === activeBlockId ? `${block.id}:${activeOpenSequence}` : block.id}
-                ref={block.id === activeBlockId ? activeBlockNodeRef : undefined}
-                className={block.id === activeBlockId ? 'tb-active-block scroll-mt-4' : undefined}
-              >
-                {renderBlock(block)}
+              <div key={block.id === activeBlockId ? `${block.id}:${activeOpenSequence}` : block.id}>
+                <div
+                  ref={block.id === activeBlockId ? activeBlockNodeRef : undefined}
+                  className={block.id === activeBlockId ? 'tb-active-block scroll-mt-4' : undefined}
+                >
+                  {renderBlock(block)}
+                </div>
+                {block.id === activeBlockId && (
+                  <InteractiveBridge
+                    actions={entryActions}
+                    activeBlockId={activeBlockId}
+                    activeItemId={activeItemId}
+                    locale={locale}
+                    openEntry={openEntry}
+                  />
+                )}
               </div>
             ))}
           </div>

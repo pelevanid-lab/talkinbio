@@ -7,7 +7,6 @@ import ProfileHeader from './ProfileHeader';
 import LanguageSwitcher from './LanguageSwitcher';
 import { Theme, DEFAULT_THEME, resolveThemeColors } from '@/config/archetypes';
 import { avatarFromBlocks } from '@/utils/avatarFromBlocks';
-import { resolveShortcuts } from '@/utils/shortcuts';
 import { hasRealContentForLocale } from '@/config/blockTypes';
 import { defaultTitleFor } from '@/config/localeTitles';
 import { Menu, X } from 'lucide-react';
@@ -87,7 +86,6 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
 
   const avatarUrl = avatarFromBlocks(blocks);
   const description = tagline?.[locale] || category || undefined;
-  const shortcuts = resolveShortcuts(blocks);
   const c = resolveThemeColors(resolvedTheme);
 
   const minimalHeader = activeBlockId != null;
@@ -103,20 +101,27 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
 
   return (
     <>
-      <div className="sticky top-0 z-40 pt-4 pb-3 -mt-4 -mx-4 px-4" style={{ background: `var(--tb-page-bg-sticky, ${c.background})` }}>
-        <ProfileHeader
-          avatarUrl={avatarUrl}
-          name={pageTitle}
-          description={description}
-          theme={resolvedTheme}
-          activeBlockId={activeBlockId}
-          onBack={() => setActiveBlockId(null)}
-          topRight={<BlockMenu blocks={blocks} locale={locale} c={c} onSelect={setActiveBlockId} />}
-          shortcuts={shortcuts}
-          onShortcutSelect={setActiveBlockId}
-          minimal={minimalHeader}
-        />
-      </div>
+      {activeBlockId && (
+        <div
+          className="absolute left-0 right-0 top-0 z-[80] px-4 pt-4 pb-3 border-b shadow-sm"
+          style={{
+            background: `var(--tb-page-bg-sticky, ${c.background})`,
+            borderColor: c.border,
+          }}
+        >
+          <ProfileHeader
+            avatarUrl={avatarUrl}
+            name={pageTitle}
+            description={description}
+            theme={resolvedTheme}
+            activeBlockId={activeBlockId}
+            onBack={() => setActiveBlockId(null)}
+            topRight={<BlockMenu blocks={blocks} locale={locale} c={c} onSelect={setActiveBlockId} />}
+            onShortcutSelect={setActiveBlockId}
+            minimal={minimalHeader}
+          />
+        </div>
+      )}
 
       {matchedBlockId ? (
         <div
@@ -154,7 +159,7 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
       ) : (
         // Soru yoksa VEYA Saule'nin sorulan soruya eşleşen bir bloğu yoksa (fallback/no-match)
         // burası devreye girer — böylece cevapsız bir soru sayfayı asla boşaltmaz.
-        <div className="w-full mt-3">
+        <div className={`w-full ${activeBlockId ? 'px-4 pt-[76px] pb-4' : 'h-full'}`}>
           {((blocks && blocks.length > 0) || (contactMethod && contactValue)) && (
             <ArchetypeRenderer
               blocks={blocks}
