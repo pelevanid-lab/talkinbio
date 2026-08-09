@@ -1374,14 +1374,15 @@ export default function ArchetypeRenderer({
   const activeBlockNodeRef = useRef<HTMLDivElement | null>(null);
   const lastFocusedTargetRef = useRef<string>('');
   useEffect(() => {
-    if (!activeBlockId || !activeItemId || !activeBlockNodeRef.current) return;
-    const targetKey = `${activeBlockId}:${activeItemId}:${activeOpenSequence}`;
+    if (!activeBlockId || !activeBlockNodeRef.current) return;
+    const targetKey = `${activeBlockId}:${activeItemId || '__block'}:${activeOpenSequence}`;
     if (lastFocusedTargetRef.current === targetKey) return;
     lastFocusedTargetRef.current = targetKey;
-    activeBlockNodeRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
+    activeBlockNodeRef.current.scrollIntoView({ behavior: activeItemId ? 'auto' : 'smooth', block: 'start' });
+    if (!activeItemId) return;
     const node = activeBlockNodeRef.current.querySelector(`[data-tb-item-id="${CSS.escape(activeItemId)}"]`);
     node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  });
+  }, [activeBlockId, activeItemId, activeOpenSequence]);
 
   const theme = themeProp || DEFAULT_THEME;
 
