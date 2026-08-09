@@ -7,35 +7,6 @@ import { useOptionalPublicPageRuntime } from './PublicPageRuntime';
 
 type LocalizedGreeting = Partial<Record<'tr' | 'en' | 'ru', string>>;
 
-function normalizeString(str: string): string {
-  return str
-    .toLowerCase()
-    .replace(/ı/g, 'i')
-    .replace(/ğ/g, 'g')
-    .replace(/ü/g, 'u')
-    .replace(/ş/g, 's')
-    .replace(/ö/g, 'o')
-    .replace(/ç/g, 'c')
-    .trim();
-}
-
-// Local lightweight fallback lexical matching loop in case API endpoint fails
-function findMatchingBlockFallback(
-  query: string,
-  blocks: any[],
-  locale: 'tr' | 'en' | 'ru'
-): { blockId?: string; itemId?: string; title: string; answer?: string } | null {
-  const q = normalizeString(query);
-  for (const block of blocks) {
-    if (!block.is_visible) continue;
-    const blockTitle = block.content?.title?.[locale] || block.content?.title?.tr || block.title || '';
-    if (blockTitle && normalizeString(blockTitle).includes(q)) {
-      return { blockId: block.id, title: blockTitle };
-    }
-  }
-  return null;
-}
-
 export default function ChatWidget({
   businessId,
   locale,
@@ -135,8 +106,8 @@ export default function ChatWidget({
 
       const data = await response.json();
       
-      pageRuntime?.setSauleSuggestions(data.suggestedQuestions || []);
-      pageRuntime?.setSauleMatchedBlock(data.matchedBlock || null);
+      pageRuntime?.setSauleSuggestions([]);
+      pageRuntime?.setSauleMatchedBlock(null);
 
       if (data.type === 'match') {
         pageRuntime?.setSauleText(data.text);
@@ -162,21 +133,9 @@ export default function ChatWidget({
         }
       }
     } catch (err) {
-      console.error('Semantic query processing failed, running local fallback:', err);
-
-      // Local fallback lexical match if the backend is down / fails
-      const fallbackMatch = findMatchingBlockFallback(query, pageRuntime?.blocks || [], activeLocale);
-
-      if (fallbackMatch) {
-        pageRuntime?.setSauleText(t('matchingBlock', { title: fallbackMatch.title }));
-        pageRuntime?.setSauleState('idle');
-        if (fallbackMatch.blockId) {
-          pageRuntime?.openBlock(fallbackMatch.blockId, fallbackMatch.itemId);
-        }
-      } else {
-        pageRuntime?.setSauleText(t('noMatchFallback'));
-        pageRuntime?.setSauleState('idle');
-      }
+      console.error('Semantic query processing failed:', err);
+      pageRuntime?.setSauleText(t('noMatchFallback'));
+      pageRuntime?.setSauleState('idle');
     } finally {
       setIsQuerying(false);
     }

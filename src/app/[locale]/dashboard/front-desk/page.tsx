@@ -37,5 +37,11 @@ export default async function FrontDeskDashboardPage({ params }: { params: Promi
     .eq('business_id', business.id)
     .order('created_at', { ascending: false });
 
-  return <FrontDeskClient business={business} initialKnowledge={knowledge || []} />;
+  const { data: blocks } = await supabase
+    .from('blocks')
+    .select('id, type, title, content, order, is_visible')
+    .eq('business_id', business.id)
+    .order('order', { ascending: true });
+
+  return <FrontDeskClient business={business} blocks={blocks || []} initialKnowledge={knowledge || []} />;
 }

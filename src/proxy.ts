@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
-import { APP_LOCALE_COOKIE, DEFAULT_LOCALE, isRoutingLocale, resolveProductLocale, resolveRoutingLocale } from './i18n/locales';
+import { APP_LOCALE_COOKIE, DEFAULT_LOCALE, ROUTING_LOCALE_COOKIE, isRoutingLocale, resolveProductLocale, resolveRoutingLocale } from './i18n/locales';
 import { createServerClient } from '@supabase/ssr';
 
 // Next 16'da `middleware` dosya konvansiyonu kullanımdan kalktı ve `proxy` olarak
@@ -36,8 +36,8 @@ function isExplicitLocalePath(pathname: string): boolean {
   return isRoutingLocale(pathname.split('/')[1]);
 }
 
-function browserLocalePath(pathname: string, acceptLanguage: string | null): string {
-  const locale = resolveRoutingLocale(acceptLanguage);
+function browserLocalePath(pathname: string, acceptLanguage: string | null, preferredLocale?: string | null): string {
+  const locale = isRoutingLocale(preferredLocale) ? preferredLocale : resolveRoutingLocale(acceptLanguage);
   return locale === DEFAULT_LOCALE ? pathname : `/${locale}${pathname === '/' ? '' : pathname}`;
 }
 
@@ -89,7 +89,11 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!isExplicitLocalePath(pathname) && isPublicProfilePath(pathname)) {
-    const expectedPath = browserLocalePath(pathname, request.headers.get('accept-language'));
+    const expectedPath = browserLocalePath(
+      pathname,
+      request.headers.get('accept-language'),
+      request.cookies.get(ROUTING_LOCALE_COOKIE)?.value
+    );
     if (pathname !== expectedPath) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = expectedPath;

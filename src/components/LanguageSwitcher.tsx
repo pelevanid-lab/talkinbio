@@ -2,7 +2,7 @@
 
 import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from '@/i18n/routing';
-import { APP_LOCALE_COOKIE, PRODUCT_LOCALES, type ProductLocale, type RoutingLocale } from '@/i18n/locales';
+import { APP_LOCALE_COOKIE, PRODUCT_LOCALES, ROUTING_LOCALE_COOKIE, type ProductLocale, type RoutingLocale } from '@/i18n/locales';
 import { Globe2 } from 'lucide-react';
 
 type LocaleOption = {
@@ -40,6 +40,7 @@ export default function LanguageSwitcher({
   const options = scope === 'app' ? PRODUCT_OPTIONS : ROUTING_OPTIONS;
 
   const handleLanguageChange = (newLocale: RoutingLocale) => {
+    document.cookie = `${ROUTING_LOCALE_COOKIE}=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
     if (scope === 'app' && (PRODUCT_LOCALES as readonly string[]).includes(newLocale)) {
       persistAppLocale(newLocale as ProductLocale);
     }

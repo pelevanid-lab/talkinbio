@@ -2,7 +2,7 @@
 
 import { DEFAULT_THEME, Theme, resolveAccentFill, resolveThemeColors } from '@/config/archetypes';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRight, Mail, MessageCircle, Link as LinkIcon, AtSign } from 'lucide-react';
+import { ArrowRight, Mail, MessageCircle, Link as LinkIcon, AtSign, ChevronLeft, Ellipsis, Loader2, Menu, Send, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkBreaks from 'remark-breaks';
 import { useLocale } from 'next-intl';
@@ -15,6 +15,8 @@ import { SauleIcon } from './AgentIcons';
 import { stableItemId } from '@/utils/pageActionTargets';
 import { supabaseThumbnailUrl } from '@/utils/imageTransform';
 import { useOptionalPublicPageRuntime } from './PublicPageRuntime';
+import LanguageSwitcher from './LanguageSwitcher';
+import { resolveInteractiveEntryTargets, type InteractiveEntrySettings } from '@/utils/interactiveEntry';
 
 type RenderCtx = {
   locale: string;
@@ -125,11 +127,17 @@ type EntryAction = {
   mediaUrl?: string | null;
 };
 
+type EntryStage = 'discover' | 'book' | 'ask';
+type EntryChatMessage = { role: 'user' | 'assistant'; content: string };
+
 const ENTRY_COPY: Record<string, Record<string, string>> = {
   openProfile: { tr: 'Profili A\u00e7', en: 'Open Profile', ru: '\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043f\u0440\u043e\u0444\u0438\u043b\u044c' },
-  choosePath: { tr: 'Ne ar\u0131yorsun?', en: 'What are you looking for?', ru: '\u0427\u0442\u043e \u0432\u044b \u0438\u0449\u0435\u0442\u0435?' },
-  interactive: { tr: 'Sayfa senin se\u00e7imine g\u00f6re de\u011fi\u015fir.', en: 'The page changes with your choice.', ru: '\u0421\u0442\u0440\u0430\u043d\u0438\u0446\u0430 \u043c\u0435\u043d\u044f\u0435\u0442\u0441\u044f \u043f\u043e \u0432\u0430\u0448\u0435\u043c\u0443 \u0432\u044b\u0431\u043e\u0440\u0443.' },
-  keepTalking: { tr: 'Bu sayfa konu\u015fmaya devam eder.', en: 'This page keeps talking.', ru: '\u042d\u0442\u0430 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0430 \u043f\u0440\u043e\u0434\u043e\u043b\u0436\u0430\u0435\u0442 \u0433\u043e\u0432\u043e\u0440\u0438\u0442\u044c.' },
+  choosePath: { tr: 'Ke\u015ffet.', en: 'Discover.', ru: '\u0418\u0441\u0441\u043b\u0435\u0434\u0443\u0439\u0442\u0435.' },
+  bookNow: { tr: 'Randevu Al.', en: 'Book Now.', ru: '\u0417\u0430\u043f\u0438\u0441\u0430\u0442\u044c\u0441\u044f.' },
+  askQuestions: { tr: 'Sorular\u0131n\u0131z\u0131 Sorabilirsiniz', en: 'You Can Ask Your Questions', ru: '\u0412\u044b \u043c\u043e\u0436\u0435\u0442\u0435 \u0437\u0430\u0434\u0430\u0442\u044c \u0441\u0432\u043e\u0438 \u0432\u043e\u043f\u0440\u043e\u0441\u044b' },
+  questionPlaceholder: { tr: 'Sorunuzu yaz\u0131n...', en: 'Write your question...', ru: '\u041d\u0430\u043f\u0438\u0448\u0438\u0442\u0435 \u0441\u0432\u043e\u0439 \u0432\u043e\u043f\u0440\u043e\u0441...' },
+  questionError: { tr: '\u015eu anda yan\u0131t veremiyorum. L\u00fctfen tekrar deneyin.', en: 'I cannot answer right now. Please try again.', ru: '\u0421\u0435\u0439\u0447\u0430\u0441 \u044f \u043d\u0435 \u043c\u043e\u0433\u0443 \u043e\u0442\u0432\u0435\u0442\u0438\u0442\u044c. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0435 \u0440\u0430\u0437.' },
+  interactive: { tr: '', en: '', ru: '' },
   otherPaths: { tr: 'Ba\u015fka bir yol se\u00e7', en: 'Choose another path', ru: '\u0412\u044b\u0431\u0440\u0430\u0442\u044c \u0434\u0440\u0443\u0433\u043e\u0439 \u043f\u0443\u0442\u044c' },
 };
 
@@ -137,11 +145,10 @@ function entryCopy(key: keyof typeof ENTRY_COPY, locale: string): string {
   return ENTRY_COPY[key]?.[locale] || ENTRY_COPY[key]?.en || '';
 }
 
-function collectEntryActions(visibleBlocks: any[], locale: string): EntryAction[] {
+function collectEntryActions(visibleBlocks: any[], locale: string, configuredBlockIds: string[] = []): EntryAction[] {
   const out: EntryAction[] = [];
-  const candidateTypes = new Set(['services', 'extra_services', 'pricing']);
-  for (const block of visibleBlocks) {
-    if (!candidateTypes.has(block.type)) continue;
+  const pushBlock = (block: any | undefined) => {
+    if (!block || block.type === 'contact' || out.some((action) => action.blockId === block.id)) return;
     out.push({
       blockId: block.id,
       itemId: null,
@@ -149,28 +156,27 @@ function collectEntryActions(visibleBlocks: any[], locale: string): EntryAction[
       eyebrow: blockEyebrow(block, locale),
       mediaUrl: blockPreviewMedia(block),
     });
-    if (out.length >= 3) return out;
-  }
+  };
 
-  for (const block of visibleBlocks) {
-    if (!candidateTypes.has(block.type)) continue;
-    const items = getLocalizedItems(block, locale);
-    for (const item of items) {
-      const label = item.title || item.label || item.caption;
-      if (!label) continue;
-      out.push({
-        blockId: block.id,
-        itemId: item.__tbItemId,
-        label,
-        eyebrow: blockEyebrow(block, locale),
-        mediaUrl: item.mediaUrl || blockPreviewMedia(block),
-      });
-      if (out.length >= 3) return out;
-    }
-  }
+  for (const blockId of configuredBlockIds) pushBlock(visibleBlocks.find((block) => block.id === blockId));
 
   for (const block of visibleBlocks) {
     if (block.type === 'about' || block.type === 'faq' || block.type === 'contact') continue;
+    pushBlock(block);
+    if (out.length >= 3) return out;
+  }
+
+  for (const block of visibleBlocks) {
+    pushBlock(block);
+    if (out.length >= 3) return out;
+  }
+  return out;
+}
+
+function collectSelectedEntryActions(visibleBlocks: any[], selectedBlock: any, baseActions: EntryAction[], locale: string): EntryAction[] {
+  const out: EntryAction[] = [];
+  const pushBlock = (block: any | undefined) => {
+    if (!block || out.some((action) => action.blockId === block.id)) return;
     out.push({
       blockId: block.id,
       itemId: null,
@@ -178,9 +184,24 @@ function collectEntryActions(visibleBlocks: any[], locale: string): EntryAction[
       eyebrow: blockEyebrow(block, locale),
       mediaUrl: blockPreviewMedia(block),
     });
-    if (out.length >= 3) return out;
+  };
+
+  pushBlock(visibleBlocks.find((block) => block.type === 'contact'));
+  pushBlock(visibleBlocks.find((block) => block.type === 'faq'));
+
+  const related = baseActions.find((action) => action.blockId !== selectedBlock.id);
+  if (related && !out.some((action) => action.blockId === related.blockId && action.itemId === related.itemId)) {
+    out.push(related);
   }
-  return out;
+
+  for (const action of baseActions) {
+    if (out.length >= 3) break;
+    if (action.blockId === selectedBlock.id) continue;
+    if (out.some((item) => item.blockId === action.blockId && item.itemId === action.itemId)) continue;
+    out.push(action);
+  }
+
+  return out.slice(0, 3);
 }
 
 function firstAboutBlock(visibleBlocks: any[]) {
@@ -444,29 +465,297 @@ function itemFocusClass(item: any, ctx: RenderCtx) {
   return item.__tbItemId && item.__tbItemId === ctx.activeItemId ? 'tb-focused-item' : '';
 }
 
+function EntryNavigationMenu({
+  blocks,
+  locale,
+  theme,
+  variant,
+  onSelect,
+}: {
+  blocks: any[];
+  locale: string;
+  theme: Theme;
+  variant: 'dots' | 'menu';
+  onSelect: (blockId: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const c = resolveThemeColors(theme);
+  const menuBlocks = blocks.filter((block) => block.type !== 'contact');
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    return () => document.removeEventListener('mousedown', closeOnOutsideClick);
+  }, [open]);
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button
+        type="button"
+        aria-label={open ? 'Men\u00fcy\u00fc kapat' : 'Men\u00fcy\u00fc a\u00e7'}
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className={`flex h-9 w-9 items-center justify-center rounded-full border shadow-sm backdrop-blur-sm transition hover:brightness-95 ${
+          variant === 'dots' ? 'border-white/25 bg-black/18 text-white' : ''
+        }`}
+        style={variant === 'menu' ? {
+          background: c.surface,
+          borderColor: c.border,
+          color: c.text,
+        } : undefined}
+      >
+        {open ? <X className="h-4.5 w-4.5" /> : variant === 'dots' ? <Ellipsis className="h-5 w-5" /> : <Menu className="h-4.5 w-4.5" />}
+      </button>
+
+      {open && (
+        <div
+          className="absolute right-0 top-full z-[70] mt-2 flex w-56 max-h-[min(420px,calc(100dvh-120px))] flex-col overflow-y-auto rounded-lg border py-1 shadow-[0_18px_50px_rgba(15,23,42,0.18)]"
+          style={{ background: c.surface, borderColor: c.border, color: c.text }}
+        >
+          <div className="flex justify-center border-b px-4 py-3" style={{ borderColor: c.border }}>
+            <LanguageSwitcher compact />
+          </div>
+          {menuBlocks.map((block) => (
+            <button
+              key={block.id}
+              type="button"
+              data-tb-entry-menu-item={block.id}
+              onClick={() => {
+                setOpen(false);
+                onSelect(block.id);
+              }}
+              className="px-4 py-2.5 text-left text-sm font-medium transition hover:brightness-95"
+              style={{ color: c.text }}
+            >
+              {blockTitleOf(block, locale)}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ProfileEntryCard({
   visibleBlocks,
+  navigationBlocks,
+  businessId,
   businessName,
   locale,
   theme,
-  openEntry,
+  renderBlock,
+  openLegacyView,
+  interactiveEntrySettings,
 }: {
   visibleBlocks: any[];
+  navigationBlocks: any[];
+  businessId: string;
   businessName: string;
   locale: string;
   theme: Theme;
-  openEntry: (blockId: string, itemId?: string | null) => void;
+  renderBlock: (block: any, activeItemId?: string | null) => React.ReactNode;
+  openLegacyView: (blockId: string) => void;
+  interactiveEntrySettings?: InteractiveEntrySettings | null;
 }) {
+  const MAX_OVERFLOW_WITHOUT_AUTO_HIDE_ACTIONS = 520;
+  const [entryBlock, setEntryBlock] = useState<{ blockId: string; itemId?: string | null } | null>(null);
+  const [entryStage, setEntryStage] = useState<EntryStage>('discover');
+  const [entryScrollActive, setEntryScrollActive] = useState(false);
+  const [entryQuestion, setEntryQuestion] = useState('');
+  const [entryChatMessages, setEntryChatMessages] = useState<EntryChatMessage[]>([]);
+  const [entryChatLoading, setEntryChatLoading] = useState(false);
+  const entryContentScrollRef = useRef<HTMLDivElement | null>(null);
+  const entryActionsRef = useRef<HTMLDivElement | null>(null);
+  const entryChatScrollRef = useRef<HTMLDivElement | null>(null);
+  const entryScrollStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const entryStickToBottomOnActionsRef = useRef(false);
+  const entryLastScrollTopRef = useRef(0);
   const aboutBlock = firstAboutBlock(visibleBlocks);
-  const actions = collectEntryActions(visibleBlocks, locale);
+  const resolvedEntryTargets = resolveInteractiveEntryTargets(visibleBlocks, interactiveEntrySettings);
+  const profileTargetBlock = visibleBlocks.find((block) => block.id === resolvedEntryTargets.heroBlockId) || aboutBlock;
+  const actions = collectEntryActions(visibleBlocks, locale, resolvedEntryTargets.discoverBlockIds);
+  const contactBlock = visibleBlocks.find((block) => block.type === 'contact');
+  const contactAction = contactBlock ? {
+    blockId: contactBlock.id,
+    itemId: null,
+    label: blockTitleOf(contactBlock, locale),
+    eyebrow: blockEyebrow(contactBlock, locale),
+    mediaUrl: blockPreviewMedia(contactBlock),
+  } satisfies EntryAction : null;
+  const selectedBlock = entryBlock ? visibleBlocks.find((block) => block.id === entryBlock.blockId) : null;
+  const selectedBlockId = selectedBlock?.id;
+  const hasSelectedPath = Boolean(selectedBlock && entryStage !== 'discover');
+  const renderedActions = entryStage === 'book' && selectedBlock
+    ? collectSelectedEntryActions(visibleBlocks, selectedBlock, actions, locale)
+    : actions;
+  const showEntryActions = !selectedBlock || !entryScrollActive;
   const coverImage = (aboutBlock && (blockPreviewMedia(aboutBlock) || aboutBlock.content?.backgroundImage)) || actions.find((a) => a.mediaUrl)?.mediaUrl || null;
   const c = resolveThemeColors(theme);
+  const selectedUsesLightChrome = Boolean(hasSelectedPath && theme.mode !== 'dark');
+  const entryChromeStyle = {
+    '--tb-entry-selected-scrim': `linear-gradient(to top, color-mix(in srgb, ${c.background} 78%, ${c.text} 22%), color-mix(in srgb, ${c.background} 84%, ${c.text} 16%) 70%, color-mix(in srgb, ${c.background} 84%, transparent))`,
+    '--tb-entry-selected-label': c.textMuted,
+    '--tb-entry-selected-action-bg': `color-mix(in srgb, ${c.surface} 88%, ${c.background} 12%)`,
+    '--tb-entry-selected-action-bg-hover': c.surface,
+    '--tb-entry-selected-action-border': `color-mix(in srgb, ${c.border} 74%, ${c.text} 26%)`,
+    '--tb-entry-selected-action-border-hover': `color-mix(in srgb, ${c.border} 58%, ${c.text} 42%)`,
+    '--tb-entry-selected-action-eyebrow': c.textMuted,
+    '--tb-entry-selected-action-text': c.text,
+    '--tb-entry-selected-action-icon': c.textMuted,
+    '--tb-entry-content-panel-bg': `color-mix(in srgb, ${c.surface} 96%, ${c.background} 4%)`,
+    '--tb-entry-content-header-bg': `color-mix(in srgb, ${c.background} 92%, ${c.surface} 8%)`,
+    '--tb-entry-content-header-border': c.border,
+  } as React.CSSProperties;
+  const openEntryInsideCard = (blockId: string, itemId?: string | null, stage: EntryStage = 'discover') => {
+    setEntryBlock({ blockId, itemId });
+    setEntryStage(stage);
+    setEntryScrollActive(false);
+    entryStickToBottomOnActionsRef.current = false;
+    entryLastScrollTopRef.current = 0;
+  };
+  const closeEntryInsideCard = () => {
+    setEntryBlock(null);
+    setEntryStage('discover');
+    setEntryQuestion('');
+    setEntryChatMessages([]);
+  };
+  const handleEntryAction = (action: EntryAction) => {
+    openEntryInsideCard(action.blockId, action.itemId, entryStage === 'discover' ? 'book' : 'ask');
+  };
+
+  const submitEntryQuestion = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const question = entryQuestion.trim();
+    if (!question || entryChatLoading || !businessId) return;
+
+    setEntryQuestion('');
+    setEntryChatMessages((messages) => [...messages, { role: 'user', content: question }]);
+    setEntryChatLoading(true);
+
+    try {
+      const response = await fetch('/api/chat/semantic-query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId,
+          locale: locale === 'en' || locale === 'ru' ? locale : 'tr',
+          query: question,
+          includePageDirections: true,
+        }),
+      });
+      if (!response.ok) throw new Error('Question request failed');
+
+      const data = await response.json();
+      const answer = typeof data.text === 'string' && data.text.trim()
+        ? data.text.trim()
+        : entryCopy('questionError', locale);
+      setEntryChatMessages((messages) => [...messages, { role: 'assistant', content: answer }]);
+
+      const targetBlockId = data.matchedBlock?.blockId || data.action?.blockId;
+      const targetItemId = data.matchedBlock?.itemId || data.action?.itemId || null;
+      if (targetBlockId) {
+        const targetBlock = visibleBlocks.find(
+          (block) => block.id === targetBlockId || block.type === targetBlockId
+        );
+        if (targetBlock) {
+          setEntryBlock({ blockId: targetBlock.id, itemId: targetItemId });
+        }
+      }
+    } catch (error) {
+      console.error('Entry question failed:', error);
+      setEntryChatMessages((messages) => [
+        ...messages,
+        { role: 'assistant', content: entryCopy('questionError', locale) },
+      ]);
+    } finally {
+      setEntryChatLoading(false);
+    }
+  };
+
+  const handleEntryContentScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const node = event.currentTarget;
+    const previousScrollTop = entryLastScrollTopRef.current;
+    const scrollDelta = node.scrollTop - previousScrollTop;
+    const direction = scrollDelta > 1 ? 'down' : scrollDelta < -1 ? 'up' : null;
+    const atTop = node.scrollTop <= 2;
+    const atBottom = node.scrollTop + node.clientHeight >= node.scrollHeight - 2;
+    const expandedClientHeight = node.clientHeight + (entryActionsRef.current?.offsetHeight || 0);
+    const overflowWithActionsHidden = node.scrollHeight - expandedClientHeight;
+
+    entryLastScrollTopRef.current = node.scrollTop;
+
+    // Opening or closing the action area changes the scroll viewport height and
+    // can emit a scroll event of its own. Only actual movement should drive the
+    // visibility state, otherwise the two layouts can toggle each other.
+    if (!direction) return;
+
+    if (entryScrollStopTimer.current) {
+      clearTimeout(entryScrollStopTimer.current);
+      entryScrollStopTimer.current = null;
+    }
+
+    if ((atTop && direction === 'up') || (atBottom && direction === 'down')) {
+      entryStickToBottomOnActionsRef.current = atBottom && direction === 'down';
+      setEntryScrollActive(false);
+      return;
+    }
+
+    if (!entryScrollActive && overflowWithActionsHidden <= MAX_OVERFLOW_WITHOUT_AUTO_HIDE_ACTIONS) {
+      entryStickToBottomOnActionsRef.current = false;
+      setEntryScrollActive(false);
+      return;
+    }
+
+    entryStickToBottomOnActionsRef.current = false;
+    setEntryScrollActive(true);
+    entryScrollStopTimer.current = setTimeout(() => {
+      entryScrollStopTimer.current = null;
+      setEntryScrollActive(false);
+    }, 5000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (entryScrollStopTimer.current) clearTimeout(entryScrollStopTimer.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedBlockId) return;
+    const node = entryContentScrollRef.current;
+    if (!node) return;
+    node.scrollTop = 0;
+    entryLastScrollTopRef.current = 0;
+  }, [selectedBlockId, entryBlock?.itemId]);
+
+  useEffect(() => {
+    if (!showEntryActions || !entryStickToBottomOnActionsRef.current) return;
+    requestAnimationFrame(() => {
+      const node = entryContentScrollRef.current;
+      if (!node) return;
+      node.scrollTop = node.scrollHeight;
+      entryStickToBottomOnActionsRef.current = false;
+    });
+  }, [showEntryActions]);
+
+  useEffect(() => {
+    const node = entryChatScrollRef.current;
+    if (!node) return;
+    node.scrollTop = node.scrollHeight;
+  }, [entryChatMessages, entryChatLoading]);
 
   return (
     <section className="flex h-full min-h-full">
       <div
         className="relative flex w-full flex-col justify-between overflow-hidden bg-[#111] text-white shadow-[0_24px_60px_rgba(15,23,42,0.16)] sm:rounded-[34px]"
-        style={{ borderColor: 'color-mix(in srgb, var(--primary) 32%, transparent)' }}
+        style={{
+          ...entryChromeStyle,
+          borderColor: 'color-mix(in srgb, var(--primary) 32%, transparent)',
+        }}
       >
         {coverImage ? (
           isVideoUrl(coverImage) ? (
@@ -483,102 +772,250 @@ function ProfileEntryCard({
         ) : (
           <div className="absolute inset-0" style={{ background: `linear-gradient(145deg, ${c.primary}, #111)` }} />
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/45 to-black/88" />
+        <style>{`
+          .tb-entry-scrim-base {
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.10), rgba(0, 0, 0, 0.14) 50%, rgba(0, 0, 0, 0.30));
+          }
+          .tb-entry-scrim-curtain {
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.30), rgba(0, 0, 0, 0.42) 48%, rgba(0, 0, 0, 0.56));
+            animation: tbEntryBrighten 1ms step-end 5s forwards;
+          }
+          .tb-entry-bottom-scrim {
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0.78) 52%, rgba(0, 0, 0, 0));
+          }
+          .tb-entry-bottom-scrim-light {
+            background: var(--tb-entry-selected-scrim);
+          }
+          .tb-entry-content-panel {
+            color: var(--text);
+          }
+          .tb-entry-content-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(20, 35, 31, 0.28) transparent;
+          }
+          .tb-entry-content-scroll::-webkit-scrollbar {
+            width: 4px;
+          }
+          .tb-entry-content-scroll::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          .tb-entry-content-scroll::-webkit-scrollbar-thumb {
+            background: rgba(20, 35, 31, 0.24);
+            border-radius: 999px;
+          }
+          .tb-entry-content-scroll section {
+            padding-top: 0;
+          }
+          .tb-entry-content-scroll h2 {
+            margin-bottom: 0.85rem;
+            font-size: 1.55rem;
+            line-height: 1.08;
+          }
+          .tb-entry-content-scroll .markdown-body {
+            font-size: 0.84rem;
+            line-height: 1.55;
+          }
+          .tb-entry-content-scroll .markdown-body p {
+            margin-bottom: 0.75rem;
+          }
+          @keyframes tbEntryBrighten {
+            to { opacity: 0; }
+          }
+        `}</style>
+        <div className="absolute inset-0 tb-entry-scrim-base" />
+        <div className="absolute inset-0 tb-entry-scrim-curtain" />
+        {showEntryActions && (
+          <div className={`absolute inset-x-0 bottom-0 h-[44%] ${selectedUsesLightChrome ? 'tb-entry-bottom-scrim-light' : 'tb-entry-bottom-scrim'}`} />
+        )}
 
-        <button
-          type="button"
-          onClick={() => aboutBlock && openEntry(aboutBlock.id)}
-          className="relative z-10 w-full flex-1 px-5 py-5 flex flex-col justify-between text-left group"
-        >
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-white/90" />
-            <span className="w-1.5 h-1.5 rounded-full bg-white/55" />
-            <span className="w-1.5 h-1.5 rounded-full bg-white/55" />
-          </span>
-          <span>
-            <span className="block text-[10px] font-mono uppercase tracking-[0.18em] text-white/65 mb-2">
-              {entryCopy('openProfile', locale)}
-            </span>
-            <span className="block text-3xl leading-none font-bold tb-heading">{renderColoredSegments(businessName)}</span>
-          </span>
-        </button>
+        <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+          {!selectedBlock && (
+            <div className="absolute right-4 top-4 z-30">
+              <EntryNavigationMenu
+                blocks={navigationBlocks}
+                locale={locale}
+                theme={theme}
+                variant="dots"
+                onSelect={openLegacyView}
+              />
+            </div>
+          )}
 
-        <div className="relative z-10 px-4 pb-4">
-          <div className="mb-2 flex items-center justify-between gap-3 text-[10px] font-mono uppercase tracking-[0.16em] text-white/62">
-            <span>{entryCopy('choosePath', locale)}</span>
-            <span>{entryCopy('interactive', locale)}</span>
+          {selectedBlock ? (
+            <div className="tb-entry-content-panel flex min-h-0 flex-1 flex-col overflow-hidden shadow-[0_18px_45px_rgba(0,0,0,0.18)] backdrop-blur-md" style={{ background: 'var(--tb-entry-content-panel-bg)' }}>
+              <div className="relative flex h-16 shrink-0 items-center justify-center border-b px-4" style={{ background: 'var(--tb-entry-content-header-bg)', borderColor: 'var(--tb-entry-content-header-border)' }}>
+                <button
+                  type="button"
+                  aria-label="Geri"
+                  onClick={closeEntryInsideCard}
+                  className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-[var(--text)] transition hover:bg-[rgba(20,35,31,0.05)]"
+                >
+                  <ChevronLeft className="h-4.5 w-4.5" />
+                </button>
+                <div className="max-w-[58%] truncate text-center text-sm font-semibold tb-heading" style={{ color: 'var(--text)' }}>
+                  {renderColoredSegments(businessName)}
+                </div>
+                <div className="absolute right-3 top-1/2 z-30 -translate-y-1/2">
+                  <EntryNavigationMenu
+                    blocks={navigationBlocks}
+                    locale={locale}
+                    theme={theme}
+                    variant="menu"
+                    onSelect={openLegacyView}
+                  />
+                </div>
+              </div>
+              <div ref={entryContentScrollRef} className="tb-entry-content-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4" onScroll={handleEntryContentScroll}>
+                {renderBlock(selectedBlock, entryBlock?.itemId)}
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              data-tb-entry-trigger="profile"
+              onClick={() => profileTargetBlock && openEntryInsideCard(profileTargetBlock.id)}
+              className="group flex min-h-0 flex-1 flex-col justify-end px-5 pb-1 text-left"
+            >
+              <span>
+                <span className="block text-[10px] font-mono uppercase tracking-[0.18em] text-white/65 mb-1.5">
+                  {entryCopy('openProfile', locale)}
+                </span>
+                <span className="block text-[26px] leading-[0.95] font-bold tb-heading">{renderColoredSegments(businessName)}</span>
+              </span>
+            </button>
+          )}
+        </div>
+
+        {showEntryActions && (
+        <div ref={entryActionsRef} className="relative z-10 px-4 pt-4 pb-4">
+          <div className={`mb-2 flex items-center justify-between gap-3 text-[10px] font-mono uppercase tracking-[0.16em] ${selectedUsesLightChrome ? 'text-[var(--tb-entry-selected-label)]' : 'text-white/62'}`}>
+            <span>{entryCopy(entryStage === 'ask' ? 'askQuestions' : entryStage === 'book' ? 'bookNow' : 'choosePath', locale)}</span>
           </div>
           <div className="space-y-2">
-            {actions.map((action) => (
+            {entryStage === 'ask' ? (
+              <>
+                <div
+                  data-tb-entry-chat
+                  className="overflow-hidden rounded-[18px] border backdrop-blur-sm"
+                  style={{
+                    background: selectedUsesLightChrome ? 'var(--tb-entry-selected-action-bg)' : 'rgba(0,0,0,0.42)',
+                    borderColor: selectedUsesLightChrome ? 'var(--tb-entry-selected-action-border)' : 'rgba(255,255,255,0.18)',
+                    color: selectedUsesLightChrome ? 'var(--tb-entry-selected-action-text)' : '#fff',
+                  }}
+                >
+                  <div
+                    ref={entryChatScrollRef}
+                    className="space-y-1.5 overflow-y-auto px-3 py-2 text-xs leading-relaxed"
+                    style={{ minHeight: '72px', maxHeight: 'min(18dvh, 156px)' }}
+                  >
+                    {entryChatMessages.length === 0 && (
+                      <div className={selectedUsesLightChrome ? 'text-[var(--tb-entry-selected-action-eyebrow)]' : 'text-white/48'}>
+                        {entryCopy('questionPlaceholder', locale)}
+                      </div>
+                    )}
+                    {entryChatMessages.map((message, index) => (
+                      <div
+                        key={`${message.role}-${index}`}
+                        className={`w-fit max-w-[88%] whitespace-pre-wrap rounded-xl px-2.5 py-1.5 ${
+                          message.role === 'user'
+                            ? 'ml-auto bg-[var(--primary)] text-white'
+                            : selectedUsesLightChrome
+                              ? 'bg-black/[0.045] text-[var(--tb-entry-selected-action-text)]'
+                              : 'bg-white/10 text-white'
+                        }`}
+                      >
+                        {message.content}
+                      </div>
+                    ))}
+                    {entryChatLoading && (
+                      <div className={`flex items-center gap-1.5 ${selectedUsesLightChrome ? 'text-[var(--tb-entry-selected-action-eyebrow)]' : 'text-white/55'}`}>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>...</span>
+                      </div>
+                    )}
+                  </div>
+                  <form
+                    onSubmit={submitEntryQuestion}
+                    className="flex items-center gap-2 border-t px-2 py-2"
+                    style={{ borderColor: selectedUsesLightChrome ? 'var(--tb-entry-selected-action-border)' : 'rgba(255,255,255,0.14)' }}
+                  >
+                    <input
+                      value={entryQuestion}
+                      onChange={(event) => setEntryQuestion(event.target.value)}
+                      placeholder={entryCopy('questionPlaceholder', locale)}
+                      aria-label={entryCopy('questionPlaceholder', locale)}
+                      className={`h-9 min-w-0 flex-1 rounded-full border bg-transparent px-3 text-xs outline-none transition focus:border-[var(--primary)] ${
+                        selectedUsesLightChrome ? 'border-black/10 placeholder:text-black/38' : 'border-white/16 text-white placeholder:text-white/42'
+                      }`}
+                    />
+                    <button
+                      type="submit"
+                      aria-label={entryCopy('askQuestions', locale)}
+                      disabled={!entryQuestion.trim() || entryChatLoading}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-white transition disabled:opacity-40"
+                    >
+                      {entryChatLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </button>
+                  </form>
+                </div>
+
+                {contactAction && (
+                  <button
+                    type="button"
+                    data-tb-entry-trigger="contact"
+                    onClick={() => openEntryInsideCard(contactAction.blockId, contactAction.itemId, 'ask')}
+                    className={`group w-full rounded-full border px-3 py-2.5 text-left backdrop-blur-sm transition ${
+                      selectedUsesLightChrome
+                        ? 'shadow-[0_10px_28px_rgba(20,35,31,0.10)]'
+                        : 'border-white/18 bg-black/42 hover:border-white/45 hover:bg-black/58'
+                    }`}
+                    style={selectedUsesLightChrome ? {
+                      background: 'var(--tb-entry-selected-action-bg)',
+                      borderColor: 'var(--tb-entry-selected-action-border)',
+                    } : undefined}
+                  >
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="min-w-0">
+                        <span className={`block text-[9px] font-mono uppercase tracking-[0.14em] ${selectedUsesLightChrome ? 'text-[var(--tb-entry-selected-action-eyebrow)]' : 'text-white/45'}`}>{contactAction.eyebrow}</span>
+                        <span className={`block truncate text-sm font-bold ${selectedUsesLightChrome ? 'text-[var(--tb-entry-selected-action-text)]' : 'text-white'}`}>{renderColoredSegments(contactAction.label)}</span>
+                      </span>
+                      <ArrowRight className={`h-4 w-4 shrink-0 transition group-hover:translate-x-0.5 ${selectedUsesLightChrome ? 'text-[var(--tb-entry-selected-action-icon)]' : 'text-white/75'}`} />
+                    </span>
+                  </button>
+                )}
+              </>
+            ) : renderedActions.map((action) => (
               <button
                 key={actionKey(action)}
                 type="button"
-                onClick={() => openEntry(action.blockId, action.itemId)}
-                className="group w-full rounded-full border border-white/18 bg-black/42 px-3 py-2.5 text-left backdrop-blur-sm transition hover:border-white/45 hover:bg-black/58"
+                data-tb-entry-trigger="action"
+                onClick={() => handleEntryAction(action)}
+                className={`group w-full rounded-full border px-3 py-2.5 text-left backdrop-blur-sm transition ${
+                  hasSelectedPath
+                    ? selectedUsesLightChrome
+                      ? 'shadow-[0_10px_28px_rgba(20,35,31,0.10)]'
+                      : 'border-white/18 bg-black/42 hover:border-white/45 hover:bg-black/58'
+                    : 'border-white/18 bg-black/42 hover:border-white/45 hover:bg-black/58'
+                }`}
+                style={selectedUsesLightChrome ? {
+                  background: 'var(--tb-entry-selected-action-bg)',
+                  borderColor: 'var(--tb-entry-selected-action-border)',
+                } : undefined}
               >
                 <span className="flex items-center justify-between gap-3">
                   <span className="min-w-0">
-                    <span className="block text-[9px] font-mono uppercase tracking-[0.14em] text-white/45">{action.eyebrow}</span>
-                    <span className="block truncate text-sm font-bold text-white">{renderColoredSegments(action.label)}</span>
+                    <span className={`block text-[9px] font-mono uppercase tracking-[0.14em] ${selectedUsesLightChrome ? 'text-[var(--tb-entry-selected-action-eyebrow)]' : 'text-white/45'}`}>{action.eyebrow}</span>
+                    <span className={`block truncate text-sm font-bold ${selectedUsesLightChrome ? 'text-[var(--tb-entry-selected-action-text)]' : 'text-white'}`}>{renderColoredSegments(action.label)}</span>
                   </span>
-                  <ArrowRight className="w-4 h-4 shrink-0 text-white/75 transition group-hover:translate-x-0.5" />
+                  <ArrowRight className={`w-4 h-4 shrink-0 transition group-hover:translate-x-0.5 ${selectedUsesLightChrome ? 'text-[var(--tb-entry-selected-action-icon)]' : 'text-white/75'}`} />
                 </span>
               </button>
             ))}
           </div>
         </div>
+        )}
       </div>
     </section>
-  );
-}
-
-function InteractiveBridge({
-  actions,
-  activeBlockId,
-  activeItemId,
-  locale,
-  openEntry,
-}: {
-  actions: EntryAction[];
-  activeBlockId: string;
-  activeItemId?: string | null;
-  locale: string;
-  openEntry: (blockId: string, itemId?: string | null) => void;
-}) {
-  const others = actions
-    .filter((action) => action.blockId !== activeBlockId || (activeItemId && action.itemId !== activeItemId))
-    .slice(0, 3);
-  if (others.length === 0) return null;
-
-  return (
-    <div className="my-2 rounded-2xl border px-4 py-3" style={{ borderColor: 'var(--border)', backgroundColor: 'color-mix(in srgb, var(--primary) 5%, var(--surface))' }}>
-      <div className="flex items-start gap-3">
-        <span className="flex gap-1 pt-1.5 shrink-0">
-          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--primary)' }} />
-          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--primary)' }} />
-          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--primary)' }} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-mono font-bold leading-relaxed" style={{ color: 'var(--text)' }}>
-            {entryCopy('keepTalking', locale)}
-          </p>
-          <div className="mt-3 flex flex-col gap-2">
-            {others.map((action) => (
-              <button
-                key={actionKey(action)}
-                type="button"
-                onClick={() => openEntry(action.blockId, action.itemId)}
-                className="flex items-center justify-between gap-2 rounded-full border px-3 py-2 text-left text-xs font-bold transition hover:-translate-y-0.5"
-                style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text)' }}
-              >
-                <span className="truncate">{renderColoredSegments(action.label)}</span>
-                <ArrowRight className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--primary)' }} />
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -1335,6 +1772,7 @@ export default function ArchetypeRenderer({
   contactValue,
   orderNowBehavior,
   categoryId,
+  interactiveEntrySettings,
 }: {
   blocks: any[],
   theme?: Theme | null,
@@ -1354,13 +1792,21 @@ export default function ArchetypeRenderer({
   orderNowBehavior?: string | null,
   // business.category_id — see RenderCtx.categoryId / orderNowLabel.
   categoryId?: string | null,
+  interactiveEntrySettings?: InteractiveEntrySettings | null,
 }) {
   const [internalActiveBlockId, setInternalActiveBlockId] = useState<string | null>(null);
   const activeBlockId = controlledActiveBlockId !== undefined ? controlledActiveBlockId : internalActiveBlockId;
-  const setActiveBlockId = onActiveBlockChange || setInternalActiveBlockId;
   const locale = useLocale();
   // useOptionalPublicPageRuntime() editör önizlemesinde (Provider yok) null döner — no-op'a düşer.
   const pageRuntime = useOptionalPublicPageRuntime();
+  const openLegacyView = useCallback(
+    (blockId: string) => {
+      if (pageRuntime?.openBlock(blockId).ok) return;
+      if (onActiveBlockChange) onActiveBlockChange(blockId);
+      else setInternalActiveBlockId(blockId);
+    },
+    [onActiveBlockChange, pageRuntime]
+  );
   const onEngagementClick = useCallback(
     (eventType: 'contact_click' | 'order_click', channel?: string | null) => {
       pageRuntime?.recordEngagementClick(eventType, channel);
@@ -1435,6 +1881,14 @@ export default function ArchetypeRenderer({
     return finalBlocks;
   }, [blocks, contactMethod, contactValue, contactValues, locale]);
 
+  const navigationBlocks = useMemo(
+    () => blocks
+      .filter((block) => block.type !== 'settings' && block.type !== 'contact' && block.is_visible !== false && hasRealContentForLocale(block, locale))
+      .slice()
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    [blocks, locale]
+  );
+
   const rawOrderNowClick = useMemo(
     () => buildOrderNowHandler(orderNowBehavior, contactValues),
     [orderNowBehavior, contactValues]
@@ -1446,15 +1900,6 @@ export default function ArchetypeRenderer({
       rawOrderNowClick(message);
     };
   }, [rawOrderNowClick, onEngagementClick, orderNowBehavior]);
-
-  const entryActions = useMemo(() => collectEntryActions(visibleBlocks, locale), [visibleBlocks, locale]);
-  const openEntry = useCallback(
-    (blockId: string, itemId?: string | null) => {
-      if (pageRuntime?.openBlock(blockId, itemId).ok) return;
-      setActiveBlockId(blockId);
-    },
-    [pageRuntime, setActiveBlockId]
-  );
 
   const styleVars = useMemo(() => {
     const c = resolveThemeColors(theme);
@@ -1480,7 +1925,7 @@ export default function ArchetypeRenderer({
   const sectionGapClass = SECTION_GAP_CLASS[theme.layoutStyle] || 'gap-10';
   const renderCtx: RenderCtx = { locale, radiusClass, headingFont, theme, cardWrap, onOrderNowClick, businessName, categoryId, activeItemId, onEngagementClick };
 
-  const renderBlock = (block: any) => {
+  const renderBlock = (block: any, focusedItemId = activeItemId) => {
     const renderFn = BLOCK_RENDERERS[block.type];
     if (!renderFn) {
       if (process.env.NODE_ENV !== 'production') {
@@ -1488,7 +1933,7 @@ export default function ArchetypeRenderer({
       }
       return null;
     }
-    return renderFn(block, renderCtx);
+    return renderFn(block, { ...renderCtx, activeItemId: focusedItemId });
   };
 
   return (
@@ -1565,10 +2010,14 @@ export default function ArchetypeRenderer({
         {!activeBlockId && (
           <ProfileEntryCard
             visibleBlocks={visibleBlocks}
+            navigationBlocks={navigationBlocks}
+            businessId={pageRuntime?.businessId || ''}
             businessName={businessName}
             locale={locale}
             theme={theme}
-            openEntry={openEntry}
+            renderBlock={renderBlock}
+            openLegacyView={openLegacyView}
+            interactiveEntrySettings={interactiveEntrySettings}
           />
         )}
 
@@ -1582,15 +2031,6 @@ export default function ArchetypeRenderer({
                 >
                   {renderBlock(block)}
                 </div>
-                {block.id === activeBlockId && (
-                  <InteractiveBridge
-                    actions={entryActions}
-                    activeBlockId={activeBlockId}
-                    activeItemId={activeItemId}
-                    locale={locale}
-                    openEntry={openEntry}
-                  />
-                )}
               </div>
             ))}
           </div>

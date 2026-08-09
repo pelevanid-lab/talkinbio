@@ -1,11 +1,9 @@
 import { streamText, isStepCount } from 'ai';
-import type { TextStreamPart } from 'ai';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getModel } from '@/utils/ai';
 import { isConversationActive } from '@/utils/conversationWindow';
 import { loadConversationHistory } from '@/agents/shared/history';
 import { AgentTurnError } from '@/agents/shared/errors';
-import { SESSION_MESSAGE_CAP } from '@/agents/shared/limits';
 import { checkShortTermFlood, checkSessionOpenRateLimit, checkBusinessDailyCap, getAbuseLimitMessage } from '@/agents/shared/rateLimit';
 import { recordUsageEvent } from '@/agents/shared/usage';
 import { notifyAdmin } from '@/agents/shared/notifyAdmin';
@@ -13,10 +11,8 @@ import { hasCredits, deductCredits, creditsExhaustedPayload, SAULE_CREDIT_COST }
 import { buildSaulePrompt, parseContactInfo } from './assistantPrompt';
 import { captureLeadTool, captureAccessRequestTool } from './assistantTools';
 import { filterBlocksToLocale } from './localeFilter';
-import { findPageRouteMatch, formatPageAction } from './pageRouter';
-import { getPageActionTargets, withContactPageActionTarget } from '@/utils/pageActionTargets';
 import { isEditorSystemBlock, resolvePublishedRuntimeData } from '@/utils/publishedSnapshot';
-import { buildSauleRuntimeProfile, createSauleStaticTurn } from '@/agents/saule/core';
+import { buildSauleRuntimeProfile } from '@/agents/saule/core';
 
 type SaulePromptBlock = { id?: string; title: string; type: string; content: unknown; is_visible?: boolean };
 
@@ -30,27 +26,6 @@ export type RunSauleTurnParams = {
   newConversation: boolean;
   isPreview: boolean;
 };
-
-function createStaticTextResult(text: string) {
-  const id = 'static-text';
-  const stream = new ReadableStream<TextStreamPart<any>>({
-    start(controller) {
-      controller.enqueue({ type: 'start' });
-      controller.enqueue({ type: 'text-start', id });
-      controller.enqueue({ type: 'text-delta', id, text });
-      controller.enqueue({ type: 'text-end', id });
-      controller.enqueue({
-        type: 'finish',
-        finishReason: 'stop',
-        rawFinishReason: 'stop',
-        totalUsage: { inputTokens: 0, outputTokens: 0 } as any,
-      });
-      controller.close();
-    },
-  });
-
-  return { stream, text: Promise.resolve(text) };
-}
 
 export async function runSauleTurn({
   supabaseAdmin,
@@ -186,33 +161,6 @@ export async function runSauleTurn({
     knowledge: knowledgeRes.data || [],
     locale,
   });
-  const deterministicRoute =
-    channel === 'web'
-      ? findPageRouteMatch(
-          withContactPageActionTarget(getPageActionTargets(runtimeProfile.blocks, locale || 'tr'), business.contact_method, business.contact_value, locale || 'tr'),
-          userMessage,
-          locale
-        )
-      : null;
-
-  if (deterministicRoute) {
-    const text = formatPageAction(deterministicRoute);
-    const creditsToDeduct = !isPreview && willCreateNewConversation ? SAULE_CREDIT_COST : 0;
-    await persistAssistantMessage(text);
-    await recordUsageEvent(supabaseAdmin, {
-      businessId,
-      agent: 'saule',
-      channel,
-      model: 'page-router',
-      usage: { inputTokens: 0, outputTokens: 0 },
-      creditsCharged: creditsToDeduct,
-    });
-    if (creditsToDeduct > 0) {
-      await deductCredits(supabaseAdmin, businessId, creditsToDeduct);
-    }
-    return createStaticTextResult(text);
-  }
-
   const systemPrompt = buildSaulePrompt({
     business: runtimeProfile.business,
     blocks: runtimeProfile.blocks,

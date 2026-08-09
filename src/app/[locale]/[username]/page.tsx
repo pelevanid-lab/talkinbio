@@ -168,10 +168,8 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
 
   const { business: pageBusiness, blocks: pageBlocks } = resolvePublishedRuntimeData(business, blocks || [], isOwner);
   const theme = pageBusiness.theme || DEFAULT_THEME;
-  const sauleSettings = pageBusiness.saule_settings || {};
-  const customGreeting = sauleSettings.customGreetingEnabled && sauleSettings.customGreeting
-    ? sauleSettings.customGreeting
-    : null;
+  // Runtime behavior settings go live when saved; publishing continues to control page content.
+  const sauleSettings = business.saule_settings || pageBusiness.saule_settings || {};
   const pageActionTargets = withContactPageActionTarget(
     getPageActionTargets(pageBlocks || [], locale),
     pageBusiness.contact_method,
@@ -255,8 +253,7 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
         blocks={pageBlocks || []}
         contactMethod={resolvedContactMethod}
         contactValue={resolvedContactValue}
-        leadCaptureEnabled={pageBusiness.saule_settings?.leadCaptureEnabled !== false}
-        customGreeting={customGreeting}
+        leadCaptureEnabled={sauleSettings.leadCaptureEnabled !== false}
         isOwner={isOwner}
       >
       {/* Scrollable content — flex-1 min-h-0 so it fills only the space ABOVE the in-flow Saule
@@ -275,7 +272,8 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
             categoryId={business.category_id}
             contactMethod={pageBusiness.contact_method}
             contactValue={pageBusiness.contact_value}
-            orderNowBehavior={pageBusiness.saule_settings?.orderNowBehavior}
+            orderNowBehavior={sauleSettings.orderNowBehavior}
+            interactiveEntrySettings={sauleSettings.interactiveEntry}
             locale={locale}
           />
 

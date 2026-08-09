@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useLocale, useTranslations } from 'next-intl';
 import {
@@ -11,10 +11,15 @@ import {
   Clock,
   Phone,
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  Image as ImageIcon,
+  ListOrdered,
 } from 'lucide-react';
 import KnowledgeBasePanel from '../leads/KnowledgeBasePanel';
 import DashboardShell from '@/components/dashboard/DashboardShell';
 import { FEATURES } from '@/config/features';
+import { getInteractiveEntryOptions, resolveInteractiveEntryTargets } from '@/utils/interactiveEntry';
 
 // Contact methods offered as an "Order Now" target — same keys as business.contact_value.
 const ORDER_NOW_METHOD_LABELS: Record<string, Record<string, string>> = {
@@ -24,7 +29,7 @@ const ORDER_NOW_METHOD_LABELS: Record<string, Record<string, string>> = {
   email: { tr: 'E-posta', en: 'Email', ru: 'Email' },
 };
 
-export default function FrontDeskClient({ business, initialKnowledge }: { business: any; initialKnowledge: any[] }) {
+export default function FrontDeskClient({ business, blocks, initialKnowledge }: { business: any; blocks: any[]; initialKnowledge: any[] }) {
   const supabase = createClient();
   const t = useTranslations('Leads');
   const tEditor = useTranslations('Editor');
@@ -37,6 +42,52 @@ export default function FrontDeskClient({ business, initialKnowledge }: { busine
   const [copiedProfileLink, setCopiedProfileLink] = useState(false);
   const [metaSuccess, setMetaSuccess] = useState<string | null>(null);
   const [metaError, setMetaError] = useState<string | null>(null);
+
+  const entryOptions = useMemo(() => getInteractiveEntryOptions(blocks, locale), [blocks, locale]);
+  const resolvedEntry = useMemo(
+    () => resolveInteractiveEntryTargets(blocks, settings.interactiveEntry),
+    [blocks, settings.interactiveEntry]
+  );
+  const entryLabels = useMemo(
+    () => new Map(entryOptions.map((option) => [option.blockId, option.label])),
+    [entryOptions]
+  );
+
+  const setHeroTarget = (blockId: string) => {
+    setSettings((current: any) => ({
+      ...current,
+      interactiveEntry: {
+        ...(current.interactiveEntry || {}),
+        heroTarget: blockId ? { blockId } : null,
+      },
+    }));
+  };
+
+  const setDiscoverTarget = (index: number, blockId: string) => {
+    const nextIds = [...resolvedEntry.discoverBlockIds];
+    nextIds[index] = blockId;
+    setSettings((current: any) => ({
+      ...current,
+      interactiveEntry: {
+        ...(current.interactiveEntry || {}),
+        discoverTargets: nextIds.filter(Boolean).map((id) => ({ blockId: id })),
+      },
+    }));
+  };
+
+  const moveDiscoverTarget = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= resolvedEntry.discoverBlockIds.length) return;
+    const nextIds = [...resolvedEntry.discoverBlockIds];
+    [nextIds[index], nextIds[targetIndex]] = [nextIds[targetIndex], nextIds[index]];
+    setSettings((current: any) => ({
+      ...current,
+      interactiveEntry: {
+        ...(current.interactiveEntry || {}),
+        discoverTargets: nextIds.map((blockId) => ({ blockId })),
+      },
+    }));
+  };
 
   if (typeof window !== 'undefined' && !metaSuccess && !metaError) {
     const searchParams = new URLSearchParams(window.location.search);
@@ -90,8 +141,12 @@ export default function FrontDeskClient({ business, initialKnowledge }: { busine
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
-      const { error } = await supabase.from('businesses').update({ saule_settings: settings }).eq('id', business.id);
+      const nextSettings = { ...settings };
+      delete nextSettings.customGreeting;
+      delete nextSettings.customGreetingEnabled;
+      const { error } = await supabase.from('businesses').update({ saule_settings: nextSettings }).eq('id', business.id);
       if (error) throw error;
+      setSettings(nextSettings);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
     } catch (err) {
@@ -204,67 +259,108 @@ export default function FrontDeskClient({ business, initialKnowledge }: { busine
           <div className="space-y-8">
             {settingsSection === 'behavior' && (
               <>
-                {/* Custom Greeting */}
-                <div className="pb-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-base font-semibold text-[#14231F]">{t('greetingTitle')}</h3>
-                      <p className="text-sm text-[#4B5A55]">{t('greetingDesc')}</p>
+                {/* Interactive entry layout */}
+                <div className="pb-5">
+                  <div className="mb-5">
+                    <h3 className="text-base font-semibold text-[#14231F]">{t('entryLayoutTitle')}</h3>
+                    <p className="text-sm text-[#4B5A55]">{t('entryLayoutDesc')}</p>
+                  </div>
+
+                  {entryOptions.length === 0 ? (
+                    <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>{t('entryNoBlocks')}</span>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="sr-only peer"
-                        checked={!!settings.customGreetingEnabled}
-                        onChange={(e) => setSettings({ ...settings, customGreetingEnabled: e.target.checked })}
-                      />
-                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FF6A5C]"></div>
-                    </label>
-                  </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div>
+                        <label htmlFor="entry-hero-target" className="mb-2 flex items-center gap-2 text-sm font-semibold text-[#14231F]">
+                          <ImageIcon className="h-4 w-4 text-[#FF6A5C]" />
+                          {t('entryHeroLabel')}
+                        </label>
+                        <p className="mb-3 text-xs text-[#8A8880]">{t('entryHeroHint')}</p>
+                        <select
+                          id="entry-hero-target"
+                          value={resolvedEntry.heroBlockId || ''}
+                          onChange={(event) => setHeroTarget(event.target.value)}
+                          className="block w-full rounded-lg border border-[rgba(20,35,31,0.14)] bg-white p-3 text-sm text-[#14231F] outline-none transition focus:border-[#FF6A5C]"
+                        >
+                          {entryOptions.map((option) => (
+                            <option key={option.blockId} value={option.blockId}>{option.label}</option>
+                          ))}
+                        </select>
+                      </div>
 
-                  <div className="bg-[#F4F2ED] p-4 rounded-xl flex flex-col gap-3">
-                    <p className="text-xs text-[#8A8880]">{t('greetingHint')}</p>
-                    {[
-                      { localeKey: 'tr' as const, label: 'Türkçe', defaultText: 'Hoşgeldiniz, size nasıl yardımcı olabilirim?' },
-                      { localeKey: 'en' as const, label: 'English', defaultText: 'Welcome, how can I help you?' },
-                      { localeKey: 'ru' as const, label: 'Русский', defaultText: 'Добро пожаловать, чем я могу вам помочь?' },
-                    ].map(({ localeKey, label, defaultText }) => {
-                      const isEnabled = !!settings.customGreetingEnabled;
-                      const currentValue = isEnabled
-                        ? (settings.customGreeting?.[localeKey] !== undefined ? settings.customGreeting?.[localeKey] : '')
-                        : defaultText;
-
-                      return (
-                        <div key={localeKey}>
-                          <label className="block text-xs font-semibold text-[#8A8880] mb-1 font-mono uppercase tracking-wider">
-                            {label} {!isEnabled && <span className="text-[10px] bg-[rgba(20,35,31,0.05)] text-[#4B5A55] px-2 py-0.5 rounded ml-1 font-normal font-sans tracking-normal capitalize">Hazır Metin</span>}
-                          </label>
-                          <textarea
-                            value={currentValue}
-                            disabled={!isEnabled}
-                            onChange={(e) => {
-                              if (isEnabled) {
-                                setSettings({
-                                  ...settings,
-                                  customGreeting: {
-                                    ...(settings.customGreeting || {}),
-                                    [localeKey]: e.target.value,
-                                  },
-                                });
-                              }
-                            }}
-                            placeholder={defaultText}
-                            className={`w-full p-3 rounded-lg border text-sm focus:outline-none transition-all ${
-                              isEnabled
-                                ? 'border-[rgba(20,35,31,0.10)] focus:border-[#FF6A5C] text-[#14231F] bg-white'
-                                : 'border-[rgba(20,35,31,0.05)] text-[#8A8880] bg-[#F4F2ED] cursor-not-allowed select-none'
-                            }`}
-                            rows={2}
-                          />
+                      <div className="border-t border-[rgba(20,35,31,0.10)] pt-5">
+                        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#14231F]">
+                          <ListOrdered className="h-4 w-4 text-[#FF6A5C]" />
+                          {t('entryDiscoverLabel')}
                         </div>
-                      );
-                    })}
-                  </div>
+                        <p className="mb-4 text-xs text-[#8A8880]">{t('entryDiscoverHint')}</p>
+                        <div className="space-y-2">
+                          {Array.from({ length: 3 }, (_, index) => {
+                            const blockId = resolvedEntry.discoverBlockIds[index] || '';
+                            return (
+                              <div key={index} className="grid grid-cols-[32px_minmax(0,1fr)_72px] items-center gap-2">
+                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#14231F] text-xs font-bold text-white">{index + 1}</span>
+                                <select
+                                  aria-label={t('entryDiscoverPosition', { position: index + 1 })}
+                                  value={blockId}
+                                  onChange={(event) => setDiscoverTarget(index, event.target.value)}
+                                  className="min-w-0 rounded-lg border border-[rgba(20,35,31,0.14)] bg-white p-3 text-sm text-[#14231F] outline-none transition focus:border-[#FF6A5C]"
+                                >
+                                  <option value="">{t('entrySelectBlock')}</option>
+                                  {entryOptions.map((option) => (
+                                    <option
+                                      key={option.blockId}
+                                      value={option.blockId}
+                                      disabled={resolvedEntry.discoverBlockIds.some((id, selectedIndex) => selectedIndex !== index && id === option.blockId)}
+                                    >
+                                      {option.label}
+                                    </option>
+                                  ))}
+                                </select>
+                                <div className="flex justify-end gap-1">
+                                  <button
+                                    type="button"
+                                    title={t('entryMoveUp')}
+                                    aria-label={t('entryMoveUp')}
+                                    disabled={index === 0 || !blockId}
+                                    onClick={() => moveDiscoverTarget(index, -1)}
+                                    className="flex h-8 w-8 items-center justify-center rounded-full border border-[rgba(20,35,31,0.12)] text-[#4B5A55] transition hover:bg-[#F4F2ED] disabled:opacity-30"
+                                  >
+                                    <ChevronUp className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    title={t('entryMoveDown')}
+                                    aria-label={t('entryMoveDown')}
+                                    disabled={index >= resolvedEntry.discoverBlockIds.length - 1 || !blockId}
+                                    onClick={() => moveDiscoverTarget(index, 1)}
+                                    className="flex h-8 w-8 items-center justify-center rounded-full border border-[rgba(20,35,31,0.12)] text-[#4B5A55] transition hover:bg-[#F4F2ED] disabled:opacity-30"
+                                  >
+                                    <ChevronDown className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        <div className="mt-4 border-l-2 border-[#FF6A5C] bg-[#F8F7F4] px-4 py-3">
+                          <div className="mb-2 text-[10px] font-semibold uppercase text-[#8A8880]">{t('entryPreview')}</div>
+                          <div className="space-y-1.5">
+                            {resolvedEntry.discoverBlockIds.map((blockId, index) => (
+                              <div key={blockId} className="flex items-center gap-2 text-sm text-[#14231F]">
+                                <span className="w-4 text-xs font-semibold text-[#8A8880]">{index + 1}</span>
+                                <span className="truncate font-medium">{entryLabels.get(blockId) || t('entryUnavailableBlock')}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Order Now Behavior */}

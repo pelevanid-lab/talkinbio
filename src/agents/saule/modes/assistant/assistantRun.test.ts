@@ -81,7 +81,7 @@ describe('runSauleTurn', () => {
     expect(supabaseAdmin.from).toHaveBeenCalledWith('messages');
   });
 
-  it('opens a visible page section without calling the LLM when the visitor asks for it', async () => {
+  it('answers web questions through Saule instead of the deterministic page router', async () => {
     const { runSauleTurn } = await import('./assistantRun');
     const { streamText } = await import('ai');
     const supabaseAdmin = createFakeSupabase({
@@ -109,10 +109,8 @@ describe('runSauleTurn', () => {
       isPreview: false,
     });
 
-    await expect(result.text).resolves.toBe(
-      '[[SAULE_CUE:showing_item]]§§ACTION§§{"type":"open_block","blockId":"services-block","itemId":"consulting"}§§/ACTION§§İlgili yeri açıyorum.'
-    );
-    expect(streamText).not.toHaveBeenCalled();
+    expect((result as any).opts.messages[0].content).toContain('Web sayfasında otomatik bölüm açma');
+    expect(streamText).toHaveBeenCalledTimes(1);
   });
 
   it('warns when the model claims success without calling the capture tool (caught in production, 2026-07-18)', async () => {

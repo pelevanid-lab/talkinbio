@@ -8,6 +8,7 @@ export type MarketingLocale = (typeof MARKETING_LOCALES)[number];
 export type ProductLocale = (typeof PRODUCT_LOCALES)[number];
 
 export const APP_LOCALE_COOKIE = 'talkinbio_app_locale';
+export const ROUTING_LOCALE_COOKIE = 'NEXT_LOCALE';
 
 export function isRoutingLocale(value: string | undefined | null): value is RoutingLocale {
   return Boolean(value && (ROUTING_LOCALES as readonly string[]).includes(value));

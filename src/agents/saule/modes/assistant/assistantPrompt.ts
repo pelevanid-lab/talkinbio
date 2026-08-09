@@ -1,7 +1,5 @@
 const LOCALE_NAMES: Record<string, string> = { tr: 'Türkçe', en: 'İngilizce', ru: 'Rusça' };
 
-import { getPageActionTargets } from '@/utils/pageActionTargets';
-
 const TONE_GUIDANCE: Record<string, string> = {
   friendly: 'Sıcak, samimi ve arkadaş canlısı bir dille konuş.',
   formal: 'Profesyonel, nazik ve mesafeli bir dille konuş.',
@@ -111,21 +109,6 @@ export function buildSaulePrompt({ business, blocks, knowledge, locale, isDemoBu
   const knowledgeSection = knowledge.length > 0
     ? `\n\nİşletme sahibinin sana özel olarak öğrettiği notlar (bunlara mutlaka uy):\n${knowledge.map((k) => `- ${k.title ? `${k.title}: ` : ''}${k.content}`).join('\n')}`
     : '';
-  const pageTargets = getPageActionTargets(blocks, locale || 'tr')
-    .map((target) => {
-      const items = target.items.length > 0
-        ? `\n  items: ${target.items.map((item) => `itemId="${item.itemId}" (${item.label})`).join('; ')}`
-        : '';
-      return `- blockId="${target.blockId}" | ${target.label} (${target.type})${items}`;
-    })
-    .join('\n');
-  const pageActionGuidance = pageTargets
-    ? `\n\nSayfa yönlendirme hedefleri:\n${pageTargets}\n\nZiyaretçinin sorusu bu hedeflerden birindeki görünür bilgiyle doğrudan ilgiliyse, cevabının en başına SADECE bir tane görünmez aksiyon etiketi ekle:\n§§ACTION§§{"type":"open_block","blockId":"BURADAKI_BLOCK_ID"}§§/ACTION§§\nAksiyon etiketinde yalnızca yukarıdaki blockId değerlerini kullan. Emin değilsen aksiyon etiketi ekleme. Aksiyon kullandığında cevabın tek kısa yönlendirme cümlesi olsun: "Burada göstereyim.", "Şunu açıyorum.", "İlgili bölümü açıyorum." Liste, madde madde açıklama veya uzun özet yazma; sayfa zaten açılacak. Bilgi yalnızca özel notlarda varsa aksiyon etiketi ekleme, kısa yazılı cevap ver ve "Bunu sana yazılı olarak iletiyorum." tonunda davran.`
-    : '';
-
-  const pageActionItemGuidance = pageTargets
-    ? `\n- Bir hedef satırında itemId değerleri varsa ve ziyaretçi belirli bir hizmet/SSS/link/galeri öğesini soruyorsa aksiyon JSON'una itemId ekle: §§ACTION§§{"type":"open_block","blockId":"BLOCK_ID","itemId":"ITEM_ID"}§§/ACTION§§. Yalnızca genel bölüm sorulduysa itemId ekleme. Aksiyon etiketi cevabın başında olsun ki sayfa beklemeden açılabilsin.`
-    : '';
 
   const demoGuidance = isDemoBusiness
     ? `\n\nÖnemli: Bu Talkinbio'nun kendi demo sayfası — sen burada Talkinbio ürününün satış asistanısın. Amacın ziyaretçinin ürünle ilgili sorularını yanıtlamak ve hazır olduğunda "capture_access_request" aracıyla (capture_lead DEĞİL) erken erişim talebi almaktır: isim ve e-posta yeterli, sohbet içinde nazikçe iste.`
@@ -143,12 +126,11 @@ export function buildSaulePrompt({ business, blocks, knowledge, locale, isDemoBu
       Aşağıdaki bilgileri kullanarak müşterilerin sorularını yanıtla:
       ${blocks.map((b) => `${b.title} (${b.type}):\n${JSON.stringify(b.content, null, 2)}`).join('\n\n')}
       ${knowledgeSection}
-      ${pageActionGuidance}
-      ${pageActionItemGuidance}
       ${demoGuidance}
 
       Kurallar:
       - Ziyaretçinin dilinde yanıt ver (Türkçe, İngilizce veya Rusça).${localeName ? ` Ziyaretçi sayfayı ${localeName} dilinde görüntülüyor, aksi belli olmadıkça bu dilde yanıt ver.` : ''}
+      - Web sayfasında otomatik bölüm açma veya görünmez aksiyon etiketi üretme. Yanıtı yazıyla ver.
       - Sadece yukarıdaki verilere dayanarak cevap ver, bilgide olmayan şeyleri uydurma.
       ${noInfoGuidance}
       - Bir mesajda birden fazla konuyu birden sorma — her mesaj TEK bir soruya odaklansın, kafa karıştırma.

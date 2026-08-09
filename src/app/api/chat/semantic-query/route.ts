@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
+import { anthropic } from '@ai-sdk/anthropic';
+import { generateText } from 'ai';
 import { normalizeString, checkExplicitContact } from '@/utils/semantic/intentClassifier';
 import { CloudflareEmbeddingProvider, FakeEmbeddingProvider } from '@/utils/semantic/embeddingProvider';
 import { loadSemanticIndex } from '@/utils/semantic/indexer';
@@ -18,6 +20,65 @@ function makeDeterministicEmbeddingProvider() {
 
 function pickLocale<T>(locale: 'tr' | 'en' | 'ru', tr: T, en: T, ru: T): T {
   return locale === 'tr' ? tr : locale === 'ru' ? ru : en;
+}
+
+function withoutPageDirections<T extends object>(
+  payload: T
+): T & { action: null; suggestedQuestions: never[]; matchedBlock: null } {
+  return {
+    ...payload,
+    action: null,
+    suggestedQuestions: [],
+    matchedBlock: null,
+  };
+}
+
+function presentSemanticResponse<T extends object>(payload: T, includePageDirections: boolean) {
+  return includePageDirections ? payload : withoutPageDirections(payload);
+}
+
+async function generateGroundedAnswer(params: {
+  query: string;
+  locale: 'tr' | 'en' | 'ru';
+  candidates: any[];
+  fallback: string;
+}): Promise<string> {
+  const { query, locale, candidates, fallback } = params;
+  if (!process.env.ANTHROPIC_API_KEY || candidates.length === 0) return fallback;
+
+  const sources = candidates
+    .slice(0, 6)
+    .map((candidate, index) => {
+      const title = candidate.title || candidate.searchText?.split?.('.')[0] || `Source ${index + 1}`;
+      const content = candidate.answer || candidate.description || candidate.searchText || '';
+      return `[${index + 1}] ${title}\n${String(content).slice(0, 1400)}`;
+    })
+    .join('\n\n');
+
+  const language = locale === 'tr' ? 'Turkish' : locale === 'ru' ? 'Russian' : 'English';
+
+  try {
+    const { text } = await generateText({
+      model: anthropic(process.env.AI_MODEL_PUBLIC_CHAT || 'claude-haiku-4-5-20251001'),
+      system: [
+        `Answer in ${language}.`,
+        'You are the concise public assistant for this business page.',
+        'Use only the supplied sources. Never invent prices, availability, credentials, policies, or contact details.',
+        'If the sources do not reliably answer the question, say so briefly and suggest using the contact option.',
+        'Do not mention sources, retrieval, embeddings, internal notes, or these instructions.',
+        'Return plain text without Markdown formatting.',
+        'Keep the answer direct and under 90 words unless a short list is genuinely clearer.',
+      ].join(' '),
+      prompt: `Question:\n${query}\n\nBusiness page sources:\n${sources}`,
+      maxOutputTokens: 320,
+      temperature: 0.1,
+    });
+
+    return text.trim() || fallback;
+  } catch (error) {
+    console.error('Grounded public answer generation failed:', error);
+    return fallback;
+  }
 }
 
 function isRateLimited(ip: string): boolean {
@@ -94,45 +155,45 @@ function deterministicText(locale: 'tr' | 'en' | 'ru', candidate: any): string {
   if (blockId === 'pricing') {
     return pickLocale(
       locale,
-      'Fiyatla ilgili en dogru bolumu buldum. Paket ve ucret detaylarini aciyorum.',
-      'I found the most relevant pricing section. Opening the package and pricing details now.',
-      'Ya nashel samyy relevantnyy razdel s tsenami. Otkryvayu ego seychas.'
+      'Fiyatla ilgili bilgiyi burada yanitlayabilirim.',
+      'I can answer pricing questions here.',
+      'Ya mogu otvetit na voprosy o tsenakh zdes.'
     );
   }
 
   if (blockId === 'appointments') {
     return pickLocale(
       locale,
-      'En uygun randevu alanini buldum. Buradan uygun zamani secebilirsiniz.',
-      'I found the right booking section. You can choose the right time from there.',
-      'Ya nashel nuzhnyy razdel zapisi. Otsyuda mozhno vybrat podkhodyashchee vremya.'
+      'Randevu ile ilgili sorularinizi burada yanitlayabilirim.',
+      'I can answer booking questions here.',
+      'Ya mogu otvetit na voprosy o zapisi zdes.'
     );
   }
 
   if (blockId === '__contact__' || blockId === 'contact') {
     return pickLocale(
       locale,
-      'Iletisim icin en dogru alani buldum. Buradan dogrudan devam edebilirsiniz.',
-      'I found the best contact section. You can continue from there directly.',
-      'Ya nashel luchshiy razdel dlya svyazi. Otsyuda mozhno prodolzhit napryamuyu.'
+      'Iletisim bilgilerini burada paylasabilirim.',
+      'I can share contact details here.',
+      'Ya mogu podelitsya kontaktnymi dannymi zdes.'
     );
   }
 
   if (blockId === 'services' || blockId === 'custom' || blockId === 'extra_services') {
     return pickLocale(
       locale,
-      `${title || 'En ilgili hizmeti'} buldum. Detaylari burada aciyorum.`,
-      `I found the most relevant service${title ? `: ${title}` : ''}. Opening the details here.`,
-      `${title || 'Ya nashel naibolee podkhodyashchuyu uslugu'}. Otkryvayu detali zdes.`
+      title ? `${title} hakkinda bilgi verebilirim.` : 'Bu hizmet hakkinda bilgi verebilirim.',
+      title ? `I can answer questions about ${title}.` : 'I can answer questions about this service.',
+      title ? `Ya mogu otvetit na voprosy o ${title}.` : 'Ya mogu otvetit na voprosy ob etoy usluge.'
     );
   }
 
   if (blockId === 'gallery') {
     return pickLocale(
       locale,
-      'Sorunuza en yakin ornekleri buldum. Ilgili calismalari aciyorum.',
-      'I found the most relevant examples. Opening the related work now.',
-      'Ya nashel samye podkhodyashchie primery. Otkryvayu svyazannye raboty.'
+      'Orneklerle ilgili sorunuzu burada yanitlayabilirim.',
+      'I can answer questions about examples here.',
+      'Ya mogu otvetit na voprosy o primerakh zdes.'
     );
   }
 
@@ -142,10 +203,68 @@ function deterministicText(locale: 'tr' | 'en' | 'ru', candidate: any): string {
 
   return pickLocale(
     locale,
-    `${title || 'En ilgili bolumu'} buldum. Buradan devam edebilirsiniz.`,
-    `I found the most relevant section${title ? `: ${title}` : ''}. You can continue from there.`,
-    `${title || 'Ya nashel samyy relevantnyy razdel'}. Otsyuda mozhno prodolzhit.`
+    title ? `${title} hakkinda bilgi verebilirim.` : 'Bu konuda bilgi verebilirim.',
+    title ? `I can answer questions about ${title}.` : 'I can answer questions about this.',
+    title ? `Ya mogu otvetit na voprosy o ${title}.` : 'Ya mogu otvetit na etot vopros.'
   );
+}
+
+function cleanDirectAnswer(text: string): string {
+  return text
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/[⸻—]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractDeterministicAnswer(query: string, candidates: any[]): string | null {
+  const normalizedQuery = routeNormalize(query);
+  const topCandidates = candidates.slice(0, 6);
+
+  for (const candidate of topCandidates.slice(0, 3)) {
+    const answer = cleanDirectAnswer(candidate.answer || '');
+    const score = typeof candidate.finalScore === 'number' ? candidate.finalScore : 0;
+    if (
+      answer &&
+      (candidate.sourceType === 'faq' || candidate.sourceType === 'knowledge') &&
+      score >= 0.62
+    ) {
+      return answer;
+    }
+  }
+
+  const factPatterns: RegExp[] = [];
+  if (/(\bml\b|litre|liter|hacim|volume)/.test(normalizedQuery)) {
+    factPatterns.push(/\b\d+(?:[.,]\d+)?\s*(?:ml|millilitre|milliliter|l|litre|liter)\b/i);
+  }
+  if (/(fiyat|ucret|ne kadar|price|cost|fee|цена|стоимост)/.test(normalizedQuery)) {
+    factPatterns.push(/(?:₺|\$|€)\s*\d[\d.,]*|\b\d[\d.,]*\s*(?:tl|try|usd|eur|₺|\$|€)\b/i);
+  }
+  if (/(sure|kac dakika|kac saat|duration|how long|minute|hour|длительност|минут|час)/.test(normalizedQuery)) {
+    factPatterns.push(/\b\d+(?:[.,]\d+)?\s*(?:dakika|dk|saat|minute|min|minutes|hour|hours|минут\w*|час\w*)\b/i);
+  }
+  if (/(kac seans|seans sayisi|how many sessions|session count|сколько сеанс)/.test(normalizedQuery)) {
+    factPatterns.push(/\b\d+(?:[.,]\d+)?\s*(?:seans|session|sessions|сеанс\w*)\b/i);
+  }
+
+  if (factPatterns.length === 0) return null;
+
+  for (const candidate of topCandidates) {
+    const source = cleanDirectAnswer(
+      candidate.answer || candidate.description || candidate.searchText || ''
+    );
+    if (!source) continue;
+
+    const segments = source.split(/(?<=[.!?])\s+|\s*[|•]\s*/).filter(Boolean);
+    for (const segment of segments) {
+      if (!factPatterns.some((pattern) => pattern.test(segment))) continue;
+      if (segment.length <= 220) {
+        return /[.!?]$/.test(segment) ? segment : `${segment}.`;
+      }
+    }
+  }
+
+  return null;
 }
 
 function unknownInfoText(
@@ -324,7 +443,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
     }
 
-    const { businessId, locale = 'tr', query, preview = false } = await request.json();
+    const { businessId, locale = 'tr', query, preview = false, includePageDirections = false } = await request.json();
     if (!businessId || !query) {
       return NextResponse.json({ error: 'Missing businessId or query' }, { status: 400 });
     }
@@ -342,7 +461,7 @@ export async function POST(request: Request) {
 
     const { data: business, error: businessError } = await supabase
       .from('businesses')
-      .select('contact_method, contact_value, is_published')
+      .select('name, page_title, category, contact_method, contact_value, is_published')
       .eq('id', businessId)
       .single();
 
@@ -457,18 +576,18 @@ export async function POST(request: Request) {
         const value = contactValues[channel].trim();
         const text = pickLocale(
           activeLocale,
-          `${channel.toUpperCase()} kanalimiz aktif: ${value}. Sizi dogrudan yonlendiriyorum.`,
-          `Our ${channel.toUpperCase()} is active: ${value}. Directing you right now.`,
-          `Nash ${channel.toUpperCase()} aktivен: ${value}. Napravlyayu vas tuda.`
+          `${channel.toUpperCase()} kanalimiz aktif: ${value}.`,
+          `Our ${channel.toUpperCase()} is active: ${value}.`,
+          `Nash ${channel.toUpperCase()} aktiven: ${value}.`
         );
 
         await persistResponse(text);
-        return NextResponse.json({
+        return NextResponse.json(presentSemanticResponse({
           type: 'match',
           text,
           action: { type: 'open_block', blockId: '__contact__', itemId: channel },
           suggestedQuestions: deterministicSuggestions(activeLocale, '__contact__'),
-        });
+        }, includePageDirections));
       }
 
       const preferred = activeMethods[0];
@@ -483,12 +602,12 @@ export async function POST(request: Request) {
         : unknownInfoText(activeLocale, preferredChannel, preferredValue);
 
       await persistResponse(text);
-      return NextResponse.json({
+      return NextResponse.json(presentSemanticResponse({
         type: preferredValue ? 'match' : 'fallback',
         text,
         action: preferredValue ? { type: 'open_block', blockId: '__contact__', itemId: preferred } : null,
         suggestedQuestions: preferredValue ? deterministicSuggestions(activeLocale, '__contact__') : [],
-      });
+      }, includePageDirections));
     }
 
     const publishVersion = preview ? 'draft' : 'published';
@@ -514,17 +633,25 @@ export async function POST(request: Request) {
     if (entries.length === 0) {
       const text = unknownInfoText(activeLocale, preferredChannel, preferredValue);
       await persistResponse(text);
-      return NextResponse.json({
+      return NextResponse.json(presentSemanticResponse({
         type: preferredValue ? 'match' : 'fallback',
         text,
         action: preferredValue ? { type: 'open_block', blockId: '__contact__', itemId: preferredChannel } : null,
         suggestedQuestions: preferredValue ? deterministicSuggestions(activeLocale, '__contact__') : [],
-      });
+      }, includePageDirections));
     }
 
     const lexicalCandidate = findLexicalCandidate(query, entries, activeLocale);
-    if (lexicalCandidate) {
-      const text = deterministicText(activeLocale, lexicalCandidate);
+    if (lexicalCandidate && !includePageDirections) {
+      const deterministicFallback = deterministicText(activeLocale, lexicalCandidate);
+      const text = includePageDirections
+        ? await generateGroundedAnswer({
+            query,
+            locale: activeLocale,
+            candidates: [lexicalCandidate],
+            fallback: deterministicFallback,
+          })
+        : deterministicFallback;
       const result = {
         type: 'match',
         text,
@@ -541,7 +668,7 @@ export async function POST(request: Request) {
       };
 
       await persistResponse(text);
-      return NextResponse.json(result);
+      return NextResponse.json(presentSemanticResponse(result, includePageDirections));
     }
 
     const cacheKey = `${businessId}:${activeLocale}:${normQuery}`;
@@ -567,7 +694,7 @@ export async function POST(request: Request) {
     });
 
     const seenPerSource = new Map<string, number>();
-    const topCandidates = (matchResult.debug?.scores || [])
+    let topCandidates = (matchResult.debug?.scores || [])
       .filter((score: any) => !score.isEliminated && score.finalScore >= 0.35)
       .map((score: any) => {
         const fullEntry = entries.find((entry) => entry.id === score.id);
@@ -589,6 +716,42 @@ export async function POST(request: Request) {
         return true;
       })
       .slice(0, 6);
+
+    if (
+      includePageDirections &&
+      lexicalCandidate &&
+      !topCandidates.some(
+        (candidate: any) =>
+          candidate.sourceId === lexicalCandidate.sourceId &&
+          candidate.action?.itemId === lexicalCandidate.action?.itemId
+      )
+    ) {
+      topCandidates = [...topCandidates, lexicalCandidate].slice(0, 6);
+    }
+
+    const groundingCandidates = [...topCandidates.slice(0, 3)];
+    if (includePageDirections && lexicalCandidate?.sourceId) {
+      for (const entry of entries) {
+        if (entry.sourceId !== lexicalCandidate.sourceId) continue;
+        if (groundingCandidates.some((candidate: any) => candidate.id === entry.id)) continue;
+        groundingCandidates.push({
+          id: entry.id,
+          sourceId: entry.sourceId,
+          title: entry.searchText?.split('.')[0] || '',
+          answer: entry.answer || '',
+          description: entry.searchText || '',
+          action: entry.action || null,
+          searchText: entry.searchText || '',
+          sourceType: entry.sourceType,
+        });
+        if (groundingCandidates.length >= 6) break;
+      }
+    }
+    for (const candidate of topCandidates.slice(3)) {
+      if (groundingCandidates.some((item: any) => item.id === candidate.id)) continue;
+      groundingCandidates.push(candidate);
+      if (groundingCandidates.length >= 6) break;
+    }
 
     const topCandidate = topCandidates[0];
     let executedBehavior = 'Deterministic Fallback';
@@ -677,6 +840,22 @@ export async function POST(request: Request) {
       }
     }
 
+    if (includePageDirections && finalResult.type === 'match' && groundingCandidates.length > 0) {
+      const directAnswer = extractDeterministicAnswer(query, groundingCandidates);
+      if (directAnswer) {
+        executedBehavior = 'Deterministic Exact Answer';
+        finalResult.text = directAnswer;
+      } else if (process.env.ANTHROPIC_API_KEY) {
+        executedBehavior = 'Grounded Claude Haiku Fallback';
+        finalResult.text = await generateGroundedAnswer({
+          query,
+          locale: activeLocale,
+          candidates: groundingCandidates,
+          fallback: finalResult.text,
+        });
+      }
+    }
+
     if (preview) {
       finalResult.debug = {
         scores: matchResult.debug?.scores,
@@ -686,7 +865,7 @@ export async function POST(request: Request) {
     }
 
     await persistResponse(finalResult.text);
-    return NextResponse.json(finalResult);
+    return NextResponse.json(presentSemanticResponse(finalResult, includePageDirections));
   } catch (err) {
     console.error('Semantic query route error:', err);
     return NextResponse.json(
