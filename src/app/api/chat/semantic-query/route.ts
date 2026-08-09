@@ -1,62 +1,336 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
-import { generateText } from 'ai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-
-const googleProvider = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY,
-});
-import { normalizeString, checkExplicitContact, classifyIntent } from '@/utils/semantic/intentClassifier';
-import { CloudflareEmbeddingProvider, GeminiEmbeddingProvider, FakeEmbeddingProvider } from '@/utils/semantic/embeddingProvider';
+import { normalizeString, checkExplicitContact } from '@/utils/semantic/intentClassifier';
+import { CloudflareEmbeddingProvider, FakeEmbeddingProvider } from '@/utils/semantic/embeddingProvider';
 import { loadSemanticIndex } from '@/utils/semantic/indexer';
 import { findSemanticMatch } from '@/utils/semantic/matcher';
 
-// Short-term in-memory cache for query embeddings to avoid duplicate Cloudflare AI calls
 const queryEmbeddingCache = new Map<string, number[]>();
+const ipRateLimiter = new Map<string, { count: number; resetAt: number }>();
 
-// Deterministic (non-LLM) reply strings below need all three locales — this used to be a
-// two-way `activeLocale === 'tr' ? TR : EN` ternary in several places, which silently gave
-// RU visitors English text. One helper, one place to keep it correct in all three languages.
+function makeDeterministicEmbeddingProvider() {
+  if (process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN) {
+    return new CloudflareEmbeddingProvider();
+  }
+  return new FakeEmbeddingProvider();
+}
+
 function pickLocale<T>(locale: 'tr' | 'en' | 'ru', tr: T, en: T, ru: T): T {
   return locale === 'tr' ? tr : locale === 'ru' ? ru : en;
 }
-
-// Extremely lightweight in-memory rate limiter
-const ipRateLimiter = new Map<string, { count: number; resetAt: number }>();
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
   const limit = ipRateLimiter.get(ip);
   if (!limit || now > limit.resetAt) {
-    ipRateLimiter.set(ip, { count: 1, resetAt: now + 60 * 1000 }); // 60 requests per minute limit
+    ipRateLimiter.set(ip, { count: 1, resetAt: now + 60_000 });
     return false;
   }
-  limit.count++;
+  limit.count += 1;
   return limit.count > 60;
 }
 
+function deterministicSuggestions(locale: 'tr' | 'en' | 'ru', blockId?: string | null): string[] {
+  switch (blockId) {
+    case 'pricing':
+      return pickLocale(
+        locale,
+        ['Hangi paket uygun?', 'Ek hizmet var mi?'],
+        ['Which plan fits?', 'Any extra services?'],
+        ['Kakoy tarif podkhodit?', 'Est dop uslugi?']
+      );
+    case 'services':
+    case 'custom':
+    case 'extra_services':
+      return pickLocale(
+        locale,
+        ['Nasil ilerliyor?', 'Fiyat bilgisi var mi?'],
+        ['How does it work?', 'Any pricing info?'],
+        ['Kak eto prokhodit?', 'Est li tseny?']
+      );
+    case 'appointments':
+      return pickLocale(
+        locale,
+        ['Hangi gunler uygun?', 'Nasil rezervasyon yaparim?'],
+        ['What days are open?', 'How do I book?'],
+        ['Kakie dni dostupny?', 'Kak zapisatsya?']
+      );
+    case 'gallery':
+      return pickLocale(
+        locale,
+        ['Daha fazla ornek?', 'Nasil iletisime gecerim?'],
+        ['More examples?', 'How do I contact you?'],
+        ['Bolshe primerov?', 'Kak svyazatsya?']
+      );
+    case '__contact__':
+    case 'contact':
+      return pickLocale(
+        locale,
+        ['Telefon var mi?', 'WhatsApp acik mi?'],
+        ['Do you have phone?', 'Is WhatsApp open?'],
+        ['Est telefon?', 'Est WhatsApp?']
+      );
+    default:
+      return pickLocale(
+        locale,
+        ['Baska ne sorabilirim?', 'Nasil iletisime gecerim?'],
+        ['What else can I ask?', 'How do I contact you?'],
+        ['Chto eshche mozhno sprosit?', 'Kak svyazatsya?']
+      );
+  }
+}
+
+function deterministicText(locale: 'tr' | 'en' | 'ru', candidate: any): string {
+  const blockId = candidate?.action?.blockId;
+  const title = candidate?.title || candidate?.searchText?.split('.')[0] || '';
+  const answer = (candidate?.answer || '').trim();
+  const sourceType = candidate?.sourceType;
+
+  if (answer && (sourceType === 'faq' || sourceType === 'knowledge')) {
+    return answer;
+  }
+
+  if (blockId === 'pricing') {
+    return pickLocale(
+      locale,
+      'Fiyatla ilgili en dogru bolumu buldum. Paket ve ucret detaylarini aciyorum.',
+      'I found the most relevant pricing section. Opening the package and pricing details now.',
+      'Ya nashel samyy relevantnyy razdel s tsenami. Otkryvayu ego seychas.'
+    );
+  }
+
+  if (blockId === 'appointments') {
+    return pickLocale(
+      locale,
+      'En uygun randevu alanini buldum. Buradan uygun zamani secebilirsiniz.',
+      'I found the right booking section. You can choose the right time from there.',
+      'Ya nashel nuzhnyy razdel zapisi. Otsyuda mozhno vybrat podkhodyashchee vremya.'
+    );
+  }
+
+  if (blockId === '__contact__' || blockId === 'contact') {
+    return pickLocale(
+      locale,
+      'Iletisim icin en dogru alani buldum. Buradan dogrudan devam edebilirsiniz.',
+      'I found the best contact section. You can continue from there directly.',
+      'Ya nashel luchshiy razdel dlya svyazi. Otsyuda mozhno prodolzhit napryamuyu.'
+    );
+  }
+
+  if (blockId === 'services' || blockId === 'custom' || blockId === 'extra_services') {
+    return pickLocale(
+      locale,
+      `${title || 'En ilgili hizmeti'} buldum. Detaylari burada aciyorum.`,
+      `I found the most relevant service${title ? `: ${title}` : ''}. Opening the details here.`,
+      `${title || 'Ya nashel naibolee podkhodyashchuyu uslugu'}. Otkryvayu detali zdes.`
+    );
+  }
+
+  if (blockId === 'gallery') {
+    return pickLocale(
+      locale,
+      'Sorunuza en yakin ornekleri buldum. Ilgili calismalari aciyorum.',
+      'I found the most relevant examples. Opening the related work now.',
+      'Ya nashel samye podkhodyashchie primery. Otkryvayu svyazannye raboty.'
+    );
+  }
+
+  if (answer) {
+    return answer;
+  }
+
+  return pickLocale(
+    locale,
+    `${title || 'En ilgili bolumu'} buldum. Buradan devam edebilirsiniz.`,
+    `I found the most relevant section${title ? `: ${title}` : ''}. You can continue from there.`,
+    `${title || 'Ya nashel samyy relevantnyy razdel'}. Otsyuda mozhno prodolzhit.`
+  );
+}
+
+function unknownInfoText(
+  locale: 'tr' | 'en' | 'ru',
+  preferredChannel?: string | null,
+  preferredValue?: string | null
+): string {
+  if (preferredChannel && preferredValue) {
+    return pickLocale(
+      locale,
+      `Bu soruya sayfadaki bilgilerle guvenilir sekilde cevap veremiyorum. Ama ${preferredChannel.toUpperCase()} uzerinden ulasabilirsiniz: ${preferredValue}.`,
+      `I cannot answer that reliably from the page content, but you can reach out via ${preferredChannel.toUpperCase()}: ${preferredValue}.`,
+      `Ya ne mogu nadezhno otvetit na eto po soderzhimomu stranitsy, no vy mozhete svyazatsya cherez ${preferredChannel.toUpperCase()}: ${preferredValue}.`
+    );
+  }
+
+  return pickLocale(
+    locale,
+    'Bu soruya sayfadaki bilgilerle guvenilir sekilde cevap veremiyorum. Lutfen daha sonra tekrar deneyin.',
+    'I cannot answer that reliably from the page content right now. Please try again later.',
+    'Ya ne mogu nadezhno otvetit na eto po soderzhimomu stranitsy pryamo seychas. Pozhaluysta, poprobuyte pozhe.'
+  );
+}
+
+const queryStopWords = new Set([
+  'i',
+  'me',
+  'my',
+  'we',
+  'you',
+  'your',
+  'a',
+  'an',
+  'the',
+  'to',
+  'for',
+  'of',
+  'and',
+  'or',
+  'in',
+  'on',
+  'with',
+  'need',
+  'want',
+  'wanna',
+  'buy',
+  'purchase',
+  'order',
+  'get',
+  'please',
+  'can',
+  'could',
+  'would',
+  'about',
+  'what',
+  'how',
+  'is',
+  'are',
+  'do',
+  'does',
+  'var',
+  'mi',
+  'icin',
+  'almak',
+  'istiyorum',
+  'lazim',
+  'gerek',
+  'нужно',
+  'хочу',
+  'купить',
+]);
+
+function meaningfulTokens(text: string): string[] {
+  return routeNormalize(text)
+    .split(' ')
+    .map((token) => token.trim())
+    .filter((token) => token.length > 2 && !queryStopWords.has(token));
+}
+
+function routeNormalize(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/ı/g, 'i')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function inferRouteIntent(query: string): 'service' | 'training' | 'product' | null {
+  const q = routeNormalize(query);
+
+  if (/(egitim|kurs|ogren|ders|training|course|learn|study|academy)/.test(q)) {
+    return 'training';
+  }
+
+  if (/(yag|oil|urun|product|satin|siparis|purchase|order|buy)/.test(q)) {
+    return 'product';
+  }
+
+  if (/(masaj|massage|terapi|therapy)/.test(q) && /(yaptir|yaptirmak|almak|randevu|rezervasyon|seans|book|booking|appointment|session|reserve)/.test(q)) {
+    return 'service';
+  }
+
+  return null;
+}
+
+function findLexicalCandidate(query: string, entries: any[], locale: 'tr' | 'en' | 'ru') {
+  const tokens = meaningfulTokens(query);
+  if (tokens.length === 0) return null;
+  const routeIntent = inferRouteIntent(query);
+
+  const ranked = entries
+    .filter((entry) => entry.locale === locale)
+    .map((entry) => {
+      const title = entry.searchText?.split('.')?.[0] || '';
+      const normalizedTitle = routeNormalize(title);
+      const normalizedSearch = routeNormalize(entry.searchText || '');
+      const candidateText = `${normalizedTitle} ${normalizedSearch}`;
+      const titleMatches = tokens.filter((token) => normalizedTitle.includes(token)).length;
+      const searchMatches = tokens.filter((token) => normalizedSearch.includes(token)).length;
+      const titleRatio = titleMatches / tokens.length;
+      const searchRatio = searchMatches / tokens.length;
+      const phrase = tokens.join(' ');
+      const phraseBonus = normalizedTitle.includes(phrase) ? 0.45 : normalizedSearch.includes(phrase) ? 0.25 : 0;
+      const actionBonus = entry.action?.type === 'open_block' ? 0.1 : 0;
+      const blockBonus = entry.sourceType === 'block' || entry.sourceType === 'block_item' ? 0.08 : 0;
+      let intentAdjustment = 0;
+      const looksTraining = /(egitim|kurs|training|course|learn|study|academy)/.test(candidateText);
+      const looksService = /(session|booking|randevu|rezervasyon|seans|therapy|procedure|masaj seans|massage session|face neck collar zone)/.test(candidateText);
+      const looksProduct = /(oil|yag|face harmony|product|volume|ingredients|ingredient)/.test(candidateText);
+
+      if (routeIntent === 'service') {
+        if (looksTraining) intentAdjustment -= 2.25;
+        if (looksService && !looksTraining) intentAdjustment += 1.25;
+        if (normalizedTitle.includes('booking') || normalizedTitle.includes('session') || normalizedTitle.includes('seans')) {
+          intentAdjustment += 0.45;
+        }
+      } else if (routeIntent === 'training') {
+        if (looksTraining) intentAdjustment += 1.1;
+        if (looksService && !looksTraining) intentAdjustment -= 0.8;
+      } else if (routeIntent === 'product') {
+        if (looksProduct) intentAdjustment += 1.1;
+        if (looksTraining) intentAdjustment -= 0.5;
+      }
+
+      return {
+        sourceId: entry.sourceId,
+        title,
+        answer: entry.answer || '',
+        description: entry.searchText || '',
+        action: entry.action || null,
+        searchText: entry.searchText || '',
+        sourceType: entry.sourceType,
+        finalScore: titleRatio * 1.4 + searchRatio + phraseBonus + actionBonus + blockBonus + intentAdjustment,
+      };
+    })
+    .filter((candidate) => candidate.finalScore >= 0.9)
+    .sort((a, b) => b.finalScore - a.finalScore);
+
+  return ranked[0] || null;
+}
+
 export async function POST(request: Request) {
-  // Outer catch needs the visitor's locale to reply in the right language too — declared
-  // here (not `const` inside try) so it survives a crash after the body is parsed.
   let activeLocale: 'tr' | 'en' | 'ru' = 'tr';
+
   try {
-    // 1. Rate limiting check
     const clientIp = request.headers.get('x-forwarded-for') || 'anonymous';
     if (isRateLimited(clientIp)) {
       return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
     }
 
     const { businessId, locale = 'tr', query, preview = false } = await request.json();
-
     if (!businessId || !query) {
       return NextResponse.json({ error: 'Missing businessId or query' }, { status: 400 });
     }
 
     activeLocale = (locale as 'tr' | 'en' | 'ru') || 'tr';
     const normQuery = normalizeString(query);
-
-    // Limit query length to prevent abuse / large payloads
     if (normQuery.length > 250) {
       return NextResponse.json({ error: 'Query is too long.' }, { status: 400 });
     }
@@ -66,28 +340,24 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Fetch canonical business profile contact details
-    const { data: business, error: bErr } = await supabase
+    const { data: business, error: businessError } = await supabase
       .from('businesses')
       .select('contact_method, contact_value, is_published')
       .eq('id', businessId)
       .single();
 
-    if (bErr || !business) {
+    if (businessError || !business) {
       return NextResponse.json({ error: 'Business not found.' }, { status: 404 });
     }
 
-    // 1.5 Load visitor_session_id cookie and manage database conversation & message persistence
     const cookieStore = await cookies();
     const visitorSessionId = cookieStore.get('visitor_session_id')?.value;
     const isPreview = !!preview;
     const conversationKey = isPreview ? `preview:${businessId}` : (visitorSessionId || `anon_web_${businessId}`);
 
     let conversationId: string | undefined;
-    let willCreateNewConversation = true;
 
-    // Find the most recent conversation for this key; reuse it only if it's still "active"
-    const { data: convData } = await supabase
+    const { data: previousConversation } = await supabase
       .from('conversations')
       .select('id, last_message_at, created_at')
       .eq('business_id', businessId)
@@ -96,93 +366,61 @@ export async function POST(request: Request) {
       .limit(1)
       .maybeSingle();
 
-    if (convData) {
-      const referenceDate = convData.last_message_at ? new Date(convData.last_message_at) : new Date(convData.created_at);
-      const differenceInDays = (new Date().getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24);
+    if (previousConversation) {
+      const referenceDate = previousConversation.last_message_at
+        ? new Date(previousConversation.last_message_at)
+        : new Date(previousConversation.created_at);
+      const differenceInDays = (Date.now() - referenceDate.getTime()) / (1000 * 60 * 60 * 24);
       const isActive = differenceInDays <= 7;
 
       if (isActive) {
-        // Group user questions in packages of up to 20 messages per conversation
-        const { count: msgCount } = await supabase
+        const { count: messageCount } = await supabase
           .from('messages')
           .select('id', { count: 'exact', head: true })
-          .eq('conversation_id', convData.id)
+          .eq('conversation_id', previousConversation.id)
           .eq('role', 'user');
 
-        if ((msgCount || 0) < 20) {
-          conversationId = convData.id;
-          willCreateNewConversation = false;
+        if ((messageCount || 0) < 20) {
+          conversationId = previousConversation.id;
         }
       }
     }
 
-    if (!isPreview) {
-      const { data: businessWithCredits } = await supabase
-        .from('businesses')
-        .select('credit_balance')
-        .eq('id', businessId)
-        .single();
-
-      const creditBalance = businessWithCredits?.credit_balance ?? 0;
-
-      if (willCreateNewConversation && creditBalance < 1) {
-        return NextResponse.json({
-          type: 'fallback',
-          // reason: client bunu okuyup lead formu açılırsa "neden açıldığını" (bkz.
-          // leads.trigger_reason) doğru işaretleyebilsin — "cevap bulunamadı" ile "kredi
-          // bitti" analiz sayfasında ayrı raporlanan iki farklı, eyleme geçirilebilir durum.
-          reason: 'credits_exhausted',
-          text: pickLocale(activeLocale, 'Bu işletmenin Saule sohbet kredisi tükendi.', 'This business has exhausted its Saule chat credits.', 'У этого бизнеса закончились кредиты чата Saule.'),
-          suggestedQuestions: []
-        }, { status: 402 });
-      }
-    }
-
     if (!conversationId) {
-      const { data: newConv } = await supabase
+      const { data: newConversation } = await supabase
         .from('conversations')
-        .insert({ business_id: businessId, visitor_session_id: conversationKey, is_preview: isPreview, channel: 'web' })
+        .insert({
+          business_id: businessId,
+          visitor_session_id: conversationKey,
+          is_preview: isPreview,
+          channel: 'web',
+        })
         .select('id')
         .single();
-      conversationId = newConv?.id;
+
+      conversationId = newConversation?.id;
     }
 
     if (!conversationId) {
       return NextResponse.json({ error: 'Failed to create conversation' }, { status: 500 });
     }
 
-    let isCreditDeducted = false;
-    const persistResponseAndDeduct = async (responseText: string) => {
-      if (!conversationId) return;
-      if (responseText) {
-        await supabase.from('messages').insert({
-          conversation_id: conversationId,
-          business_id: businessId,
-          role: 'assistant',
-          content: responseText,
-        });
-        await supabase.from('conversations').update({
-          last_message_at: new Date().toISOString(),
-        }).eq('id', conversationId);
-      }
+    const persistResponse = async (responseText: string) => {
+      if (!responseText) return;
 
-      if (!isPreview && willCreateNewConversation && !isCreditDeducted) {
-        isCreditDeducted = true;
-        const { deductCredits } = await import('@/agents/shared/credits');
-        await deductCredits(supabase, businessId, 1);
-        
-        await supabase.from('usage_events').insert({
-          business_id: businessId,
-          agent: 'saule',
-          channel: 'web',
-          model: 'gemini-2.5-flash',
-          usage: { inputTokens: 0, outputTokens: 0 },
-          credits_charged: 1,
-        });
-      }
+      await supabase.from('messages').insert({
+        conversation_id: conversationId,
+        business_id: businessId,
+        role: 'assistant',
+        content: responseText,
+      });
+
+      await supabase
+        .from('conversations')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', conversationId);
     };
 
-    // Insert user's message
     await supabase.from('messages').insert({
       conversation_id: conversationId,
       business_id: businessId,
@@ -190,134 +428,127 @@ export async function POST(request: Request) {
       content: query.trim(),
     });
 
-    await supabase.from('conversations').update({
-      last_message_at: new Date().toISOString(),
-      is_read: false,
-    }).eq('id', conversationId);
+    await supabase
+      .from('conversations')
+      .update({
+        last_message_at: new Date().toISOString(),
+        is_read: false,
+      })
+      .eq('id', conversationId);
 
-    // 2. LAYER 1: Explicit Contact Channel rules (100% offline & deterministically handled)
     const contactInfo = checkExplicitContact(query, activeLocale);
-    
     let contactValues: Record<string, string> = {};
+
     try {
       contactValues = business.contact_value ? JSON.parse(business.contact_value) : {};
     } catch {
       contactValues = {};
     }
+
     const activeMethods = (business.contact_method || '').split(',').filter(Boolean);
+    const preferredChannel = activeMethods[0] || null;
+    const preferredValue = preferredChannel ? contactValues[preferredChannel]?.trim() || null : null;
 
-    // 2. LAYER 1: Explicit Contact Channel rules (100% offline & deterministically handled)
-    // We ONLY short-circuit explicit channel requests (e.g. WhatsApp, phone, email) here.
-    // Generic contact requests (e.g. 'adres', 'konum', 'iletisim') are deferred to semantic matching first, so they don't hijack custom knowledge base notes!
-    if (contactInfo.isContactQuery && contactInfo.isExplicitChannel) {
-      if (contactInfo.isExplicitChannel && contactInfo.channel) {
-        const channel = contactInfo.channel;
-        const channelRegistered = activeMethods.includes(channel) && contactValues[channel]?.trim();
+    if (contactInfo.isContactQuery && contactInfo.isExplicitChannel && contactInfo.channel) {
+      const channel = contactInfo.channel;
+      const channelRegistered = activeMethods.includes(channel) && contactValues[channel]?.trim();
 
-        if (channelRegistered) {
-          // Success: Matched registered channel
-          const value = contactValues[channel].trim();
-          let text = `${channel.toUpperCase()} kanalımız aktif: ${value}. Sizi doğrudan yönlendiriyorum.`;
-          if (activeLocale === 'en') {
-            text = `Our ${channel.toUpperCase()} is active: ${value}. Directing you right now.`;
-          } else if (activeLocale === 'ru') {
-            text = `Наш ${channel.toUpperCase()} активен: ${value}. Направляю вас туда.`;
-          }
+      if (channelRegistered) {
+        const value = contactValues[channel].trim();
+        const text = pickLocale(
+          activeLocale,
+          `${channel.toUpperCase()} kanalimiz aktif: ${value}. Sizi dogrudan yonlendiriyorum.`,
+          `Our ${channel.toUpperCase()} is active: ${value}. Directing you right now.`,
+          `Nash ${channel.toUpperCase()} aktivен: ${value}. Napravlyayu vas tuda.`
+        );
 
-          await persistResponseAndDeduct(text);
-          return NextResponse.json({
-            type: 'match',
-            text,
-            action: { type: 'open_block', blockId: '__contact__', itemId: channel }
-          });
-        } else {
-          // Failure: Channel not registered, offer preferred/first active alternative
-          const preferred = activeMethods[0];
-          const prefValue = preferred ? contactValues[preferred]?.trim() : null;
-
-          let text = `Maalesef ${channel.toUpperCase()} kanalımız bulunmuyor.`;
-          if (prefValue) {
-            text += ` Ancak bize ${preferred.toUpperCase()} üzerinden ulaşabilirsiniz: ${prefValue}.`;
-          } else {
-            text += ' İletişim bilgilerimiz henüz girilmemiş.';
-          }
-
-          if (activeLocale === 'en') {
-            text = `Sorry, we don't have a ${channel.toUpperCase()} channel.`;
-            if (prefValue) {
-              text += ` However, you can reach us via ${preferred.toUpperCase()}: ${prefValue}.`;
-            }
-          } else if (activeLocale === 'ru') {
-            text = `К сожалению, у нас нет канала ${channel.toUpperCase()}.`;
-            if (prefValue) {
-              text += ` Однако вы можете связаться с нами через ${preferred.toUpperCase()}: ${prefValue}.`;
-            }
-          }
-
-          await persistResponseAndDeduct(text);
-          return NextResponse.json({
-            type: 'match',
-            text,
-            action: preferred ? { type: 'open_block', blockId: '__contact__', itemId: preferred } : undefined
-          });
-        }
+        await persistResponse(text);
+        return NextResponse.json({
+          type: 'match',
+          text,
+          action: { type: 'open_block', blockId: '__contact__', itemId: channel },
+          suggestedQuestions: deterministicSuggestions(activeLocale, '__contact__'),
+        });
       }
+
+      const preferred = activeMethods[0];
+      const preferredValue = preferred ? contactValues[preferred]?.trim() : null;
+      const text = preferredValue
+        ? pickLocale(
+            activeLocale,
+            `${channel.toUpperCase()} aktif degil. Ama bize ${preferred.toUpperCase()} uzerinden ulasabilirsiniz: ${preferredValue}.`,
+            `We do not have ${channel.toUpperCase()} active here. You can reach us via ${preferred.toUpperCase()}: ${preferredValue}.`,
+            `${channel.toUpperCase()} nedostupen. No vy mozhete svyazatsya s nami cherez ${preferred.toUpperCase()}: ${preferredValue}.`
+          )
+        : unknownInfoText(activeLocale, preferredChannel, preferredValue);
+
+      await persistResponse(text);
+      return NextResponse.json({
+        type: preferredValue ? 'match' : 'fallback',
+        text,
+        action: preferredValue ? { type: 'open_block', blockId: '__contact__', itemId: preferred } : null,
+        suggestedQuestions: preferredValue ? deterministicSuggestions(activeLocale, '__contact__') : [],
+      });
     }
 
-    // 3. LAYER 2: Load Server-Side semantic index entries
     const publishVersion = preview ? 'draft' : 'published';
     let entries = await loadSemanticIndex({ supabase, businessId, publishVersion });
 
     if (entries.length === 0) {
-      // Dynamic on-the-fly semantic indexing safeguard: if index is missing/empty, compile it instantly so visitors don't face empty index fallbacks
       try {
         const { buildSemanticIndex } = await import('@/utils/semantic/indexer');
-        const hasGemini = !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY);
-        const hasCF = !!(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN);
-        const embeddingProvider = hasGemini
-          ? new GeminiEmbeddingProvider()
-          : hasCF
-            ? new CloudflareEmbeddingProvider()
-            : new FakeEmbeddingProvider();
 
         await buildSemanticIndex({
           supabase,
           businessId,
           publishVersion,
-          embeddingProvider,
+          embeddingProvider: makeDeterministicEmbeddingProvider(),
         });
 
-        // Reload the newly compiled index
         entries = await loadSemanticIndex({ supabase, businessId, publishVersion });
-      } catch (buildErr) {
-        console.error('Dynamic semantic index building failed:', buildErr);
+      } catch (buildError) {
+        console.error('Dynamic semantic index building failed:', buildError);
       }
     }
 
     if (entries.length === 0) {
-      // Return safe fallback if no index entries can be compiled at all
-      const fallbackText = pickLocale(activeLocale, 'Şu anda bu soruya cevap veremiyorum.', 'I cannot answer this question right now.', 'Сейчас я не могу ответить на этот вопрос.');
-      await persistResponseAndDeduct(fallbackText);
+      const text = unknownInfoText(activeLocale, preferredChannel, preferredValue);
+      await persistResponse(text);
       return NextResponse.json({
-        type: 'fallback',
-        text: fallbackText
+        type: preferredValue ? 'match' : 'fallback',
+        text,
+        action: preferredValue ? { type: 'open_block', blockId: '__contact__', itemId: preferredChannel } : null,
+        suggestedQuestions: preferredValue ? deterministicSuggestions(activeLocale, '__contact__') : [],
       });
     }
 
-    // 4. LAYER 3: Generate Query Embedding (Incremental cache checked first)
+    const lexicalCandidate = findLexicalCandidate(query, entries, activeLocale);
+    if (lexicalCandidate) {
+      const text = deterministicText(activeLocale, lexicalCandidate);
+      const result = {
+        type: 'match',
+        text,
+        action: lexicalCandidate.action,
+        suggestedQuestions: deterministicSuggestions(activeLocale, lexicalCandidate.action?.blockId),
+        matchedBlock: lexicalCandidate.action?.blockId
+          ? {
+              title: lexicalCandidate.title,
+              description: lexicalCandidate.answer || lexicalCandidate.description,
+              blockId: lexicalCandidate.action.blockId,
+              itemId: lexicalCandidate.action.itemId || undefined,
+            }
+          : null,
+      };
+
+      await persistResponse(text);
+      return NextResponse.json(result);
+    }
+
     const cacheKey = `${businessId}:${activeLocale}:${normQuery}`;
     let queryEmbedding = queryEmbeddingCache.get(cacheKey) || null;
 
     if (!queryEmbedding) {
-      const hasGemini = !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY);
-      const hasCF = !!(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN);
-      const provider = hasGemini
-        ? new GeminiEmbeddingProvider()
-        : hasCF
-          ? new CloudflareEmbeddingProvider()
-          : new FakeEmbeddingProvider();
-      
-      queryEmbedding = await provider.embedQuery(normQuery);
+      queryEmbedding = await makeDeterministicEmbeddingProvider().embedQuery(normQuery);
       if (queryEmbedding) {
         queryEmbeddingCache.set(cacheKey, queryEmbedding);
       }
@@ -327,342 +558,120 @@ export async function POST(request: Request) {
       throw new Error('Failed to generate query embedding.');
     }
 
-    // 5. LAYER 4: Match and Rank semantic entries
     const matchResult = findSemanticMatch({
       query: normQuery,
       locale: activeLocale,
       entries,
       queryEmbedding,
-      isDebugMode: true // Keep true so we always have candidates to rank and retrieve for RAG
+      isDebugMode: true,
     });
 
-    // 6. LAYER 5: Gemini 2.5 Flash Retrieval-Augmented Generation (RAG)
-    // Diversify by source block before slicing: a single services-shaped block can
-    // contribute its block-level entry PLUS one entry per item, so on broad "what do you
-    // offer" queries every one of those near-duplicate entries can outscore other,
-    // equally-relevant blocks (verified: a block with 3 items monopolized all 4 slots
-    // ahead of a "Danışmanlık" note ranked #7 and an "Eğitim Formatı" block ranked #8,
-    // so Gemini never saw either). Cap how many entries any single sourceId can place,
-    // and widen the slot count a little now that duplicates can't hog it.
-    const MAX_PER_SOURCE = 2;
-    const RAG_CONTEXT_SIZE = 6;
     const seenPerSource = new Map<string, number>();
     const topCandidates = (matchResult.debug?.scores || [])
-      .filter((sc: any) => !sc.isEliminated && sc.finalScore >= 0.35)
-      .map((sc: any) => {
-        const fullEntry = entries.find((e) => e.id === sc.id);
+      .filter((score: any) => !score.isEliminated && score.finalScore >= 0.35)
+      .map((score: any) => {
+        const fullEntry = entries.find((entry) => entry.id === score.id);
         return {
-          ...sc,
+          ...score,
           sourceId: fullEntry?.sourceId,
           title: fullEntry?.searchText.split('.')[0] || '',
           answer: fullEntry?.answer || fullEntry?.searchText || '',
-          action: fullEntry?.action || null
+          action: fullEntry?.action || null,
+          searchText: fullEntry?.searchText || '',
+          sourceType: fullEntry?.sourceType || score.sourceType,
         };
       })
-      .filter((cand: any) => {
-        const key = cand.sourceId || cand.id;
+      .filter((candidate: any) => {
+        const key = candidate.sourceId || candidate.id;
         const count = seenPerSource.get(key) || 0;
-        if (count >= MAX_PER_SOURCE) return false;
+        if (count >= 2) return false;
         seenPerSource.set(key, count + 1);
         return true;
       })
-      .slice(0, RAG_CONTEXT_SIZE);
-
-    let finalResult = {
-      type: 'match',
-      text: '',
-      action: null as any,
-      suggestedQuestions: [] as string[],
-      matchedBlock: null as any,
-      debug: undefined as any
-    };
+      .slice(0, 6);
 
     const topCandidate = topCandidates[0];
-    let executedBehavior = '';
+    let executedBehavior = 'Deterministic Fallback';
 
-    // 1. BEHAVIOR 1: If top candidate is extremely high confidence (>= 0.70) AND is a block-opening action, handle completely deterministically (no Gemini)
-    if (topCandidate && topCandidate.finalScore >= 0.70 && topCandidate.action?.type === 'open_block') {
-      executedBehavior = 'Deterministic Block Match';
-      finalResult.type = 'match';
-      finalResult.text = topCandidate.answer || pickLocale(activeLocale, `${topCandidate.title} bölümünü açıyorum.`, `Opening ${topCandidate.title} section.`, `Открываю раздел «${topCandidate.title}».`);
-      finalResult.action = topCandidate.action;
-      finalResult.matchedBlock = {
-        title: topCandidate.title,
-        description: topCandidate.answer,
-        blockId: topCandidate.action?.blockId,
-        itemId: topCandidate.action?.itemId,
-      };
-      finalResult.suggestedQuestions = pickLocale(
-        activeLocale,
-        ['İletişime nasıl geçerim?', 'Hemen randevu alabilir miyim?'],
-        ['How can I contact?', 'Can I book an appointment?'],
-        ['Как с вами связаться?', 'Можно ли записаться прямо сейчас?']
-      );
-    }
-    // 2. BEHAVIOR 3: No candidates found above 0.35 similarity -> Fallback (handled on client side based on leadCaptureEnabled/contactValue)
-    else if (topCandidates.length === 0) {
-      // Check if it's a generic contact/address request (e.g. contains 'adres', 'konum', 'iletisim' but had no custom knowledge note in DB)
+    const finalResult: {
+      type: 'match' | 'clarification' | 'fallback';
+      text: string;
+      action: any;
+      suggestedQuestions: string[];
+      matchedBlock: any;
+      debug?: any;
+    } = {
+      type: 'fallback',
+      text: '',
+      action: null,
+      suggestedQuestions: [],
+      matchedBlock: null,
+    };
+
+    if (matchResult.type === 'clarification') {
+      executedBehavior = 'Deterministic Clarification';
+      finalResult.type = 'clarification';
+      finalResult.text = matchResult.text;
+      finalResult.action = matchResult.action || null;
+    } else if (topCandidates.length === 0) {
       if (contactInfo.isContactQuery && contactInfo.isGenericRequest) {
-        executedBehavior = 'Deterministic Generic Contact Fallback';
+        executedBehavior = 'Deterministic Generic Contact';
         const preferred = activeMethods[0];
-        const prefValue = preferred ? contactValues[preferred]?.trim() : null;
+        const preferredValue = preferred ? contactValues[preferred]?.trim() : null;
 
-        if (prefValue) {
+        if (preferredValue) {
           finalResult.type = 'match';
-          finalResult.text = `Bize ${preferred.toUpperCase()} üzerinden kolayca ulaşabilirsiniz: ${prefValue}.`;
-          if (activeLocale === 'en') {
-            finalResult.text = `You can easily reach us via ${preferred.toUpperCase()}: ${prefValue}.`;
-          } else if (activeLocale === 'ru') {
-            finalResult.text = `Вы можете легко связаться с нами через ${preferred.toUpperCase()}: ${prefValue}.`;
-          }
+          finalResult.text = pickLocale(
+            activeLocale,
+            `Bize ${preferred.toUpperCase()} uzerinden ulasabilirsiniz: ${preferredValue}.`,
+            `You can reach us via ${preferred.toUpperCase()}: ${preferredValue}.`,
+            `Vy mozhete svyazatsya s nami cherez ${preferred.toUpperCase()}: ${preferredValue}.`
+          );
           finalResult.action = { type: 'open_block', blockId: '__contact__', itemId: preferred };
+          finalResult.suggestedQuestions = deterministicSuggestions(activeLocale, '__contact__');
           finalResult.matchedBlock = {
-            title: pickLocale(activeLocale, 'İletişim', 'Contact', 'Контакты'),
-            description: pickLocale(activeLocale, 'Bizimle doğrudan iletişime geçin.', 'Get in touch with us directly.', 'Свяжитесь с нами напрямую.'),
+            title: pickLocale(activeLocale, 'Iletisim', 'Contact', 'Kontakty'),
+            description: finalResult.text,
             blockId: '__contact__',
             itemId: preferred,
           };
-          finalResult.suggestedQuestions = pickLocale(
-            activeLocale,
-            ['Adresiniz nedir?', 'Yüz yüze eğitim var mı?'],
-            ['What is your address?', 'Is there face-to-face training?'],
-            ['Какой у вас адрес?', 'Есть ли очное обучение?']
-          );
         } else {
-          finalResult.type = 'fallback';
-          finalResult.text = '';
+          finalResult.text = unknownInfoText(activeLocale, preferredChannel, preferredValue);
+          finalResult.action = preferredValue ? { type: 'open_block', blockId: '__contact__', itemId: preferredChannel } : null;
+          finalResult.suggestedQuestions = preferredValue ? deterministicSuggestions(activeLocale, '__contact__') : [];
         }
       } else {
-        // BEHAVIOR 4: Hybrid safety net. The fast hybrid ranker (embedding + lexical +
-        // intent gate) found nothing confident enough — this can be a genuinely
-        // under-indexed question, OR a false negative from the intent gate (e.g. a query
-        // classified as "book" hard-rejecting a "learn" entry that was actually the right
-        // answer). Instead of silently giving up, make one last, deliberately more
-        // expensive attempt with the FULL page context (every compiled entry for this
-        // locale, not just the top 4 by score) so Saule stays "aware of the whole site"
-        // for the rare cases the cheap path misses. This should fire rarely — most
-        // queries are served above without ever reaching here.
-        const localeEntries = entries.filter((e) => e.locale === activeLocale);
-        if (localeEntries.length === 0) {
-          executedBehavior = 'Fallback (no content indexed)';
-          finalResult.type = 'fallback';
-          finalResult.text = '';
-        } else {
-          executedBehavior = 'Gemini Full-Context Escalation';
-          try {
-            const fullContextText = localeEntries
-              .map((e, index) => `Item #${index + 1}:
-- Source Type: ${e.sourceType}
-- Title/Question: ${e.searchText.split('.')[0]}
-- Content/Answer: ${(e.answer || e.searchText).replace(/<[^>]*>/g, '').substring(0, 300)}
-- Action Block: ${e.action?.blockId || ''}
-- Action Item: ${e.action?.itemId || ''}`)
-              .join('\n\n');
-
-            const escalationPrompt = `You are Saule, a warm, professional, premium, and friendly virtual assistant for the bio/portfolio page owner.
-Your goal is to answer the visitor's query with maximum warmth, clarity, and precision in the requested language: "${activeLocale === 'tr' ? 'Turkish' : activeLocale === 'ru' ? 'Russian' : 'English'}".
-
-A faster keyword/embedding search already ran and found no confident match, so this is a full manual pass with EVERYTHING known about the page owner (every service, product, FAQ, and knowledge base note):
----
-${fullContextText}
----
-
-CRITICAL CONSTRAINTS & BEHAVIOR:
-1. Answer the user's query: "${query}" using ONLY the context above.
-2. A "knowledge" Source Type item may contain an inline usage condition the owner wrote for YOU, not for the visitor — e.g. Turkish phrasing like "...sadece ... sorulduğunda belirt" ("only mention this when asked ..."), or similar English/Russian equivalents. Treat that phrase as a binding instruction: only use that specific item's content if the visitor's actual question matches the stated condition. If the current query does not match it, ignore that item for this answer entirely — do not treat it as the default/general answer just because it's the most relevant match — and answer from the remaining context instead. Never repeat the condition/instruction sentence itself to the visitor.
-3. Be highly proactive and business-focused: if the exact thing asked for isn't offered but a related alternative is mentioned in the context (e.g. training instead of a direct session, or vice versa), explain warmly and steer to the alternative, and set "action" to open it.
-4. Do NOT invent, assume, or extrapolate any details (prices, times, services, addresses) not explicitly mentioned in the context.
-5. If truly nothing in the context is relevant to the query, set "found" to false and leave "text" empty — do not apologize or guess.
-6. Keep the answer warm, elegant, premium, and concise (under 2-3 sentences).
-7. You MUST return your output in JSON format with exactly these four keys:
-   - "found": (boolean) true if you answered using real context, false if nothing relevant exists.
-   - "text": (string) your warm, natural, helpful conversational response, or "" if found is false.
-   - "action": (object or null) {"type": "open_block", "blockId": "...", "itemId": "..."} using the Action Block/Item of the matching (or proactively suggested alternative) item, or null.
-   - "suggestedQuestions": (array of strings) 2-3 short, clickable follow-up questions, or [] if found is false.
-
-Return ONLY a valid JSON object. Do not include markdown code block formatting (like \`\`\`json) or any pre/post text.`;
-
-            const { text: geminiOutput } = await generateText({
-              model: googleProvider('gemini-2.5-flash'),
-              prompt: escalationPrompt,
-            });
-
-            let cleanJson = geminiOutput.trim();
-            if (cleanJson.startsWith('```')) {
-              cleanJson = cleanJson.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-            }
-            const parsed = JSON.parse(cleanJson);
-
-            if (parsed.found && parsed.text) {
-              finalResult.type = 'match';
-              finalResult.text = parsed.text;
-              finalResult.action = parsed.action || null;
-              finalResult.suggestedQuestions = parsed.suggestedQuestions || [];
-
-              const actionBlockId = finalResult.action?.blockId;
-              const actionItemId = finalResult.action?.itemId;
-              if (actionBlockId) {
-                const matchedCand = localeEntries.find(
-                  (e) => e.action?.blockId === actionBlockId && (!actionItemId || e.action?.itemId === actionItemId)
-                );
-                if (matchedCand) {
-                  finalResult.matchedBlock = {
-                    title: matchedCand.searchText.split('.')[0] || '',
-                    description: matchedCand.answer || '',
-                    blockId: actionBlockId,
-                    itemId: actionItemId || undefined,
-                  };
-                }
-              }
-            } else {
-              finalResult.type = 'fallback';
-              finalResult.text = '';
-            }
-          } catch (escalationErr) {
-            console.error('Gemini full-context escalation failed, falling back:', escalationErr);
-            finalResult.type = 'fallback';
-            finalResult.text = '';
-          }
-        }
+        finalResult.text = unknownInfoText(activeLocale, preferredChannel, preferredValue);
+        finalResult.action = preferredValue ? { type: 'open_block', blockId: '__contact__', itemId: preferredChannel } : null;
+        finalResult.suggestedQuestions = preferredValue ? deterministicSuggestions(activeLocale, '__contact__') : [];
       }
-    }
-    // 3. BEHAVIOR 2: Conversational FAQ / Knowledge Base synthesis (Gemini 2.5 Flash RAG)
-    else {
-      executedBehavior = 'Gemini RAG';
-      // Run Gemini 2.5 Flash RAG
-      try {
-        const contextText = topCandidates
-          .map((c: any, index: number) => `Candidate #${index + 1}:
-- Source Type: ${c.sourceType}
-- Title/Question: ${c.title || c.searchText}
-- Content/Answer: ${c.answer || c.searchText}
-- Action Block: ${c.action?.blockId || ''}
-- Action Item: ${c.action?.itemId || ''}`)
-          .join('\n\n');
+    } else {
+      executedBehavior = topCandidate?.finalScore >= 0.7
+        ? 'Deterministic High Confidence Match'
+        : 'Deterministic Semantic Match';
 
-        const systemPrompt = `You are Saule, a warm, professional, premium, and friendly virtual assistant for the bio/portfolio page owner.
-Your goal is to answer the visitor's query with maximum warmth, clarity, and precision in the requested language: "${activeLocale === 'tr' ? 'Turkish' : activeLocale === 'ru' ? 'Russian' : 'English'}".
+      finalResult.type = 'match';
+      finalResult.text = deterministicText(activeLocale, topCandidate);
+      finalResult.action = topCandidate?.action || matchResult.action || null;
+      finalResult.suggestedQuestions = deterministicSuggestions(activeLocale, finalResult.action?.blockId);
 
-Below is the ONLY factual context you have about the page owner (their services, products, FAQs, and custom Knowledge Base notes):
----
-${contextText}
----
+      if (finalResult.action?.blockId) {
+        const matchedCandidate = topCandidates.find(
+          (candidate: any) =>
+            candidate.action?.blockId === finalResult.action?.blockId &&
+            (!finalResult.action?.itemId || candidate.action?.itemId === finalResult.action?.itemId)
+        ) || entries.find(
+          (entry: any) =>
+            entry.action?.blockId === finalResult.action?.blockId &&
+            (!finalResult.action?.itemId || entry.action?.itemId === finalResult.action?.itemId)
+        ) || topCandidate;
 
-CRITICAL CONSTRAINTS & BEHAVIOR:
-1. Answer the user's query: "${query}" using ONLY the provided context.
-2. A "knowledge" Source Type candidate may contain an inline usage condition the owner wrote for YOU, not for the visitor — e.g. Turkish phrasing like "...sadece ... sorulduğunda belirt" ("only mention this when asked ..."), or similar English/Russian equivalents. Treat that phrase as a binding instruction: only use that specific candidate's content if the visitor's actual question matches the stated condition. If the current query does not match it, ignore that candidate for this answer entirely — do not treat it as the default/general answer just because it scored highest — and answer from the remaining context instead. Never repeat the condition/instruction sentence itself to the visitor.
-3. Be highly proactive, smart, and business-focused: If a requested service, language, format, or product option is unavailable or restricted (e.g. no online Turkish training), but the context mentions a viable alternative (e.g. face-to-face/yüz yüze training, offline workshops, or physical addresses), explain the situation warmly and immediately steer/suggest the alternative to the visitor. If a relevant block action exists for the alternative in the context, output that action to open it for them!
-4. Do NOT invent, assume, or extrapolate any details (prices, times, services, addresses) not explicitly mentioned in the context.
-5. If the context does not contain the answer or any relevant alternatives, respond gracefully stating you don't have this information right now, and suggest contacting the owner via their preferred channel.
-6. Keep the answer warm, elegant, premium, and concise (under 2-3 sentences).
-7. You MUST return your output in JSON format with exactly these three keys:
-   - "text": (string) Your warm, natural, and helpful conversational response.
-   - "action": (object or null) An action to trigger on the page IF and only if the query is highly relevant to one of the candidates (or the proactively suggested alternative candidate). The object must be of the form: {"type": "open_block", "blockId": "blockType", "itemId": "optionalItemId"}. Use the Action Block and Action Item details from the matching/alternative Candidate. If not highly relevant to a specific block, set to null.
-   - "suggestedQuestions": (array of strings) 2 or 3 extremely relevant, short, and highly interesting follow-up questions that the visitor can click next (e.g. ["Eğitim içerikleri neler?", "Kimler katılabilir?"]). Do not make them too long. Keep them short (under 4-5 words if possible) and extremely clickable.
-
-Return ONLY a valid JSON object. Do not include markdown code block formatting (like \`\`\`json) or any pre/post text.`;
-
-        const { text: geminiOutput } = await generateText({
-          model: googleProvider('gemini-2.5-flash'),
-          prompt: systemPrompt,
-        });
-
-        let cleanJson = geminiOutput.trim();
-        if (cleanJson.startsWith('```')) {
-          cleanJson = cleanJson.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-        }
-
-        const parsed = JSON.parse(cleanJson);
-        finalResult.text = parsed.text;
-        finalResult.action = parsed.action || null;
-        finalResult.suggestedQuestions = parsed.suggestedQuestions || [];
-
-        // Fail-safe Intelligent Heuristics Layer:
-        // Automatically attach the optimal native business block based on key concepts inside query or response text.
-        const lowerText = finalResult.text.toLowerCase();
-        const lowerQuery = query.toLowerCase();
-        
-        // Check if query is specifically about massage sessions, seans, or bookings (excluding training keywords)
-        const isMassageSessionQuery = (lowerQuery.includes('masaj') || lowerQuery.includes('seans') || lowerQuery.includes('terapi')) &&
-                                      !(lowerQuery.includes('egitim') || lowerQuery.includes('kurs') || lowerQuery.includes('okul') || lowerQuery.includes('ders') || lowerQuery.includes('format'));
-
-        // Check if query is about education/training (and not just booking a session)
-        const isEduQuery = !isMassageSessionQuery && (lowerQuery.includes('egitim') || lowerQuery.includes('kurs') || lowerQuery.includes('format') || lowerText.includes('egitim') || lowerText.includes('yuz yuze') || lowerText.includes('online'));
-        
-        if (isMassageSessionQuery) {
-          // Force the 'custom' (Masaj) block so that the native Masaj block is correctly rendered
-          const customEntry = entries.find((e: any) => e.blockType === 'custom' || e.action?.blockId === 'custom');
-          if (customEntry) {
-            finalResult.action = { type: 'open_block', blockId: 'custom', itemId: customEntry.action?.itemId || null };
-          }
-        } else if (isEduQuery) {
-          // Force the 'services' (Eğitim Formatı) block so that the authentic education format block is rendered
-          const servicesEntry = entries.find((e: any) => e.blockType === 'services' || e.action?.blockId === 'services');
-          if (servicesEntry) {
-            finalResult.action = { type: 'open_block', blockId: 'services', itemId: servicesEntry.action?.itemId || null };
-          }
-        } else {
-          // Other heuristics only run as fail-safes if Gemini or the matching process returned no action
-          if (!finalResult.action) {
-            // Case B: Query or text is about location/address (adres, konum, nerede, yol tarifi)
-            const isLocationQuery = lowerQuery.includes('adres') || lowerQuery.includes('konum') || lowerQuery.includes('nerede') || lowerText.includes('adres') || lowerText.includes('konum');
-            if (isLocationQuery) {
-              const contactCand = entries.find((e: any) => e.blockType === 'contact' || e.action?.blockId === '__contact__' || e.action?.blockId === 'contact');
-              if (contactCand) {
-                finalResult.action = { type: 'open_block', blockId: '__contact__', itemId: contactCand.action?.itemId || null };
-              }
-            }
-            
-            // Case C: Query or text is about price/cost (fiyat, ücret, maliyet, ne kadar)
-            if (!finalResult.action) {
-              const isPriceQuery = lowerQuery.includes('fiyat') || lowerQuery.includes('ucret') || lowerQuery.includes('maliyet') || lowerQuery.includes('kadar') || lowerText.includes('fiyat') || lowerText.includes('ucret') || lowerText.includes('maliyet');
-              if (isPriceQuery) {
-                const pricingCand = entries.find((e: any) => e.blockType === 'pricing' || e.action?.blockId === 'pricing');
-                if (pricingCand) {
-                  finalResult.action = { type: 'open_block', blockId: 'pricing', itemId: pricingCand.action?.itemId || null };
-                }
-              }
-            }
-          }
-        }
-
-        // Resolve matchedBlock card info from action
-        const actionBlockId = finalResult.action?.blockId;
-        const actionItemId = finalResult.action?.itemId;
-        if (actionBlockId) {
-          const matchedCand = topCandidates.find(
-            (c: any) => c.action?.blockId === actionBlockId && (!actionItemId || c.action?.itemId === actionItemId)
-          ) || entries.find(
-            (e: any) => e.action?.blockId === actionBlockId && (!actionItemId || e.action?.itemId === actionItemId)
-          ) || topCandidate;
-
-          if (matchedCand) {
-            finalResult.matchedBlock = {
-              title: matchedCand.title || '',
-              description: matchedCand.answer || '',
-              blockId: actionBlockId,
-              itemId: actionItemId || undefined,
-            };
-          }
-        }
-      } catch (geminiErr) {
-        console.error('Gemini RAG generation failed, falling back to top score candidate:', geminiErr);
-        // Fallback to top matched candidate
-        finalResult.text = topCandidate?.answer || topCandidate?.searchText || '';
-        finalResult.action = topCandidate?.action || null;
-        finalResult.suggestedQuestions = pickLocale(
-          activeLocale,
-          ['İletişime nasıl geçerim?', 'Daha fazla bilgi alabilir miyim?'],
-          ['How to contact?', 'Can I get more info?'],
-          ['Как с вами связаться?', 'Можно узнать больше?']
-        );
-        
-        if (topCandidate?.action?.blockId) {
+        if (matchedCandidate) {
           finalResult.matchedBlock = {
-            title: topCandidate.title || '',
-            description: topCandidate.answer || '',
-            blockId: topCandidate.action.blockId,
-            itemId: topCandidate.action.itemId || undefined,
+            title: matchedCandidate.title || matchedCandidate.searchText?.split?.('.')[0] || '',
+            description: matchedCandidate.answer || '',
+            blockId: finalResult.action.blockId,
+            itemId: finalResult.action.itemId || undefined,
           };
         }
       }
@@ -676,14 +685,21 @@ Return ONLY a valid JSON object. Do not include markdown code block formatting (
       };
     }
 
-    await persistResponseAndDeduct(finalResult.text);
-
+    await persistResponse(finalResult.text);
     return NextResponse.json(finalResult);
-  } catch (err: any) {
+  } catch (err) {
     console.error('Semantic query route error:', err);
-    return NextResponse.json({
-      type: 'fallback',
-      text: pickLocale(activeLocale, 'Bir hata oluştu, lütfen daha sonra tekrar deneyin.', 'An error occurred, please try again later.', 'Произошла ошибка, попробуйте позже.')
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        type: 'fallback',
+        text: pickLocale(
+          activeLocale,
+          'Bir hata olustu, lutfen daha sonra tekrar deneyin.',
+          'An error occurred, please try again later.',
+          'Proizoshla oshibka, poprobuyte pozzhe.'
+        ),
+      },
+      { status: 500 }
+    );
   }
 }

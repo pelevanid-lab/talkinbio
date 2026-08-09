@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { CloudflareEmbeddingProvider, GeminiEmbeddingProvider, FakeEmbeddingProvider } from '@/utils/semantic/embeddingProvider';
+import { CloudflareEmbeddingProvider, FakeEmbeddingProvider } from '@/utils/semantic/embeddingProvider';
 import { buildSemanticIndex } from '@/utils/semantic/indexer';
 import { getBusinessFromRequest } from '@/utils/businessAuth';
 
@@ -27,14 +27,11 @@ export async function POST(
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const hasGemini = !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY);
     const hasCF = !!(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN);
 
-    const embeddingProvider = hasGemini
-      ? new GeminiEmbeddingProvider()
-      : hasCF
-        ? new CloudflareEmbeddingProvider()
-        : new FakeEmbeddingProvider();
+    const embeddingProvider = hasCF
+      ? new CloudflareEmbeddingProvider()
+      : new FakeEmbeddingProvider();
 
     const result = await buildSemanticIndex({
       supabase,

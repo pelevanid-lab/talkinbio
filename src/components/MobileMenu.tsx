@@ -9,6 +9,7 @@ interface MobileMenuProps {
   texts: {
     pricing?: string;
     login: string;
+    create?: string;
     dashboard?: string;
   };
 }
@@ -65,6 +66,13 @@ export default function MobileMenu({ isLoggedIn, texts }: MobileMenuProps) {
             </Link>
           ) : (
             <div className="flex flex-col gap-3 mt-2">
+              <Link 
+                href="/register" 
+                className="btn btn-primary w-full text-center"
+                onClick={() => setIsOpen(false)}
+              >
+                {texts.create || 'Sign up'}
+              </Link>
               <Link 
                 href="/login" 
                 className="btn btn-ghost w-full text-center border border-[var(--border)]"

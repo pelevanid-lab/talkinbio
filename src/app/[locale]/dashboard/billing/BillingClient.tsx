@@ -38,6 +38,7 @@ const MODEL_LABEL_KEY: Record<string, string> = {
   'fal-ai/imageutils/rembg': 'model.fal-ai/imageutils/rembg',
   'fal-ai/flux-lora-fast-training': 'model.fal-ai/flux-lora-fast-training',
   'gemini-2.5-pro': 'model.gemini-2-5-pro',
+  'visitor-credit': 'model.visitor-credit',
 };
 
 type Transaction = {

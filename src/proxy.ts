@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
-import { APP_LOCALE_COOKIE, DEFAULT_LOCALE, isRoutingLocale, resolveProductLocale } from './i18n/locales';
+import { APP_LOCALE_COOKIE, DEFAULT_LOCALE, isRoutingLocale, resolveProductLocale, resolveRoutingLocale } from './i18n/locales';
 import { createServerClient } from '@supabase/ssr';
 
 // Next 16'da `middleware` dosya konvansiyonu kullanımdan kalktı ve `proxy` olarak
@@ -32,6 +32,39 @@ function productLocalePath(pathname: string, locale: string): string {
   return locale === DEFAULT_LOCALE ? unlocalized : `/${locale}${unlocalized === '/' ? '' : unlocalized}`;
 }
 
+function isExplicitLocalePath(pathname: string): boolean {
+  return isRoutingLocale(pathname.split('/')[1]);
+}
+
+function browserLocalePath(pathname: string, acceptLanguage: string | null): string {
+  const locale = resolveRoutingLocale(acceptLanguage);
+  return locale === DEFAULT_LOCALE ? pathname : `/${locale}${pathname === '/' ? '' : pathname}`;
+}
+
+function isPublicProfilePath(pathname: string): boolean {
+  if (pathname === '/') return false;
+  const unlocalized = stripLocale(pathname);
+  const segments = unlocalized.split('/').filter(Boolean);
+  if (segments.length !== 1) return false;
+
+  const reserved = new Set([
+    'admin',
+    'api',
+    'auth',
+    'dashboard',
+    'legal',
+    'login',
+    'onboarding',
+    'pricing',
+    'register',
+    'request-access',
+    'stakeholders',
+    'updates',
+  ]);
+
+  return !reserved.has(segments[0]);
+}
+
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const firstSegment = pathname.split('/')[1];
@@ -48,6 +81,15 @@ export async function proxy(request: NextRequest) {
       request.headers.get('accept-language')
     );
     const expectedPath = productLocalePath(pathname, appLocale);
+    if (pathname !== expectedPath) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = expectedPath;
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
+  if (!isExplicitLocalePath(pathname) && isPublicProfilePath(pathname)) {
+    const expectedPath = browserLocalePath(pathname, request.headers.get('accept-language'));
     if (pathname !== expectedPath) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = expectedPath;

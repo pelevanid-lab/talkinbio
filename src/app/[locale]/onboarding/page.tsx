@@ -441,7 +441,7 @@ export default function OnboardingPage() {
     // düşük başlangıç kredisini (bkz. handleSave/header) tam bakiyeye tamamla.
     const { data: bizRow } = await supabase.from('businesses').select('credit_balance').eq('id', bizId).single();
     const updates: Record<string, any> = { setup_completed: true };
-    if ((bizRow?.credit_balance ?? 0) < 100) updates.credit_balance = 100;
+    if ((bizRow?.credit_balance ?? 0) < 200) updates.credit_balance = 200;
     await supabase.from('businesses').update(updates).eq('id', bizId);
     setPhase('done');
   }, [supabase]);
@@ -694,7 +694,7 @@ export default function OnboardingPage() {
               // Hesapsız (anonim) aşamada düşük bir başlangıç kredisi — e-posta bile
               // istemeyen bir akışta AI maliyeti sınırlı kalsın. Hesap kalıcı hale
               // gelince (bkz. finishWizardOrGate) 100'e tamamlanır.
-              credit_balance: 20,
+              credit_balance: 200,
               setup_completed: false,
             })
             .select()

@@ -7,6 +7,9 @@ import PoweredByFooter from '@/components/PoweredByFooter';
 import ProfilePageBody from '@/components/ProfilePageBody';
 import { PublicPageRuntimeProvider } from '@/components/PublicPageRuntime';
 import { createClient } from '@/utils/supabase/server';
+import { supabaseAdmin } from '@/utils/supabase/admin';
+import { deductCredits } from '@/agents/shared/credits';
+import { recordUsageEvent } from '@/agents/shared/usage';
 import { DEFAULT_THEME, resolvePageCanvases, resolveThemeColors } from '@/config/archetypes';
 import { googleFontsHref } from '@/utils/googleFonts';
 import { getPageActionTargets, withContactPageActionTarget } from '@/utils/pageActionTargets';
@@ -135,6 +138,18 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
         // Error code 23505 is unique_violation, which means they already visited today
         if (error && error.code !== '23505') {
           console.error('Failed to record page view:', error.message || error, 'Code:', error.code);
+        } else if (!error) {
+          await Promise.all([
+            deductCredits(supabaseAdmin, business.id, 1),
+            recordUsageEvent(supabaseAdmin, {
+              businessId: business.id,
+              agent: 'saule',
+              channel: 'web',
+              model: 'visitor-credit',
+              usage: { inputTokens: 0, outputTokens: 0 },
+              creditsCharged: 1,
+            }),
+          ]);
         }
       }
     } catch (err) {

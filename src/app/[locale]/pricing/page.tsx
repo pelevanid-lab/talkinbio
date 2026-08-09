@@ -26,7 +26,6 @@ const LogoSVG = () => (
 
 const USE_CASES = [
   { emoji: '⚡', titleKey: 'use_interactive_title', descKey: 'use_interactive_desc', soon: false },
-  { emoji: '✍️', titleKey: 'use_content_title',     descKey: 'use_content_desc',     soon: false },
   { emoji: '🎨', titleKey: 'use_media_title',        descKey: 'use_media_desc',        soon: false },
   { emoji: '💬', titleKey: 'use_assistant_title',    descKey: 'use_assistant_desc',    soon: true  },
 ] as const;

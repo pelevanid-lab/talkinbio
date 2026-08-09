@@ -18,6 +18,7 @@ const ROUTING_OPTIONS: LocaleOption[] = [
 
 const PRODUCT_OPTIONS: LocaleOption[] = [
   { value: 'en', label: 'English' },
+  { value: 'ru', label: 'Русский' },
   { value: 'tr', label: 'Türkçe' },
 ];
 

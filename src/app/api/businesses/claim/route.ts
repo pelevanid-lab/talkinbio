@@ -57,7 +57,7 @@ export async function POST(request: Request) {
   };
   // Anonim aşamada verilen düşük başlangıç kredisini (bkz. onboarding handleSave)
   // kalıcı hesap bakiyesine tamamla — finishWizardOrGate'teki mantığın aynısı.
-  if ((business.credit_balance ?? 0) < 100) updates.credit_balance = 100;
+  if ((business.credit_balance ?? 0) < 200) updates.credit_balance = 200;
 
   // owner_id koşulu iyimser kilit: aynı anda iki kişi aynı linki devralmaya
   // çalışırsa, sadece ilki başarılı olur (satır artık eski owner_id ile eşleşmez).
