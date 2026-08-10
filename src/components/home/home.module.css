@@ -138,6 +138,10 @@
   color: var(--orange);
 }
 
+.mobileConversionHero {
+  display: none;
+}
+
 @keyframes pulseDot {
   0%, 100% { opacity: 0.35; transform: translateY(0); }
   50% { opacity: 1; transform: translateY(-2px); }
@@ -381,7 +385,7 @@
 }
 
 .intentQuestion {
-  margin: 20px 0 12px;
+  margin: 20px 0 10px;
   font-family: var(--font-bricolage), sans-serif;
   font-size: clamp(24px, 2.8vw, 36px);
   font-weight: 800;
@@ -1581,6 +1585,18 @@
 }
 
 @media (max-width: 640px) {
+  .shell,
+  .main {
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  .navbar,
+  .composer,
+  .finalCta {
+    display: none;
+  }
+
   .navInner {
     grid-template-columns: 1fr auto;
     min-height: 62px;
@@ -1588,6 +1604,349 @@
 
   .desktopNav,
   .navActions {
+    display: none;
+  }
+
+  .mobileConversionHero {
+    position: relative;
+    display: flex;
+    height: 100svh;
+    min-height: 100svh;
+    overflow: hidden;
+    background: #101110;
+    color: white;
+    isolation: isolate;
+  }
+
+  .mobileConversionMedia {
+    position: absolute;
+    inset: 0;
+    z-index: -3;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
+    opacity: 0.72;
+    filter: saturate(0.78) contrast(1.08);
+    transform: scale(1.01);
+  }
+
+  .mobileConversionScrim {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background:
+      linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.18) 42%, rgba(0, 0, 0, 0.92)),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.18), transparent 38%, rgba(0, 0, 0, 0.2));
+  }
+
+  .mobileConversionLogo {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 36px;
+    padding: 0 11px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.18);
+    color: #f6efe4;
+    font-family: var(--font-bricolage), sans-serif;
+    font-size: 18px;
+    font-weight: 850;
+    line-height: 1;
+    backdrop-filter: blur(12px);
+    cursor: pointer;
+  }
+
+  .mobileConversionLogo > span:last-child {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .mobileConversionLogo i {
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
+  .mobileConversionMenu {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 2;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    color: white;
+    backdrop-filter: blur(10px);
+    border: 0;
+    cursor: pointer;
+  }
+
+  .mobileConversionMenu[data-audio-enabled="true"] {
+    background: rgba(216, 111, 31, 0.34);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16);
+  }
+
+  .mobileConversionMenu span {
+    display: none;
+  }
+
+  .mobileConversionMenu svg {
+    display: block;
+    stroke-width: 2.4;
+  }
+
+  .mobileConversionContent {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 0;
+    max-height: 100svh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 16px 16px;
+    scrollbar-width: none;
+  }
+
+  .mobileConversionContent[data-scene="about"] {
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 64px;
+  }
+
+  .mobileConversionContent::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobileConversionProfile {
+    margin-bottom: 18px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    text-shadow: 0 12px 34px rgba(0, 0, 0, 0.55);
+    cursor: pointer;
+  }
+
+  .mobileConversionProfile span,
+  .mobileConversionActions > span,
+  .mobileConversionActions small {
+    display: block;
+    font-family: var(--font-ibm-plex-mono), monospace;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .mobileConversionProfile span,
+  .mobileConversionActions > span {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .mobileConversionProfile h1 {
+    margin: 9px 0 8px;
+    font-family: var(--font-bricolage), sans-serif;
+    font-size: clamp(38px, 10.6vw, 50px);
+    font-weight: 800;
+    line-height: 0.92;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+
+  .mobileConversionProfile p {
+    margin: 0;
+    max-width: 320px;
+    color: rgba(255, 255, 255, 0.84);
+    font-size: 13px;
+    font-weight: 750;
+    line-height: 1.35;
+  }
+
+  .mobileConversionActions {
+    display: grid;
+    gap: 7px;
+  }
+
+  .mobileConversionActions > span {
+    margin-bottom: 4px;
+  }
+
+  .mobileConversionActions a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    min-height: 56px;
+    padding: 11px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.42);
+    color: white;
+    text-decoration: none;
+    backdrop-filter: blur(10px);
+  }
+
+  .mobileConversionActions a > span {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 850;
+    line-height: 1.1;
+  }
+
+  .mobileConversionActions small {
+    color: rgba(255, 255, 255, 0.48);
+    font-size: 9px;
+  }
+
+  .mobileConversionActions svg {
+    flex: 0 0 auto;
+    color: rgba(255, 255, 255, 0.86);
+  }
+
+  .mobileAboutPanel {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    margin: 0;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 22px;
+    background: rgba(8, 9, 9, 0.74);
+    box-shadow: 0 26px 72px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(14px);
+    overflow: hidden;
+  }
+
+  .mobileAboutScroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    padding: 16px 16px 18px;
+    scrollbar-width: none;
+  }
+
+  .mobileAboutScroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobileAboutNumber,
+  .mobileAboutSignal,
+  .mobileAboutFounder span {
+    font-family: var(--font-ibm-plex-mono), monospace;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .mobileAboutNumber {
+    display: block;
+    color: var(--orange);
+    margin-bottom: 8px;
+  }
+
+  .mobileAboutPanel h2 {
+    margin: 0;
+    color: #f6efe4;
+    font-family: var(--font-bricolage), sans-serif;
+    font-size: clamp(31px, 8.9vw, 42px);
+    font-weight: 700;
+    line-height: 0.94;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+
+  .mobileAboutLead {
+    margin: 10px 0 10px;
+    color: rgba(246, 239, 228, 0.7);
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1.42;
+  }
+
+  .mobileAboutSignal {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    color: var(--orange);
+  }
+
+  .mobileAboutFounder {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 0.85fr);
+    gap: 0;
+    align-items: stretch;
+    margin: 0 0 14px;
+    overflow: hidden;
+    border-radius: 16px;
+    background: rgba(127, 123, 98, 0.92);
+  }
+
+  .mobileAboutFounder img {
+    display: block;
+    width: 100%;
+    height: 112px;
+    object-fit: cover;
+    object-position: 34% center;
+    filter: grayscale(0.1) contrast(1.04);
+  }
+
+  .mobileAboutFounder figcaption {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 12px;
+    color: #f6efe4;
+  }
+
+  .mobileAboutFounder strong {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 15px;
+    line-height: 1.05;
+  }
+
+  .mobileAboutFounder span {
+    color: rgba(246, 239, 228, 0.66);
+    font-size: 9px;
+    line-height: 1.3;
+  }
+
+  .mobileAboutCopy {
+    display: grid;
+    gap: 9px;
+  }
+
+  .mobileAboutCopy p {
+    margin: 0;
+    color: rgba(246, 239, 228, 0.82);
+    font-size: 12px;
+    font-weight: 650;
+    line-height: 1.5;
+  }
+
+  .hero,
+  .adaptiveStatus {
     display: none;
   }
 

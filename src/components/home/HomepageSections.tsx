@@ -1,8 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useState, type CSSProperties } from 'react';
-import { ArrowRight, Camera, Mail, Music } from 'lucide-react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { ArrowRight, Camera, Mail, Music, Volume2, VolumeX } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/routing';
 import {
   capabilityItems,
@@ -52,6 +52,143 @@ export function BrandLogo() {
       <span>talkinbio</span>
       <PresenceIndicator state="idle" />
     </span>
+  );
+}
+
+export function MobileConversionHero({
+  onIntentSelect,
+}: {
+  onIntentSelect: (intent: HomepageIntent) => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const [mobileScene, setMobileScene] = useState<'discover' | 'about'>('discover');
+
+  function toggleAudio() {
+    const video = videoRef.current;
+    if (!video) return;
+    const nextEnabled = !audioEnabled;
+    video.muted = !nextEnabled;
+    video.volume = 1;
+    if (video.paused) void video.play();
+    setAudioEnabled(nextEnabled);
+  }
+
+  const intentActions = (
+    <div className={styles.mobileConversionActions}>
+      <span>DISCOVER.</span>
+      <a href="#setup" onClick={() => onIntentSelect('create_page')}>
+        <span>
+          <small>PROJECT</small>
+          I need a new website
+        </span>
+        <ArrowRight aria-hidden="true" size={18} />
+      </a>
+      <a href="#examples" onClick={() => onIntentSelect('existing_link_bio')}>
+        <span>
+          <small>PROJECT</small>
+          My website feels outdated
+        </span>
+        <ArrowRight aria-hidden="true" size={18} />
+      </a>
+      <a href="#ask" onClick={() => onIntentSelect('curious')}>
+        <span>
+          <small>GOAL</small>
+          I need more leads
+        </span>
+        <ArrowRight aria-hidden="true" size={18} />
+      </a>
+    </div>
+  );
+
+  return (
+    <section className={styles.mobileConversionHero} aria-label="Talkinbio discovery">
+      <video
+        ref={videoRef}
+        className={styles.mobileConversionMedia}
+        src="/videos/cicada-hero-mobile.mp4"
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+        aria-hidden="true"
+      />
+      <div className={styles.mobileConversionScrim} aria-hidden="true" />
+      <button type="button" className={styles.mobileConversionLogo} onClick={() => setMobileScene('discover')} aria-label="Return to Talkinbio intro">
+        <span>talkinbio</span>
+        <span aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </span>
+      </button>
+      <button
+        type="button"
+        className={styles.mobileConversionMenu}
+        onClick={toggleAudio}
+        aria-label={audioEnabled ? 'Turn cicada sound off' : 'Turn cicada sound on'}
+        data-audio-enabled={audioEnabled}
+      >
+        {audioEnabled ? <Volume2 aria-hidden="true" size={19} /> : <VolumeX aria-hidden="true" size={19} />}
+      </button>
+      <div className={styles.mobileConversionContent} data-scene={mobileScene}>
+        {mobileScene === 'discover' ? (
+          <>
+            <button type="button" className={styles.mobileConversionProfile} onClick={() => setMobileScene('about')}>
+              <span>OPEN WEBSITE</span>
+              <h1>
+                The web
+                <br />
+                is too quiet.
+              </h1>
+              <p>
+                Pages were made to be visited.
+                <br />
+                We think they should talk back.
+              </p>
+            </button>
+            {intentActions}
+          </>
+        ) : (
+          <article className={styles.mobileAboutPanel} aria-labelledby="mobile-about-title">
+            <div className={styles.mobileAboutScroll}>
+              <span className={styles.mobileAboutNumber}>04</span>
+              <h2 id="mobile-about-title">
+                Stop linking.
+                <br />
+                Start talking.
+              </h2>
+              <p className={styles.mobileAboutLead}>
+                Conversation does not sit on top of the website. Conversation controls the website.
+              </p>
+              <div className={styles.mobileAboutSignal}>
+                <PresenceIndicator state="thinking" />
+                <span>THE INTERFACE IS CHANGING.</span>
+              </div>
+              <figure className={styles.mobileAboutFounder}>
+                <Image src="/enes-founder-portrait-sketch.png" alt="Enes Pehlivan portrait" width={420} height={260} loading="eager" />
+                <figcaption>
+                  <strong>Enes Pehlivan</strong>
+                  <span>Founder, Talkinbio</span>
+                </figcaption>
+              </figure>
+              <div className={styles.mobileAboutCopy}>
+                <p>
+                  We design interactive, live, voice-enabled and moving websites for people and institutions that need more than a static page.
+                </p>
+                <p>
+                  A Talkinbio website can listen to intent, answer in context, guide the visitor, show the right service and move the interface toward conversion.
+                </p>
+                <p>
+                  The point is not to add another link. The point is to turn the page into a conversational experience: creative, alive and built around the next action.
+                </p>
+              </div>
+            </div>
+          </article>
+        )}
+        {mobileScene === 'about' ? intentActions : null}
+      </div>
+    </section>
   );
 }
 

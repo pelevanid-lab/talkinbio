@@ -16,6 +16,7 @@ import {
   FinalCTA,
   Footer,
   HeroSection,
+  MobileConversionHero,
   PricingSection,
   SearchSection,
   SetupSection,
@@ -118,7 +119,8 @@ export default function AdaptiveHomepage() {
   return (
     <>
       <main className={styles.main} data-adapted={adapted}>
-          <HeroSection
+        <MobileConversionHero onIntentSelect={handleIntentSelect} />
+        <HeroSection
           activeIntent={intent}
           activeResponse={intent ? intentCopy[intent].response : null}
           adapted={adapted}
