@@ -449,7 +449,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
           {renderColoredSegments(blockTitle)}
         </h2>
         {images.length > 0 && (
-          <div className={`grid ${images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-3 mb-6`}>
+          <div className={`tb-about-media grid ${images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-3 mb-6`}>
             {images.map((img, idx) => (
               <div
                 key={idx}
@@ -473,7 +473,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
     // dock reserved below), so viewport-height units measure the wrong box and can make the hero
     // balloon far taller than the space actually available.
     return (
-      <section key={block.id} className={`relative overflow-hidden ${radiusClass} h-[440px] shadow-xl flex items-end group`}>
+      <section key={block.id} className={`tb-about-media relative overflow-hidden ${radiusClass} h-[440px] shadow-xl flex items-end group`}>
         <div className="absolute inset-0 z-0">
           {ctx.businessName?.toLowerCase().includes('talkinbio') ? (
             <div className="w-full h-full flex items-center justify-center bg-slate-900">
@@ -503,7 +503,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
     // surrounding browser window was wide, regardless of how narrow this column actually was.
     return (
       <section key={block.id} className="pt-4">
-        <div className={`flex flex-row overflow-hidden border shadow-md ${radiusClass}`} style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+        <div className={`tb-about-media flex flex-row overflow-hidden border shadow-md ${radiusClass}`} style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div className="w-2/5 shrink-0 relative flex items-center justify-center bg-slate-100">
             {ctx.businessName?.toLowerCase().includes('talkinbio') ? (
               <SauleIcon size={160} className="object-contain" />
@@ -529,7 +529,7 @@ function renderAbout(block: any, ctx: RenderCtx) {
   // Standard layout
   const isTalkinbio = ctx.businessName?.toLowerCase().includes('talkinbio');
   const MediaElement = mediaUrl || isTalkinbio ? (
-    <div className={`overflow-hidden shadow-sm ${radiusClass} ${pos === 'middle' ? 'my-6' : pos === 'top' ? 'mb-6' : 'mt-6'}`}>
+    <div className={`tb-about-media overflow-hidden shadow-sm ${radiusClass} ${pos === 'middle' ? 'my-6' : pos === 'top' ? 'mb-6' : 'mt-6'}`}>
       {isTalkinbio ? (
         <SauleIcon size={240} className="w-full max-h-96 object-contain" />
       ) : isVideoUrl(mediaUrl) ? (
@@ -677,7 +677,7 @@ function EntryNavigationMenu({
 
       {open && (
         <div
-          className="absolute right-0 top-full z-[70] mt-2 flex w-56 max-h-[min(420px,calc(100dvh-120px))] flex-col overflow-y-auto rounded-lg border py-1 shadow-[0_18px_50px_rgba(15,23,42,0.18)]"
+          className="absolute left-0 top-full z-[70] mt-2 flex w-56 max-h-[min(420px,calc(100dvh-120px))] flex-col overflow-y-auto rounded-lg border py-1 shadow-[0_18px_50px_rgba(15,23,42,0.18)]"
           style={{ background: c.surface, borderColor: c.border, color: c.text }}
         >
           <div className="flex justify-center border-b px-4 py-3" style={{ borderColor: c.border }}>
@@ -743,6 +743,7 @@ function ProfileEntryCard({
   const [entryQuestion, setEntryQuestion] = useState('');
   const [entryChatMessages, setEntryChatMessages] = useState<EntryChatMessage[]>([]);
   const [entryChatLoading, setEntryChatLoading] = useState(false);
+  const [entryDesktopLayout, setEntryDesktopLayout] = useState(false);
   const [conversionSceneIndex, setConversionSceneIndex] = useState(0);
   const [conversionAnswer, setConversionAnswer] = useState<ConversionAnswerState | null>(null);
   const entryContentScrollRef = useRef<HTMLDivElement | null>(null);
@@ -937,6 +938,15 @@ function ProfileEntryCard({
   }, []);
 
   useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const media = window.matchMedia('(min-width: 1024px)');
+    const update = () => setEntryDesktopLayout(media.matches);
+    update();
+    media.addEventListener?.('change', update);
+    return () => media.removeEventListener?.('change', update);
+  }, []);
+
+  useEffect(() => {
     if (!selectedBlockId) return;
     setConversionAnswer(null);
     const node = entryContentScrollRef.current;
@@ -961,10 +971,122 @@ function ProfileEntryCard({
     node.scrollTop = node.scrollHeight;
   }, [entryChatMessages, entryChatLoading]);
 
+  // Name/tagline + shortcut chips shown over the cover photo when nothing is selected yet.
+  // Reused as-is (not just referenced) both in the normal in-flow spot (mobile, and desktop
+  // before the `entryDesktopLayout` media query engages) and in `.tb-entry-desktop-profile-idle`
+  // below — that sibling is absolutely positioned to match `.tb-entry-cover-media`'s box exactly,
+  // because this element's own box (an in-flow grid item) resolves `height: calc(100% - Npx)`
+  // against its grid row's used track size, not the card's full height like the (absolutely
+  // positioned) cover photo does — the two boxes end up different heights, so nesting the text
+  // inside this element's own box can't reliably reach the true bottom edge of the photo.
+  const profileTeaserBody = (
+    <>
+      <button
+        type="button"
+        data-tb-entry-trigger="profile"
+        onClick={() => {
+          if (isConversion && entryDesktopLayout) {
+            closeEntryInsideCard();
+            return;
+          }
+          if (profileTargetBlock) openEntryInsideCard(profileTargetBlock.id, null, 'profile');
+        }}
+        className="group max-w-full text-left"
+      >
+        <span className="block text-[10px] font-mono uppercase tracking-[0.18em] text-white/65 mb-1.5">
+          {entryCopy('openProfile', locale)}
+        </span>
+        <span className="block text-[26px] leading-[0.95] font-bold tb-heading">{renderColoredSegments(businessName)}</span>
+        {description && (
+          <span className="mt-2 block max-w-[92%] text-[12px] font-semibold leading-snug text-white/78">
+            {renderColoredSegments(description)}
+          </span>
+        )}
+      </button>
+      {entryShortcuts.length > 0 && (
+        <div className="mt-2 flex max-w-full flex-wrap gap-1.5">
+          {entryShortcuts.map((shortcut, index) => {
+            let Icon = LinkIcon;
+            let href = '';
+            let isExternalLink = false;
+
+            if (shortcut.kind === 'link') {
+              Icon = iconForLinkUrl(shortcut.url);
+              href = shortcut.url;
+              isExternalLink = true;
+            } else if (shortcut.kind === 'contact') {
+              // Contact shortcuts — generate URL based on channel
+              const contactIconMap: Record<string, any> = {
+                email: Mail,
+                whatsapp: MessageCircle,
+                instagram: AtSign,
+                telegram: MessageCircle,
+              };
+              Icon = contactIconMap[shortcut.channel] || MessageCircle;
+
+              if (shortcut.channel === 'email') {
+                href = `mailto:${shortcut.value}`;
+              } else if (shortcut.channel === 'whatsapp') {
+                href = `https://wa.me/${shortcut.value.replace(/[^0-9]/g, '')}`;
+              } else if (shortcut.channel === 'instagram') {
+                href = `https://instagram.com/${shortcut.value}`;
+              } else if (shortcut.channel === 'telegram') {
+                href = `https://t.me/${shortcut.value}`;
+              }
+              isExternalLink = true;
+            }
+
+            const className = 'inline-flex max-w-[48%] items-center gap-1.5 rounded-full border border-white/18 bg-black/30 px-2.5 py-1.5 text-[11px] font-bold text-white/88 backdrop-blur-sm transition hover:border-white/42 hover:bg-black/45';
+            const content = (
+              <>
+                <Icon className="h-3 w-3 shrink-0 text-white/70" />
+                <span className="truncate">{shortcut.label}</span>
+              </>
+            );
+
+            if (isExternalLink) {
+              return (
+                <a
+                  key={`${shortcut.kind}-${shortcut.label || (shortcut.kind === 'contact' ? shortcut.channel : '')}-${index}`}
+                  href={href}
+                  target={shortcut.kind === 'link' ? '_blank' : undefined}
+                  rel={shortcut.kind === 'link' ? 'noreferrer' : undefined}
+                  className={className}
+                  onClick={() => {
+                    if (shortcut.kind === 'contact') {
+                      onEngagementClick?.('contact_click', shortcut.channel);
+                    }
+                  }}
+                >
+                  {content}
+                </a>
+              );
+            }
+
+            if (shortcut.kind === 'service') {
+              return (
+                <button
+                  key={`${shortcut.kind}-${shortcut.blockId}-${shortcut.label}-${index}`}
+                  type="button"
+                  onClick={() => openEntryInsideCard(shortcut.blockId, null, 'book')}
+                  className={className}
+                >
+                  {content}
+                </button>
+              );
+            }
+
+            return null;
+          })}
+        </div>
+      )}
+    </>
+  );
+
   return (
-    <section className="flex h-full min-h-full">
+    <section className={`tb-entry-viewport flex h-full min-h-full ${isConversion ? 'tb-entry-viewport-conversion' : ''}`}>
       <div
-        className="relative flex w-full flex-col justify-between overflow-hidden bg-[#111] text-white shadow-[0_24px_60px_rgba(15,23,42,0.16)] sm:rounded-[34px]"
+        className={`tb-entry-shell relative flex w-full flex-col justify-between overflow-hidden bg-[#111] text-white shadow-[0_24px_60px_rgba(15,23,42,0.16)] sm:rounded-[34px] ${isConversion ? 'tb-entry-shell-conversion' : ''} ${selectedBlock ? 'tb-entry-shell-selected' : 'tb-entry-shell-discover'}`}
         style={{
           ...entryChromeStyle,
           borderColor: 'color-mix(in srgb, var(--primary) 32%, transparent)',
@@ -972,18 +1094,18 @@ function ProfileEntryCard({
       >
         {coverImage ? (
           isVideoUrl(coverImage) ? (
-            <video src={coverImage} className="absolute inset-0 w-full h-full object-cover opacity-75" autoPlay loop muted playsInline />
+            <video src={coverImage} className="tb-entry-cover-media absolute inset-0 w-full h-full object-cover opacity-75" autoPlay loop muted playsInline />
           ) : (
             <img
               src={supabaseThumbnailUrl(coverImage, { width: 720 }) ?? coverImage}
               alt=""
               loading="eager"
               decoding="async"
-              className="absolute inset-0 w-full h-full object-cover opacity-75"
+              className="tb-entry-cover-media absolute inset-0 w-full h-full object-cover opacity-75"
             />
           )
         ) : (
-          <div className="absolute inset-0" style={{ background: `linear-gradient(145deg, ${c.primary}, #111)` }} />
+          <div className="tb-entry-cover-media absolute inset-0" style={{ background: `linear-gradient(145deg, ${c.primary}, #111)` }} />
         )}
         <style>{`
           .tb-entry-scrim-base {
@@ -1031,6 +1153,157 @@ function ProfileEntryCard({
           .tb-entry-content-scroll .markdown-body p {
             margin-bottom: 0.75rem;
           }
+          @media (min-width: 1024px) {
+            .tb-entry-viewport-conversion {
+              width: 100%;
+            }
+            .tb-entry-shell-conversion {
+              display: grid;
+              grid-template-columns: minmax(340px, 0.72fr) minmax(520px, 1.28fr);
+              grid-template-rows: minmax(0, 1fr) auto;
+              column-gap: 34px;
+              row-gap: 18px;
+              padding: 18px;
+              border: 1px solid rgba(20, 35, 31, 0.08);
+              background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.34)),
+                linear-gradient(90deg, transparent 0 43%, color-mix(in srgb, var(--primary) 7%, transparent) 43% 100%),
+                color-mix(in srgb, var(--tb-entry-content-panel-bg) 74%, transparent);
+            }
+            .tb-entry-shell-conversion .tb-entry-cover-media,
+            .tb-entry-shell-conversion .tb-entry-scrim-base,
+            .tb-entry-shell-conversion .tb-entry-scrim-curtain,
+            .tb-entry-shell-conversion .tb-entry-bottom-scrim,
+            .tb-entry-shell-conversion .tb-entry-bottom-scrim-light {
+              grid-column: 1;
+              grid-row: 1;
+              position: absolute;
+              inset: 18px auto auto 18px;
+              width: calc((100% - 70px) * 0.35);
+              height: calc(100% - 310px);
+              min-height: 0;
+              max-height: 540px;
+              border-radius: 24px;
+            }
+            .tb-entry-shell-conversion .tb-entry-cover-media {
+              opacity: 1;
+              box-shadow: 0 26px 70px rgba(15, 23, 42, 0.18);
+            }
+            .tb-entry-shell-conversion .tb-entry-scrim-base,
+            .tb-entry-shell-conversion .tb-entry-bottom-scrim,
+            .tb-entry-shell-conversion .tb-entry-bottom-scrim-light,
+            .tb-entry-shell-conversion .tb-entry-scrim-curtain {
+              display: none;
+            }
+            .tb-entry-shell-conversion .tb-entry-main {
+              grid-column: 1;
+              grid-row: 1;
+              min-height: 0;
+            }
+            .tb-entry-shell-conversion.tb-entry-shell-discover .tb-entry-main {
+              height: calc(100% - 310px);
+              max-height: 540px;
+              overflow: hidden;
+            }
+            .tb-entry-shell-conversion .tb-entry-desktop-profile {
+              position: absolute;
+              inset: 18px auto auto 18px;
+              width: calc((100% - 70px) * 0.35);
+              height: calc(100% - 310px);
+              max-height: 540px;
+              overflow: hidden;
+              background: linear-gradient(to top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.22) 35%, rgba(0, 0, 0, 0) 65%);
+            }
+            .tb-entry-shell-conversion.tb-entry-shell-discover .tb-entry-main > div:last-child {
+              display: none;
+            }
+            .tb-entry-shell-conversion .tb-entry-desktop-profile-idle {
+              position: absolute;
+              inset: 18px auto auto 18px;
+              width: calc((100% - 70px) * 0.35);
+              height: calc(100% - 310px);
+              max-height: 540px;
+              overflow: hidden;
+              background: linear-gradient(to top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.22) 35%, rgba(0, 0, 0, 0) 65%);
+            }
+            .tb-entry-shell-conversion .tb-entry-actions {
+              grid-column: 1;
+              grid-row: 2;
+              align-self: start;
+              padding: 0;
+            }
+            .tb-entry-shell-conversion.tb-entry-shell-discover .tb-entry-actions {
+              width: 100%;
+              max-width: none;
+              align-self: start;
+              justify-self: stretch;
+              padding: 0;
+            }
+            .tb-entry-shell-conversion.tb-entry-shell-discover .tb-entry-actions > div:first-child {
+              margin-bottom: 10px;
+              color: color-mix(in srgb, var(--text-muted) 90%, var(--text) 10%);
+            }
+            .tb-entry-shell-conversion.tb-entry-shell-discover [data-tb-entry-trigger="action"] {
+              border-color: color-mix(in srgb, var(--border) 82%, var(--text) 18%);
+              background: color-mix(in srgb, var(--surface) 86%, white 14%);
+              box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+              padding: 15px 18px;
+            }
+            .tb-entry-shell-conversion.tb-entry-shell-discover [data-tb-entry-trigger="action"]:hover {
+              border-color: color-mix(in srgb, var(--primary) 56%, var(--border) 44%);
+              background: var(--surface);
+            }
+            .tb-entry-shell-conversion.tb-entry-shell-discover [data-tb-entry-trigger="action"] span span:first-child {
+              color: var(--text-muted);
+            }
+            .tb-entry-shell-conversion.tb-entry-shell-discover [data-tb-entry-trigger="action"] span span:last-child {
+              color: var(--text);
+            }
+            .tb-entry-shell-conversion.tb-entry-shell-discover [data-tb-entry-trigger="action"] svg {
+              color: var(--text-muted);
+            }
+            .tb-entry-shell-conversion.tb-entry-shell-selected .tb-entry-main {
+              grid-column: 2;
+              grid-row: 1 / span 2;
+            }
+            .tb-entry-shell-conversion.tb-entry-shell-selected .tb-entry-actions {
+              grid-column: 1;
+              grid-row: 2;
+              padding: 0;
+            }
+            .tb-entry-shell-conversion.tb-entry-shell-selected .tb-entry-live-actions {
+              display: none;
+            }
+            .tb-entry-shell-conversion .tb-entry-desktop-start-panel {
+              grid-column: 2;
+              grid-row: 1 / span 2;
+              min-height: 0;
+              display: flex;
+            }
+            .tb-entry-shell-conversion .tb-entry-content-panel .tb-about-media,
+            .tb-entry-shell-conversion .tb-entry-content-panel .tb-about-media img,
+            .tb-entry-shell-conversion .tb-entry-content-panel .tb-about-media video {
+              display: none !important;
+            }
+            .tb-entry-shell-conversion .tb-entry-mobile-corner-menu,
+            .tb-entry-shell-conversion .tb-entry-content-header {
+              display: none;
+            }
+            .tb-entry-shell-conversion .tb-entry-content-panel {
+              border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+              border-radius: 24px;
+              box-shadow: 0 22px 60px rgba(15, 23, 42, 0.10);
+            }
+            .tb-entry-shell-conversion .tb-entry-content-scroll {
+              padding: 24px;
+            }
+            .tb-entry-shell-conversion .tb-entry-content-scroll h2 {
+              font-size: 2rem;
+            }
+            .tb-entry-shell-conversion .tb-entry-content-scroll .markdown-body {
+              font-size: 0.95rem;
+            }
+          }
           @keyframes tbEntryBrighten {
             to { opacity: 0; }
           }
@@ -1041,9 +1314,70 @@ function ProfileEntryCard({
           <div className={`absolute inset-x-0 bottom-0 h-[44%] ${selectedUsesLightChrome ? 'tb-entry-bottom-scrim-light' : 'tb-entry-bottom-scrim'}`} />
         )}
 
-        <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+        {isConversion && entryDesktopLayout && (
+          <div className="absolute left-5 top-5 z-50 hidden lg:block">
+            <EntryNavigationMenu
+              blocks={visibleBlocks}
+              locale={locale}
+              theme={theme}
+              variant="dots"
+              onSelect={handleEntryMenuSelect}
+            />
+          </div>
+        )}
+
+        {isConversion && selectedBlock && entryDesktopLayout && (
+          <div className="tb-entry-desktop-profile relative z-10 hidden min-h-0 flex-col justify-end p-7 text-left lg:flex">
+            <button
+              type="button"
+              data-tb-entry-trigger="profile"
+              onClick={closeEntryInsideCard}
+              className="group max-w-full text-left"
+            >
+              <span className="mb-2 block text-[10px] font-mono uppercase tracking-[0.18em] text-white/65">
+                {entryCopy('openProfile', locale)}
+              </span>
+              <span className="block text-[34px] font-bold leading-[0.96] tb-heading">{renderColoredSegments(businessName)}</span>
+              {description && (
+                <span className="mt-3 block max-w-[88%] text-sm font-semibold leading-snug text-white/78">
+                  {renderColoredSegments(description)}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
+
+        {isConversion && !selectedBlock && entryDesktopLayout && (
+          <div className="tb-entry-desktop-profile-idle relative z-10 hidden min-h-0 flex-col justify-end p-7 text-left lg:flex">
+            {profileTeaserBody}
+          </div>
+        )}
+
+        {isConversion && !selectedBlock && profileTargetBlock && (
+          <div className="tb-entry-desktop-start-panel tb-entry-content-panel hidden min-h-0 flex-1 flex-col overflow-hidden shadow-[0_18px_45px_rgba(0,0,0,0.10)] backdrop-blur-md lg:flex" style={{ background: 'var(--tb-entry-content-panel-bg)' }}>
+            <div className="tb-entry-content-header relative flex h-16 shrink-0 items-center justify-center border-b px-4" style={{ background: 'var(--tb-entry-content-header-bg)', borderColor: 'var(--tb-entry-content-header-border)' }}>
+              <div className="max-w-[70%] truncate text-center text-sm font-semibold tb-heading" style={{ color: 'var(--text)' }}>
+                {renderColoredSegments(businessName)}
+              </div>
+              <div className="absolute right-3 top-1/2 z-30 -translate-y-1/2">
+                <EntryNavigationMenu
+                  blocks={visibleBlocks}
+                  locale={locale}
+                  theme={theme}
+                  variant="menu"
+                  onSelect={handleEntryMenuSelect}
+                />
+              </div>
+            </div>
+            <div className="tb-entry-content-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4">
+              {renderBlock(profileTargetBlock, null)}
+            </div>
+          </div>
+        )}
+
+        <div className="tb-entry-main relative z-10 flex min-h-0 flex-1 flex-col">
           {!selectedBlock && (
-            <div className="absolute right-4 top-4 z-30">
+            <div className="tb-entry-mobile-corner-menu absolute right-4 top-4 z-30">
               <EntryNavigationMenu
                 blocks={visibleBlocks}
                 locale={locale}
@@ -1056,7 +1390,7 @@ function ProfileEntryCard({
 
           {selectedBlock ? (
             <div className="tb-entry-content-panel flex min-h-0 flex-1 flex-col overflow-hidden shadow-[0_18px_45px_rgba(0,0,0,0.18)] backdrop-blur-md" style={{ background: 'var(--tb-entry-content-panel-bg)' }}>
-              <div className="relative flex h-16 shrink-0 items-center justify-center border-b px-4" style={{ background: 'var(--tb-entry-content-header-bg)', borderColor: 'var(--tb-entry-content-header-border)' }}>
+              <div className="tb-entry-content-header relative flex h-16 shrink-0 items-center justify-center border-b px-4" style={{ background: 'var(--tb-entry-content-header-bg)', borderColor: 'var(--tb-entry-content-header-border)' }}>
                 <button
                   type="button"
                   aria-label="Geri"
@@ -1319,105 +1653,45 @@ function ProfileEntryCard({
             </div>
           ) : (
             <div className="flex min-h-0 flex-1 flex-col justify-end px-5 pb-1 text-left">
-              <button
-                type="button"
-                data-tb-entry-trigger="profile"
-                onClick={() => profileTargetBlock && openEntryInsideCard(profileTargetBlock.id, null, 'profile')}
-                className="group max-w-full text-left"
-              >
-                <span className="block text-[10px] font-mono uppercase tracking-[0.18em] text-white/65 mb-1.5">
-                  {entryCopy('openProfile', locale)}
-                </span>
-                <span className="block text-[26px] leading-[0.95] font-bold tb-heading">{renderColoredSegments(businessName)}</span>
-                {description && (
-                  <span className="mt-2 block max-w-[92%] text-[12px] font-semibold leading-snug text-white/78">
-                    {renderColoredSegments(description)}
-                  </span>
-                )}
-              </button>
-              {entryShortcuts.length > 0 && (
-                <div className="mt-2 flex max-w-full flex-wrap gap-1.5">
-                  {entryShortcuts.map((shortcut, index) => {
-                    let Icon = LinkIcon;
-                    let href = '';
-                    let isExternalLink = false;
-
-                    if (shortcut.kind === 'link') {
-                      Icon = iconForLinkUrl(shortcut.url);
-                      href = shortcut.url;
-                      isExternalLink = true;
-                    } else if (shortcut.kind === 'contact') {
-                      // Contact shortcuts — generate URL based on channel
-                      const contactIconMap: Record<string, any> = {
-                        email: Mail,
-                        whatsapp: MessageCircle,
-                        instagram: AtSign,
-                        telegram: MessageCircle,
-                      };
-                      Icon = contactIconMap[shortcut.channel] || MessageCircle;
-
-                      if (shortcut.channel === 'email') {
-                        href = `mailto:${shortcut.value}`;
-                      } else if (shortcut.channel === 'whatsapp') {
-                        href = `https://wa.me/${shortcut.value.replace(/[^0-9]/g, '')}`;
-                      } else if (shortcut.channel === 'instagram') {
-                        href = `https://instagram.com/${shortcut.value}`;
-                      } else if (shortcut.channel === 'telegram') {
-                        href = `https://t.me/${shortcut.value}`;
-                      }
-                      isExternalLink = true;
-                    }
-
-                    const className = 'inline-flex max-w-[48%] items-center gap-1.5 rounded-full border border-white/18 bg-black/30 px-2.5 py-1.5 text-[11px] font-bold text-white/88 backdrop-blur-sm transition hover:border-white/42 hover:bg-black/45';
-                    const content = (
-                      <>
-                        <Icon className="h-3 w-3 shrink-0 text-white/70" />
-                        <span className="truncate">{shortcut.label}</span>
-                      </>
-                    );
-
-                    if (isExternalLink) {
-                      return (
-                        <a
-                          key={`${shortcut.kind}-${shortcut.label || (shortcut.kind === 'contact' ? shortcut.channel : '')}-${index}`}
-                          href={href}
-                          target={shortcut.kind === 'link' ? '_blank' : undefined}
-                          rel={shortcut.kind === 'link' ? 'noreferrer' : undefined}
-                          className={className}
-                          onClick={() => {
-                            if (shortcut.kind === 'contact') {
-                              onEngagementClick?.('contact_click', shortcut.channel);
-                            }
-                          }}
-                        >
-                          {content}
-                        </a>
-                      );
-                    }
-
-                    if (shortcut.kind === 'service') {
-                      return (
-                        <button
-                          key={`${shortcut.kind}-${shortcut.blockId}-${shortcut.label}-${index}`}
-                          type="button"
-                          onClick={() => openEntryInsideCard(shortcut.blockId, null, 'book')}
-                          className={className}
-                        >
-                          {content}
-                        </button>
-                      );
-                    }
-
-                    return null;
-                  })}
-                </div>
-              )}
+              {profileTeaserBody}
             </div>
           )}
         </div>
 
+        {isConversion && selectedBlock && (
+          <div className="tb-entry-actions tb-entry-fixed-actions relative z-10 hidden px-4 pt-4 pb-4 lg:block">
+            <div className="mb-2 flex items-center justify-between gap-3 text-[10px] font-mono uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              <span>{entryCopy('choosePath', locale)}</span>
+            </div>
+            <div className="space-y-2">
+              {actions.map((action, index) => (
+                <button
+                  key={`desktop-fixed-${actionKey(action)}`}
+                  type="button"
+                  aria-label={`${entryCopy('choosePath', locale)} ${index + 1}`}
+                  data-tb-entry-trigger="action"
+                  onClick={() => openEntryInsideCard(action.blockId, action.itemId, 'book')}
+                  className="group w-full rounded-full border px-3 py-2.5 text-left backdrop-blur-sm transition"
+                  style={{
+                    background: 'var(--tb-entry-selected-action-bg)',
+                    borderColor: 'var(--tb-entry-selected-action-border)',
+                  }}
+                >
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="min-w-0">
+                      <span className="block text-[9px] font-mono uppercase tracking-[0.14em] text-[var(--tb-entry-selected-action-eyebrow)]">{action.eyebrow}</span>
+                      <span className="block truncate text-sm font-bold text-[var(--tb-entry-selected-action-text)]">{renderColoredSegments(action.label)}</span>
+                    </span>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-[var(--tb-entry-selected-action-icon)] transition group-hover:translate-x-0.5" />
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {showEntryActions && (
-        <div ref={entryActionsRef} className="relative z-10 px-4 pt-4 pb-4">
+        <div ref={entryActionsRef} className="tb-entry-actions tb-entry-live-actions relative z-10 px-4 pt-4 pb-4">
           <div className={`mb-2 flex items-center justify-between gap-3 text-[10px] font-mono uppercase tracking-[0.16em] ${selectedUsesLightChrome ? 'text-[var(--tb-entry-selected-label)]' : 'text-white/62'}`}>
             <span>{entryCopy(showConversionGuidance ? 'askQuestions' : entryStage === 'ask' ? 'askQuestions' : entryStage === 'book' ? 'bookNow' : 'choosePath', locale)}</span>
           </div>

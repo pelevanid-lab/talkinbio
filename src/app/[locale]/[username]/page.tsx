@@ -198,6 +198,9 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
   // renkli div'i yalnızca blok alanını kaplıyor, profil başlığı ve boşluklar bunun dışında.
   const resolvedColors = resolveThemeColors(theme);
   const { pageCanvas, stickyCanvas } = resolvePageCanvases(theme);
+  const resolvedPageType = resolvePublicPageType(sauleSettings.pageType);
+  const isConversionPage = resolvedPageType === 'conversion';
+  const conversionBackdropUrl = '/conversion-nature-backdrop.png';
   const pageStyle = {
     background: pageCanvas,
     color: resolvedColors.text,
@@ -223,9 +226,55 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
   }
 
   return (
-    <div className="min-h-[100dvh] flex justify-center sm:items-center sm:px-6 sm:py-6 relative" style={pageStyle}>
+    <div className={`min-h-[100dvh] flex justify-center sm:items-center sm:px-6 sm:py-6 relative ${isConversionPage ? 'lg:overflow-hidden lg:px-8 lg:py-6' : ''}`} style={pageStyle}>
+      {isConversionPage && (
+        <>
+          <style>{`
+            @keyframes tbConversionGrassSway {
+              0%, 100% { transform: translate3d(0, 0, 0) skewX(0deg) scale(1.012); }
+              45% { transform: translate3d(0.42%, -0.16%, 0) skewX(-0.45deg) scale(1.016); }
+              70% { transform: translate3d(-0.22%, 0.10%, 0) skewX(0.28deg) scale(1.014); }
+            }
+            @keyframes tbConversionLeavesSway {
+              0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1.018); }
+              50% { transform: translate3d(-0.34%, 0.18%, 0) rotate(0.22deg) scale(1.022); }
+            }
+          `}</style>
+          <div className="pointer-events-none fixed inset-0 hidden overflow-hidden lg:block" aria-hidden="true">
+            <div
+              className="absolute inset-[-3%] bg-cover bg-center saturate-[1.04]"
+              style={{
+                backgroundImage: `url("${conversionBackdropUrl}")`,
+                opacity: 0.9,
+              }}
+            />
+            <div
+              className="absolute inset-[-3%] bg-cover bg-center saturate-[1.08]"
+              style={{
+                backgroundImage: `url("${conversionBackdropUrl}")`,
+                animation: 'tbConversionGrassSway 7.5s ease-in-out infinite',
+                clipPath: 'polygon(0 42%, 34% 48%, 34% 100%, 0 100%)',
+                opacity: 0.26,
+                transformOrigin: '16% 82%',
+              }}
+            />
+            <div
+              className="absolute inset-[-3%] bg-cover bg-center saturate-[1.08]"
+              style={{
+                backgroundImage: `url("${conversionBackdropUrl}")`,
+                animation: 'tbConversionLeavesSway 9s ease-in-out infinite',
+                clipPath: 'polygon(70% 0, 100% 0, 100% 58%, 78% 50%)',
+                opacity: 0.22,
+                transformOrigin: '88% 18%',
+              }}
+            />
+            <div className="absolute inset-0 bg-[rgba(244,242,237,0.24)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(244,242,237,0.16),rgba(244,242,237,0.36)_50%,rgba(244,242,237,0.16))]" />
+          </div>
+        </>
+      )}
       <div
-        className="relative flex h-[100dvh] w-full max-w-md flex-col overflow-hidden sm:h-[860px] sm:max-h-[calc(100dvh-48px)] sm:rounded-[34px] sm:border sm:shadow-[0_30px_90px_rgba(15,23,42,0.16)]"
+        className={`relative z-10 flex h-[100dvh] w-full max-w-md flex-col overflow-hidden sm:h-[860px] sm:max-h-[calc(100dvh-48px)] sm:rounded-[34px] sm:border sm:shadow-[0_30px_90px_rgba(15,23,42,0.16)] ${isConversionPage ? 'lg:h-[calc(100dvh-48px)] lg:w-full lg:max-w-[1380px] lg:rounded-[36px]' : ''}`}
         style={{ ...pageStyle, borderColor: 'rgba(20,35,31,0.10)' }}
       >
       <script
@@ -260,8 +309,8 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
       {/* Scrollable content — flex-1 min-h-0 so it fills only the space ABOVE the in-flow Saule
           dock below. Blocks scroll within here; the last block ends above Saule and can never
           slide under it (no magic pb-[…] needed). */}
-      <main className="flex-1 min-h-0 overflow-y-auto">
-        <div className="max-w-md mx-auto h-full w-full">
+      <main className={`flex-1 min-h-0 overflow-y-auto ${isConversionPage ? 'lg:overflow-hidden' : ''}`}>
+        <div className={`max-w-md mx-auto h-full w-full ${isConversionPage ? 'lg:max-w-none' : ''}`}>
 
           <ProfilePageBody
             blocks={pageBlocks || []}
@@ -274,7 +323,7 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
             contactMethod={pageBusiness.contact_method}
             contactValue={pageBusiness.contact_value}
             orderNowBehavior={sauleSettings.orderNowBehavior}
-            pageType={resolvePublicPageType(sauleSettings.pageType)}
+            pageType={resolvedPageType}
             interactiveEntrySettings={sauleSettings.interactiveEntry}
             conversionFlowSettings={sauleSettings.conversionFlow}
             locale={locale}
