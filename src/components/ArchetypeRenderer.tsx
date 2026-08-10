@@ -220,8 +220,9 @@ function conversionQuestionsForBlock(
   locale: string,
   conversionFlowSettings?: ConversionFlowSettings | null
 ): ConversionQuestion[] {
+  if (block?.type === 'contact' || block?.type === 'faq') return [];
   const savedQuestions = savedConversionQuestionsForBlock(block, locale, conversionFlowSettings);
-  if (savedQuestions) return savedQuestions;
+  if (savedQuestions) return savedQuestions.slice(0, 2).map((question) => ({ ...question, next: question.next?.slice(0, 1) }));
 
   const title = blockTitleOf(block, locale);
   const summary = blockSummaryForQuestion(block, locale);
@@ -762,12 +763,12 @@ function ProfileEntryCard({
     ? conversionAnswer?.question.next?.slice(0, 3) || conversionQuestionsForBlock(selectedBlock, locale, conversionFlowSettings)
     : [];
   const showConversionFreeQuestion = conversionAnswerDepth(conversionAnswer) >= 2;
-  const showConversionGuidance = isConversion && Boolean(selectedBlock) && entryStage !== 'profile';
+  const showConversionGuidance = isConversion && Boolean(selectedBlock) && entryStage === 'book' && selectedBlock?.type !== 'contact' && selectedBlock?.type !== 'faq';
   const hasSelectedPath = Boolean(selectedBlock && entryStage !== 'discover');
   const renderedActions = entryStage === 'book' && selectedBlock
     ? collectSelectedEntryActions(visibleBlocks, selectedBlock, actions, locale)
     : actions;
-  const showEntryActions = !selectedBlock || entryStage === 'profile' || (!isConversion && !entryScrollActive);
+  const showEntryActions = !selectedBlock || entryStage === 'profile' || entryStage === 'ask' || (!isConversion && !entryScrollActive);
   const coverImage = (aboutBlock && (blockPreviewMedia(aboutBlock) || aboutBlock.content?.backgroundImage)) || actions.find((a) => a.mediaUrl)?.mediaUrl || null;
   const c = resolveThemeColors(theme);
   const entryShortcuts = (shortcuts || []).slice(0, 4);

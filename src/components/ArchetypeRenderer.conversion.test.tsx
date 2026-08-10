@@ -36,6 +36,8 @@ describe('Conversion UI', () => {
         theme={DEFAULT_THEME}
         businessName="\u00d6rnek Profil"
         pageType="conversion"
+        contactMethod="whatsapp"
+        contactValue='{"whatsapp":"+905551112233"}'
       />
     );
 
@@ -61,6 +63,33 @@ describe('Conversion UI', () => {
     fireEvent.click(screen.getByRole('button', { name: /Hi\u00e7 deneyimim yok/i }));
 
     expect(screen.getByText(/temel anatomi/i)).toBeTruthy();
+    expect(container.querySelector('[data-tb-entry-chat]')).toBeTruthy();
+  });
+
+  it('opens contact as free AI question step instead of generating contact suggestions', () => {
+    const { container } = render(
+      <ArchetypeRenderer
+        blocks={blocks}
+        theme={DEFAULT_THEME}
+        businessName="\u00d6rnek Profil"
+        pageType="conversion"
+        contactMethod="whatsapp"
+        contactValue='{"whatsapp":"+905551112233"}'
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /E\u011fitim Format\u0131/i }));
+    const firstQuestion = container.querySelector('[data-tb-conversion-question="training-suitability"]');
+    expect(firstQuestion).toBeTruthy();
+    fireEvent.click(firstQuestion!);
+
+    const contactButton = container.querySelector('[data-tb-entry-trigger="contact"]');
+    expect(contactButton).toBeTruthy();
+    fireEvent.click(contactButton!);
+
+    expect(screen.getAllByText('İletişim').length).toBeGreaterThan(0);
+    expect(screen.queryByText(/İletişim hakkında ne bilmeliyim/i)).toBeNull();
+    expect(screen.queryByText(/Bu kimler için uygun/i)).toBeNull();
     expect(container.querySelector('[data-tb-entry-chat]')).toBeTruthy();
   });
 });
