@@ -15,11 +15,15 @@ import {
   ChevronUp,
   Image as ImageIcon,
   ListOrdered,
+  Globe2,
+  PanelsTopLeft,
+  MousePointerClick,
+  Wand2,
 } from 'lucide-react';
 import KnowledgeBasePanel from '../leads/KnowledgeBasePanel';
 import DashboardShell from '@/components/dashboard/DashboardShell';
 import { FEATURES } from '@/config/features';
-import { getInteractiveEntryOptions, resolveInteractiveEntryTargets } from '@/utils/interactiveEntry';
+import { getInteractiveEntryOptions, resolveInteractiveEntryTargets, resolvePublicPageType } from '@/utils/interactiveEntry';
 
 // Contact methods offered as an "Order Now" target — same keys as business.contact_value.
 const ORDER_NOW_METHOD_LABELS: Record<string, Record<string, string>> = {
@@ -36,7 +40,10 @@ export default function FrontDeskClient({ business, blocks, initialKnowledge }: 
   const locale = useLocale();
 
   const [settingsSection, setSettingsSection] = useState<'behavior' | 'capture' | 'knowledge'>('behavior');
-  const [settings, setSettings] = useState(business.saule_settings || {});
+  const [settings, setSettings] = useState({
+    ...(business.saule_settings || {}),
+    pageType: resolvePublicPageType(business.saule_settings?.pageType),
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [copiedProfileLink, setCopiedProfileLink] = useState(false);
@@ -142,6 +149,7 @@ export default function FrontDeskClient({ business, blocks, initialKnowledge }: 
     setIsSaving(true);
     try {
       const nextSettings = { ...settings };
+      nextSettings.pageType = resolvePublicPageType(nextSettings.pageType);
       delete nextSettings.customGreeting;
       delete nextSettings.customGreetingEnabled;
       const { error } = await supabase.from('businesses').update({ saule_settings: nextSettings }).eq('id', business.id);
@@ -259,7 +267,46 @@ export default function FrontDeskClient({ business, blocks, initialKnowledge }: 
           <div className="space-y-8">
             {settingsSection === 'behavior' && (
               <>
+                <div className="pb-5">
+                  <div className="mb-4">
+                    <h3 className="text-base font-semibold text-[#14231F]">{t('pageTypeTitle')}</h3>
+                    <p className="text-sm text-[#4B5A55]">{t('pageTypeDesc')}</p>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2 rounded-lg bg-[#F4F2ED] p-2 sm:grid-cols-3">
+                    {([
+                      { key: 'classic', label: t('pageTypeClassic'), desc: t('pageTypeClassicDesc'), icon: Globe2, disabled: false },
+                      { key: 'hybrid', label: t('pageTypeHybrid'), desc: t('pageTypeHybridDesc'), icon: PanelsTopLeft, disabled: false },
+                      { key: 'conversion', label: t('pageTypeConversion'), desc: t('pageTypeConversionDesc'), icon: MousePointerClick, disabled: false },
+                    ] as const).map(({ key, label, desc, icon: Icon, disabled }) => {
+                      const selected = settings.pageType === key;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => setSettings((current: typeof settings) => ({ ...current, pageType: key }))}
+                          className={`relative min-h-[116px] p-3 text-left transition ${
+                            selected
+                              ? 'bg-white text-[#14231F] shadow-sm ring-1 ring-[#FF6A5C]'
+                              : disabled
+                                ? 'cursor-not-allowed text-[#8A8880] opacity-60'
+                                : 'text-[#4B5A55] hover:bg-white/70'
+                          }`}
+                        >
+                          <div className="mb-2 flex items-center justify-between gap-2">
+                            <Icon className={`h-4 w-4 ${selected ? 'text-[#FF6A5C]' : ''}`} />
+                            {disabled && <span className="text-[9px] font-semibold uppercase text-[#8A8880]">{t('pageTypeComingSoon')}</span>}
+                          </div>
+                          <div className="text-sm font-semibold">{label}</div>
+                          <div className="mt-1 text-xs leading-5 opacity-75">{desc}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Interactive entry layout */}
+                {settings.pageType !== 'classic' && (
                 <div className="pb-5">
                   <div className="mb-5">
                     <h3 className="text-base font-semibold text-[#14231F]">{t('entryLayoutTitle')}</h3>
@@ -358,10 +405,26 @@ export default function FrontDeskClient({ business, blocks, initialKnowledge }: 
                             ))}
                           </div>
                         </div>
+                        {settings.pageType === 'conversion' && (
+                          <div className="mt-4 flex flex-col gap-3 rounded-lg border border-[rgba(20,35,31,0.10)] bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                              <div className="text-sm font-semibold text-[#14231F]">Conversion soru ağacı</div>
+                              <p className="mt-1 text-xs leading-5 text-[#8A8880]">İlk 3 seçenekten sonra akacak soru-cevap ağacını ayrı ekranda hazırlayın. Otomatik doldurma: 25 kredi.</p>
+                            </div>
+                            <a
+                              href={`/${locale}/dashboard/front-desk/conversion-flow`}
+                              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[#14231F] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#20342F]"
+                            >
+                              <Wand2 className="h-4 w-4" />
+                              Akışı Düzenle
+                            </a>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Order Now Behavior */}
                 <div className="py-4 border-t border-[rgba(20,35,31,0.10)]">

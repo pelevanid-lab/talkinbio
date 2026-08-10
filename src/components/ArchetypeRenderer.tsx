@@ -2,7 +2,7 @@
 
 import { DEFAULT_THEME, Theme, resolveAccentFill, resolveThemeColors } from '@/config/archetypes';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRight, Mail, MessageCircle, Link as LinkIcon, AtSign, ChevronLeft, Ellipsis, Loader2, Menu, Send, X } from 'lucide-react';
+import { ArrowRight, Mail, MessageCircle, Link as LinkIcon, AtSign, ChevronLeft, ChevronRight, Ellipsis, Loader2, Menu, Send, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkBreaks from 'remark-breaks';
 import { useLocale } from 'next-intl';
@@ -16,7 +16,8 @@ import { stableItemId } from '@/utils/pageActionTargets';
 import { supabaseThumbnailUrl } from '@/utils/imageTransform';
 import { useOptionalPublicPageRuntime } from './PublicPageRuntime';
 import LanguageSwitcher from './LanguageSwitcher';
-import { resolveInteractiveEntryTargets, type InteractiveEntrySettings } from '@/utils/interactiveEntry';
+import { resolveInteractiveEntryTargets, type ConversionFlowSettings, type InteractiveEntrySettings, type PublicPageType } from '@/utils/interactiveEntry';
+import { resolveShortcuts, type Shortcut } from '@/utils/shortcuts';
 
 type RenderCtx = {
   locale: string;
@@ -127,8 +128,28 @@ type EntryAction = {
   mediaUrl?: string | null;
 };
 
-type EntryStage = 'discover' | 'book' | 'ask';
+type EntryStage = 'discover' | 'profile' | 'book' | 'ask';
 type EntryChatMessage = { role: 'user' | 'assistant'; content: string };
+type ConversionQuestion = {
+  id: string;
+  label: string;
+  answer: string;
+  next?: ConversionQuestion[];
+};
+type ConversionAnswerState = {
+  question: ConversionQuestion;
+  previous: ConversionAnswerState | null;
+};
+
+function conversionAnswerDepth(state: ConversionAnswerState | null): number {
+  let depth = 0;
+  let current = state;
+  while (current) {
+    depth += 1;
+    current = current.previous;
+  }
+  return depth;
+}
 
 const ENTRY_COPY: Record<string, Record<string, string>> = {
   openProfile: { tr: 'Profili A\u00e7', en: 'Open Profile', ru: '\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043f\u0440\u043e\u0444\u0438\u043b\u044c' },
@@ -143,6 +164,142 @@ const ENTRY_COPY: Record<string, Record<string, string>> = {
 
 function entryCopy(key: keyof typeof ENTRY_COPY, locale: string): string {
   return ENTRY_COPY[key]?.[locale] || ENTRY_COPY[key]?.en || '';
+}
+
+function compactText(value: string, maxLength = 340): string {
+  const text = value.replace(/\s+/g, ' ').trim();
+  if (text.length <= maxLength) return text;
+  const slice = text.slice(0, maxLength);
+  const lastSpace = slice.lastIndexOf(' ');
+  return `${slice.slice(0, lastSpace > 220 ? lastSpace : maxLength).trim()}...`;
+}
+
+function blockSummaryForQuestion(block: any, locale: string): string {
+  const items = getLocalizedItems(block, locale);
+  const firstItem = items[0];
+  const localized = block.content?.[locale] || block.content || {};
+  const text = firstItem?.description || firstItem?.answer || firstItem?.quote || localized.text || localized.description || localized.intro || '';
+  return compactText(typeof text === 'string' ? text : '');
+}
+
+function isTrainingLikeBlock(block: any, locale: string): boolean {
+  const title = stripColorSyntax(blockTitleOf(block, locale)).toLocaleLowerCase('tr-TR');
+  return /egitim|e\u011fitim|training|kurs|course|format/.test(title);
+}
+
+function savedConversionQuestionsForBlock(
+  block: any,
+  locale: string,
+  conversionFlowSettings?: ConversionFlowSettings | null
+): ConversionQuestion[] | null {
+  const node = conversionFlowSettings?.nodes?.[block.id];
+  const localized = node?.locales?.[locale as 'tr' | 'en' | 'ru']?.questions;
+  const fallback = node?.questions;
+  const questions = Array.isArray(localized) && localized.length > 0 ? localized : fallback;
+  if (!Array.isArray(questions) || questions.length === 0) return null;
+  return questions
+    .filter((question: any) => question?.id && question?.label && question?.answer)
+    .map((question: any) => ({
+      id: String(question.id),
+      label: String(question.label),
+      answer: String(question.answer),
+      next: Array.isArray(question.next)
+        ? question.next
+            .filter((next: any) => next?.id && next?.label && next?.answer)
+            .map((next: any) => ({
+              id: String(next.id),
+              label: String(next.label),
+              answer: String(next.answer),
+            }))
+        : undefined,
+    }));
+}
+
+function conversionQuestionsForBlock(
+  block: any,
+  locale: string,
+  conversionFlowSettings?: ConversionFlowSettings | null
+): ConversionQuestion[] {
+  const savedQuestions = savedConversionQuestionsForBlock(block, locale, conversionFlowSettings);
+  if (savedQuestions) return savedQuestions;
+
+  const title = blockTitleOf(block, locale);
+  const summary = blockSummaryForQuestion(block, locale);
+  const hasTrainingTone = isTrainingLikeBlock(block, locale);
+
+  if (hasTrainingTone) {
+    if (locale === 'en') {
+      return [
+        {
+          id: 'training-suitability',
+          label: 'Is this training right for me?',
+          answer: 'This training can be adapted for both beginners and experienced professionals. The most important distinction is your goal: personal learning, professional development, or building a service system.',
+          next: [
+            { id: 'training-beginner', label: 'Can I join with no experience?', answer: 'Yes. The flow can start from foundational anatomy, touch principles, and safe practice before moving into advanced techniques.' },
+            { id: 'training-personal', label: 'Can I learn only for myself?', answer: 'Yes. If your goal is personal use, the focus can stay on practical, safe, repeatable techniques rather than client workflow.' },
+            { id: 'training-program', label: 'What is in the program?', answer: summary || 'The program covers face and neck-shoulder massage, drainage, myofascial techniques, buccal massage, anatomy, indications, contraindications, and working ergonomics.' },
+          ],
+        },
+        { id: 'training-duration', label: 'How long does the training take?', answer: 'The exact duration depends on the selected format and your starting level. The best next step is to clarify the goal and choose the right training structure.', next: [
+          { id: 'training-format', label: 'Which format fits me?', answer: 'For fast personal learning, a focused individual format works well. For professional use, a broader practical program is more suitable.' },
+          { id: 'training-practice', label: 'Is there hands-on practice?', answer: 'Yes. The training is designed around practice, body mechanics, model work, and repeatable technique.' },
+          { id: 'training-booking', label: 'How do I book?', answer: 'You can request an appointment from the contact step and share the training goal before scheduling.' },
+        ] },
+        { id: 'training-booking', label: 'How can I book?', answer: 'You can move to contact and share that you are interested in the training. The conversation should include your level, goal, and preferred date range.', next: [
+          { id: 'training-whatsapp', label: 'Can I write on WhatsApp?', answer: 'Yes. WhatsApp is the fastest way to share your goal and ask for suitable dates.' },
+          { id: 'training-price', label: 'What is the price?', answer: 'If a price is listed in this profile, use that as the current reference. For custom formats, confirm the final offer during contact.' },
+          { id: 'training-before', label: 'What should I say first?', answer: 'Briefly say whether you want the training for yourself or professionally, and whether you have previous experience.' },
+        ] },
+      ];
+    }
+
+    return [
+      {
+        id: 'training-suitability',
+        label: 'Bu e\u011fitim bana uygun mu?',
+        answer: 'Bu e\u011fitim hem yeni ba\u015flayanlara hem de deneyimli profesyonellere uyarlanabilir. As\u0131l ayr\u0131m hedefinizde: kendiniz i\u00e7in \u00f6\u011frenmek, profesyonel geli\u015fim veya hizmet sistemi kurmak.',
+        next: [
+          { id: 'training-beginner', label: 'Hi\u00e7 deneyimim yok, kat\u0131labilir miyim?', answer: 'Evet. Ak\u0131\u015f temel anatomi, g\u00fcvenli dokunu\u015f prensipleri ve pratik uygulamayla ba\u015flat\u0131labilir; sonra ileri tekniklere ge\u00e7ilir.' },
+          { id: 'training-personal', label: 'Sadece kendim i\u00e7in \u00f6\u011frenebilir miyim?', answer: 'Evet. Hedef ki\u015fisel kullan\u0131msa odak, dan\u0131\u015fan ak\u0131\u015f\u0131ndan \u00e7ok g\u00fcvenli, pratik ve tekrar edilebilir tekniklerde kalabilir.' },
+          { id: 'training-program', label: 'Programda neler var?', answer: summary || 'Programda y\u00fcz ve boyun-omuz masaj\u0131, lenfatik drenaj, miyofasyal teknikler, bukkal masaj, anatomi, endikasyonlar, kontrendikasyonlar ve ergonomi ba\u015fl\u0131klar\u0131 yer al\u0131r.' },
+        ],
+      },
+      {
+        id: 'training-duration',
+        label: 'E\u011fitim ne kadar s\u00fcr\u00fcyor?',
+        answer: 'S\u00fcre se\u00e7ilen formata ve ba\u015flang\u0131\u00e7 seviyenize g\u00f6re netle\u015fir. Do\u011fru format i\u00e7in \u00f6nce hedefinizi ve mevcut deneyiminizi konu\u015fmak gerekir.',
+        next: [
+          { id: 'training-format', label: 'Hangi format bana uyar?', answer: 'K\u0131sa ve ki\u015fisel bir hedef i\u00e7in bireysel odakl\u0131 format uygundur. Profesyonel kullan\u0131mda daha geni\u015f pratik program daha do\u011fru olur.' },
+          { id: 'training-practice', label: 'Uygulama prati\u011fi var m\u0131?', answer: 'Evet. E\u011fitim pratik uygulama, el pozisyonu, model \u00fczerinde \u00e7al\u0131\u015fma ve ergonomi \u00fczerine kurulur.' },
+          { id: 'training-booking', label: 'Nas\u0131l randevu alabilirim?', answer: 'Randevu i\u00e7in ileti\u015fim ad\u0131m\u0131na ge\u00e7ip e\u011fitim hedefinizi ve uygun tarih aral\u0131\u011f\u0131n\u0131z\u0131 payla\u015fabilirsiniz.' },
+        ],
+      },
+      {
+        id: 'training-booking',
+        label: 'Nas\u0131l randevu alabilirim?',
+        answer: 'Randevu almak i\u00e7in ileti\u015fim kanal\u0131ndan e\u011fitimle ilgilendi\u011finizi yazman\u0131z yeterli. Seviyeniz, hedefiniz ve uygun tarih aral\u0131\u011f\u0131 birlikte netle\u015ftirilir.',
+        next: [
+          { id: 'training-whatsapp', label: 'WhatsApp\u2019tan yazabilir miyim?', answer: 'Evet. WhatsApp, hedefinizi anlatmak ve uygun tarihleri konu\u015fmak i\u00e7in en h\u0131zl\u0131 yoldur.' },
+          { id: 'training-price', label: '\u00dccreti nereden g\u00f6r\u00fcr\u00fcm?', answer: 'Profilde fiyat g\u00f6steriliyorsa g\u00fcncel referans odur. Ki\u015fiye \u00f6zel formatlarda son teklif ileti\u015fim s\u0131ras\u0131nda netle\u015fir.' },
+          { id: 'training-before', label: '\u0130lk mesajda ne yazmal\u0131y\u0131m?', answer: 'E\u011fitimi kendiniz i\u00e7in mi profesyonel olarak m\u0131 istedi\u011finizi ve daha \u00f6nce deneyiminiz olup olmad\u0131\u011f\u0131n\u0131 yazman\u0131z yeterli.' },
+        ],
+      },
+    ];
+  }
+
+  if (locale === 'en') {
+    return [
+      { id: 'what-is-this', label: `What should I know about ${stripColorSyntax(title)}?`, answer: summary || `This section explains ${stripColorSyntax(title)} in the profile context.` },
+      { id: 'who-for', label: 'Who is this for?', answer: summary || 'The best fit depends on the visitor goal and the details shared in this profile section.' },
+      { id: 'next-step', label: 'What is the next step?', answer: 'If this looks relevant, ask a specific question or continue with the contact step to confirm availability and details.' },
+    ];
+  }
+
+  return [
+    { id: 'what-is-this', label: `${stripColorSyntax(title)} hakk\u0131nda ne bilmeliyim?`, answer: summary || `Bu b\u00f6l\u00fcm ${stripColorSyntax(title)} hakk\u0131ndaki temel bilgileri \u00f6zetler.` },
+    { id: 'who-for', label: 'Bu kimler i\u00e7in uygun?', answer: summary || 'Uygunluk, ziyaret\u00e7inin hedefi ve bu b\u00f6l\u00fcmde payla\u015f\u0131lan detaylara g\u00f6re netle\u015fir.' },
+    { id: 'next-step', label: 'Sonraki ad\u0131m ne?', answer: 'Bu i\u00e7erik size uygunsa daha spesifik bir soru sorabilir veya uygunluk ve detaylar i\u00e7in ileti\u015fim ad\u0131m\u0131na ge\u00e7ebilirsiniz.' },
+  ];
 }
 
 function collectEntryActions(visibleBlocks: any[], locale: string, configuredBlockIds: string[] = []): EntryAction[] {
@@ -545,22 +702,31 @@ function ProfileEntryCard({
   navigationBlocks,
   businessId,
   businessName,
+  description,
+  shortcuts,
   locale,
   theme,
   renderBlock,
   openLegacyView,
   interactiveEntrySettings,
+  conversionFlowSettings,
+  pageType,
 }: {
   visibleBlocks: any[];
   navigationBlocks: any[];
   businessId: string;
   businessName: string;
+  description?: string;
+  shortcuts?: Shortcut[];
   locale: string;
   theme: Theme;
   renderBlock: (block: any, activeItemId?: string | null) => React.ReactNode;
   openLegacyView: (blockId: string) => void;
   interactiveEntrySettings?: InteractiveEntrySettings | null;
+  conversionFlowSettings?: ConversionFlowSettings | null;
+  pageType: PublicPageType;
 }) {
+  const isConversion = pageType === 'conversion';
   const MAX_OVERFLOW_WITHOUT_AUTO_HIDE_ACTIONS = 520;
   const [entryBlock, setEntryBlock] = useState<{ blockId: string; itemId?: string | null } | null>(null);
   const [entryStage, setEntryStage] = useState<EntryStage>('discover');
@@ -568,6 +734,8 @@ function ProfileEntryCard({
   const [entryQuestion, setEntryQuestion] = useState('');
   const [entryChatMessages, setEntryChatMessages] = useState<EntryChatMessage[]>([]);
   const [entryChatLoading, setEntryChatLoading] = useState(false);
+  const [conversionSceneIndex, setConversionSceneIndex] = useState(0);
+  const [conversionAnswer, setConversionAnswer] = useState<ConversionAnswerState | null>(null);
   const entryContentScrollRef = useRef<HTMLDivElement | null>(null);
   const entryActionsRef = useRef<HTMLDivElement | null>(null);
   const entryChatScrollRef = useRef<HTMLDivElement | null>(null);
@@ -588,13 +756,21 @@ function ProfileEntryCard({
   } satisfies EntryAction : null;
   const selectedBlock = entryBlock ? visibleBlocks.find((block) => block.id === entryBlock.blockId) : null;
   const selectedBlockId = selectedBlock?.id;
+  const conversionScenes: any[] = [];
+  const conversionScene: any = null;
+  const conversionQuestions = selectedBlock
+    ? conversionAnswer?.question.next?.slice(0, 3) || conversionQuestionsForBlock(selectedBlock, locale, conversionFlowSettings)
+    : [];
+  const showConversionFreeQuestion = conversionAnswerDepth(conversionAnswer) >= 2;
+  const showConversionGuidance = isConversion && Boolean(selectedBlock) && entryStage !== 'profile';
   const hasSelectedPath = Boolean(selectedBlock && entryStage !== 'discover');
   const renderedActions = entryStage === 'book' && selectedBlock
     ? collectSelectedEntryActions(visibleBlocks, selectedBlock, actions, locale)
     : actions;
-  const showEntryActions = !selectedBlock || !entryScrollActive;
+  const showEntryActions = !selectedBlock || entryStage === 'profile' || (!isConversion && !entryScrollActive);
   const coverImage = (aboutBlock && (blockPreviewMedia(aboutBlock) || aboutBlock.content?.backgroundImage)) || actions.find((a) => a.mediaUrl)?.mediaUrl || null;
   const c = resolveThemeColors(theme);
+  const entryShortcuts = (shortcuts || []).slice(0, 4);
   const selectedUsesLightChrome = Boolean(hasSelectedPath && theme.mode !== 'dark');
   const entryChromeStyle = {
     '--tb-entry-selected-scrim': `linear-gradient(to top, color-mix(in srgb, ${c.background} 78%, ${c.text} 22%), color-mix(in srgb, ${c.background} 84%, ${c.text} 16%) 70%, color-mix(in srgb, ${c.background} 84%, transparent))`,
@@ -614,6 +790,7 @@ function ProfileEntryCard({
     setEntryBlock({ blockId, itemId });
     setEntryStage(stage);
     setEntryScrollActive(false);
+    setConversionAnswer(null);
     entryStickToBottomOnActionsRef.current = false;
     entryLastScrollTopRef.current = 0;
   };
@@ -622,9 +799,35 @@ function ProfileEntryCard({
     setEntryStage('discover');
     setEntryQuestion('');
     setEntryChatMessages([]);
+    setConversionAnswer(null);
   };
   const handleEntryAction = (action: EntryAction) => {
     openEntryInsideCard(action.blockId, action.itemId, entryStage === 'discover' ? 'book' : 'ask');
+  };
+  const handleEntryMenuSelect = (blockId: string) => {
+    openLegacyView(blockId);
+  };
+  const handleConversionQuestion = (question: ConversionQuestion) => {
+    setConversionAnswer((current) => ({ question, previous: current }));
+    requestAnimationFrame(() => {
+      const node = entryContentScrollRef.current;
+      const answerNode = node?.querySelector('[data-tb-conversion-answer]');
+      if (node && answerNode instanceof HTMLElement) {
+        const top = answerNode.offsetTop - 18;
+        if (typeof node.scrollTo === 'function') {
+          node.scrollTo({ top, behavior: 'smooth' });
+        } else {
+          node.scrollTop = top;
+        }
+      }
+    });
+  };
+  const handleEntryBack = () => {
+    if (isConversion && conversionAnswer) {
+      setConversionAnswer(conversionAnswer.previous);
+      return;
+    }
+    closeEntryInsideCard();
   };
 
   const submitEntryQuestion = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -726,6 +929,7 @@ function ProfileEntryCard({
 
   useEffect(() => {
     if (!selectedBlockId) return;
+    setConversionAnswer(null);
     const node = entryContentScrollRef.current;
     if (!node) return;
     node.scrollTop = 0;
@@ -832,11 +1036,11 @@ function ProfileEntryCard({
           {!selectedBlock && (
             <div className="absolute right-4 top-4 z-30">
               <EntryNavigationMenu
-                blocks={navigationBlocks}
+                blocks={visibleBlocks}
                 locale={locale}
                 theme={theme}
                 variant="dots"
-                onSelect={openLegacyView}
+                onSelect={handleEntryMenuSelect}
               />
             </div>
           )}
@@ -847,7 +1051,7 @@ function ProfileEntryCard({
                 <button
                   type="button"
                   aria-label="Geri"
-                  onClick={closeEntryInsideCard}
+                  onClick={handleEntryBack}
                   className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-[var(--text)] transition hover:bg-[rgba(20,35,31,0.05)]"
                 >
                   <ChevronLeft className="h-4.5 w-4.5" />
@@ -857,42 +1061,413 @@ function ProfileEntryCard({
                 </div>
                 <div className="absolute right-3 top-1/2 z-30 -translate-y-1/2">
                   <EntryNavigationMenu
-                    blocks={navigationBlocks}
+                    blocks={visibleBlocks}
                     locale={locale}
                     theme={theme}
                     variant="menu"
-                    onSelect={openLegacyView}
+                    onSelect={handleEntryMenuSelect}
                   />
                 </div>
               </div>
-              <div ref={entryContentScrollRef} className="tb-entry-content-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4" onScroll={handleEntryContentScroll}>
-                {renderBlock(selectedBlock, entryBlock?.itemId)}
-              </div>
+              {isConversion ? (
+                <div ref={entryContentScrollRef} data-tb-conversion-flow className="tb-entry-content-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4">
+                  {renderBlock(selectedBlock, entryBlock?.itemId)}
+
+                  {showConversionGuidance && (
+                  <div className="mt-7 space-y-4 border-t pt-5" style={{ borderColor: 'var(--border)' }}>
+                    {!conversionAnswer ? (
+                      <div data-tb-conversion-suggestions className="space-y-2">
+                        <div className="text-[10px] font-mono uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                          {entryCopy('askQuestions', locale)}
+                        </div>
+                        {conversionQuestions.slice(0, 2).map((question) => (
+                          <button
+                            key={question.id}
+                            type="button"
+                            data-tb-conversion-question={question.id}
+                            onClick={() => handleConversionQuestion(question)}
+                            className="group w-full rounded-full border px-3 py-2.5 text-left transition hover:brightness-95"
+                            style={{
+                              background: 'var(--tb-entry-selected-action-bg)',
+                              borderColor: 'var(--tb-entry-selected-action-border)',
+                              color: 'var(--tb-entry-selected-action-text)',
+                            }}
+                          >
+                            <span className="flex items-center justify-between gap-3">
+                              <span className="min-w-0">
+                                <span className="block text-[9px] font-mono uppercase tracking-[0.14em] text-[var(--tb-entry-selected-action-eyebrow)]">
+                                  {locale === 'en' ? 'Question' : locale === 'ru' ? '\u0412\u043e\u043f\u0440\u043e\u0441' : 'Soru'}
+                                </span>
+                                <span className="block truncate text-sm font-bold">{question.label}</span>
+                              </span>
+                              <ArrowRight className="h-4 w-4 shrink-0 text-[var(--tb-entry-selected-action-icon)] transition group-hover:translate-x-0.5" />
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div data-tb-conversion-answer className="space-y-4">
+                        <article className="rounded-lg border p-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+                          <div className="mb-2 text-[10px] font-mono uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                            {locale === 'en' ? 'Answer' : locale === 'ru' ? '\u041e\u0442\u0432\u0435\u0442' : 'Yan\u0131t'}
+                          </div>
+                          <h3 className="mb-2 text-lg font-bold leading-tight tb-heading" style={{ color: 'var(--text)' }}>
+                            {conversionAnswer.question.label}
+                          </h3>
+                          <p className="whitespace-pre-line text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                            {conversionAnswer.question.answer}
+                          </p>
+                        </article>
+
+                        <div data-tb-conversion-suggestions className="space-y-2">
+                          {conversionQuestions.slice(0, 1).map((question) => (
+                            <button
+                              key={question.id}
+                              type="button"
+                              data-tb-conversion-question={question.id}
+                              onClick={() => handleConversionQuestion(question)}
+                              className="group w-full rounded-full border px-3 py-2.5 text-left transition hover:brightness-95"
+                              style={{
+                                background: 'var(--tb-entry-selected-action-bg)',
+                                borderColor: 'var(--tb-entry-selected-action-border)',
+                                color: 'var(--tb-entry-selected-action-text)',
+                              }}
+                            >
+                              <span className="flex items-center justify-between gap-3">
+                                <span className="min-w-0">
+                                  <span className="block text-[9px] font-mono uppercase tracking-[0.14em] text-[var(--tb-entry-selected-action-eyebrow)]">
+                                    {locale === 'en' ? 'Question' : locale === 'ru' ? '\u0412\u043e\u043f\u0440\u043e\u0441' : 'Soru'}
+                                  </span>
+                                  <span className="block truncate text-sm font-bold">{question.label}</span>
+                                </span>
+                                <ArrowRight className="h-4 w-4 shrink-0 text-[var(--tb-entry-selected-action-icon)] transition group-hover:translate-x-0.5" />
+                              </span>
+                            </button>
+                          ))}
+                          {contactAction && (
+                            <button
+                              type="button"
+                              data-tb-entry-trigger="contact"
+                              onClick={() => openEntryInsideCard(contactAction.blockId, contactAction.itemId, 'ask')}
+                              className="group w-full rounded-full border px-3 py-2.5 text-left transition hover:brightness-95"
+                              style={{
+                                background: 'var(--tb-entry-selected-action-bg)',
+                                borderColor: 'var(--tb-entry-selected-action-border)',
+                                color: 'var(--tb-entry-selected-action-text)',
+                              }}
+                            >
+                              <span className="flex items-center justify-between gap-3">
+                                <span className="min-w-0">
+                                  <span className="block text-[9px] font-mono uppercase tracking-[0.14em] text-[var(--tb-entry-selected-action-eyebrow)]">{contactAction.eyebrow}</span>
+                                  <span className="block truncate text-sm font-bold">{renderColoredSegments(contactAction.label)}</span>
+                                </span>
+                                <ArrowRight className="h-4 w-4 shrink-0 text-[var(--tb-entry-selected-action-icon)] transition group-hover:translate-x-0.5" />
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {showConversionFreeQuestion && (
+                    <div
+                      data-tb-entry-chat
+                      className="overflow-hidden rounded-[18px] border"
+                      style={{
+                        background: 'var(--tb-entry-selected-action-bg)',
+                        borderColor: 'var(--tb-entry-selected-action-border)',
+                        color: 'var(--tb-entry-selected-action-text)',
+                      }}
+                    >
+                      {entryChatMessages.length > 0 && (
+                        <div
+                          ref={entryChatScrollRef}
+                          className="space-y-1.5 overflow-hidden px-3 py-2 text-xs leading-relaxed"
+                          style={{ maxHeight: '128px' }}
+                        >
+                          {entryChatMessages.slice(-2).map((message, index) => (
+                            <div
+                              key={`${message.role}-${index}`}
+                              className={`w-fit max-w-[88%] whitespace-pre-wrap rounded-xl px-2.5 py-1.5 ${
+                                message.role === 'user'
+                                  ? 'ml-auto bg-[var(--primary)] text-white'
+                                  : 'bg-black/[0.045] text-[var(--tb-entry-selected-action-text)]'
+                              }`}
+                            >
+                              {message.content}
+                            </div>
+                          ))}
+                          {entryChatLoading && (
+                            <div className="flex items-center gap-1.5 text-[var(--tb-entry-selected-action-eyebrow)]">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              <span>...</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <form
+                        onSubmit={submitEntryQuestion}
+                        className="flex items-center gap-2 border-t px-2 py-2"
+                        style={{ borderColor: 'var(--tb-entry-selected-action-border)' }}
+                      >
+                        <input
+                          value={entryQuestion}
+                          onChange={(event) => setEntryQuestion(event.target.value)}
+                          placeholder={entryCopy('questionPlaceholder', locale)}
+                          aria-label={entryCopy('questionPlaceholder', locale)}
+                          className="h-9 min-w-0 flex-1 rounded-full border border-black/10 bg-transparent px-3 text-xs outline-none transition placeholder:text-black/38 focus:border-[var(--primary)]"
+                        />
+                        <button
+                          type="submit"
+                          aria-label={entryCopy('askQuestions', locale)}
+                          disabled={!entryQuestion.trim() || entryChatLoading}
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-white transition disabled:opacity-40"
+                        >
+                          {entryChatLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        </button>
+                      </form>
+                    </div>
+                    )}
+                  </div>
+                  )}
+                  {conversionScene && (
+                    <div className="flex min-h-0 flex-1 flex-col">
+                      {conversionScene.mediaUrl && (
+                        <div className="mb-4 min-h-0 flex-[1.15] overflow-hidden rounded-lg bg-black/5">
+                          {isVideoUrl(conversionScene.mediaUrl) ? (
+                            <video src={conversionScene.mediaUrl} className="h-full w-full object-cover" autoPlay loop muted playsInline />
+                          ) : (
+                            <img
+                              src={supabaseThumbnailUrl(conversionScene.mediaUrl, { width: 720 }) ?? conversionScene.mediaUrl}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          )}
+                        </div>
+                      )}
+                      <div className="flex min-h-0 flex-1 flex-col justify-center overflow-hidden">
+                        <div className="mb-2 text-[9px] font-mono uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                          {conversionScene.eyebrow}
+                        </div>
+                        <h2 className="mb-3 text-[clamp(1.25rem,5cqw,1.75rem)] font-bold leading-tight tb-heading">
+                          {renderColoredSegments(conversionScene.title)}
+                        </h2>
+                        {conversionScene.text && (
+                          <div
+                            className="overflow-hidden text-[13px] leading-[1.55] text-[var(--text-muted)]"
+                            style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 8 }}
+                          >
+                            <ReactMarkdown remarkPlugins={[remarkBreaks]} components={colorLinkComponents} urlTransform={styleUrlTransform}>
+                              {toColorMarkdown(conversionScene.text)}
+                            </ReactMarkdown>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {!conversionAnswer && conversionScenes.length > 1 && (
+                    <div className="mt-3 flex h-9 shrink-0 items-center justify-between border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+                      <button
+                        type="button"
+                        aria-label="Önceki"
+                        disabled={conversionSceneIndex === 0}
+                        onClick={() => setConversionSceneIndex((index) => Math.max(0, index - 1))}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border transition disabled:opacity-25"
+                        style={{ borderColor: 'var(--border)' }}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <div className="flex items-center gap-1.5" aria-label={`${conversionSceneIndex + 1} / ${conversionScenes.length}`}>
+                        {conversionScenes.map((_, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            aria-label={`${index + 1}. sahne`}
+                            onClick={() => setConversionSceneIndex(index)}
+                            className={`h-1.5 rounded-full transition-all ${index === conversionSceneIndex ? 'w-5 bg-[var(--primary)]' : 'w-1.5 bg-black/20'}`}
+                          />
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Sonraki"
+                        disabled={conversionSceneIndex >= conversionScenes.length - 1}
+                        onClick={() => setConversionSceneIndex((index) => Math.min(conversionScenes.length - 1, index + 1))}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border transition disabled:opacity-25"
+                        style={{ borderColor: 'var(--border)' }}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div ref={entryContentScrollRef} className="tb-entry-content-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4" onScroll={handleEntryContentScroll}>
+                  {renderBlock(selectedBlock, entryBlock?.itemId)}
+                </div>
+              )}
             </div>
           ) : (
-            <button
-              type="button"
-              data-tb-entry-trigger="profile"
-              onClick={() => profileTargetBlock && openEntryInsideCard(profileTargetBlock.id)}
-              className="group flex min-h-0 flex-1 flex-col justify-end px-5 pb-1 text-left"
-            >
-              <span>
+            <div className="flex min-h-0 flex-1 flex-col justify-end px-5 pb-1 text-left">
+              <button
+                type="button"
+                data-tb-entry-trigger="profile"
+                onClick={() => profileTargetBlock && openEntryInsideCard(profileTargetBlock.id, null, 'profile')}
+                className="group max-w-full text-left"
+              >
                 <span className="block text-[10px] font-mono uppercase tracking-[0.18em] text-white/65 mb-1.5">
                   {entryCopy('openProfile', locale)}
                 </span>
                 <span className="block text-[26px] leading-[0.95] font-bold tb-heading">{renderColoredSegments(businessName)}</span>
-              </span>
-            </button>
+                {description && (
+                  <span className="mt-2 block max-w-[92%] text-[12px] font-semibold leading-snug text-white/78">
+                    {renderColoredSegments(description)}
+                  </span>
+                )}
+              </button>
+              {entryShortcuts.length > 0 && (
+                <div className="mt-2 flex max-w-full flex-wrap gap-1.5">
+                  {entryShortcuts.map((shortcut, index) => {
+                    const Icon = shortcut.kind === 'link' ? iconForLinkUrl(shortcut.url) : LinkIcon;
+                    const className = 'inline-flex max-w-[48%] items-center gap-1.5 rounded-full border border-white/18 bg-black/30 px-2.5 py-1.5 text-[11px] font-bold text-white/88 backdrop-blur-sm transition hover:border-white/42 hover:bg-black/45';
+                    const content = (
+                      <>
+                        <Icon className="h-3 w-3 shrink-0 text-white/70" />
+                        <span className="truncate">{shortcut.label}</span>
+                      </>
+                    );
+                    if (shortcut.kind === 'link') {
+                      return (
+                        <a
+                          key={`${shortcut.kind}-${shortcut.label}-${index}`}
+                          href={shortcut.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={className}
+                        >
+                          {content}
+                        </a>
+                      );
+                    }
+                    return (
+                      <button
+                        key={`${shortcut.kind}-${shortcut.blockId}-${shortcut.label}-${index}`}
+                        type="button"
+                        onClick={() => openEntryInsideCard(shortcut.blockId, null, 'book')}
+                        className={className}
+                      >
+                        {content}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           )}
         </div>
 
         {showEntryActions && (
         <div ref={entryActionsRef} className="relative z-10 px-4 pt-4 pb-4">
           <div className={`mb-2 flex items-center justify-between gap-3 text-[10px] font-mono uppercase tracking-[0.16em] ${selectedUsesLightChrome ? 'text-[var(--tb-entry-selected-label)]' : 'text-white/62'}`}>
-            <span>{entryCopy(entryStage === 'ask' ? 'askQuestions' : entryStage === 'book' ? 'bookNow' : 'choosePath', locale)}</span>
+            <span>{entryCopy(showConversionGuidance ? 'askQuestions' : entryStage === 'ask' ? 'askQuestions' : entryStage === 'book' ? 'bookNow' : 'choosePath', locale)}</span>
           </div>
           <div className="space-y-2">
-            {entryStage === 'ask' ? (
+            {showConversionGuidance ? (
+              <>
+                <div data-tb-conversion-suggestions className="space-y-2">
+                  {conversionQuestions.slice(0, 3).map((question) => (
+                    <button
+                      key={question.id}
+                      type="button"
+                      data-tb-conversion-question={question.id}
+                      onClick={() => handleConversionQuestion(question)}
+                      className={`group w-full rounded-full border px-3 py-2.5 text-left backdrop-blur-sm transition ${
+                        selectedUsesLightChrome
+                          ? 'shadow-[0_10px_28px_rgba(20,35,31,0.10)]'
+                          : 'border-white/18 bg-black/42 hover:border-white/45 hover:bg-black/58'
+                      }`}
+                      style={selectedUsesLightChrome ? {
+                        background: 'var(--tb-entry-selected-action-bg)',
+                        borderColor: 'var(--tb-entry-selected-action-border)',
+                      } : undefined}
+                    >
+                      <span className="flex items-center justify-between gap-3">
+                        <span className="min-w-0">
+                          <span className={`block text-[9px] font-mono uppercase tracking-[0.14em] ${selectedUsesLightChrome ? 'text-[var(--tb-entry-selected-action-eyebrow)]' : 'text-white/45'}`}>
+                            {locale === 'en' ? 'Question' : locale === 'ru' ? '\u0412\u043e\u043f\u0440\u043e\u0441' : 'Soru'}
+                          </span>
+                          <span className={`block truncate text-sm font-bold ${selectedUsesLightChrome ? 'text-[var(--tb-entry-selected-action-text)]' : 'text-white'}`}>{question.label}</span>
+                        </span>
+                        <ArrowRight className={`w-4 h-4 shrink-0 transition group-hover:translate-x-0.5 ${selectedUsesLightChrome ? 'text-[var(--tb-entry-selected-action-icon)]' : 'text-white/75'}`} />
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                <div
+                  data-tb-entry-chat
+                  className="overflow-hidden rounded-[18px] border backdrop-blur-sm"
+                  style={{
+                    background: selectedUsesLightChrome ? 'var(--tb-entry-selected-action-bg)' : 'rgba(0,0,0,0.42)',
+                    borderColor: selectedUsesLightChrome ? 'var(--tb-entry-selected-action-border)' : 'rgba(255,255,255,0.18)',
+                    color: selectedUsesLightChrome ? 'var(--tb-entry-selected-action-text)' : '#fff',
+                  }}
+                >
+                  {entryChatMessages.length > 0 && (
+                    <div
+                      ref={entryChatScrollRef}
+                      className="space-y-1.5 overflow-hidden px-3 py-2 text-xs leading-relaxed"
+                      style={{ maxHeight: 'min(14dvh, 112px)' }}
+                    >
+                      {entryChatMessages.slice(-2).map((message, index) => (
+                        <div
+                          key={`${message.role}-${index}`}
+                          className={`w-fit max-w-[88%] whitespace-pre-wrap rounded-xl px-2.5 py-1.5 ${
+                            message.role === 'user'
+                              ? 'ml-auto bg-[var(--primary)] text-white'
+                              : selectedUsesLightChrome
+                                ? 'bg-black/[0.045] text-[var(--tb-entry-selected-action-text)]'
+                                : 'bg-white/10 text-white'
+                          }`}
+                        >
+                          {message.content}
+                        </div>
+                      ))}
+                      {entryChatLoading && (
+                        <div className={`flex items-center gap-1.5 ${selectedUsesLightChrome ? 'text-[var(--tb-entry-selected-action-eyebrow)]' : 'text-white/55'}`}>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <span>...</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <form
+                    onSubmit={submitEntryQuestion}
+                    className="flex items-center gap-2 border-t px-2 py-2"
+                    style={{ borderColor: selectedUsesLightChrome ? 'var(--tb-entry-selected-action-border)' : 'rgba(255,255,255,0.14)' }}
+                  >
+                    <input
+                      value={entryQuestion}
+                      onChange={(event) => setEntryQuestion(event.target.value)}
+                      placeholder={entryCopy('questionPlaceholder', locale)}
+                      aria-label={entryCopy('questionPlaceholder', locale)}
+                      className={`h-9 min-w-0 flex-1 rounded-full border bg-transparent px-3 text-xs outline-none transition focus:border-[var(--primary)] ${
+                        selectedUsesLightChrome ? 'border-black/10 placeholder:text-black/38' : 'border-white/16 text-white placeholder:text-white/42'
+                      }`}
+                    />
+                    <button
+                      type="submit"
+                      aria-label={entryCopy('askQuestions', locale)}
+                      disabled={!entryQuestion.trim() || entryChatLoading}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-white transition disabled:opacity-40"
+                    >
+                      {entryChatLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </button>
+                  </form>
+                </div>
+              </>
+            ) : entryStage === 'ask' ? (
               <>
                 <div
                   data-tb-entry-chat
@@ -905,7 +1480,7 @@ function ProfileEntryCard({
                 >
                   <div
                     ref={entryChatScrollRef}
-                    className="space-y-1.5 overflow-y-auto px-3 py-2 text-xs leading-relaxed"
+                    className={`space-y-1.5 px-3 py-2 text-xs leading-relaxed ${isConversion ? 'overflow-hidden' : 'overflow-y-auto'}`}
                     style={{ minHeight: '72px', maxHeight: 'min(18dvh, 156px)' }}
                   >
                     {entryChatMessages.length === 0 && (
@@ -913,7 +1488,7 @@ function ProfileEntryCard({
                         {entryCopy('questionPlaceholder', locale)}
                       </div>
                     )}
-                    {entryChatMessages.map((message, index) => (
+                    {(isConversion ? entryChatMessages.slice(-2) : entryChatMessages).map((message, index) => (
                       <div
                         key={`${message.role}-${index}`}
                         className={`w-fit max-w-[88%] whitespace-pre-wrap rounded-xl px-2.5 py-1.5 ${
@@ -1764,6 +2339,7 @@ export default function ArchetypeRenderer({
   blocks,
   theme: themeProp,
   businessName,
+  description,
   activeBlockId: controlledActiveBlockId,
   activeItemId,
   activeOpenSequence = 0,
@@ -1772,11 +2348,14 @@ export default function ArchetypeRenderer({
   contactValue,
   orderNowBehavior,
   categoryId,
+  pageType = 'hybrid',
   interactiveEntrySettings,
+  conversionFlowSettings,
 }: {
   blocks: any[],
   theme?: Theme | null,
   businessName: string,
+  description?: string,
   // Optional controlled active-block state, so a parent header (page title row) can render the
   // "back" control itself instead of it floating inside the scrollable block content. Falls back
   // to internal state when omitted.
@@ -1792,7 +2371,9 @@ export default function ArchetypeRenderer({
   orderNowBehavior?: string | null,
   // business.category_id — see RenderCtx.categoryId / orderNowLabel.
   categoryId?: string | null,
+  pageType?: PublicPageType,
   interactiveEntrySettings?: InteractiveEntrySettings | null,
+  conversionFlowSettings?: ConversionFlowSettings | null,
 }) {
   const [internalActiveBlockId, setInternalActiveBlockId] = useState<string | null>(null);
   const activeBlockId = controlledActiveBlockId !== undefined ? controlledActiveBlockId : internalActiveBlockId;
@@ -1831,6 +2412,7 @@ export default function ArchetypeRenderer({
   }, [activeBlockId, activeItemId, activeOpenSequence]);
 
   const theme = themeProp || DEFAULT_THEME;
+  const isClassicPage = pageType === 'classic';
 
   const radiusClass = useMemo(() => {
     switch (theme.borderRadius) {
@@ -1888,6 +2470,7 @@ export default function ArchetypeRenderer({
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [blocks, locale]
   );
+  const shortcuts = useMemo(() => resolveShortcuts(blocks), [blocks]);
 
   const rawOrderNowClick = useMemo(
     () => buildOrderNowHandler(orderNowBehavior, contactValues),
@@ -1938,7 +2521,7 @@ export default function ArchetypeRenderer({
 
   return (
     <div
-      className={`${activeBlockId ? 'min-h-full pb-20' : 'h-full min-h-full pb-0'} ${bodyFont}`}
+      className={`${activeBlockId || isClassicPage ? 'min-h-full pb-20' : 'h-full min-h-full pb-0'} ${bodyFont}`}
       style={{
         ...styleVars,
         background: 'var(--tb-page-bg, var(--bg))',
@@ -2006,28 +2589,32 @@ export default function ArchetypeRenderer({
         }
       `}</style>
 
-      <div className={activeBlockId ? 'flex flex-col gap-10' : 'flex h-full flex-col'}>
-        {!activeBlockId && (
+      <div className={activeBlockId || isClassicPage ? 'flex flex-col gap-10' : 'flex h-full flex-col'}>
+        {!activeBlockId && !isClassicPage && (
           <ProfileEntryCard
             visibleBlocks={visibleBlocks}
             navigationBlocks={navigationBlocks}
             businessId={pageRuntime?.businessId || ''}
             businessName={businessName}
+            description={description}
+            shortcuts={shortcuts}
             locale={locale}
             theme={theme}
             renderBlock={renderBlock}
             openLegacyView={openLegacyView}
+            pageType={pageType}
             interactiveEntrySettings={interactiveEntrySettings}
+            conversionFlowSettings={conversionFlowSettings}
           />
         )}
 
-        {activeBlockId && (
+        {(activeBlockId || isClassicPage) && (
           <div className={`flex flex-col ${sectionGapClass}`}>
             {visibleBlocks.map(block => (
               <div key={block.id === activeBlockId ? `${block.id}:${activeOpenSequence}` : block.id}>
                 <div
-                  ref={block.id === activeBlockId ? activeBlockNodeRef : undefined}
-                  className={block.id === activeBlockId ? 'tb-active-block scroll-mt-4' : undefined}
+                  ref={activeBlockId && block.id === activeBlockId ? activeBlockNodeRef : undefined}
+                  className={activeBlockId && block.id === activeBlockId ? 'tb-active-block scroll-mt-4' : undefined}
                 >
                   {renderBlock(block)}
                 </div>

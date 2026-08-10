@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getInteractiveEntryOptions, resolveInteractiveEntryTargets } from './interactiveEntry';
+import { getInteractiveEntryOptions, resolveInteractiveEntryTargets, resolvePublicPageType } from './interactiveEntry';
 
 const block = (id: string, type: string, order: number, title = id) => ({
   id,
@@ -12,6 +12,14 @@ const block = (id: string, type: string, order: number, title = id) => ({
 });
 
 describe('interactive entry settings', () => {
+  it('keeps existing profiles on hybrid mode unless another valid mode is selected', () => {
+    expect(resolvePublicPageType(undefined)).toBe('hybrid');
+    expect(resolvePublicPageType('hybrid')).toBe('hybrid');
+    expect(resolvePublicPageType('classic')).toBe('classic');
+    expect(resolvePublicPageType('conversion')).toBe('conversion');
+    expect(resolvePublicPageType('unknown')).toBe('hybrid');
+  });
+
   it('uses wizard order without requiring service-specific block types', () => {
     const blocks = [
       block('bio', 'about', 0),

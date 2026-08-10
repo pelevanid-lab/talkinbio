@@ -14,6 +14,7 @@ import { googleFontsHref } from '@/utils/googleFonts';
 import { getPageActionTargets, withContactPageActionTarget } from '@/utils/pageActionTargets';
 import { resolvePublishedRuntimeData } from '@/utils/publishedSnapshot';
 import { localizedPath, localizedUrl, hreflangPaths } from '@/utils/localizedUrl';
+import { resolvePublicPageType } from '@/utils/interactiveEntry';
 
 // Her ziyarette taze saule_settings çekilsin
 export const dynamic = 'force-dynamic';
@@ -273,7 +274,9 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
             contactMethod={pageBusiness.contact_method}
             contactValue={pageBusiness.contact_value}
             orderNowBehavior={sauleSettings.orderNowBehavior}
+            pageType={resolvePublicPageType(sauleSettings.pageType)}
             interactiveEntrySettings={sauleSettings.interactiveEntry}
+            conversionFlowSettings={sauleSettings.conversionFlow}
             locale={locale}
           />
 

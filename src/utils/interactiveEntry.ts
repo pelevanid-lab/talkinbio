@@ -1,6 +1,26 @@
 import { hasRealContent } from '@/config/blockTypes';
 import { blockTargetLabel } from '@/utils/pageActionTargets';
 
+export type PublicPageType = 'classic' | 'hybrid' | 'conversion';
+
+export type ConversionFlowQuestion = {
+  id: string;
+  label: string;
+  answer: string;
+  next?: ConversionFlowQuestion[];
+};
+
+export type ConversionFlowSettings = {
+  nodes?: Record<string, {
+    locales?: Partial<Record<'tr' | 'en' | 'ru', { questions?: ConversionFlowQuestion[] }>>;
+    questions?: ConversionFlowQuestion[];
+  }>;
+};
+
+export function resolvePublicPageType(value: unknown): PublicPageType {
+  return value === 'classic' || value === 'conversion' ? value : 'hybrid';
+}
+
 export type InteractiveEntryTarget = {
   blockId: string;
   itemId?: string | null;

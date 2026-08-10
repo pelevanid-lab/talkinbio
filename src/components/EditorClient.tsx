@@ -11,7 +11,7 @@ import SetPasswordModal from './SetPasswordModal';
 import { useTranslations, useLocale } from 'next-intl';
 import { getPublishRule, hasRealContent, isRequiredSatisfied } from '@/config/blockTypes';
 import { extractLocaleText, isSyncableType, type SyncableBlockType, type BlockLocaleText } from '@/agents/saule/modes/studio/localeSync';
-import type { LocaleKey } from '@/config/localeTitles';
+import { defaultTitleFor, type LocaleKey } from '@/config/localeTitles';
 import { DEFAULT_THEME, Theme, resolveAccentFill, resolvePageCanvases, resolveThemeColors } from '@/config/archetypes';
 import { avatarFromBlocks } from '@/utils/avatarFromBlocks';
 import { collectShortcutCandidates, getShortcuts, resolveShortcuts, shortcutsEqual, type Shortcut } from '@/utils/shortcuts';
@@ -60,6 +60,25 @@ export default function EditorClient({
 
   const t = useTranslations('Editor');
   const locale = useLocale();
+
+  const blockContentTitle = (block: any) => {
+    const normalize = (value: unknown) => String(value || '').trim().toLocaleLowerCase('tr-TR');
+    const localeOrder = Array.from(new Set([locale, ...activeLocales, ...ALL_LOCALES]));
+    const candidates = [
+      ...localeOrder.map((loc) => block.content?.[loc]?.title),
+      block.title,
+    ];
+    const title = candidates.find((value) => typeof value === 'string' && value.trim().length > 0)?.trim();
+    if (!title) return '';
+
+    const defaultLabels = new Set([
+      t(`blocks.${block.type}` as any),
+      block.type,
+      ...localeOrder.map((loc) => defaultTitleFor(block.type, loc)),
+    ].map(normalize).filter(Boolean));
+
+    return defaultLabels.has(normalize(title)) ? '' : title;
+  };
 
   const hasContactValue = useMemo(() => {
     try {
@@ -1042,30 +1061,38 @@ export default function EditorClient({
               <p className="text-xs text-slate-500 mb-4">{t('manualDesc')}</p>
               
               {blocks.filter(b => !isEditorSystemBlock(b)).length === 0 && <p className="text-sm text-slate-500">{t('noContent')}</p>}
-              {blocks.filter(b => !isEditorSystemBlock(b)).map(b => (
-                <div
-                  key={b.id}
-                  draggable
-                  onDragStart={() => setDraggedBlockId(b.id)}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => handleDropReorder(b.id)}
-                  onClick={() => setEditingBlock(b)}
-                  className={`flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:border-[var(--coral)] transition cursor-pointer shadow-sm group ${draggedBlockId === b.id ? 'opacity-40' : ''}`}
-                >
-                  <div className="flex items-center gap-2">
-                    <GripVertical className="w-4 h-4 text-slate-300 cursor-grab shrink-0" />
-                    <div>
-                      <span className="font-medium text-sm text-[var(--ink)] block group-hover:text-[var(--coral)] transition-colors">
-                        {t(`blocks.${b.type}`)}
-                      </span>
-                      <span className="text-xs text-[var(--ink-soft)] capitalize">{b.type}</span>
+              {blocks.filter(b => !isEditorSystemBlock(b)).map(b => {
+                const userTitle = blockContentTitle(b);
+                return (
+                  <div
+                    key={b.id}
+                    draggable
+                    onDragStart={() => setDraggedBlockId(b.id)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => handleDropReorder(b.id)}
+                    onClick={() => setEditingBlock(b)}
+                    className={`flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:border-[var(--coral)] transition cursor-pointer shadow-sm group ${draggedBlockId === b.id ? 'opacity-40' : ''}`}
+                  >
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <GripVertical className="w-4 h-4 text-slate-300 cursor-grab shrink-0" />
+                      <div className="min-w-0">
+                        <span className="font-medium text-sm text-[var(--ink)] block group-hover:text-[var(--coral)] transition-colors truncate">
+                          {t(`blocks.${b.type}`)}
+                        </span>
+                        {userTitle && (
+                          <span className="mt-0.5 block truncate text-xs font-medium text-[var(--teal)]">
+                            {userTitle}
+                          </span>
+                        )}
+                        <span className="text-xs text-[var(--ink-soft)] capitalize">{b.type}</span>
+                      </div>
                     </div>
+                    <button className="shrink-0 text-[var(--teal)] group-hover:bg-[var(--coral-tint)] group-hover:text-[var(--coral)] p-2 rounded transition">
+                      <Edit2 className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button className="text-[var(--teal)] group-hover:bg-[var(--coral-tint)] group-hover:text-[var(--coral)] p-2 rounded transition">
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
 
               <div className="pt-4 border-t border-slate-200 mt-6 space-y-4">
                 <h4 className="text-sm font-medium text-[var(--ink-soft)]">{t('newSection')}</h4>

@@ -11,7 +11,7 @@ import { hasRealContentForLocale } from '@/config/blockTypes';
 import { defaultTitleFor } from '@/config/localeTitles';
 import { Menu, X } from 'lucide-react';
 import { useOptionalPublicPageRuntime } from './PublicPageRuntime';
-import type { InteractiveEntrySettings } from '@/utils/interactiveEntry';
+import { resolvePublicPageType, type ConversionFlowSettings, type InteractiveEntrySettings, type PublicPageType } from '@/utils/interactiveEntry';
 
 function BlockMenu({ blocks, locale, c, onSelect }: { blocks: any[], locale: string, c: any, onSelect: (id: string) => void }) {
   const [open, setOpen] = useState(false);
@@ -70,7 +70,7 @@ type LocalizedText = Partial<Record<'tr' | 'en' | 'ru', string>> | null;
 
 // Owns activeBlockId so the "back" control can live in the same header (ProfileHeader) as the
 // avatar/name/language switcher instead of floating inside the scrollable block content below.
-export default function ProfilePageBody({ blocks, theme, businessName, pageTitle, tagline, category, categoryId, contactMethod, contactValue, orderNowBehavior, interactiveEntrySettings, locale }: { blocks: any[], theme?: Theme | null, businessName: string, pageTitle: string, tagline?: LocalizedText, category?: string | null, categoryId?: string | null, contactMethod?: string | null, contactValue?: string | null, orderNowBehavior?: string | null, interactiveEntrySettings?: InteractiveEntrySettings | null, locale: 'tr' | 'en' | 'ru' }) {
+export default function ProfilePageBody({ blocks, theme, businessName, pageTitle, tagline, category, categoryId, contactMethod, contactValue, orderNowBehavior, pageType, interactiveEntrySettings, conversionFlowSettings, locale }: { blocks: any[], theme?: Theme | null, businessName: string, pageTitle: string, tagline?: LocalizedText, category?: string | null, categoryId?: string | null, contactMethod?: string | null, contactValue?: string | null, orderNowBehavior?: string | null, pageType?: PublicPageType, interactiveEntrySettings?: InteractiveEntrySettings | null, conversionFlowSettings?: ConversionFlowSettings | null, locale: 'tr' | 'en' | 'ru' }) {
   const t = useTranslations('PublicPage');
   const [localActiveBlockId, setLocalActiveBlockId] = useState<string | null>(null);
   const pageRuntime = useOptionalPublicPageRuntime();
@@ -88,8 +88,10 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
   const avatarUrl = avatarFromBlocks(blocks);
   const description = tagline?.[locale] || category || undefined;
   const c = resolveThemeColors(resolvedTheme);
+  const resolvedPageType = resolvePublicPageType(pageType);
+  const isClassicPage = resolvedPageType === 'classic';
 
-  const minimalHeader = activeBlockId != null;
+  const minimalHeader = activeBlockId != null || isClassicPage;
   const matchedBlockId = null;
   const matchedBlocks: never[] = [];
 
@@ -98,7 +100,7 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
   // blok listesine düşülür — sayfa asla boş kalmaz (bkz. render, "matchedBlockId" dalı).
   return (
     <>
-      {activeBlockId && (
+      {(activeBlockId || isClassicPage) && (
         <div
           className="absolute left-0 right-0 top-0 z-[80] px-4 pt-4 pb-3 border-b shadow-sm"
           style={{
@@ -112,7 +114,7 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
             description={description}
             theme={resolvedTheme}
             activeBlockId={activeBlockId}
-            onBack={() => setActiveBlockId(null)}
+            onBack={activeBlockId ? () => setActiveBlockId(null) : undefined}
             topRight={<BlockMenu blocks={blocks} locale={locale} c={c} onSelect={setActiveBlockId} />}
             onShortcutSelect={setActiveBlockId}
             minimal={minimalHeader}
@@ -142,6 +144,7 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
               blocks={matchedBlocks}
               theme={resolvedTheme}
               businessName={businessName}
+              description={description}
               categoryId={categoryId}
               activeBlockId={pageRuntime!.sauleMatchedBlock!.blockId}
               activeItemId={pageRuntime!.sauleMatchedBlock!.itemId ?? null}
@@ -157,12 +160,13 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
       ) : (
         // Soru yoksa VEYA Saule'nin sorulan soruya eşleşen bir bloğu yoksa (fallback/no-match)
         // burası devreye girer — böylece cevapsız bir soru sayfayı asla boşaltmaz.
-        <div className={`w-full ${activeBlockId ? 'px-4 pt-[76px] pb-4' : 'h-full'}`}>
+        <div className={`w-full ${activeBlockId || isClassicPage ? 'px-4 pt-[76px] pb-4' : 'h-full'}`}>
           {((blocks && blocks.length > 0) || (contactMethod && contactValue)) && (
             <ArchetypeRenderer
               blocks={blocks}
               theme={theme}
               businessName={businessName}
+              description={description}
               categoryId={categoryId}
               activeBlockId={activeBlockId}
               activeItemId={pageRuntime?.activeItemId ?? null}
@@ -171,7 +175,9 @@ export default function ProfilePageBody({ blocks, theme, businessName, pageTitle
               contactMethod={contactMethod}
               contactValue={contactValue}
               orderNowBehavior={orderNowBehavior}
+              pageType={resolvedPageType}
               interactiveEntrySettings={interactiveEntrySettings}
+              conversionFlowSettings={conversionFlowSettings}
             />
           )}
         </div>
