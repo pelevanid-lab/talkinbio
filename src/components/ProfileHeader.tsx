@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, Tag, X, Check, AlertCircle, MessageSquare, Phone, Mail, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, Tag, X, Check, AlertCircle, MessageSquare, Phone, Mail, ArrowLeft, MessageCircle, AtSign } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Theme, resolveThemeColors } from '@/config/archetypes';
@@ -421,26 +421,53 @@ export default function ProfileHeader({
         )}
 
         {shortcuts && shortcuts.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-2 mt-3">
+          <div className="flex flex-wrap gap-2 pt-1">
             {shortcuts.slice(0, 4).map((s, idx) => {
-              const Icon = s.kind === 'link' ? iconForLinkUrl(s.url) : Tag;
-              const inner = (
-                <>
-                  <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: c.primary }} />
-                  <span className="truncate max-w-[9rem]">{s.label}</span>
-                </>
-              );
               const className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition hover:scale-[1.03]';
               const style = { backgroundColor: c.surface, borderColor: c.border, color: c.text };
-              return s.kind === 'link' ? (
-                <a key={idx} href={s.url} target="_blank" rel="noreferrer" className={className} style={style}>
-                  {inner}
-                </a>
-              ) : (
-                <button key={idx} type="button" onClick={() => onShortcutSelect?.(s.blockId)} className={className} style={style}>
-                  {inner}
-                </button>
-              );
+
+              if (s.kind === 'link') {
+                const Icon = iconForLinkUrl(s.url);
+                return (
+                  <a key={idx} href={s.url} target="_blank" rel="noreferrer" className={className} style={style}>
+                    <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: c.primary }} />
+                    <span className="truncate max-w-[9rem]">{s.label}</span>
+                  </a>
+                );
+              }
+
+              if (s.kind === 'contact') {
+                const contactIconMap: Record<string, any> = {
+                  email: Mail,
+                  whatsapp: MessageCircle,
+                  instagram: AtSign,
+                  telegram: MessageCircle,
+                };
+                const Icon = contactIconMap[s.channel] || MessageCircle;
+                let href = '';
+                if (s.channel === 'email') href = `mailto:${s.value}`;
+                else if (s.channel === 'whatsapp') href = `https://wa.me/${s.value.replace(/[^0-9]/g, '')}`;
+                else if (s.channel === 'instagram') href = `https://instagram.com/${s.value}`;
+                else if (s.channel === 'telegram') href = `https://t.me/${s.value}`;
+
+                return (
+                  <a key={idx} href={href} target="_blank" rel="noreferrer" className={className} style={style}>
+                    <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: c.primary }} />
+                    <span className="truncate max-w-[9rem]">{s.label}</span>
+                  </a>
+                );
+              }
+
+              if (s.kind === 'service') {
+                return (
+                  <button key={idx} type="button" onClick={() => onShortcutSelect?.(s.blockId)} className={className} style={style}>
+                    <Tag className="w-3.5 h-3.5 shrink-0" style={{ color: c.primary }} />
+                    <span className="truncate max-w-[9rem]">{s.label}</span>
+                  </button>
+                );
+              }
+
+              return null;
             })}
           </div>
         )}

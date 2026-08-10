@@ -718,6 +718,7 @@ function ProfileEntryCard({
   interactiveEntrySettings,
   conversionFlowSettings,
   pageType,
+  onEngagementClick,
 }: {
   visibleBlocks: any[];
   navigationBlocks: any[];
@@ -732,6 +733,7 @@ function ProfileEntryCard({
   interactiveEntrySettings?: InteractiveEntrySettings | null;
   conversionFlowSettings?: ConversionFlowSettings | null;
   pageType: PublicPageType;
+  onEngagementClick?: (eventType: 'contact_click' | 'order_click', channel?: string | null) => void;
 }) {
   const isConversion = pageType === 'conversion';
   const MAX_OVERFLOW_WITHOUT_AUTO_HIDE_ACTIONS = 520;
@@ -1384,7 +1386,7 @@ function ProfileEntryCard({
                           className={className}
                           onClick={() => {
                             if (shortcut.kind === 'contact') {
-                              ctx.onEngagementClick('contact_click', shortcut.channel);
+                              onEngagementClick?.('contact_click', shortcut.channel);
                             }
                           }}
                         >
@@ -1393,17 +1395,20 @@ function ProfileEntryCard({
                       );
                     }
 
-                    // Service shortcut — button with onClick
-                    return (
-                      <button
-                        key={`${shortcut.kind}-${shortcut.blockId}-${shortcut.label}-${index}`}
-                        type="button"
-                        onClick={() => openEntryInsideCard(shortcut.blockId, null, 'book')}
-                        className={className}
-                      >
-                        {content}
-                      </button>
-                    );
+                    if (shortcut.kind === 'service') {
+                      return (
+                        <button
+                          key={`${shortcut.kind}-${shortcut.blockId}-${shortcut.label}-${index}`}
+                          type="button"
+                          onClick={() => openEntryInsideCard(shortcut.blockId, null, 'book')}
+                          className={className}
+                        >
+                          {content}
+                        </button>
+                      );
+                    }
+
+                    return null;
                   })}
                 </div>
               )}
@@ -2649,6 +2654,7 @@ export default function ArchetypeRenderer({
             pageType={pageType}
             interactiveEntrySettings={interactiveEntrySettings}
             conversionFlowSettings={conversionFlowSettings}
+            onEngagementClick={onEngagementClick}
           />
         )}
 
