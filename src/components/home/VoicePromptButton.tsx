@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Volume2 } from 'lucide-react';
 import styles from './home.module.css';
 
@@ -58,7 +58,6 @@ function pickCyberFemaleVoice(voices: SpeechSynthesisVoice[]) {
 export default function VoicePromptButton({ onSpeakingChange }: { onSpeakingChange?: (speaking: boolean) => void }) {
   const [supported, setSupported] = useState(false);
   const [speaking, setSpeaking] = useState(false);
-  const attemptedAutoPlay = useRef(false);
 
   useEffect(() => {
     onSpeakingChange?.(speaking);
@@ -100,19 +99,13 @@ export default function VoicePromptButton({ onSpeakingChange }: { onSpeakingChan
     window.speechSynthesis.addEventListener('voiceschanged', primeVoices);
 
     const supportTimer = window.setTimeout(() => setSupported(true), 0);
-    const timer = window.setTimeout(() => {
-      if (attemptedAutoPlay.current) return;
-      attemptedAutoPlay.current = true;
-      speak();
-    }, 900);
 
     return () => {
       window.clearTimeout(supportTimer);
-      window.clearTimeout(timer);
       window.speechSynthesis.cancel();
       window.speechSynthesis.removeEventListener('voiceschanged', primeVoices);
     };
-  }, [speak]);
+  }, []);
 
   if (!supported) return null;
 

@@ -55,6 +55,29 @@ describe('interactive entry settings', () => {
     });
   });
 
+  it('respects a deliberately shorter discover list instead of padding it back to the limit', () => {
+    const blocks = [
+      block('about', 'about', 0),
+      block('catalog', 'services', 1),
+      block('proof', 'testimonials', 2),
+      block('faq', 'faq', 3),
+    ];
+
+    expect(resolveInteractiveEntryTargets(blocks, {
+      discoverTargets: [{ blockId: 'catalog' }],
+    })).toEqual({
+      heroBlockId: 'about',
+      discoverBlockIds: ['catalog'],
+    });
+
+    expect(resolveInteractiveEntryTargets(blocks, {
+      discoverTargets: [{ blockId: 'catalog' }, { blockId: 'proof' }],
+    })).toEqual({
+      heroBlockId: 'about',
+      discoverBlockIds: ['catalog', 'proof'],
+    });
+  });
+
   it('lists every visible content block with a locale fallback', () => {
     const blocks = [
       block('one', 'custom', 2, 'Türkçe başlık'),

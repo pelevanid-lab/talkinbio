@@ -107,16 +107,25 @@ export function resolveInteractiveEntryTargets(
 
   for (const target of settings?.discoverTargets || []) add(target?.blockId);
 
-  // Respect the wizard's block order. Introductory and answer-only sections are fallback choices,
-  // not hard-coded requirements, so this works for services, products, musicians and future sectors.
-  for (const block of selectable) {
-    if (block.type === 'about' || block.type === 'faq') continue;
-    add(block.id);
-    if (discoverBlockIds.length >= limit) break;
-  }
-  for (const block of selectable) {
-    add(block.id);
-    if (discoverBlockIds.length >= limit) break;
+  // Only backfill with fallback picks when the owner hasn't deliberately configured fewer
+  // slots than `limit`. A saved list shorter than `limit` (e.g. just one entry) means the
+  // owner chose to show fewer options and that choice should stick. A saved list at (or
+  // trying to reach) `limit` that resolved to fewer valid entries — duplicates or a since
+  // deleted block — still gets repaired via the fallback loops below, and pages that have
+  // never been configured (`discoverTargets` unset) get sensible defaults.
+  const configuredCount = settings?.discoverTargets?.length ?? 0;
+  if (configuredCount >= limit || !Array.isArray(settings?.discoverTargets)) {
+    // Respect the wizard's block order. Introductory and answer-only sections are fallback choices,
+    // not hard-coded requirements, so this works for services, products, musicians and future sectors.
+    for (const block of selectable) {
+      if (block.type === 'about' || block.type === 'faq') continue;
+      add(block.id);
+      if (discoverBlockIds.length >= limit) break;
+    }
+    for (const block of selectable) {
+      add(block.id);
+      if (discoverBlockIds.length >= limit) break;
+    }
   }
 
   return { heroBlockId, discoverBlockIds: discoverBlockIds.slice(0, limit) };

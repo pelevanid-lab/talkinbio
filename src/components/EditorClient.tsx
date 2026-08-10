@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, Edit2, Copy, ExternalLink, X, CheckCircle2, Circle, GripVertical, Tag, Eye } from 'lucide-react';
+import { Loader2, Edit2, Copy, ExternalLink, X, CheckCircle2, Circle, GripVertical, Tag, Eye, Mail, MessageCircle, AtSign } from 'lucide-react';
 import BlockEditorModal from './BlockEditorModal';
 import SetPasswordModal from './SetPasswordModal';
 
@@ -868,7 +868,7 @@ export default function EditorClient({
                   settings block's content.shortcuts. */}
               {(() => {
                 const currentShortcuts = getShortcuts(blocks);
-                const candidates = collectShortcutCandidates(blocks, locale)
+                const candidates = collectShortcutCandidates(blocks, business, locale)
                   .filter((cand) => !currentShortcuts.some((s) => shortcutsEqual(s, cand)));
                 const atMax = currentShortcuts.length >= 4;
                 return (
@@ -880,7 +880,18 @@ export default function EditorClient({
                     {currentShortcuts.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mb-2">
                         {currentShortcuts.map((s, idx) => {
-                          const Icon = s.kind === 'link' ? iconForLinkUrl(s.url) : Tag;
+                          let Icon = Tag;
+                          if (s.kind === 'link') {
+                            Icon = iconForLinkUrl(s.url);
+                          } else if (s.kind === 'contact') {
+                            const contactIconMap: Record<string, any> = {
+                              email: Mail,
+                              whatsapp: MessageCircle,
+                              instagram: AtSign,
+                              telegram: MessageCircle,
+                            };
+                            Icon = contactIconMap[s.channel] || MessageCircle;
+                          }
                           return (
                             <span key={idx} className="inline-flex items-center gap-1 pl-2 pr-1 py-1 bg-white border border-slate-200 rounded-full text-xs text-[var(--ink)]">
                               <Icon className="w-3 h-3 shrink-0 text-slate-400" />
@@ -915,6 +926,11 @@ export default function EditorClient({
                       {candidates.some((c) => c.kind === 'service') && (
                         <optgroup label={t('shortcutGroupServices')}>
                           {candidates.map((c, i) => c.kind === 'service' ? <option key={i} value={i}>{c.label}</option> : null)}
+                        </optgroup>
+                      )}
+                      {candidates.some((c) => c.kind === 'contact') && (
+                        <optgroup label={t('shortcutGroupContact')}>
+                          {candidates.map((c, i) => c.kind === 'contact' ? <option key={i} value={i}>{c.label}</option> : null)}
                         </optgroup>
                       )}
                     </select>

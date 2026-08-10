@@ -9,7 +9,8 @@
 
 export type Shortcut =
   | { kind: 'link'; label: string; url: string }
-  | { kind: 'service'; blockId: string; label: string };
+  | { kind: 'service'; blockId: string; label: string }
+  | { kind: 'contact'; channel: 'email' | 'whatsapp' | 'instagram' | 'telegram'; label: string; value: string };
 
 function serviceItemLabel(item: any, locale: string): string {
   return (item?.[locale]?.title || item?.title || '').trim();
@@ -36,8 +37,12 @@ export function resolveShortcuts(blocks: any[] | null | undefined): Shortcut[] {
     .slice(0, 4);
 }
 
-// Editör açılır listesi için seçilebilir adaylar: tüm links öğeleri + tüm services/pricing öğeleri.
-export function collectShortcutCandidates(blocks: any[] | null | undefined, locale: string): Shortcut[] {
+// Editör açılır listesi için seçilebilir adaylar: tüm links öğeleri + tüm services/pricing öğeleri + iletişim yöntemleri.
+export function collectShortcutCandidates(
+  blocks: any[] | null | undefined,
+  business: any,
+  locale: string
+): Shortcut[] {
   const out: Shortcut[] = [];
   for (const block of blocks || []) {
     const items: any[] = block?.content?.items || [];
@@ -53,6 +58,34 @@ export function collectShortcutCandidates(blocks: any[] | null | undefined, loca
       }
     }
   }
+
+  // İletişim yöntemlerini ekle
+  const contactMethod = business?.contact_method || '';
+  const contactValueStr = business?.contact_value || '{}';
+  let contactValues: Record<string, string> = {};
+  try {
+    contactValues = JSON.parse(contactValueStr);
+  } catch {
+    contactValues = {};
+  }
+
+  const contactLabels: Record<string, Record<string, string>> = {
+    whatsapp: { tr: 'Telefon & WhatsApp', en: 'Phone & WhatsApp', ru: 'Телефон и WhatsApp' },
+    instagram: { tr: 'Instagram', en: 'Instagram', ru: 'Instagram' },
+    email: { tr: 'E-posta', en: 'Email', ru: 'Email' },
+    telegram: { tr: 'Telegram', en: 'Telegram', ru: 'Telegram' },
+  };
+
+  const methods = contactMethod.split(',').map((m: string) => m.trim()).filter(Boolean);
+  for (const channel of methods as Array<'email' | 'whatsapp' | 'instagram' | 'telegram'>) {
+    const value = contactValues[channel]?.trim();
+    if (value) {
+      const labels = contactLabels[channel] || {};
+      const label = labels[locale] || labels.tr || channel;
+      out.push({ kind: 'contact', channel, label, value });
+    }
+  }
+
   return out;
 }
 
@@ -61,5 +94,6 @@ export function shortcutsEqual(a: Shortcut, b: Shortcut): boolean {
   if (a.kind !== b.kind) return false;
   if (a.kind === 'link' && b.kind === 'link') return a.url === b.url && a.label === b.label;
   if (a.kind === 'service' && b.kind === 'service') return a.blockId === b.blockId && a.label === b.label;
+  if (a.kind === 'contact' && b.kind === 'contact') return a.channel === b.channel && a.value === b.value;
   return false;
 }

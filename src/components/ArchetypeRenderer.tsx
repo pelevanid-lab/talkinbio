@@ -318,15 +318,21 @@ function collectEntryActions(visibleBlocks: any[], locale: string, configuredBlo
 
   for (const blockId of configuredBlockIds) pushBlock(visibleBlocks.find((block) => block.id === blockId));
 
-  for (const block of visibleBlocks) {
-    if (block.type === 'about' || block.type === 'faq' || block.type === 'contact') continue;
-    pushBlock(block);
-    if (out.length >= 3) return out;
-  }
+  // resolveInteractiveEntryTargets already resolves the deliberate (possibly shorter than 3)
+  // discover list or backfills sensible defaults for unconfigured pages, so configuredBlockIds
+  // is normally the final answer. Only fall back here as a last resort when nothing resolved
+  // at all (e.g. an empty page), so an owner's choice to show just one or two options sticks.
+  if (out.length === 0) {
+    for (const block of visibleBlocks) {
+      if (block.type === 'about' || block.type === 'faq' || block.type === 'contact') continue;
+      pushBlock(block);
+      if (out.length >= 3) return out;
+    }
 
-  for (const block of visibleBlocks) {
-    pushBlock(block);
-    if (out.length >= 3) return out;
+    for (const block of visibleBlocks) {
+      pushBlock(block);
+      if (out.length >= 3) return out;
+    }
   }
   return out;
 }
@@ -1330,7 +1336,36 @@ function ProfileEntryCard({
               {entryShortcuts.length > 0 && (
                 <div className="mt-2 flex max-w-full flex-wrap gap-1.5">
                   {entryShortcuts.map((shortcut, index) => {
-                    const Icon = shortcut.kind === 'link' ? iconForLinkUrl(shortcut.url) : LinkIcon;
+                    let Icon = LinkIcon;
+                    let href = '';
+                    let isExternalLink = false;
+
+                    if (shortcut.kind === 'link') {
+                      Icon = iconForLinkUrl(shortcut.url);
+                      href = shortcut.url;
+                      isExternalLink = true;
+                    } else if (shortcut.kind === 'contact') {
+                      // Contact shortcuts — generate URL based on channel
+                      const contactIconMap: Record<string, any> = {
+                        email: Mail,
+                        whatsapp: MessageCircle,
+                        instagram: AtSign,
+                        telegram: MessageCircle,
+                      };
+                      Icon = contactIconMap[shortcut.channel] || MessageCircle;
+
+                      if (shortcut.channel === 'email') {
+                        href = `mailto:${shortcut.value}`;
+                      } else if (shortcut.channel === 'whatsapp') {
+                        href = `https://wa.me/${shortcut.value.replace(/[^0-9]/g, '')}`;
+                      } else if (shortcut.channel === 'instagram') {
+                        href = `https://instagram.com/${shortcut.value}`;
+                      } else if (shortcut.channel === 'telegram') {
+                        href = `https://t.me/${shortcut.value}`;
+                      }
+                      isExternalLink = true;
+                    }
+
                     const className = 'inline-flex max-w-[48%] items-center gap-1.5 rounded-full border border-white/18 bg-black/30 px-2.5 py-1.5 text-[11px] font-bold text-white/88 backdrop-blur-sm transition hover:border-white/42 hover:bg-black/45';
                     const content = (
                       <>
@@ -1338,19 +1373,27 @@ function ProfileEntryCard({
                         <span className="truncate">{shortcut.label}</span>
                       </>
                     );
-                    if (shortcut.kind === 'link') {
+
+                    if (isExternalLink) {
                       return (
                         <a
-                          key={`${shortcut.kind}-${shortcut.label}-${index}`}
-                          href={shortcut.url}
-                          target="_blank"
-                          rel="noreferrer"
+                          key={`${shortcut.kind}-${shortcut.label || (shortcut.kind === 'contact' ? shortcut.channel : '')}-${index}`}
+                          href={href}
+                          target={shortcut.kind === 'link' ? '_blank' : undefined}
+                          rel={shortcut.kind === 'link' ? 'noreferrer' : undefined}
                           className={className}
+                          onClick={() => {
+                            if (shortcut.kind === 'contact') {
+                              ctx.onEngagementClick('contact_click', shortcut.channel);
+                            }
+                          }}
                         >
                           {content}
                         </a>
                       );
                     }
+
+                    // Service shortcut — button with onClick
                     return (
                       <button
                         key={`${shortcut.kind}-${shortcut.blockId}-${shortcut.label}-${index}`}
