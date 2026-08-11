@@ -5,6 +5,8 @@ import AdaptiveHomepage from '@/components/home/AdaptiveHomepage';
 import { BrandLogo } from '@/components/home/HomepageSections';
 import { heroStructuredDataDescription, navCopy } from '@/components/home/homeData';
 import styles from '@/components/home/home.module.css';
+import { cookies } from 'next/headers';
+import { hasSupabaseAuthCookie } from '@/utils/supabase/authCookies';
 
 type Locale = 'tr' | 'en' | 'ru';
 
@@ -12,10 +14,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale: rawLocale } = await params;
   const locale = (['tr', 'en', 'ru'].includes(rawLocale) ? rawLocale : 'en') as Locale;
   const nav = navCopy[locale] || navCopy.en;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const cookieStore = await cookies();
+  let user = null;
+  if (hasSupabaseAuthCookie(cookieStore.getAll())) {
+    const supabase = await createClient();
+    const result = await supabase.auth.getUser();
+    user = result.data.user;
+  }
   const isLoggedIn = Boolean(user && !user.is_anonymous);
 
   const jsonLd = {

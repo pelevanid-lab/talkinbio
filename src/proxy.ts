@@ -3,6 +3,7 @@ import createIntlMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 import { APP_LOCALE_COOKIE, DEFAULT_LOCALE, ROUTING_LOCALE_COOKIE, isRoutingLocale, resolveProductLocale, resolveRoutingLocale } from './i18n/locales';
 import { createServerClient } from '@supabase/ssr';
+import { hasSupabaseAuthCookie } from './utils/supabase/authCookies';
 
 // Next 16'da `middleware` dosya konvansiyonu kullanımdan kalktı ve `proxy` olarak
 // yeniden adlandırıldı (davranış aynı; proxy varsayılan olarak Node.js runtime'ında
@@ -148,7 +149,11 @@ export async function proxy(request: NextRequest) {
     request.cookies.set('visitor_session_id', sessionId);
   }
 
-  await supabase.auth.getUser();
+  // Anonymous requests have no session to refresh. Avoid a network round trip
+  // on every public page, especially because Proxy runs before rendering.
+  if (hasSupabaseAuthCookie(request.cookies.getAll())) {
+    await supabase.auth.getUser();
+  }
 
   return response;
 }

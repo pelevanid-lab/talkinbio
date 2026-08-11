@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { ArrowRight, Camera, Mail, Music, Volume2, VolumeX } from 'lucide-react';
+import { ArrowRight, BarChart3, Camera, Compass, Link2, Mail, MessageCircle, MonitorUp, Music, Volume2, VolumeX } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/routing';
 import {
   capabilityItems,
@@ -62,9 +62,10 @@ export function MobileConversionHero({
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
-  const [mobileScene, setMobileScene] = useState<'discover' | 'about' | 'createWebsite' | 'redesignWebsite'>('discover');
+  const [mobileScene, setMobileScene] = useState<'discover' | 'about' | 'createWebsite' | 'redesignWebsite' | 'websitePotential'>('discover');
   const [websiteAudience, setWebsiteAudience] = useState<'personal' | 'business' | null>(null);
   const [redesignFocus, setRedesignFocus] = useState<'identity' | 'interaction' | null>(null);
+  const [potentialFocus, setPotentialFocus] = useState<'opportunities' | 'experience' | null>(null);
 
   function toggleAudio() {
     const video = videoRef.current;
@@ -80,12 +81,14 @@ export function MobileConversionHero({
     setMobileScene('discover');
     setWebsiteAudience(null);
     setRedesignFocus(null);
+    setPotentialFocus(null);
   }
 
   function openCreateWebsite() {
     onIntentSelect('create_page');
     setWebsiteAudience(null);
     setRedesignFocus(null);
+    setPotentialFocus(null);
     setMobileScene('createWebsite');
   }
 
@@ -93,7 +96,16 @@ export function MobileConversionHero({
     onIntentSelect('existing_link_bio');
     setWebsiteAudience(null);
     setRedesignFocus(null);
+    setPotentialFocus(null);
     setMobileScene('redesignWebsite');
+  }
+
+  function openWebsitePotential() {
+    onIntentSelect('curious');
+    setWebsiteAudience(null);
+    setRedesignFocus(null);
+    setPotentialFocus(null);
+    setMobileScene('websitePotential');
   }
 
   const intentActions = (
@@ -113,13 +125,13 @@ export function MobileConversionHero({
         </span>
         <ArrowRight aria-hidden="true" size={18} />
       </button>
-      <a href="#ask" onClick={() => onIntentSelect('curious')}>
+      <button type="button" onClick={openWebsitePotential}>
         <span>
           <small>GOAL</small>
-          I need more leads
+          I want more from my website
         </span>
         <ArrowRight aria-hidden="true" size={18} />
-      </a>
+      </button>
     </div>
   );
 
@@ -263,7 +275,7 @@ export function MobileConversionHero({
               ) : null}
             </div>
           </article>
-        ) : (
+        ) : mobileScene === 'redesignWebsite' ? (
           <article className={styles.mobileAboutPanel} aria-labelledby="mobile-redesign-title">
             <div className={styles.mobileAboutScroll}>
               <span className={styles.mobileAboutNumber}>02</span>
@@ -324,6 +336,78 @@ export function MobileConversionHero({
                     {redesignFocus === 'identity'
                       ? 'Do you want an evolution or a completely new direction?'
                       : 'What should visitors be able to do that they can’t do today?'}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          </article>
+        ) : (
+          <article className={styles.mobileAboutPanel} aria-labelledby="mobile-potential-title">
+            <div className={styles.mobileAboutScroll}>
+              <h2 id="mobile-potential-title">
+                What can a
+                <br />
+                page do?
+              </h2>
+              <p className={styles.mobileAboutLead}>
+                A website can do more than explain who you are. It can answer at the right moment, guide each visitor toward what matters, reveal the right work or offer, connect people to the next step and learn what they actually need.
+              </p>
+              <div className={styles.mobileCapabilityGrid} aria-label="What a Talkinbio page can do">
+                <div>
+                  <MessageCircle aria-hidden="true" size={20} />
+                  <strong>Answer</strong>
+                  <span>Questions in context.</span>
+                </div>
+                <div>
+                  <Compass aria-hidden="true" size={20} />
+                  <strong>Guide</strong>
+                  <span>Each visitor forward.</span>
+                </div>
+                <div>
+                  <MonitorUp aria-hidden="true" size={20} />
+                  <strong>Show</strong>
+                  <span>Work, offers and ideas.</span>
+                </div>
+                <div>
+                  <Link2 aria-hidden="true" size={20} />
+                  <strong>Connect</strong>
+                  <span>People to the next step.</span>
+                </div>
+                <div>
+                  <BarChart3 aria-hidden="true" size={20} />
+                  <strong>Learn</strong>
+                  <span>What people really want.</span>
+                </div>
+              </div>
+              <div className={styles.mobileAboutCopy}>
+                <p>
+                  Instead of asking every visitor to search through the same fixed structure, the page can respond to intent and bring the most useful path forward. The experience becomes shorter, clearer and more personal.
+                </p>
+                <p>
+                  That may mean creating measurable opportunities for the business, or simply making the website more useful, memorable and satisfying for the people using it.
+                </p>
+              </div>
+              <div className={styles.mobileIntentQuestion}>
+                <span>NEXT MOVE</span>
+                <p>What do you want your website to do more of?</p>
+              </div>
+              <div className={styles.mobileQuestionChoices}>
+                <button type="button" data-selected={potentialFocus === 'opportunities'} onClick={() => setPotentialFocus('opportunities')}>
+                  <span>I want it to generate opportunities</span>
+                  <ArrowRight aria-hidden="true" size={16} />
+                </button>
+                <button type="button" data-selected={potentialFocus === 'experience'} onClick={() => setPotentialFocus('experience')}>
+                  <span>I want it to create a better experience</span>
+                  <ArrowRight aria-hidden="true" size={16} />
+                </button>
+              </div>
+              {potentialFocus ? (
+                <div className={styles.mobileQuestionPrompt} aria-live="polite">
+                  <span>{potentialFocus === 'opportunities' ? 'OPPORTUNITIES' : 'EXPERIENCE'}</span>
+                  <p>
+                    {potentialFocus === 'opportunities'
+                      ? 'What matters most: leads, bookings, applications or sales?'
+                      : 'What should visitors be able to discover, ask or do?'}
                   </p>
                 </div>
               ) : null}

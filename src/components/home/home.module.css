@@ -1727,7 +1727,8 @@
 
   .mobileConversionContent[data-scene="about"],
   .mobileConversionContent[data-scene="createWebsite"],
-  .mobileConversionContent[data-scene="redesignWebsite"] {
+  .mobileConversionContent[data-scene="redesignWebsite"],
+  .mobileConversionContent[data-scene="websitePotential"] {
     justify-content: space-between;
     gap: 12px;
     padding-top: 64px;
@@ -2009,6 +2010,50 @@
     display: grid;
     gap: 8px;
     margin-top: 10px;
+  }
+
+  .mobileCapabilityGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 16px 0;
+    border-top: 1px solid rgba(246, 239, 228, 0.16);
+    border-left: 1px solid rgba(246, 239, 228, 0.16);
+  }
+
+  .mobileCapabilityGrid > div {
+    min-width: 0;
+    min-height: 102px;
+    display: grid;
+    align-content: start;
+    gap: 5px;
+    padding: 13px 12px;
+    border-right: 1px solid rgba(246, 239, 228, 0.16);
+    border-bottom: 1px solid rgba(246, 239, 228, 0.16);
+  }
+
+  .mobileCapabilityGrid > div:last-child {
+    grid-column: 1 / -1;
+    min-height: 86px;
+  }
+
+  .mobileCapabilityGrid svg {
+    margin-bottom: 4px;
+    color: #f6efe4;
+    stroke-width: 1.7;
+  }
+
+  .mobileCapabilityGrid strong {
+    color: #f6efe4;
+    font-size: 12px;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .mobileCapabilityGrid span {
+    color: rgba(246, 239, 228, 0.62);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.25;
   }
 
   .mobileCicadaStage {
