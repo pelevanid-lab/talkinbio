@@ -62,7 +62,9 @@ export function MobileConversionHero({
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
-  const [mobileScene, setMobileScene] = useState<'discover' | 'about'>('discover');
+  const [mobileScene, setMobileScene] = useState<'discover' | 'about' | 'createWebsite' | 'redesignWebsite'>('discover');
+  const [websiteAudience, setWebsiteAudience] = useState<'personal' | 'business' | null>(null);
+  const [redesignFocus, setRedesignFocus] = useState<'identity' | 'interaction' | null>(null);
 
   function toggleAudio() {
     const video = videoRef.current;
@@ -74,23 +76,43 @@ export function MobileConversionHero({
     setAudioEnabled(nextEnabled);
   }
 
+  function returnToMobileIntro() {
+    setMobileScene('discover');
+    setWebsiteAudience(null);
+    setRedesignFocus(null);
+  }
+
+  function openCreateWebsite() {
+    onIntentSelect('create_page');
+    setWebsiteAudience(null);
+    setRedesignFocus(null);
+    setMobileScene('createWebsite');
+  }
+
+  function openRedesignWebsite() {
+    onIntentSelect('existing_link_bio');
+    setWebsiteAudience(null);
+    setRedesignFocus(null);
+    setMobileScene('redesignWebsite');
+  }
+
   const intentActions = (
     <div className={styles.mobileConversionActions}>
       <span>DISCOVER.</span>
-      <a href="#setup" onClick={() => onIntentSelect('create_page')}>
+      <button type="button" onClick={openCreateWebsite}>
         <span>
           <small>PROJECT</small>
           I need a new website
         </span>
         <ArrowRight aria-hidden="true" size={18} />
-      </a>
-      <a href="#examples" onClick={() => onIntentSelect('existing_link_bio')}>
+      </button>
+      <button type="button" onClick={openRedesignWebsite}>
         <span>
           <small>PROJECT</small>
           My website feels outdated
         </span>
         <ArrowRight aria-hidden="true" size={18} />
-      </a>
+      </button>
       <a href="#ask" onClick={() => onIntentSelect('curious')}>
         <span>
           <small>GOAL</small>
@@ -114,7 +136,7 @@ export function MobileConversionHero({
         aria-hidden="true"
       />
       <div className={styles.mobileConversionScrim} aria-hidden="true" />
-      <button type="button" className={styles.mobileConversionLogo} onClick={() => setMobileScene('discover')} aria-label="Return to Talkinbio intro">
+      <button type="button" className={styles.mobileConversionLogo} onClick={returnToMobileIntro} aria-label="Return to Talkinbio intro">
         <span>talkinbio</span>
         <span aria-hidden="true">
           <i />
@@ -149,10 +171,9 @@ export function MobileConversionHero({
             </button>
             {intentActions}
           </>
-        ) : (
+        ) : mobileScene === 'about' ? (
           <article className={styles.mobileAboutPanel} aria-labelledby="mobile-about-title">
             <div className={styles.mobileAboutScroll}>
-              <span className={styles.mobileAboutNumber}>04</span>
               <h2 id="mobile-about-title">
                 Stop linking.
                 <br />
@@ -183,6 +204,129 @@ export function MobileConversionHero({
                   The point is not to add another link. The point is to turn the page into a conversational experience: creative, alive and built around the next action.
                 </p>
               </div>
+            </div>
+          </article>
+        ) : mobileScene === 'createWebsite' ? (
+          <article className={styles.mobileAboutPanel} aria-labelledby="mobile-create-title">
+            <div className={styles.mobileAboutScroll}>
+              <span className={styles.mobileAboutNumber}>01</span>
+              <h2 id="mobile-create-title">
+                Create your
+                <br />
+                website.
+              </h2>
+              <p className={styles.mobileAboutLead}>
+                We turn a request into a living website: interactive, voice-enabled, moving, conversational and built to convert.
+              </p>
+              <div className={styles.mobileProcessList} aria-label="Website creation process">
+                {['Request', 'Meet', 'Pricing', 'Demo', 'Payment', 'Delivery'].map((step, index) => (
+                  <div key={step}>
+                    <span>{String(index + 1).padStart(2, '0')}</span>
+                    {step}
+                  </div>
+                ))}
+              </div>
+              <div className={styles.mobileAboutCopy}>
+                <p>
+                  You send the first request. We meet, understand what the website needs to achieve, price the work, build a focused demo, then move through payment and delivery.
+                </p>
+                <p>
+                  The goal is not just to publish pages. The goal is to create a website that explains, listens, guides and helps the visitor take the right next step.
+                </p>
+              </div>
+              <div className={styles.mobileCicadaStage} aria-hidden="true">
+                <Image src="/singing-cicada-stage.png" alt="" width={520} height={780} loading="eager" />
+              </div>
+              <div className={styles.mobileIntentQuestion}>
+                <span>START WITH YOU</span>
+                <p>Who are we building this website around?</p>
+              </div>
+              <div className={styles.mobileQuestionChoices}>
+                <button type="button" data-selected={websiteAudience === 'personal'} onClick={() => setWebsiteAudience('personal')}>
+                  <span>For myself / my personal brand</span>
+                  <ArrowRight aria-hidden="true" size={16} />
+                </button>
+                <button type="button" data-selected={websiteAudience === 'business'} onClick={() => setWebsiteAudience('business')}>
+                  <span>For my business / brand</span>
+                  <ArrowRight aria-hidden="true" size={16} />
+                </button>
+              </div>
+              {websiteAudience ? (
+                <div className={styles.mobileQuestionPrompt} aria-live="polite">
+                  <span>{websiteAudience === 'personal' ? 'PERSONAL BRAND' : 'BUSINESS / BRAND'}</span>
+                  <p>
+                    {websiteAudience === 'personal'
+                      ? 'What should people understand about you first?'
+                      : 'What should the website help your business achieve?'}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          </article>
+        ) : (
+          <article className={styles.mobileAboutPanel} aria-labelledby="mobile-redesign-title">
+            <div className={styles.mobileAboutScroll}>
+              <span className={styles.mobileAboutNumber}>02</span>
+              <h2 id="mobile-redesign-title">
+                Every page
+                <br />
+                has something
+                <br />
+                to say.
+              </h2>
+              <p className={styles.mobileAboutLead}>
+                Outdated does not always mean old. Sometimes the brand has moved forward while the website is still speaking in its previous voice. Sometimes it looks polished, but gives people nothing to feel, explore or do.
+              </p>
+              <div className={styles.mobileImageMarquee} aria-hidden="true">
+                <div>
+                  <span className={styles.mobileMarqueeBotanical} />
+                  <span className={styles.mobileMarqueeMaterial} />
+                  <span className={styles.mobileMarqueeUliana} />
+                  <span className={styles.mobileMarqueeDance} />
+                  <span className={styles.mobileMarqueeFounder} />
+                  <span className={styles.mobileMarqueeCeramic} />
+                  <span className={styles.mobileMarqueeInstallation} />
+                  <span className={styles.mobileMarqueeBotanical} />
+                  <span className={styles.mobileMarqueeMaterial} />
+                  <span className={styles.mobileMarqueeUliana} />
+                  <span className={styles.mobileMarqueeDance} />
+                  <span className={styles.mobileMarqueeFounder} />
+                  <span className={styles.mobileMarqueeCeramic} />
+                  <span className={styles.mobileMarqueeInstallation} />
+                </div>
+              </div>
+              <div className={styles.mobileAboutCopy}>
+                <p>
+                  We begin with what the page should say and how people should answer. Image, typography, motion, voice and interaction become one living narrative: make the value understood, then make the next action feel natural.
+                </p>
+                <p>
+                  The right move may be a precise evolution or a clean break. Either way, the new experience should feel unmistakably yours and turn attention into conversation, trust and conversion.
+                </p>
+              </div>
+              <div className={styles.mobileIntentQuestion}>
+                <span>FIRST SIGNAL</span>
+                <p>What makes you feel most that your website is outdated?</p>
+              </div>
+              <div className={styles.mobileQuestionChoices}>
+                <button type="button" data-selected={redesignFocus === 'identity'} onClick={() => setRedesignFocus('identity')}>
+                  <span>The design and visual identity</span>
+                  <ArrowRight aria-hidden="true" size={16} />
+                </button>
+                <button type="button" data-selected={redesignFocus === 'interaction'} onClick={() => setRedesignFocus('interaction')}>
+                  <span>The way people interact with it</span>
+                  <ArrowRight aria-hidden="true" size={16} />
+                </button>
+              </div>
+              {redesignFocus ? (
+                <div className={styles.mobileQuestionPrompt} aria-live="polite">
+                  <span>{redesignFocus === 'identity' ? 'DESIGN / IDENTITY' : 'INTERACTION'}</span>
+                  <p>
+                    {redesignFocus === 'identity'
+                      ? 'Do you want an evolution or a completely new direction?'
+                      : 'What should visitors be able to do that they can’t do today?'}
+                  </p>
+                </div>
+              ) : null}
             </div>
           </article>
         )}

@@ -1591,6 +1591,10 @@
     overflow: hidden;
   }
 
+  .footer {
+    display: none;
+  }
+
   .navbar,
   .composer,
   .finalCta {
@@ -1721,7 +1725,9 @@
     scrollbar-width: none;
   }
 
-  .mobileConversionContent[data-scene="about"] {
+  .mobileConversionContent[data-scene="about"],
+  .mobileConversionContent[data-scene="createWebsite"],
+  .mobileConversionContent[data-scene="redesignWebsite"] {
     justify-content: space-between;
     gap: 12px;
     padding-top: 64px;
@@ -1786,22 +1792,27 @@
     margin-bottom: 4px;
   }
 
-  .mobileConversionActions a {
+  .mobileConversionActions a,
+  .mobileConversionActions button {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 14px;
+    width: 100%;
     min-height: 56px;
     padding: 11px 14px;
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 999px;
     background: rgba(0, 0, 0, 0.42);
     color: white;
+    font: inherit;
     text-decoration: none;
     backdrop-filter: blur(10px);
+    cursor: pointer;
   }
 
-  .mobileConversionActions a > span {
+  .mobileConversionActions a > span,
+  .mobileConversionActions button > span {
     display: grid;
     gap: 3px;
     min-width: 0;
@@ -1943,6 +1954,237 @@
     font-size: 12px;
     font-weight: 650;
     line-height: 1.5;
+  }
+
+  .mobileProcessList {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+    margin: 14px 0;
+  }
+
+  .mobileProcessList div {
+    min-height: 48px;
+    display: grid;
+    align-content: center;
+    gap: 3px;
+    padding: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.055);
+    color: rgba(246, 239, 228, 0.86);
+    font-size: 11px;
+    font-weight: 850;
+    line-height: 1.1;
+  }
+
+  .mobileProcessList span,
+  .mobileIntentQuestion span,
+  .mobileQuestionPrompt span {
+    color: var(--orange);
+    font-family: var(--font-ibm-plex-mono), monospace;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .mobileIntentQuestion {
+    display: grid;
+    gap: 5px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(246, 239, 228, 0.12);
+  }
+
+  .mobileIntentQuestion p {
+    margin: 0;
+    color: #f6efe4;
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1.16;
+  }
+
+  .mobileQuestionChoices {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .mobileCicadaStage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    height: 134px;
+    min-height: 134px;
+    margin: 6px 0 0;
+    overflow: hidden;
+    border-radius: 18px;
+    background:
+      radial-gradient(ellipse at 50% 82%, rgba(216, 111, 31, 0.28), transparent 48%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0));
+  }
+
+  .mobileCicadaStage::before {
+    content: "";
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    bottom: 14px;
+    height: 1px;
+    background: rgba(246, 239, 228, 0.18);
+  }
+
+  .mobileCicadaStage::after {
+    content: "";
+    position: absolute;
+    left: 22%;
+    right: 22%;
+    bottom: 13px;
+    height: 18px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.22);
+    filter: blur(10px);
+  }
+
+  .mobileCicadaStage img {
+    position: relative;
+    z-index: 1;
+    width: auto;
+    height: 144px;
+    margin-top: -12px;
+    filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.32));
+  }
+
+  .mobileQuestionChoices button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 52px;
+    padding: 11px 13px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 16px;
+    background: rgba(246, 239, 228, 0.08);
+    color: #f6efe4;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 850;
+    line-height: 1.18;
+    text-align: left;
+  }
+
+  .mobileQuestionChoices button[data-selected="true"] {
+    border-color: rgba(216, 111, 31, 0.62);
+    background: rgba(216, 111, 31, 0.16);
+  }
+
+  .mobileQuestionChoices svg {
+    flex: 0 0 auto;
+    color: rgba(246, 239, 228, 0.76);
+  }
+
+  .mobileQuestionPrompt {
+    display: grid;
+    gap: 7px;
+    margin-top: 10px;
+    padding: 13px;
+    border: 1px solid rgba(216, 111, 31, 0.32);
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.26);
+  }
+
+  .mobileQuestionPrompt p {
+    margin: 0;
+    color: #f6efe4;
+    font-size: 15px;
+    font-weight: 850;
+    line-height: 1.24;
+  }
+
+  .mobileImageMarquee {
+    position: relative;
+    margin: 17px -16px 16px;
+    overflow: hidden;
+    border-block: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.22);
+  }
+
+  .mobileImageMarquee::before,
+  .mobileImageMarquee::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    width: 44px;
+    pointer-events: none;
+  }
+
+  .mobileImageMarquee::before {
+    left: 0;
+    background: linear-gradient(90deg, rgba(8, 9, 9, 0.95), transparent);
+  }
+
+  .mobileImageMarquee::after {
+    right: 0;
+    background: linear-gradient(270deg, rgba(8, 9, 9, 0.95), transparent);
+  }
+
+  .mobileImageMarquee > div {
+    display: flex;
+    gap: 10px;
+    width: max-content;
+    padding: 12px 10px;
+    animation: mobileMarqueeDrift 44s linear infinite;
+  }
+
+  .mobileImageMarquee span {
+    flex: 0 0 auto;
+    width: 206px;
+    height: 124px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 4px;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.2);
+    background-position: center;
+    background-size: cover;
+  }
+
+  .mobileMarqueeBotanical {
+    background-image: url("/creative-strip/botanical-portrait.webp");
+  }
+
+  .mobileMarqueeMaterial {
+    background-image: url("/creative-strip/material-identity.webp");
+  }
+
+  .mobileMarqueeUliana {
+    background-image: url("/creative-strip/uliana-hero-crop.webp");
+    background-position: center 36%;
+  }
+
+  .mobileMarqueeDance {
+    background-image: url("/creative-strip/dance-motion.webp");
+  }
+
+  .mobileMarqueeFounder {
+    background-image: url("/enes-founder-portrait-sketch.png");
+    background-position: 30% 38%;
+    filter: sepia(0.12) saturate(0.9) contrast(1.04);
+  }
+
+  .mobileMarqueeCeramic {
+    background-image: url("/creative-strip/ceramic-scent.webp");
+  }
+
+  .mobileMarqueeInstallation {
+    background-image: url("/creative-strip/responsive-installation.webp");
+  }
+
+  @keyframes mobileMarqueeDrift {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(-50% - 5px)); }
   }
 
   .hero,
