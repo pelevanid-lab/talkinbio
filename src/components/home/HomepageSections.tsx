@@ -221,7 +221,6 @@ export function MobileConversionHero({
         ) : mobileScene === 'createWebsite' ? (
           <article className={styles.mobileAboutPanel} aria-labelledby="mobile-create-title">
             <div className={styles.mobileAboutScroll}>
-              <span className={styles.mobileAboutNumber}>01</span>
               <h2 id="mobile-create-title">
                 Create your
                 <br />
@@ -247,7 +246,7 @@ export function MobileConversionHero({
                 </p>
               </div>
               <div className={styles.mobileCicadaStage} aria-hidden="true">
-                <Image src="/singing-cicada-stage.png" alt="" width={520} height={780} loading="eager" />
+                <Image src="/cicada-hero-closeup.jpg" alt="" width={520} height={780} loading="eager" />
               </div>
               <div className={styles.mobileIntentQuestion}>
                 <span>START WITH YOU</span>
@@ -278,7 +277,6 @@ export function MobileConversionHero({
         ) : mobileScene === 'redesignWebsite' ? (
           <article className={styles.mobileAboutPanel} aria-labelledby="mobile-redesign-title">
             <div className={styles.mobileAboutScroll}>
-              <span className={styles.mobileAboutNumber}>02</span>
               <h2 id="mobile-redesign-title">
                 Every page
                 <br />
