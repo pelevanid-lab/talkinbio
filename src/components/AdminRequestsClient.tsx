@@ -4,7 +4,43 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Check, X, Trash2, Send } from 'lucide-react';
 
-export default function AdminRequestsClient({ initialPending, initialProcessed }: { initialPending: any[], initialProcessed: any[] }) {
+type OnboardingContact = { selected?: boolean; value?: string };
+
+type OnboardingRequest = {
+  id: string;
+  name: string;
+  email: string;
+  category?: string | null;
+  contacts: Record<string, OnboardingContact>;
+  source?: string | null;
+  status: string;
+};
+
+type WebsiteProjectRequest = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  social_media: string | null;
+  primary_choice: string;
+  secondary_choice: string;
+  question: string;
+  answer: string;
+  status: string;
+  created_at: string;
+};
+
+export default function AdminRequestsClient({
+  initialPending,
+  initialProcessed,
+  initialWebsiteRequests,
+}: {
+  initialPending: OnboardingRequest[];
+  initialProcessed: OnboardingRequest[];
+  initialWebsiteRequests: WebsiteProjectRequest[];
+}) {
   const router = useRouter();
   const [pending, setPending] = useState(initialPending);
   const [processed, setProcessed] = useState(initialProcessed);
@@ -63,6 +99,53 @@ export default function AdminRequestsClient({ initialPending, initialProcessed }
 
   return (
     <div className="space-y-8">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-6 border-b border-slate-200">
+          <h2 className="text-xl font-bold text-slate-900">Web Sitesi Talepleri ({initialWebsiteRequests.length})</h2>
+        </div>
+
+        {initialWebsiteRequests.length === 0 ? (
+          <div className="p-8 text-center text-slate-500">Henuz web sitesi talebi bulunmuyor.</div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {initialWebsiteRequests.map((request) => (
+              <article key={request.id} className="p-6 space-y-5 hover:bg-slate-50 transition">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold text-lg text-slate-900">{request.first_name} {request.last_name}</h3>
+                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
+                      {request.email ? <a href={`mailto:${request.email}`} className="hover:text-slate-900">{request.email}</a> : null}
+                      {request.phone ? <a href={`tel:${request.phone}`} className="hover:text-slate-900">{request.phone}</a> : null}
+                      {request.website ? <span>Website: {request.website}</span> : null}
+                      {request.social_media ? <span>Social: {request.social_media}</span> : null}
+                    </div>
+                  </div>
+                  <time className="text-xs text-slate-500" dateTime={request.created_at}>
+                    {new Date(request.created_at).toLocaleString('tr-TR')}
+                  </time>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div className="rounded-lg bg-slate-100 p-4">
+                    <p className="text-xs font-semibold uppercase text-slate-500">Ana yonlendirme</p>
+                    <p className="mt-1 font-semibold text-slate-900">{request.primary_choice}</p>
+                  </div>
+                  <div className="rounded-lg bg-slate-100 p-4">
+                    <p className="text-xs font-semibold uppercase text-slate-500">Alt secim</p>
+                    <p className="mt-1 font-semibold text-slate-900">{request.secondary_choice}</p>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 p-4">
+                  <p className="text-sm font-semibold text-slate-700">{request.question}</p>
+                  <p className="mt-2 whitespace-pre-wrap text-slate-900">{request.answer}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-6 border-b border-slate-200">
           <h2 className="text-xl font-bold text-slate-900">Bekleyen Talepler ({pending.length})</h2>

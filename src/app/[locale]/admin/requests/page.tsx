@@ -21,13 +21,19 @@ export default async function AdminRequestsPage() {
     .order('created_at', { ascending: false })
     .limit(10);
 
+  const { data: websiteRequests } = await supabaseAdmin
+    .from('website_project_requests')
+    .select('*')
+    .order('created_at', { ascending: false });
+
   return (
     <AdminLayout>
       <h1 className="text-3xl font-bold text-slate-900 mb-8">Kayıt Talepleri</h1>
       
       <AdminRequestsClient 
         initialPending={requests || []} 
-        initialProcessed={processed || []} 
+        initialProcessed={processed || []}
+        initialWebsiteRequests={websiteRequests || []}
       />
     </AdminLayout>
   );

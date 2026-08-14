@@ -1,8 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { ArrowRight, BarChart3, Camera, Compass, Link2, Mail, MessageCircle, MonitorUp, Music, Volume2, VolumeX } from 'lucide-react';
+import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from 'react';
+import { ArrowRight, BarChart3, Camera, CheckCircle2, Compass, Link2, Loader2, Mail, MessageCircle, MonitorUp, Music, Send, Volume2, VolumeX } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/routing';
 import {
   capabilityItems,
@@ -52,6 +52,322 @@ export function BrandLogo() {
       <span>talkinbio</span>
       <PresenceIndicator state="idle" />
     </span>
+  );
+}
+
+export function DesktopConversionHero({
+  onIntentSelect,
+}: {
+  onIntentSelect: (intent: HomepageIntent) => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const [desktopScene, setDesktopScene] = useState<'intro' | 'create' | 'redesign' | 'potential'>('intro');
+
+  function replayIntro() {
+    const video = videoRef.current;
+    if (!video) return;
+    setDesktopScene('intro');
+    setRevealed(false);
+    video.currentTime = 0;
+    video.muted = !audioEnabled;
+    void video.play();
+  }
+
+  function toggleAudio() {
+    const video = videoRef.current;
+    if (!video) return;
+    const nextEnabled = !audioEnabled;
+    video.muted = !nextEnabled;
+    video.volume = 1;
+    if (!revealed && video.paused) void video.play();
+    setAudioEnabled(nextEnabled);
+  }
+
+  function selectDesktopIntent(intent: HomepageIntent) {
+    onIntentSelect(intent);
+    setDesktopScene(intent === 'create_page' ? 'create' : intent === 'existing_link_bio' ? 'redesign' : 'potential');
+  }
+
+  return (
+    <section className={styles.desktopConversionHero} data-revealed={revealed} aria-label="Talkinbio desktop discovery">
+      <video
+        ref={videoRef}
+        className={styles.desktopConversionMedia}
+        src="/videos/cicada-hero-mobile.mp4"
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+        onEnded={() => setRevealed(true)}
+      />
+      <div className={styles.desktopConversionScrim} aria-hidden="true" />
+
+      <button type="button" className={styles.desktopConversionLogo} onClick={replayIntro} aria-label="Replay Talkinbio intro">
+        <span>talkinbio</span>
+        <span aria-hidden="true"><i /><i /><i /></span>
+      </button>
+      <button
+        type="button"
+        className={styles.desktopConversionAudio}
+        onClick={toggleAudio}
+        aria-label={audioEnabled ? 'Turn cicada sound off' : 'Turn cicada sound on'}
+      >
+        {audioEnabled ? <Volume2 aria-hidden="true" size={21} /> : <VolumeX aria-hidden="true" size={21} />}
+      </button>
+
+      {desktopScene === 'intro' ? <div className={styles.desktopAboutReveal} aria-hidden={!revealed}>
+        <div className={styles.desktopAboutCopy}>
+          <span>OPEN WEBSITE</span>
+          <h1>
+            The web is too quiet.
+          </h1>
+          <p className={styles.desktopAboutLead}>
+            Pages were made to be visited. We think they should talk back.
+          </p>
+          <div className={styles.desktopAboutStatement}>
+            <Image src="/enes-founder-portrait-sketch.png" alt="Enes Pehlivan portrait" width={160} height={160} loading="eager" />
+            <div>
+              <strong>Stop linking. Start talking.</strong>
+              <p>
+                We design interactive, live, voice-enabled and moving websites that listen to intent, guide people in context and turn attention into conversation.
+              </p>
+              <small>Enes Pehlivan · Founder, Talkinbio</small>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.desktopScatteredActions} aria-label="Choose what brings you here">
+          <button className={styles.desktopIntentCreate} type="button" onClick={() => selectDesktopIntent('create_page')}>
+            <small>PROJECT</small><span>I need a new website</span><ArrowRight aria-hidden="true" size={18} />
+          </button>
+          <button className={styles.desktopIntentRedesign} type="button" onClick={() => selectDesktopIntent('existing_link_bio')}>
+            <small>PROJECT</small><span>My website feels outdated</span><ArrowRight aria-hidden="true" size={18} />
+          </button>
+          <button className={styles.desktopIntentMore} type="button" onClick={() => selectDesktopIntent('curious')}>
+            <small>GOAL</small><span>I want more from my website</span><ArrowRight aria-hidden="true" size={18} />
+          </button>
+        </div>
+      </div> : <DesktopIntentScene scene={desktopScene} />}
+    </section>
+  );
+}
+
+function MobileProjectRequestForm({
+  primaryChoice,
+  secondaryChoice,
+  question,
+}: {
+  primaryChoice: string;
+  secondaryChoice: string;
+  question: string;
+}) {
+  const [form, setForm] = useState({ answer: '', firstName: '', lastName: '', phone: '', email: '', website: '', socialMedia: '' });
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [message, setMessage] = useState('');
+
+  function updateField(field: keyof typeof form, value: string) {
+    setForm((current) => ({ ...current, [field]: value }));
+    if (status === 'error') {
+      setStatus('idle');
+      setMessage('');
+    }
+  }
+
+  async function submitRequest(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setStatus('submitting');
+    setMessage('');
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      const response = await fetch('/api/website-project-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          company: formData.get('company'),
+          primaryChoice,
+          secondaryChoice,
+          question,
+          locale: document.documentElement.lang,
+        }),
+      });
+      const result = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) throw new Error(result.error || 'Your request could not be sent.');
+      setStatus('success');
+    } catch (error) {
+      setStatus('error');
+      setMessage(error instanceof Error ? error.message : 'Your request could not be sent.');
+    }
+  }
+
+  if (status === 'success') {
+    return (
+      <div className={styles.mobileRequestSuccess} role="status">
+        <CheckCircle2 aria-hidden="true" size={24} />
+        <div>
+          <strong>Your request is with us.</strong>
+          <p>We will review what you shared and get in touch.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <form className={styles.mobileRequestForm} onSubmit={submitRequest}>
+      <label className={styles.mobileRequestAnswer}>
+        <span>YOUR ANSWER</span>
+        <textarea required rows={5} maxLength={3000} value={form.answer} onChange={(event) => updateField('answer', event.target.value)} placeholder="Tell us in your own words..." />
+      </label>
+
+      <div className={styles.mobileRequestIdentity}>
+        <p>How can we reach you?</p>
+        <div className={styles.mobileRequestFields}>
+          <label><span>First name *</span><input required maxLength={80} autoComplete="given-name" value={form.firstName} onChange={(event) => updateField('firstName', event.target.value)} /></label>
+          <label><span>Last name *</span><input required maxLength={80} autoComplete="family-name" value={form.lastName} onChange={(event) => updateField('lastName', event.target.value)} /></label>
+          <label><span>Phone <small>optional</small></span><input type="tel" maxLength={200} autoComplete="tel" value={form.phone} onChange={(event) => updateField('phone', event.target.value)} /></label>
+          <label><span>Email *</span><input required type="email" maxLength={200} autoComplete="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} /></label>
+          <label><span>Website <small>optional</small></span><input type="text" maxLength={200} inputMode="url" autoComplete="url" value={form.website} onChange={(event) => updateField('website', event.target.value)} placeholder="yourwebsite.com" /></label>
+          <label><span>Social media <small>optional</small></span><input type="text" maxLength={200} value={form.socialMedia} onChange={(event) => updateField('socialMedia', event.target.value)} placeholder="@username or profile link" /></label>
+        </div>
+        <p className={styles.mobileRequestContactNote}>We will use your email to respond to this request.</p>
+      </div>
+
+      <label className={styles.mobileRequestHoneypot} aria-hidden="true">Company<input name="company" type="text" tabIndex={-1} autoComplete="off" /></label>
+      {status === 'error' ? <p className={styles.mobileRequestError} role="alert">{message}</p> : null}
+      <button className={styles.mobileRequestSubmit} type="submit" disabled={status === 'submitting'}>
+        {status === 'submitting' ? <Loader2 className={styles.mobileRequestSpinner} aria-hidden="true" size={17} /> : <Send aria-hidden="true" size={17} />}
+        {status === 'submitting' ? 'Sending...' : 'Send request'}
+      </button>
+    </form>
+  );
+}
+
+function DesktopIntentScene({ scene }: { scene: 'create' | 'redesign' | 'potential' }) {
+  const [secondaryChoice, setSecondaryChoice] = useState<string | null>(null);
+
+  const config = scene === 'create'
+    ? {
+        title: 'Create your website.',
+        lead: 'We turn a request into a living website: interactive, voice-enabled, moving, conversational and built to convert.',
+        copy: [
+          'You send the first request. We meet, understand what the website needs to achieve, price the work, build a focused demo, then move through payment and delivery.',
+          'The goal is not just to publish pages. The goal is to create a website that explains, listens, guides and helps the visitor take the right next step.',
+        ],
+        promptLabel: 'START WITH YOU',
+        prompt: 'Who are we building this website around?',
+        options: [
+          { label: 'For myself / my personal brand', question: 'What should people understand about you first?' },
+          { label: 'For my business / brand', question: 'What should the website help your business achieve?' },
+        ],
+        primaryChoice: 'I need a new website',
+      }
+    : scene === 'redesign'
+      ? {
+          title: 'Every page has something to say.',
+          lead: 'Outdated does not always mean old. Sometimes the brand has moved forward while the website is still speaking in its previous voice. Sometimes it looks polished, but gives people nothing to feel, explore or do.',
+          copy: [
+            'We begin with what the page should say and how people should answer. Image, typography, motion, voice and interaction become one living narrative.',
+            'The right move may be a precise evolution or a clean break. Either way, the new experience should feel unmistakably yours and turn attention into conversation, trust and conversion.',
+          ],
+          promptLabel: 'FIRST SIGNAL',
+          prompt: 'What makes you feel most that your website is outdated?',
+          options: [
+            { label: 'The design and visual identity', question: 'Do you want an evolution or a completely new direction?' },
+            { label: 'The way people interact with it', question: 'What should visitors be able to do that they can’t do today?' },
+          ],
+          primaryChoice: 'My website feels outdated',
+        }
+      : {
+          title: 'What can a page do?',
+          lead: 'A website can do more than explain who you are. It can answer at the right moment, guide each visitor, reveal the right offer, connect people to the next step and learn what they actually need.',
+          copy: [
+            'Instead of asking every visitor to search through the same fixed structure, the page can respond to intent and bring the most useful path forward.',
+            'That may mean creating measurable opportunities, or making the website more useful, memorable and satisfying for the people using it.',
+          ],
+          promptLabel: 'NEXT MOVE',
+          prompt: 'What do you want your website to do more of?',
+          options: [
+            { label: 'I want it to generate opportunities', question: 'What matters most: leads, bookings, applications or sales?' },
+            { label: 'I want it to create a better experience', question: 'What should visitors be able to discover, ask or do?' },
+          ],
+          primaryChoice: 'I want more from my website',
+        };
+
+  const selectedOption = config.options.find((option) => option.label === secondaryChoice) || null;
+
+  return (
+    <article className={styles.desktopIntentScene} aria-labelledby="desktop-intent-title">
+      <div className={styles.desktopIntentScroll}>
+        <header className={styles.desktopIntentHeader}>
+          <h2 id="desktop-intent-title">{config.title}</h2>
+          <p>{config.lead}</p>
+        </header>
+
+        <div className={styles.desktopIntentBody}>
+          <div className={styles.desktopIntentNarrative}>
+            {config.copy.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+          </div>
+
+          <div className={styles.desktopIntentVisual} data-scene={scene} aria-hidden="true">
+            {scene === 'create' ? (
+              <>
+                <Image src="/singing-cicada-stage.png" alt="" width={520} height={780} loading="eager" />
+                <div className={styles.desktopProcessTrack}>
+                  {['Request', 'Meet', 'Pricing', 'Demo', 'Payment', 'Delivery'].map((step) => <span key={step}>{step}</span>)}
+                </div>
+              </>
+            ) : scene === 'redesign' ? (
+              <div className={styles.desktopCreativeStrip}>
+                <span className={styles.mobileMarqueeBotanical} />
+                <span className={styles.mobileMarqueeUliana} />
+                <span className={styles.mobileMarqueeDance} />
+                <span className={styles.mobileMarqueeFounder} />
+                <span className={styles.mobileMarqueeInstallation} />
+              </div>
+            ) : (
+              <div className={styles.desktopCapabilityList}>
+                <span><MessageCircle size={21} />Answer</span>
+                <span><Compass size={21} />Guide</span>
+                <span><MonitorUp size={21} />Show</span>
+                <span><Link2 size={21} />Connect</span>
+                <span><BarChart3 size={21} />Learn</span>
+              </div>
+            )}
+          </div>
+
+          <div className={styles.desktopIntentDecision}>
+            <div className={styles.desktopIntentPrompt}>
+              <span>{config.promptLabel}</span>
+              <p>{config.prompt}</p>
+            </div>
+            <div className={styles.desktopIntentChoices}>
+              {config.options.map((option) => (
+                <button key={option.label} type="button" data-selected={secondaryChoice === option.label} onClick={() => setSecondaryChoice(option.label)}>
+                  <span>{option.label}</span><ArrowRight aria-hidden="true" size={17} />
+                </button>
+              ))}
+            </div>
+
+            {selectedOption ? (
+              <div className={styles.desktopIntentAnswer}>
+                <div className={styles.desktopIntentFollowup}>
+                  <span>YOUR TURN</span>
+                  <p>{selectedOption.question}</p>
+                </div>
+                <MobileProjectRequestForm
+                  primaryChoice={config.primaryChoice}
+                  secondaryChoice={selectedOption.label}
+                  question={selectedOption.question}
+                />
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -263,14 +579,17 @@ export function MobileConversionHero({
                 </button>
               </div>
               {websiteAudience ? (
-                <div className={styles.mobileQuestionPrompt} aria-live="polite">
-                  <span>{websiteAudience === 'personal' ? 'PERSONAL BRAND' : 'BUSINESS / BRAND'}</span>
-                  <p>
-                    {websiteAudience === 'personal'
-                      ? 'What should people understand about you first?'
-                      : 'What should the website help your business achieve?'}
-                  </p>
-                </div>
+                <>
+                  <div className={styles.mobileQuestionPrompt} aria-live="polite">
+                    <span>{websiteAudience === 'personal' ? 'PERSONAL BRAND' : 'BUSINESS / BRAND'}</span>
+                    <p>{websiteAudience === 'personal' ? 'What should people understand about you first?' : 'What should the website help your business achieve?'}</p>
+                  </div>
+                  <MobileProjectRequestForm
+                    primaryChoice="I need a new website"
+                    secondaryChoice={websiteAudience === 'personal' ? 'For myself / my personal brand' : 'For my business / brand'}
+                    question={websiteAudience === 'personal' ? 'What should people understand about you first?' : 'What should the website help your business achieve?'}
+                  />
+                </>
               ) : null}
             </div>
           </article>
@@ -328,14 +647,17 @@ export function MobileConversionHero({
                 </button>
               </div>
               {redesignFocus ? (
-                <div className={styles.mobileQuestionPrompt} aria-live="polite">
-                  <span>{redesignFocus === 'identity' ? 'DESIGN / IDENTITY' : 'INTERACTION'}</span>
-                  <p>
-                    {redesignFocus === 'identity'
-                      ? 'Do you want an evolution or a completely new direction?'
-                      : 'What should visitors be able to do that they can’t do today?'}
-                  </p>
-                </div>
+                <>
+                  <div className={styles.mobileQuestionPrompt} aria-live="polite">
+                    <span>{redesignFocus === 'identity' ? 'DESIGN / IDENTITY' : 'INTERACTION'}</span>
+                    <p>{redesignFocus === 'identity' ? 'Do you want an evolution or a completely new direction?' : 'What should visitors be able to do that they can’t do today?'}</p>
+                  </div>
+                  <MobileProjectRequestForm
+                    primaryChoice="My website feels outdated"
+                    secondaryChoice={redesignFocus === 'identity' ? 'The design and visual identity' : 'The way people interact with it'}
+                    question={redesignFocus === 'identity' ? 'Do you want an evolution or a completely new direction?' : 'What should visitors be able to do that they can’t do today?'}
+                  />
+                </>
               ) : null}
             </div>
           </article>
@@ -400,14 +722,17 @@ export function MobileConversionHero({
                 </button>
               </div>
               {potentialFocus ? (
-                <div className={styles.mobileQuestionPrompt} aria-live="polite">
-                  <span>{potentialFocus === 'opportunities' ? 'OPPORTUNITIES' : 'EXPERIENCE'}</span>
-                  <p>
-                    {potentialFocus === 'opportunities'
-                      ? 'What matters most: leads, bookings, applications or sales?'
-                      : 'What should visitors be able to discover, ask or do?'}
-                  </p>
-                </div>
+                <>
+                  <div className={styles.mobileQuestionPrompt} aria-live="polite">
+                    <span>{potentialFocus === 'opportunities' ? 'OPPORTUNITIES' : 'EXPERIENCE'}</span>
+                    <p>{potentialFocus === 'opportunities' ? 'What matters most: leads, bookings, applications or sales?' : 'What should visitors be able to discover, ask or do?'}</p>
+                  </div>
+                  <MobileProjectRequestForm
+                    primaryChoice="I want more from my website"
+                    secondaryChoice={potentialFocus === 'opportunities' ? 'I want it to generate opportunities' : 'I want it to create a better experience'}
+                    question={potentialFocus === 'opportunities' ? 'What matters most: leads, bookings, applications or sales?' : 'What should visitors be able to discover, ask or do?'}
+                  />
+                </>
               ) : null}
             </div>
           </article>

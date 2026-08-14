@@ -12,6 +12,7 @@ import {
 import {
   AskThePageSection,
   CapabilitiesSection,
+  DesktopConversionHero,
   ExamplesSection,
   FinalCTA,
   Footer,
@@ -119,6 +120,7 @@ export default function AdaptiveHomepage() {
   return (
     <>
       <main className={styles.main} data-adapted={adapted}>
+        <DesktopConversionHero onIntentSelect={handleIntentSelect} />
         <MobileConversionHero onIntentSelect={handleIntentSelect} />
         <HeroSection
           activeIntent={intent}
