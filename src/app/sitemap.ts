@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { localizedUrl, hreflangUrls } from '@/utils/localizedUrl';
+import { editorialArticles, editorialTopics } from '@/components/editorial/editorialData';
+import { touchpointPages } from '@/components/home/homeData';
 
 // sitemap.ts is a cached Route Handler by default in Next 16 (see node_modules/next/dist/docs/
 // .../metadata/sitemap.md) — without a revalidate/dynamic config it snapshots once at build time
@@ -13,7 +15,13 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 1. Static Routes
-  const staticRoutes = ['', '/legal', '/stakeholders', '/pricing'].map(route => ({
+  const editorialRoutes = [
+    '/first-contact',
+    ...editorialTopics.map(({ slug }) => `/topics/${slug}`),
+    ...editorialArticles.map(({ slug }) => `/articles/${slug}`),
+    ...Object.keys(touchpointPages).map((slug) => `/explore/${slug}`),
+  ];
+  const staticRoutes = ['', '/legal', '/stakeholders', '/pricing', ...editorialRoutes].map(route => ({
     url: localizedUrl('en', route), // Use 'en' as the default canonical for the base URL in the sitemap listing
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,

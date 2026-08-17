@@ -1,0 +1,44 @@
+.control {
+  position: fixed;
+  z-index: 2147483000;
+  top: max(34px, env(safe-area-inset-top));
+  right: 112px;
+  left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 12px;
+  color: #f7f4ec;
+  background: rgba(7, 9, 8, 0.78);
+  border: 1px solid rgba(247, 244, 236, 0.28);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.control:focus-within {
+  border-color: rgba(226, 108, 23, 0.9);
+}
+
+@media (max-width: 640px) {
+  .control {
+    top: max(14px, env(safe-area-inset-top));
+    right: 64px;
+    left: auto;
+    min-height: 34px;
+    padding-inline: 10px;
+  }
+
+}
+
+@media (max-width: 360px) {
+  .control {
+    top: calc(max(14px, env(safe-area-inset-top)) + 44px);
+    right: auto;
+    left: 16px;
+    gap: 6px;
+    padding-inline: 8px;
+  }
+}

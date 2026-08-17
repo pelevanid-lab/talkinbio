@@ -2,7 +2,6 @@
 
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { ChevronLeft } from 'lucide-react';
 
 const LinkedInIcon = () => (
@@ -44,7 +43,6 @@ export default function StakeholdersPage() {
           </Link>
           <div className="links" style={{ display: 'none' }}></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <LanguageSwitcher />
             <Link href="/login" className="btn btn-ghost" style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}>
               {tNav('login')}
             </Link>

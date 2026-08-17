@@ -274,9 +274,8 @@
   .desktopAboutCopy {
     position: absolute;
     left: clamp(36px, 6vw, 110px);
-    top: 50%;
-    width: min(48vw, 720px);
-    transform: translateY(-48%);
+    top: clamp(96px, 14vh, 150px);
+    width: min(38vw, 560px);
   }
 
   .desktopAboutCopy > span {
@@ -287,303 +286,98 @@
   }
 
   .desktopAboutCopy h1 {
-    max-width: 690px;
-    margin: 10px 0 12px;
+    max-width: 520px;
+    margin: 8px 0 10px;
     color: #f6efe4;
     font-family: var(--font-bricolage), sans-serif;
-    font-size: clamp(58px, 6.2vw, 112px);
+    font-size: clamp(30px, 3.4vw, 52px);
     font-weight: 900;
-    line-height: 0.88;
+    line-height: 0.98;
     letter-spacing: 0;
-    text-transform: uppercase;
   }
 
   .desktopAboutLead {
-    max-width: 510px;
+    max-width: 420px;
     margin: 0;
     color: rgba(246, 239, 228, 0.78);
-    font-size: clamp(16px, 1.35vw, 21px);
+    font-size: clamp(14px, 1.1vw, 17px);
     font-weight: 750;
     line-height: 1.28;
   }
 
-  .desktopAboutStatement {
+  .desktopCurator {
     display: grid;
-    grid-template-columns: 104px minmax(0, 1fr);
-    gap: 18px;
-    align-items: center;
-    max-width: 610px;
-    margin-top: clamp(24px, 3.5vh, 40px);
-    padding-top: 18px;
+    gap: 7px;
+    width: fit-content;
+    margin-top: clamp(18px, 3vh, 28px);
+    padding-top: 15px;
     border-top: 1px solid rgba(246, 239, 228, 0.22);
   }
 
-  .desktopAboutStatement img {
-    width: 104px;
-    height: 104px;
-    border-radius: 4px;
-    object-fit: contain;
-    object-position: center;
-    background: #8d8870;
-    filter: sepia(0.2) contrast(1.08);
-  }
-
-  .desktopAboutStatement strong {
-    display: block;
-    font-size: 17px;
-    line-height: 1.1;
-  }
-
-  .desktopAboutStatement p {
-    margin: 7px 0 9px;
-    color: rgba(246, 239, 228, 0.68);
-    font-size: 12px;
-    font-weight: 650;
-    line-height: 1.42;
-  }
-
-  .desktopAboutStatement small {
-    color: #d86f1f;
+  .desktopCurator span {
+    color: rgba(246, 239, 228, 0.58);
     font-family: var(--font-ibm-plex-mono), monospace;
-    font-size: 9px;
-    font-weight: 750;
-    text-transform: uppercase;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
   }
 
-  .desktopScatteredActions button {
-    position: absolute;
-    z-index: 2;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 3px 18px;
-    align-items: center;
-    min-width: clamp(260px, 22vw, 360px);
-    min-height: 82px;
-    padding: 15px 18px;
-    border: 1px solid rgba(246, 239, 228, 0.34);
-    border-radius: 4px;
-    background: rgba(5, 6, 6, 0.42);
+  .desktopCurator a {
     color: #f6efe4;
-    text-align: left;
-    backdrop-filter: blur(14px);
-    transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
-  }
-
-  .desktopScatteredActions button:hover {
-    border-color: rgba(216, 111, 31, 0.82);
-    background: rgba(5, 6, 6, 0.72);
-    transform: translateY(-3px) rotate(0deg);
-  }
-
-  .desktopScatteredActions small {
-    grid-column: 1 / -1;
-    color: #d86f1f;
-    font-family: var(--font-ibm-plex-mono), monospace;
-    font-size: 9px;
-    font-weight: 750;
-  }
-
-  .desktopScatteredActions span {
-    font-size: clamp(15px, 1.2vw, 19px);
-    font-weight: 850;
-    line-height: 1.08;
-  }
-
-  .desktopIntentCreate {
-    top: 21%;
-    right: 12%;
-    transform: rotate(1.2deg);
-  }
-
-  .desktopIntentRedesign {
-    top: 48%;
-    right: 18%;
-    transform: rotate(-1.5deg);
-  }
-
-  .desktopIntentMore {
-    right: 10%;
-    bottom: 10%;
-    transform: rotate(0.8deg);
-  }
-
-  .desktopIntentScene {
-    position: absolute;
-    inset: clamp(92px, 11vh, 120px) clamp(30px, 4vw, 70px) clamp(24px, 4vh, 42px);
-    z-index: 2;
-    overflow: hidden;
-    border: 1px solid rgba(246, 239, 228, 0.2);
-    border-radius: 6px;
-    background: rgba(7, 8, 8, 0.84);
-    color: #f6efe4;
-    backdrop-filter: blur(18px);
-    animation: desktopSceneEnter 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  }
-
-  .desktopIntentScroll {
-    width: 100%;
-    height: 100%;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding: clamp(24px, 3vw, 46px);
-    scrollbar-width: none;
-  }
-
-  .desktopIntentScroll::-webkit-scrollbar {
-    display: none;
-  }
-
-  .desktopIntentHeader {
-    display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(300px, 0.75fr);
-    gap: clamp(30px, 6vw, 100px);
-    align-items: end;
-    padding-bottom: clamp(22px, 3vh, 34px);
-    border-bottom: 1px solid rgba(246, 239, 228, 0.16);
-  }
-
-  .desktopIntentHeader h2 {
-    max-width: 780px;
-    margin: 0;
-    font-family: var(--font-bricolage), sans-serif;
-    font-size: clamp(48px, 5.5vw, 92px);
-    font-weight: 900;
-    line-height: 0.9;
-    letter-spacing: 0;
-    text-transform: uppercase;
-  }
-
-  .desktopIntentHeader > p {
-    margin: 0;
-    color: rgba(246, 239, 228, 0.68);
-    font-size: clamp(13px, 1.1vw, 17px);
-    font-weight: 700;
-    line-height: 1.45;
-  }
-
-  .desktopIntentBody {
-    display: grid;
-    grid-template-columns: minmax(210px, 0.72fr) minmax(300px, 1fr) minmax(330px, 0.92fr);
-    gap: clamp(20px, 2.5vw, 42px);
-    align-items: start;
-    padding-top: clamp(24px, 3vh, 38px);
-  }
-
-  .desktopIntentNarrative {
-    display: grid;
-    gap: 16px;
-  }
-
-  .desktopIntentNarrative p {
-    margin: 0;
-    color: rgba(246, 239, 228, 0.7);
     font-size: 13px;
-    font-weight: 650;
-    line-height: 1.5;
-  }
-
-  .desktopIntentVisual {
-    position: relative;
-    min-height: 300px;
-    overflow: hidden;
-    border-inline: 1px solid rgba(246, 239, 228, 0.13);
-  }
-
-  .desktopIntentVisual[data-scene="create"] {
-    display: grid;
-    place-items: center;
-    min-height: 340px;
-  }
-
-  .desktopIntentVisual[data-scene="create"] > img {
-    width: auto;
-    height: 270px;
-    object-fit: contain;
-    filter: drop-shadow(0 22px 28px rgba(0, 0, 0, 0.42));
-  }
-
-  .desktopProcessTrack {
-    position: absolute;
-    inset: auto 18px 14px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    border: 1px solid rgba(246, 239, 228, 0.14);
-    background: rgba(246, 239, 228, 0.14);
-  }
-
-  .desktopProcessTrack span {
-    padding: 8px 6px;
-    background: rgba(8, 9, 9, 0.92);
-    color: rgba(246, 239, 228, 0.7);
-    font-family: var(--font-ibm-plex-mono), monospace;
-    font-size: 8px;
-    font-weight: 750;
-    text-align: center;
-    text-transform: uppercase;
-  }
-
-  .desktopCreativeStrip {
-    display: grid;
-    grid-template-columns: repeat(6, minmax(145px, 1fr));
-    gap: 10px;
-    width: max-content;
-    height: 310px;
-    padding: 8px 16px;
-    animation: desktopCreativeDrift 28s linear infinite;
-  }
-
-  .desktopCreativeStrip span {
-    width: 180px;
-    height: 294px;
-    border-radius: 3px;
-    background-position: center;
-    background-size: cover;
-  }
-
-  .desktopCreativeStrip .mobileMarqueeBotanical { background-image: url("/creative-strip/botanical-portrait.webp"); }
-  .desktopCreativeStrip .mobileMarqueeUliana { background-image: url("/creative-strip/uliana-hero-crop.webp"); }
-  .desktopCreativeStrip .mobileMarqueeDance { background-image: url("/creative-strip/dance-motion.webp"); }
-  .desktopCreativeStrip .mobileMarqueeFounder { background-image: url("/enes-founder-portrait-sketch.png"); }
-  .desktopCreativeStrip .mobileMarqueeInstallation { background-image: url("/creative-strip/responsive-installation.webp"); }
-
-  .desktopCapabilityList {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    min-height: 310px;
-    border-top: 1px solid rgba(246, 239, 228, 0.14);
-    border-left: 1px solid rgba(246, 239, 228, 0.14);
-  }
-
-  .desktopCapabilityList span {
-    display: grid;
-    align-content: center;
-    justify-items: center;
-    gap: 10px;
-    min-height: 100px;
-    border-right: 1px solid rgba(246, 239, 228, 0.14);
-    border-bottom: 1px solid rgba(246, 239, 228, 0.14);
-    font-size: 12px;
     font-weight: 850;
-    text-transform: uppercase;
+    text-decoration-color: rgba(216, 111, 31, 0.72);
+    text-underline-offset: 4px;
+    transition: color 180ms ease, text-decoration-color 180ms ease;
   }
 
-  .desktopCapabilityList span:last-child {
-    grid-column: 1 / -1;
+  .desktopCurator a:hover {
+    color: #d86f1f;
+    text-decoration-color: #d86f1f;
   }
 
-  .desktopIntentDecision {
-    min-width: 0;
-  }
-
-  .desktopIntentPrompt,
-  .desktopIntentFollowup {
-    display: grid;
+  .desktopHolisticBack {
+    display: inline-flex;
+    align-items: center;
     gap: 7px;
+    margin-top: 14px;
+    padding: 7px 10px;
+    border: 1px solid rgba(246, 239, 228, 0.22);
+    border-radius: 999px;
+    background: rgba(5, 6, 6, 0.3);
+    color: rgba(246, 239, 228, 0.82);
+    font-family: var(--font-ibm-plex-mono), monospace;
+    font-size: 10px;
+    font-weight: 750;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: border-color 180ms ease, color 180ms ease, transform 180ms ease;
   }
 
-  .desktopIntentPrompt > span,
-  .desktopIntentFollowup > span {
+  .desktopHolisticBack:hover {
+    border-color: rgba(216, 111, 31, 0.72);
+    color: #f6efe4;
+    transform: translateX(-2px);
+  }
+
+  .desktopTouchpointDetail {
+    max-width: 480px;
+    max-height: 0;
+    margin-top: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 320ms cubic-bezier(0.2, 0.7, 0.2, 1), opacity 220ms ease, margin-top 320ms ease;
+  }
+
+  .desktopTouchpointDetail[data-open="true"] {
+    max-height: 320px;
+    margin-top: clamp(16px, 2.4vh, 26px);
+    padding-top: 14px;
+    opacity: 1;
+    border-top: 1px solid rgba(246, 239, 228, 0.22);
+  }
+
+  .desktopTouchpointDetail > span {
     color: #d86f1f;
     font-family: var(--font-ibm-plex-mono), monospace;
     font-size: 9px;
@@ -591,242 +385,337 @@
     letter-spacing: 0.08em;
   }
 
-  .desktopIntentPrompt p,
-  .desktopIntentFollowup p {
-    margin: 0;
-    color: #f6efe4;
-    font-size: clamp(18px, 1.6vw, 25px);
-    font-weight: 900;
-    line-height: 1.08;
-  }
-
-  .desktopIntentChoices {
-    display: grid;
-    gap: 9px;
-    margin-top: 18px;
-  }
-
-  .desktopIntentChoices button {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    min-height: 58px;
-    padding: 12px 15px;
-    border: 1px solid rgba(246, 239, 228, 0.18);
-    border-radius: 4px;
-    background: rgba(246, 239, 228, 0.06);
-    color: #f6efe4;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 850;
-    text-align: left;
-  }
-
-  .desktopIntentChoices button[data-selected="true"] {
-    border-color: rgba(216, 111, 31, 0.7);
-    background: rgba(216, 111, 31, 0.14);
-  }
-
-  .desktopIntentAnswer {
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid rgba(246, 239, 228, 0.14);
-  }
-
-  .desktopIntentAnswer .mobileRequestForm {
-    display: grid;
-    gap: 14px;
-    margin-top: 14px;
-    padding: 15px;
-    border: 1px solid rgba(246, 239, 228, 0.16);
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.28);
-  }
-
-  .desktopIntentAnswer .mobileRequestAnswer,
-  .desktopIntentAnswer .mobileRequestFields label {
+  .desktopTouchpointDetail ul {
     display: grid;
     gap: 6px;
-    min-width: 0;
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
   }
 
-  .desktopIntentAnswer .mobileRequestAnswer > span,
-  .desktopIntentAnswer .mobileRequestFields label > span {
-    color: rgba(246, 239, 228, 0.58);
+  .desktopTopicThesis {
+    max-width: 470px;
+    margin: 9px 0 0;
+    color: rgba(246, 239, 228, 0.9);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.42;
+  }
+
+  .desktopTouchpointDetail li {
+    position: relative;
+    padding-left: 14px;
+    color: rgba(246, 239, 228, 0.82);
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1.35;
+  }
+
+  .desktopTouchpointDetail li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 7px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #d86f1f;
+  }
+
+  .desktopTouchpointExplore {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 10px 16px;
+    border: 1px solid #d86f1f;
+    border-radius: 999px;
+    background: rgba(216, 111, 31, 0.16);
+    color: #f6efe4;
+    font-size: 12px;
+    font-weight: 850;
+    text-decoration: none;
+    transition: background 180ms ease, transform 180ms ease;
+  }
+
+  .desktopTouchpointExplore:hover {
+    background: rgba(216, 111, 31, 0.32);
+    transform: translateX(2px);
+  }
+
+  .desktopTouchpointExplore:disabled {
+    cursor: not-allowed;
+    opacity: 0.48;
+    transform: none;
+  }
+
+  .desktopTouchpointField {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .desktopTouchpointLine {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .desktopTouchpointLine path {
+    fill: none;
+    stroke: rgba(216, 111, 31, 0.76);
+    stroke-width: 0.3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .desktopTouchpointCard {
+    position: absolute;
+    z-index: 2;
+    display: grid;
+    gap: 3px;
+    min-width: clamp(190px, 15vw, 250px);
+    padding: 12px 15px;
+    border: 1px solid rgba(246, 239, 228, 0.3);
+    border-radius: 4px;
+    background: rgba(5, 6, 6, 0.42);
+    color: #f6efe4;
+    text-align: left;
+    backdrop-filter: blur(14px);
+    pointer-events: auto;
+    transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+  }
+
+  .desktopTouchpointCard:hover {
+    border-color: rgba(216, 111, 31, 0.7);
+    background: rgba(5, 6, 6, 0.68);
+  }
+
+  .desktopTouchpointCard[data-selected="true"] {
+    border-color: #d86f1f;
+    background: rgba(216, 111, 31, 0.22);
+    transform: translateY(-2px);
+  }
+
+  .desktopTouchpointCard small {
+    color: #d86f1f;
+    font-family: var(--font-ibm-plex-mono), monospace;
+    font-size: 9px;
+    font-weight: 750;
+    letter-spacing: 0.05em;
+  }
+
+  .desktopTouchpointCard span {
+    font-size: clamp(13px, 1.05vw, 16px);
+    font-weight: 850;
+    line-height: 1.12;
+  }
+
+  .desktopHolisticGroupCard {
+    position: relative;
+    width: clamp(240px, 18vw, 310px);
+    min-width: 0;
+    gap: 4px;
+    padding: 15px 17px;
+  }
+
+  .desktopHolisticGroupCard em {
+    max-width: 265px;
+    margin-top: 3px;
+    color: rgba(246, 239, 228, 0.62);
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 650;
+    line-height: 1.3;
+  }
+
+  .desktopHolisticGroupCard > svg {
+    position: absolute;
+    top: 50%;
+    right: 13px;
+    color: rgba(246, 239, 228, 0.68);
+    transform: translateY(-50%);
+    transition: transform 180ms ease, color 180ms ease;
+  }
+
+  .desktopHolisticGroupCard[data-selected="true"] > svg {
+    color: #d86f1f;
+    transform: translateY(-50%) rotate(90deg);
+  }
+
+  .desktopHolisticField {
+    left: 53%;
+    right: 3%;
+    top: 9%;
+    bottom: 4%;
+  }
+
+  .desktopHolisticStages {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .desktopHolisticStage {
+    position: absolute;
+    width: clamp(250px, 22vw, 350px);
+    pointer-events: auto;
+  }
+
+  .desktopHolisticStage:nth-child(1) {
+    left: -23%;
+    top: 1%;
+  }
+
+  .desktopHolisticStage:nth-child(2) {
+    right: 1%;
+    top: 15%;
+  }
+
+  .desktopHolisticStage:nth-child(3) {
+    left: 7%;
+    top: 46%;
+  }
+
+  .desktopHolisticStage:nth-child(4) {
+    right: 1%;
+    top: 68%;
+  }
+
+  .desktopHolisticStage .desktopHolisticGroupCard {
+    width: 100%;
+  }
+
+  .desktopHolisticTrail {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .desktopHolisticChild {
+    position: absolute;
+    z-index: 3;
+    display: grid;
+    gap: 2px;
+    width: clamp(150px, 11.5vw, 190px);
+    min-height: 34px;
+    padding: 6px 9px;
+    border: 1px solid rgba(246, 239, 228, 0.22);
+    border-radius: 3px;
+    background: rgba(5, 6, 6, 0.62);
+    color: #f6efe4;
+    text-align: left;
+    backdrop-filter: blur(12px);
+    pointer-events: auto;
+    cursor: pointer;
+    transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+  }
+
+  .desktopHolisticChild::before {
+    content: "";
+    position: absolute;
+    left: -6px;
+    top: calc(50% - 1px);
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: #d86f1f;
+    box-shadow: 0 0 16px rgba(216, 111, 31, 0.55);
+    transform: translateY(-50%);
+  }
+
+  .desktopHolisticChild:hover,
+  .desktopHolisticChild[data-selected="true"] {
+    border-color: #d86f1f;
+    background: rgba(216, 111, 31, 0.2);
+    transform: translateY(-2px);
+  }
+
+  .desktopHolisticChild small {
+    color: #d86f1f;
     font-family: var(--font-ibm-plex-mono), monospace;
     font-size: 8px;
-    font-weight: 800;
-    text-transform: uppercase;
+    font-weight: 750;
+    letter-spacing: 0.05em;
   }
 
-  .desktopIntentAnswer .mobileRequestFields small {
-    color: rgba(246, 239, 228, 0.35);
-    font: inherit;
-    text-transform: lowercase;
-  }
-
-  .desktopIntentAnswer textarea,
-  .desktopIntentAnswer input {
-    width: 100%;
-    border: 1px solid rgba(246, 239, 228, 0.16);
-    border-radius: 3px;
-    outline: 0;
-    background: rgba(246, 239, 228, 0.07);
-    color: #f6efe4;
-    font: inherit;
+  .desktopHolisticChild span {
     font-size: 12px;
+    font-weight: 820;
+    line-height: 1.12;
   }
 
-  .desktopIntentAnswer textarea {
-    min-height: 96px;
-    resize: vertical;
-    padding: 10px;
+  .desktopHolisticTrail[data-group="understand-market"] .desktopHolisticChild:nth-of-type(1) {
+    left: 31%;
+    top: 4%;
   }
 
-  .desktopIntentAnswer input {
-    height: 38px;
-    padding: 0 9px;
+  .desktopHolisticTrail[data-group="understand-market"] .desktopHolisticChild:nth-of-type(2) {
+    right: 15%;
+    top: 6%;
   }
 
-  .desktopIntentAnswer textarea:focus,
-  .desktopIntentAnswer input:focus {
-    border-color: rgba(216, 111, 31, 0.74);
+  .desktopHolisticTrail[data-group="design-value"] .desktopHolisticChild:nth-of-type(1) {
+    right: 34%;
+    top: 31%;
   }
 
-  .desktopIntentAnswer .mobileRequestIdentity {
-    display: grid;
-    gap: 10px;
-    padding-top: 13px;
-    border-top: 1px solid rgba(246, 239, 228, 0.12);
+  .desktopHolisticTrail[data-group="design-value"] .desktopHolisticChild:nth-of-type(2) {
+    right: 1%;
+    top: 32%;
   }
 
-  .desktopIntentAnswer .mobileRequestIdentity > p:first-child {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 900;
+  .desktopHolisticTrail[data-group="design-value"] .desktopHolisticChild:nth-of-type(3) {
+    right: 40%;
+    top: 39%;
   }
 
-  .desktopIntentAnswer .mobileRequestFields {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 9px;
+  .desktopHolisticTrail[data-group="design-value"] .desktopHolisticChild:nth-of-type(4) {
+    right: 7%;
+    top: 40%;
   }
 
-  .desktopIntentAnswer .mobileRequestContactNote,
-  .desktopIntentAnswer .mobileRequestError {
-    margin: 0;
-    color: rgba(246, 239, 228, 0.5);
-    font-size: 9px;
+  .desktopHolisticTrail[data-group="deliver-value"] .desktopHolisticChild:nth-of-type(1) {
+    left: 48%;
+    top: 62%;
   }
 
-  .desktopIntentAnswer .mobileRequestSubmit {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 44px;
-    border: 0;
-    border-radius: 3px;
-    background: #f6efe4;
-    color: #111312;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 900;
+  .desktopHolisticTrail[data-group="deliver-value"] .desktopHolisticChild:nth-of-type(2) {
+    right: 4%;
+    top: 62%;
   }
 
-  .desktopIntentAnswer .mobileRequestHoneypot {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
+  .desktopHolisticTrail[data-group="grow-relationship"] .desktopHolisticChild:nth-of-type(1) {
+    left: 58%;
+    top: 82%;
   }
 
-  .desktopIntentAnswer .mobileRequestSuccess {
-    display: flex;
-    gap: 10px;
-    margin-top: 14px;
-    padding: 15px;
-    border: 1px solid rgba(216, 111, 31, 0.4);
-    background: rgba(216, 111, 31, 0.12);
+  .desktopHolisticTrail[data-group="grow-relationship"] .desktopHolisticChild:nth-of-type(2) {
+    left: 20%;
+    top: 86%;
   }
 
-  @keyframes desktopSceneEnter {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes desktopCreativeDrift {
-    from { transform: translateX(0); }
-    to { transform: translateX(-38%); }
-  }
 }
 
 @media (min-width: 641px) and (max-width: 980px) {
   .desktopAboutCopy {
     left: 38px;
-    width: 52vw;
+    width: 58vw;
   }
 
   .desktopAboutCopy h1 {
-    font-size: clamp(52px, 7.7vw, 74px);
+    font-size: clamp(28px, 5.2vw, 40px);
   }
 
-  .desktopAboutStatement {
-    grid-template-columns: 78px minmax(0, 1fr);
-  }
-
-  .desktopAboutStatement img {
-    width: 78px;
-    height: 92px;
-  }
-
-  .desktopScatteredActions button {
-    min-width: 250px;
-    max-width: 290px;
-  }
-
-  .desktopIntentCreate { right: 6%; }
-  .desktopIntentRedesign { right: 8%; }
-  .desktopIntentMore { right: 5%; }
-
-  .desktopIntentScene {
-    inset: 84px 22px 20px;
-  }
-
-  .desktopIntentHeader {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-
-  .desktopIntentBody {
-    grid-template-columns: 1fr;
-  }
-
-  .desktopIntentVisual {
-    border: 1px solid rgba(246, 239, 228, 0.13);
-  }
-}
-
-@media (min-width: 981px) and (max-width: 1180px) {
-  .desktopIntentBody {
-    grid-template-columns: minmax(0, 0.7fr) minmax(0, 1fr);
-  }
-
-  .desktopIntentDecision {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-    gap: 22px;
-  }
-
-  .desktopIntentChoices {
-    margin-top: 0;
-  }
-
-  .desktopIntentAnswer {
-    grid-column: 1 / -1;
+  .desktopTouchpointCard {
+    min-width: 190px;
+    max-width: 230px;
   }
 }
 
@@ -2409,38 +2298,23 @@
     max-height: 100svh;
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 0 16px 16px;
+    padding: 84px 16px 16px;
     scrollbar-width: none;
-  }
-
-  .mobileConversionContent[data-scene="about"],
-  .mobileConversionContent[data-scene="createWebsite"],
-  .mobileConversionContent[data-scene="redesignWebsite"],
-  .mobileConversionContent[data-scene="websitePotential"] {
-    justify-content: space-between;
-    gap: 12px;
-    padding-top: 64px;
   }
 
   .mobileConversionContent::-webkit-scrollbar {
     display: none;
   }
 
-  .mobileConversionProfile {
-    margin-bottom: 18px;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: inherit;
-    text-align: left;
+  .mobileTouchpointIntro {
+    margin-bottom: 14px;
     text-shadow: 0 12px 34px rgba(0, 0, 0, 0.55);
-    cursor: pointer;
   }
 
-  .mobileConversionProfile span,
-  .mobileConversionActions > span,
-  .mobileConversionActions small {
+  .mobileTouchpointIntro > span {
     display: block;
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.7);
     font-family: var(--font-ibm-plex-mono), monospace;
     font-size: 10px;
     font-weight: 800;
@@ -2448,647 +2322,239 @@
     text-transform: uppercase;
   }
 
-  .mobileConversionProfile span,
-  .mobileConversionActions > span {
-    color: rgba(255, 255, 255, 0.7);
-  }
-
-  .mobileConversionProfile h1 {
-    margin: 9px 0 8px;
+  .mobileTouchpointIntro h1 {
+    margin: 0 0 8px;
     font-family: var(--font-bricolage), sans-serif;
-    font-size: clamp(38px, 10.6vw, 50px);
+    font-size: clamp(26px, 7.6vw, 34px);
     font-weight: 800;
-    line-height: 0.92;
+    line-height: 1;
     letter-spacing: 0;
-    text-transform: uppercase;
   }
 
-  .mobileConversionProfile p {
+  .mobileTouchpointIntro p {
     margin: 0;
-    max-width: 320px;
-    color: rgba(255, 255, 255, 0.84);
+    color: rgba(255, 255, 255, 0.82);
     font-size: 13px;
     font-weight: 750;
     line-height: 1.35;
   }
 
-  .mobileConversionActions {
+  .mobileCurator {
     display: grid;
+    gap: 5px;
+    width: fit-content;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  .mobileCurator span {
+    color: rgba(255, 255, 255, 0.56);
+    font-family: var(--font-ibm-plex-mono), monospace;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+  }
+
+  .mobileCurator a {
+    color: #f6efe4;
+    font-size: 12px;
+    font-weight: 850;
+    text-decoration-color: rgba(216, 111, 31, 0.78);
+    text-underline-offset: 4px;
+  }
+
+  .mobileTouchpointList {
+    display: grid;
+    gap: 8px;
+    min-height: 0;
+  }
+
+  .mobileHolisticBack {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
     gap: 7px;
+    margin: 0 0 10px;
+    padding: 7px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.34);
+    color: rgba(255, 255, 255, 0.86);
+    font-family: var(--font-ibm-plex-mono), monospace;
+    font-size: 10px;
+    font-weight: 750;
+    backdrop-filter: blur(10px);
   }
 
-  .mobileConversionActions > span {
-    margin-bottom: 4px;
-  }
-
-  .mobileConversionActions a,
-  .mobileConversionActions button {
+  .mobileTouchpointRow button {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 14px;
     width: 100%;
-    min-height: 56px;
+    min-height: 54px;
     padding: 11px 14px;
     border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 999px;
+    border-radius: 16px;
     background: rgba(0, 0, 0, 0.42);
     color: white;
     font: inherit;
-    text-decoration: none;
+    text-align: left;
     backdrop-filter: blur(10px);
     cursor: pointer;
   }
 
-  .mobileConversionActions a > span,
-  .mobileConversionActions button > span {
+  .mobileTouchpointRow button[data-selected="true"] {
+    border-color: #d86f1f;
+    background: rgba(216, 111, 31, 0.28);
+  }
+
+  .mobileTouchpointRow button > span {
     display: grid;
     gap: 3px;
     min-width: 0;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 850;
     line-height: 1.1;
   }
 
-  .mobileConversionActions small {
-    color: rgba(255, 255, 255, 0.48);
+  .mobileTouchpointRow button small {
+    color: rgba(255, 255, 255, 0.5);
+    font-family: var(--font-ibm-plex-mono), monospace;
     font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
   }
 
-  .mobileConversionActions svg {
+  .mobileTouchpointRow button svg {
     flex: 0 0 auto;
     color: rgba(255, 255, 255, 0.86);
   }
 
-  .mobileAboutPanel {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0;
-    max-height: none;
-    margin: 0;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 22px;
-    background: rgba(8, 9, 9, 0.74);
-    box-shadow: 0 26px 72px rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(14px);
-    overflow: hidden;
-  }
-
-  .mobileAboutScroll {
-    flex: 1 1 auto;
-    min-height: 0;
-    max-height: none;
-    overflow-y: auto;
-    padding: 16px 16px 18px;
-    scrollbar-width: none;
-  }
-
-  .mobileAboutScroll::-webkit-scrollbar {
-    display: none;
-  }
-
-  .mobileAboutNumber,
-  .mobileAboutSignal,
-  .mobileAboutFounder span {
-    font-family: var(--font-ibm-plex-mono), monospace;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-  }
-
-  .mobileAboutNumber {
-    display: block;
-    color: var(--orange);
-    margin-bottom: 8px;
-  }
-
-  .mobileAboutPanel h2 {
-    margin: 0;
-    color: #f6efe4;
-    font-family: var(--font-bricolage), sans-serif;
-    font-size: clamp(31px, 8.9vw, 42px);
-    font-weight: 700;
-    line-height: 0.94;
-    letter-spacing: 0;
-    text-transform: uppercase;
-  }
-
-  .mobileAboutLead {
-    margin: 10px 0 10px;
-    color: rgba(246, 239, 228, 0.7);
-    font-size: 12px;
-    font-weight: 750;
-    line-height: 1.42;
-  }
-
-  .mobileAboutSignal {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-    color: var(--orange);
-  }
-
-  .mobileAboutFounder {
-    display: grid;
-    grid-template-columns: minmax(0, 0.95fr) minmax(0, 0.85fr);
-    gap: 0;
-    align-items: stretch;
-    margin: 0 0 14px;
-    overflow: hidden;
-    border-radius: 16px;
-    background: rgba(127, 123, 98, 0.92);
-  }
-
-  .mobileAboutFounder img {
-    display: block;
-    width: 100%;
-    height: 112px;
-    object-fit: cover;
-    object-position: 34% center;
-    filter: grayscale(0.1) contrast(1.04);
-  }
-
-  .mobileAboutFounder figcaption {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 12px;
-    color: #f6efe4;
-  }
-
-  .mobileAboutFounder strong {
-    display: block;
-    margin-bottom: 5px;
-    font-size: 15px;
-    line-height: 1.05;
-  }
-
-  .mobileAboutFounder span {
-    color: rgba(246, 239, 228, 0.66);
-    font-size: 9px;
-    line-height: 1.3;
-  }
-
-  .mobileAboutCopy {
-    display: grid;
-    gap: 9px;
-  }
-
-  .mobileAboutCopy p {
-    margin: 0;
-    color: rgba(246, 239, 228, 0.82);
-    font-size: 12px;
+  .mobileHolisticGroupRow > p {
+    margin: 5px 14px 2px;
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 11px;
     font-weight: 650;
-    line-height: 1.5;
-  }
-
-  .mobileProcessList {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 7px;
-    margin: 14px 0;
-  }
-
-  .mobileProcessList div {
-    min-height: 48px;
-    display: grid;
-    align-content: center;
-    gap: 3px;
-    padding: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.13);
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.055);
-    color: rgba(246, 239, 228, 0.86);
-    font-size: 11px;
-    font-weight: 850;
-    line-height: 1.1;
-  }
-
-  .mobileProcessList span,
-  .mobileIntentQuestion span,
-  .mobileQuestionPrompt span {
-    color: var(--orange);
-    font-family: var(--font-ibm-plex-mono), monospace;
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  .mobileIntentQuestion {
-    display: grid;
-    gap: 5px;
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(246, 239, 228, 0.12);
-  }
-
-  .mobileIntentQuestion p {
-    margin: 0;
-    color: #f6efe4;
-    font-size: 16px;
-    font-weight: 900;
-    line-height: 1.16;
-  }
-
-  .mobileQuestionChoices {
-    display: grid;
-    gap: 8px;
-    margin-top: 10px;
-  }
-
-  .mobileCapabilityGrid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin: 16px 0;
-    border-top: 1px solid rgba(246, 239, 228, 0.16);
-    border-left: 1px solid rgba(246, 239, 228, 0.16);
-  }
-
-  .mobileCapabilityGrid > div {
-    min-width: 0;
-    min-height: 102px;
-    display: grid;
-    align-content: start;
-    gap: 5px;
-    padding: 13px 12px;
-    border-right: 1px solid rgba(246, 239, 228, 0.16);
-    border-bottom: 1px solid rgba(246, 239, 228, 0.16);
-  }
-
-  .mobileCapabilityGrid > div:last-child {
-    grid-column: 1 / -1;
-    min-height: 86px;
-  }
-
-  .mobileCapabilityGrid svg {
-    margin-bottom: 4px;
-    color: #f6efe4;
-    stroke-width: 1.7;
-  }
-
-  .mobileCapabilityGrid strong {
-    color: #f6efe4;
-    font-size: 12px;
-    line-height: 1;
-    text-transform: uppercase;
-  }
-
-  .mobileCapabilityGrid span {
-    color: rgba(246, 239, 228, 0.62);
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 1.25;
-  }
-
-  .mobileCicadaStage {
-    position: relative;
-    display: grid;
-    place-items: center;
-    height: 134px;
-    min-height: 134px;
-    margin: 6px 0 0;
-    overflow: hidden;
-    border-radius: 18px;
-    background:
-      radial-gradient(ellipse at 50% 82%, rgba(216, 111, 31, 0.28), transparent 48%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0));
-  }
-
-  .mobileCicadaStage::before {
-    content: "";
-    position: absolute;
-    left: 12%;
-    right: 12%;
-    bottom: 14px;
-    height: 1px;
-    background: rgba(246, 239, 228, 0.18);
-  }
-
-  .mobileCicadaStage::after {
-    content: "";
-    position: absolute;
-    left: 22%;
-    right: 22%;
-    bottom: 13px;
-    height: 18px;
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.22);
-    filter: blur(10px);
-  }
-
-  .mobileCicadaStage img {
-    position: relative;
-    z-index: 1;
-    width: auto;
-    height: 144px;
-    margin-top: -12px;
-    filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.32));
-  }
-
-  .mobileQuestionChoices button {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    min-height: 52px;
-    padding: 11px 13px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 16px;
-    background: rgba(246, 239, 228, 0.08);
-    color: #f6efe4;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 850;
-    line-height: 1.18;
-    text-align: left;
-  }
-
-  .mobileQuestionChoices button[data-selected="true"] {
-    border-color: rgba(216, 111, 31, 0.62);
-    background: rgba(216, 111, 31, 0.16);
-  }
-
-  .mobileQuestionChoices svg {
-    flex: 0 0 auto;
-    color: rgba(246, 239, 228, 0.76);
-  }
-
-  .mobileQuestionPrompt {
-    display: grid;
-    gap: 7px;
-    margin-top: 10px;
-    padding: 13px;
-    border: 1px solid rgba(216, 111, 31, 0.32);
-    border-radius: 16px;
-    background: rgba(0, 0, 0, 0.26);
-  }
-
-  .mobileQuestionPrompt p {
-    margin: 0;
-    color: #f6efe4;
-    font-size: 15px;
-    font-weight: 850;
-    line-height: 1.24;
-  }
-
-  .mobileRequestForm {
-    position: relative;
-    display: grid;
-    gap: 15px;
-    margin-top: 12px;
-    padding: 15px;
-    border: 1px solid rgba(246, 239, 228, 0.16);
-    border-radius: 16px;
-    background: rgba(4, 5, 5, 0.58);
-  }
-
-  .mobileRequestAnswer,
-  .mobileRequestFields label {
-    display: grid;
-    gap: 7px;
-    min-width: 0;
-  }
-
-  .mobileRequestAnswer > span,
-  .mobileRequestFields label > span {
-    color: rgba(246, 239, 228, 0.68);
-    font-family: var(--font-mono), monospace;
-    font-size: 9px;
-    font-weight: 800;
-    line-height: 1.1;
-    text-transform: uppercase;
-  }
-
-  .mobileRequestFields small {
-    color: rgba(246, 239, 228, 0.38);
-    font: inherit;
-    text-transform: lowercase;
-  }
-
-  .mobileRequestAnswer textarea,
-  .mobileRequestFields input {
-    width: 100%;
-    border: 1px solid rgba(246, 239, 228, 0.17);
-    border-radius: 10px;
-    outline: none;
-    background: rgba(246, 239, 228, 0.07);
-    color: #f6efe4;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 700;
-    transition: border-color 160ms ease, background 160ms ease;
-  }
-
-  .mobileRequestAnswer textarea {
-    min-height: 112px;
-    resize: vertical;
-    padding: 12px;
-    line-height: 1.4;
-  }
-
-  .mobileRequestFields input {
-    height: 42px;
-    padding: 0 10px;
-  }
-
-  .mobileRequestAnswer textarea::placeholder,
-  .mobileRequestFields input::placeholder {
-    color: rgba(246, 239, 228, 0.32);
-  }
-
-  .mobileRequestAnswer textarea:focus,
-  .mobileRequestFields input:focus {
-    border-color: rgba(216, 111, 31, 0.72);
-    background: rgba(246, 239, 228, 0.1);
-  }
-
-  .mobileRequestIdentity {
-    display: grid;
-    gap: 10px;
-    padding-top: 14px;
-    border-top: 1px solid rgba(246, 239, 228, 0.12);
-  }
-
-  .mobileRequestIdentity > p:first-child {
-    margin: 0;
-    color: #f6efe4;
-    font-size: 15px;
-    font-weight: 900;
-  }
-
-  .mobileRequestFields {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 11px 9px;
-  }
-
-  .mobileRequestContactNote {
-    margin: 0;
-    color: rgba(246, 239, 228, 0.5);
-    font-size: 10px;
-    font-weight: 700;
-    line-height: 1.3;
-  }
-
-  .mobileRequestSubmit {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 48px;
-    border: 0;
-    border-radius: 10px;
-    background: #f6efe4;
-    color: #101211;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 900;
-  }
-
-  .mobileRequestSubmit:disabled {
-    opacity: 0.68;
-  }
-
-  .mobileRequestSpinner {
-    animation: mobileRequestSpin 800ms linear infinite;
-  }
-
-  .mobileRequestError {
-    margin: 0;
-    color: #ff9b78;
-    font-size: 11px;
-    font-weight: 800;
-  }
-
-  .mobileRequestSuccess {
-    display: flex;
-    align-items: flex-start;
-    gap: 11px;
-    margin-top: 12px;
-    padding: 16px;
-    border: 1px solid rgba(216, 111, 31, 0.4);
-    border-radius: 16px;
-    background: rgba(216, 111, 31, 0.12);
-    color: #f6efe4;
-  }
-
-  .mobileRequestSuccess svg {
-    flex: 0 0 auto;
-    color: #d86f1f;
-  }
-
-  .mobileRequestSuccess strong {
-    display: block;
-    font-size: 14px;
-  }
-
-  .mobileRequestSuccess p {
-    margin: 3px 0 0;
-    color: rgba(246, 239, 228, 0.66);
-    font-size: 11px;
     line-height: 1.35;
   }
 
-  .mobileRequestHoneypot {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
+  .mobileHolisticGroupRow > button svg,
+  .mobileHolisticChild > button svg {
+    transition: transform 180ms ease;
   }
 
-  @keyframes mobileRequestSpin {
-    to { transform: rotate(360deg); }
+  .mobileHolisticGroupRow[data-open="true"] > button svg,
+  .mobileHolisticChild[data-open="true"] > button svg {
+    transform: rotate(90deg);
   }
 
-  .mobileImageMarquee {
+  .mobileHolisticChildren {
     position: relative;
-    margin: 17px -16px 16px;
-    overflow: hidden;
-    border-block: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(0, 0, 0, 0.22);
+    display: grid;
+    gap: 6px;
+    margin: 8px 0 4px 18px;
+    padding-left: 13px;
+    border-left: 1px solid rgba(216, 111, 31, 0.76);
   }
 
-  .mobileImageMarquee::before,
-  .mobileImageMarquee::after {
+  .mobileHolisticChild {
+    position: relative;
+  }
+
+  .mobileHolisticChild::before {
     content: "";
     position: absolute;
-    top: 0;
-    bottom: 0;
-    z-index: 2;
-    width: 44px;
-    pointer-events: none;
+    left: -13px;
+    top: 23px;
+    width: 12px;
+    height: 1px;
+    background: rgba(216, 111, 31, 0.76);
   }
 
-  .mobileImageMarquee::before {
+  .mobileTouchpointRow .mobileHolisticChild > button {
+    min-height: 46px;
+    padding: 9px 12px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.52);
+  }
+
+  .mobileTouchpointRow .mobileHolisticChild > button > span {
+    font-size: 13px;
+  }
+
+  .mobileHolisticChild .mobileTopicDetail {
+    padding-bottom: 5px;
+  }
+
+  .mobileTouchpointRow ul {
+    display: grid;
+    gap: 6px;
+    margin: 6px 0 4px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.32);
+    list-style: none;
+  }
+
+  .mobileTouchpointRow li {
+    position: relative;
+    padding-left: 13px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+    font-weight: 650;
+    line-height: 1.35;
+  }
+
+  .mobileTouchpointRow li::before {
+    content: "";
+    position: absolute;
     left: 0;
-    background: linear-gradient(90deg, rgba(8, 9, 9, 0.95), transparent);
+    top: 6px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #d86f1f;
   }
 
-  .mobileImageMarquee::after {
-    right: 0;
-    background: linear-gradient(270deg, rgba(8, 9, 9, 0.95), transparent);
+  .mobileTouchpointExplore {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin: 2px 0 4px;
+    padding: 9px 15px;
+    border: 1px solid #d86f1f;
+    border-radius: 999px;
+    background: rgba(216, 111, 31, 0.2);
+    color: white;
+    font-size: 12px;
+    font-weight: 850;
+    text-decoration: none;
   }
 
-  .mobileImageMarquee > div {
-    display: flex;
-    gap: 10px;
-    width: max-content;
-    padding: 12px 10px;
-    animation: mobileMarqueeDrift 44s linear infinite;
+  .mobileTopicDetail > p {
+    margin: 8px 14px 0;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.45;
   }
 
-  .mobileImageMarquee span {
-    flex: 0 0 auto;
-    width: 206px;
-    height: 124px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.13);
-    border-radius: 4px;
-    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.2);
-    background-position: center;
-    background-size: cover;
+  .mobileTopicDetail > .mobileTouchpointExplore:disabled {
+    cursor: not-allowed;
+    opacity: 0.48;
   }
 
-  .mobileMarqueeBotanical {
-    background-image: url("/creative-strip/botanical-portrait.webp");
-  }
-
-  .mobileMarqueeMaterial {
-    background-image: url("/creative-strip/material-identity.webp");
-  }
-
-  .mobileMarqueeUliana {
-    background-image: url("/creative-strip/uliana-hero-crop.webp");
-    background-position: center 36%;
-  }
-
-  .mobileMarqueeDance {
-    background-image: url("/creative-strip/dance-motion.webp");
-  }
-
-  .mobileMarqueeFounder {
-    background-image: url("/enes-founder-portrait-sketch.png");
-    background-position: 30% 38%;
-    filter: sepia(0.12) saturate(0.9) contrast(1.04);
-  }
-
-  .mobileMarqueeCeramic {
-    background-image: url("/creative-strip/ceramic-scent.webp");
-  }
-
-  .mobileMarqueeInstallation {
-    background-image: url("/creative-strip/responsive-installation.webp");
-  }
-
-  @keyframes mobileMarqueeDrift {
-    from { transform: translateX(0); }
-    to { transform: translateX(calc(-50% - 5px)); }
+  .mobileTouchpointRow button.mobileTouchpointExplore {
+    display: inline-flex;
+    width: auto;
+    min-height: 0;
+    margin: 2px 0 4px;
+    padding: 9px 15px;
+    border-color: #d86f1f;
+    border-radius: 999px;
+    background: rgba(216, 111, 31, 0.2);
   }
 
   .hero,

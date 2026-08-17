@@ -1,0 +1,883 @@
+/* Single-screen architecture, matching the homepage shell: the page never scrolls itself.
+   Default state ("home") mirrors the homepage hero — scattered cards tied by an orange thread.
+   Clicking a card swaps it for a full internally-scrollable panel; clicking the backdrop or the
+   panel's own back link returns to the scattered home screen. */
+
+.page {
+  position: relative;
+  height: 100svh;
+  min-height: 100svh;
+  overflow: hidden;
+  background: #050606;
+  color: #f6efe4;
+  isolation: isolate;
+}
+
+.media {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: filter 900ms ease, opacity 900ms ease, transform 1600ms ease;
+}
+
+.page[data-revealed="true"] .media {
+  opacity: 0.55;
+  filter: saturate(0.55) brightness(0.55) contrast(1.1);
+  transform: scale(1.02);
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  opacity: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.3) 45%, rgba(0, 0, 0, 0.62));
+  transition: opacity 900ms ease;
+}
+
+.page[data-revealed="true"] .scrim {
+  opacity: 1;
+}
+
+.logo {
+  position: absolute;
+  top: clamp(16px, 2.6vh, 28px);
+  left: clamp(16px, 3vw, 40px);
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 15px;
+  border: 1px solid rgba(246, 239, 228, 0.22);
+  border-radius: 999px;
+  background: rgba(5, 6, 6, 0.4);
+  color: #f6efe4;
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: 17px;
+  font-weight: 850;
+  text-decoration: none;
+  backdrop-filter: blur(12px);
+}
+
+/* Orange thread — same motif as the homepage hero, wound behind the scattered cards. */
+.line {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 900ms ease 200ms;
+}
+
+.page[data-revealed="true"] .line {
+  opacity: 1;
+}
+
+.line path {
+  fill: none;
+  stroke: rgba(216, 111, 31, 0.55);
+  stroke-width: 0.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Home screen: headline + scattered cards, the page's resting state.     */
+/* ---------------------------------------------------------------------- */
+
+.homeScreen {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(14px);
+  transition: opacity 700ms ease 180ms, transform 900ms cubic-bezier(0.2, 0.7, 0.2, 1) 180ms;
+}
+
+.page[data-revealed="true"] .homeScreen {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.homeScreen[data-hidden="true"] {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.97);
+  transition: opacity 320ms ease, transform 320ms ease;
+}
+
+.homeCopy {
+  position: absolute;
+  left: clamp(20px, 4vw, 56px);
+  top: 50%;
+  width: min(34vw, 460px);
+  transform: translateY(-50%);
+}
+
+.homeCopy > span {
+  display: block;
+  margin-bottom: 8px;
+  color: #d86f1f;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.homeCopy h1 {
+  margin: 0 0 12px;
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: clamp(24px, 3vw, 38px);
+  font-weight: 900;
+  line-height: 1.08;
+}
+
+.homeCopy p {
+  max-width: 380px;
+  margin: 0;
+  color: rgba(246, 239, 228, 0.72);
+  font-size: clamp(13px, 1vw, 15px);
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.cardField {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.card {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  gap: 3px;
+  min-width: clamp(180px, 15vw, 240px);
+  padding: 12px 15px;
+  border: 1px solid rgba(246, 239, 228, 0.3);
+  border-radius: 4px;
+  background: rgba(5, 6, 6, 0.42);
+  color: #f6efe4;
+  text-align: left;
+  backdrop-filter: blur(14px);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.card:hover {
+  border-color: rgba(216, 111, 31, 0.7);
+  background: rgba(5, 6, 6, 0.68);
+  transform: translateY(-3px);
+}
+
+.card small {
+  color: #d86f1f;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+}
+
+.card span {
+  font-size: clamp(13px, 1.05vw, 16px);
+  font-weight: 850;
+  line-height: 1.12;
+}
+
+/* nextHub shows different text on mobile (see the mobile media query below) — desktop keeps
+   the generic hub label, both wrappers use display:contents so they don't break the card's grid. */
+.cardDesktopLabel {
+  display: contents;
+}
+
+.cardMobileLabel {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Backdrop: click anywhere outside the open panel to go back home.       */
+/* ---------------------------------------------------------------------- */
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Panel: what a clicked card turns into. Only this scrolls.               */
+/* ---------------------------------------------------------------------- */
+
+.panel {
+  position: absolute;
+  inset: clamp(72px, 10vh, 104px) clamp(16px, 4vw, 56px) clamp(18px, 3.5vh, 36px);
+  z-index: 3;
+  overflow: hidden;
+  border: 1px solid rgba(246, 239, 228, 0.18);
+  border-radius: 20px;
+  background: rgba(7, 8, 8, 0.88);
+  backdrop-filter: blur(20px);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.97);
+  transition: opacity 380ms ease, transform 380ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.panel[data-open="true"] {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.panelScroll {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(20px, 3.4vh, 40px) clamp(20px, 4vw, 56px) clamp(40px, 6vh, 64px);
+  scrollbar-width: none;
+}
+
+.panelScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.panelBack {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 22px;
+  padding: 7px 14px 7px 12px;
+  border: 1px solid rgba(246, 239, 228, 0.2);
+  border-radius: 999px;
+  background: rgba(246, 239, 228, 0.06);
+  color: rgba(246, 239, 228, 0.8);
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.panelBack:hover {
+  border-color: #d86f1f;
+  color: #f6efe4;
+}
+
+.panelHeader {
+  max-width: 640px;
+  margin-bottom: 24px;
+}
+
+.panelHeader > span:first-child {
+  display: block;
+  margin-bottom: 8px;
+  color: #d86f1f;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.panelHeader h2 {
+  margin: 0 0 8px;
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: clamp(21px, 2.6vw, 32px);
+  font-weight: 900;
+  line-height: 1.1;
+  color: #f6efe4;
+}
+
+.panelHeader > p {
+  margin: 0;
+  max-width: 520px;
+  color: rgba(246, 239, 228, 0.66);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Signal demo                                                             */
+/* ---------------------------------------------------------------------- */
+
+.signalCard {
+  margin-top: 6px;
+  padding: clamp(16px, 2.4vw, 26px);
+  border: 1px solid rgba(246, 239, 228, 0.14);
+  border-radius: 16px;
+  background: rgba(246, 239, 228, 0.04);
+}
+
+.signalForm {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.signalForm input {
+  flex: 1 1 240px;
+  min-height: 46px;
+  padding: 0 16px;
+  border: 1px solid rgba(246, 239, 228, 0.18);
+  border-radius: 999px;
+  background: rgba(246, 239, 228, 0.07);
+  color: #f6efe4;
+  font: inherit;
+  font-size: 13px;
+}
+
+.signalForm input::placeholder {
+  color: rgba(246, 239, 228, 0.4);
+}
+
+.signalForm input:focus {
+  outline: 2px solid #d86f1f;
+  outline-offset: 1px;
+}
+
+.signalForm button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #f6efe4;
+  color: #111312;
+  font-size: 12.5px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.signalForm button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.signalStatus {
+  margin: 12px 0 0;
+  color: rgba(246, 239, 228, 0.55);
+  font-size: 12.5px;
+}
+
+.signalError {
+  margin: 12px 0 0;
+  color: #ff8f6b;
+  font-size: 12.5px;
+}
+
+.signalResultLabel {
+  display: block;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(246, 239, 228, 0.14);
+  color: #d86f1f;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Result grid reuses .frameworkGrid/.frameworkStep further down — same letter-tile look as the
+   "SIGNAL modeli" card, so a live analysis and the static framework read as one system. */
+
+/* ---------------------------------------------------------------------- */
+/* Discovery paths                                                         */
+/* ---------------------------------------------------------------------- */
+
+.pathGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.pathCard {
+  padding: 18px;
+  border: 1px solid rgba(246, 239, 228, 0.14);
+  border-radius: 14px;
+  background: rgba(246, 239, 228, 0.04);
+}
+
+.pathCard h3 {
+  margin: 0 0 6px;
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: 16.5px;
+  font-weight: 850;
+  color: #f6efe4;
+}
+
+.pathCard p {
+  margin: 0 0 12px;
+  color: rgba(246, 239, 228, 0.62);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.pathCard ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pathCard li {
+  position: relative;
+  padding-left: 14px;
+  color: rgba(246, 239, 228, 0.68);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.pathCard li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 5px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #d86f1f;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Manifesto                                                               */
+/* ---------------------------------------------------------------------- */
+
+.manifesto {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(246, 239, 228, 0.14);
+}
+
+.manifesto p {
+  margin: 0 0 10px;
+  max-width: 600px;
+  color: #f6efe4;
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: clamp(16px, 1.8vw, 21px);
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.manifestoClaim {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: rgba(216, 111, 31, 0.18);
+  color: #d86f1f;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Teaser cards (articles, case study, next touchpoints)                   */
+/* ---------------------------------------------------------------------- */
+
+.teaserBadge {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(246, 239, 228, 0.08);
+  color: rgba(246, 239, 228, 0.5);
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.articleGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.articleCard {
+  display: block;
+  padding: 14px 16px;
+  border: 1px solid rgba(246, 239, 228, 0.14);
+  border-radius: 12px;
+  background: rgba(246, 239, 228, 0.04);
+  color: inherit;
+  text-decoration: none;
+}
+
+.articleCard small {
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(246, 239, 228, 0.54);
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.07em;
+}
+
+.articleCard h3 {
+  margin: 0;
+  color: #f6efe4;
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: 13.5px;
+  font-weight: 800;
+  line-height: 1.32;
+}
+
+.caseStudyIntro {
+  margin-bottom: 6px;
+}
+
+.caseStudyIntro p {
+  margin: 0;
+  max-width: 560px;
+  color: rgba(246, 239, 228, 0.66);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.caseStudyCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 16px;
+  padding: 9px 16px;
+  border: 1px solid #d86f1f;
+  border-radius: 999px;
+  background: rgba(216, 111, 31, 0.16);
+  color: #f6efe4;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.caseStudyCta:hover {
+  background: rgba(216, 111, 31, 0.32);
+}
+
+.caseStudyResult {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(246, 239, 228, 0.14);
+}
+
+.caseStudyResult p {
+  margin: 10px 0 0;
+  max-width: 640px;
+  color: rgba(246, 239, 228, 0.82);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.caseStudyGallery {
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(246, 239, 228, 0.14);
+}
+
+.caseStudyGallery > span {
+  display: block;
+  color: #d86f1f;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.galleryList {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.galleryRow {
+  border: 1px solid rgba(246, 239, 228, 0.14);
+  border-radius: 12px;
+  background: rgba(246, 239, 228, 0.04);
+  overflow: hidden;
+}
+
+.galleryRow button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 16px;
+  border: 0;
+  background: transparent;
+  color: #f6efe4;
+  text-align: left;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.galleryRow svg {
+  flex: 0 0 auto;
+  color: rgba(246, 239, 228, 0.5);
+}
+
+.galleryRow[data-open="true"] svg {
+  color: #d86f1f;
+  transform: rotate(90deg);
+}
+
+.galleryRow p {
+  margin: 0;
+  padding: 0 16px 16px;
+  color: rgba(246, 239, 228, 0.68);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* ---------------------------------------------------------------------- */
+/* SIGNAL framework                                                        */
+/* ---------------------------------------------------------------------- */
+
+.frameworkGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.frameworkStep {
+  padding: 13px;
+  border: 1px solid rgba(246, 239, 228, 0.14);
+  border-radius: 12px;
+  background: rgba(246, 239, 228, 0.04);
+}
+
+.frameworkStep strong {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-bottom: 5px;
+  color: #f6efe4;
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: 13.5px;
+}
+
+.frameworkStep strong > span {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: #d86f1f;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.frameworkStep p {
+  margin: 0;
+  color: rgba(246, 239, 228, 0.6);
+  font-size: 11px;
+  line-height: 1.32;
+}
+
+.frameworkRun {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(246, 239, 228, 0.14);
+}
+
+.frameworkRun > span {
+  display: block;
+  margin-bottom: 6px;
+  color: #d86f1f;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.frameworkRun > p {
+  margin: 0 0 4px;
+  max-width: 520px;
+  color: rgba(246, 239, 228, 0.66);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Next touchpoints                                                        */
+/* ---------------------------------------------------------------------- */
+
+.nextGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.nextCard {
+  padding: 16px;
+  border: 1px solid rgba(246, 239, 228, 0.14);
+  border-radius: 14px;
+  background: rgba(246, 239, 228, 0.04);
+}
+
+.nextCard small {
+  display: block;
+  margin-bottom: 5px;
+  color: #d86f1f;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.nextCard strong {
+  display: block;
+  color: #f6efe4;
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: 14.5px;
+  font-weight: 800;
+}
+
+.nextCard p {
+  margin: 5px 0 0;
+  color: rgba(246, 239, 228, 0.45);
+  font-size: 11px;
+}
+
+.nextCardButton {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid rgba(246, 239, 228, 0.14);
+  border-radius: 14px;
+  background: rgba(246, 239, 228, 0.04);
+  text-align: left;
+  cursor: pointer;
+}
+
+.nextCardButton:hover {
+  border-color: #d86f1f;
+  background: rgba(216, 111, 31, 0.14);
+}
+
+.nextCardButton > span:first-child {
+  display: grid;
+  gap: 5px;
+}
+
+.nextCardButton small {
+  color: #d86f1f;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.nextCardButton strong {
+  color: #f6efe4;
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: 14.5px;
+  font-weight: 800;
+}
+
+.nextCardButton svg {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  color: rgba(246, 239, 228, 0.5);
+}
+
+@media (max-width: 640px) {
+  /* Rotated/scattered cards don't work on a narrow screen — same call as the homepage hero:
+     mobile gets a plain tappable list instead, the line motif steps aside. */
+  .line {
+    display: none;
+  }
+
+  .homeScreen {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+
+  .homeScreen::-webkit-scrollbar {
+    display: none;
+  }
+
+  .homeCopy {
+    position: static;
+    flex: 0 0 auto;
+    padding: 76px 18px 0;
+    transform: none;
+    width: auto;
+  }
+
+  .cardField {
+    position: static;
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px 18px 24px;
+  }
+
+  .card {
+    position: static !important;
+    min-width: 0;
+    width: 100%;
+    transform: none !important;
+  }
+
+  .card:hover {
+    transform: none;
+  }
+
+  /* The fork collapses into one row on mobile: nextHub swaps to the first next-touchpoint's
+     name, the 3 individual destination cards hide (still reachable from inside nextHub's panel). */
+  .cardDesktopLabel {
+    display: none;
+  }
+
+  .cardMobileLabel {
+    display: contents;
+  }
+
+  .nextTouchpointCard {
+    display: none;
+  }
+
+  .panel {
+    inset: 64px 10px 14px;
+    border-radius: 16px;
+  }
+
+  .panelScroll {
+    padding: 18px 16px 32px;
+  }
+}

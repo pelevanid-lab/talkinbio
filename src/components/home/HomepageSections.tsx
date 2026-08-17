@@ -1,8 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from 'react';
-import { ArrowRight, BarChart3, Camera, CheckCircle2, Compass, Link2, Loader2, Mail, MessageCircle, MonitorUp, Music, Send, Volume2, VolumeX } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { ArrowRight, Camera, Mail, Music, Volume2, VolumeX } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/routing';
 import {
   capabilityItems,
@@ -11,12 +12,17 @@ import {
   sectionMeta,
   setupSteps,
   suggestedQuestions,
+  touchpointCategories,
+  touchpointPages,
   type HomepageIntent,
   type HomepageSectionId,
 } from './homeData';
 import PresenceIndicator from './PresenceIndicator';
 import VoicePromptButton from './VoicePromptButton';
 import styles from './home.module.css';
+import { getEditorialTopics } from '@/components/editorial/editorialData';
+import { normalizeEditorialLocale } from '@/components/editorial/editorialTranslations';
+import { IMMERSIVE_VIDEO } from '@/config/immersiveMedia';
 
 type HomepageGuideResult = {
   answer: string;
@@ -55,21 +61,102 @@ export function BrandLogo() {
   );
 }
 
-export function DesktopConversionHero({
-  onIntentSelect,
-}: {
-  onIntentSelect: (intent: HomepageIntent) => void;
-}) {
+// Scatter positions for the 8 touchpoint cards on the desktop hero. Content lives in
+// homeData.touchpointCategories (shared with mobile + the /explore/[slug] pages) — this is
+// purely the desktop layout, kept separate so the data stays presentation-agnostic.
+const touchpointCardPositions: Record<string, CSSProperties> = {
+  search: { top: '5%', right: '30%', transform: 'rotate(-2deg)' },
+  social: { top: '4%', right: '4%', transform: 'rotate(1.6deg)' },
+  marketplace: { top: '24%', right: '18%', transform: 'rotate(-1deg)' },
+  community: { top: '30%', right: '1%', transform: 'rotate(2.2deg)' },
+  outdoor: { top: '50%', right: '23%', transform: 'rotate(1deg)' },
+  retail: { top: '55%', right: '2%', transform: 'rotate(-1.8deg)' },
+  wordofmouth: { bottom: '18%', right: '26%', transform: 'rotate(0.8deg)' },
+  partnership: { bottom: '6%', right: '4%', transform: 'rotate(-1.2deg)' },
+};
+
+type HolisticGroup = {
+  id: string;
+  number: string;
+  title: string;
+  description: string;
+  topicSlugs: string[];
+};
+
+const holisticGroupsTr: HolisticGroup[] = [
+  {
+    id: 'understand-market',
+    number: '01',
+    title: 'Pazarı Anla',
+    description: 'Müşteriyi dinle, pazardaki anlamlı grupları gör.',
+    topicSlugs: ['customer-and-market-insights', 'segmentation'],
+  },
+  {
+    id: 'design-value',
+    number: '02',
+    title: 'Değeri Tasarla',
+    description: 'Kime, hangi nedenle ve nasıl bir teklif sunacağını belirle.',
+    topicSlugs: ['targeting', 'positioning', 'brand-and-value-proposition', 'product-service-and-pricing'],
+  },
+  {
+    id: 'deliver-value',
+    number: '03',
+    title: 'Değeri Sun ve Anlat',
+    description: 'Tasarlanan değeri müşterinin karşısına çıkar ve anlaşılır kıl.',
+    topicSlugs: ['channels-and-experience', 'communication-and-content'],
+  },
+  {
+    id: 'grow-relationship',
+    number: '04',
+    title: 'İlişkiyi Büyüt',
+    description: 'İlişkiyi sürdür, sonuçları ölç ve öğrenerek büyüt.',
+    topicSlugs: ['loyalty-and-customer-value', 'measurement-and-growth'],
+  },
+];
+
+const holisticShell = {
+  tr: { reading: 'PAZARLAMA OKUMALARI', title: 'Holistik bakış açısıyla pazarlamayı anlamak.', lead: 'Pazarı anlayarak başla ya da ihtiyacın olan bölüme odaklan.', curatorKicker: 'DERLEYİCİYİ TANI', curator: 'Derleyici: Enes Pehlivan', explore: 'Keşfet', area: 'ALAN', map: 'Holistik pazarlama haritası', stages: 'Holistik pazarlamanın dört aşaması ve alt alanları', replay: 'Talkinbio girişini yeniden oynat', mute: 'Sesi kapat', unmute: 'Sesi aç' },
+  en: { reading: 'MARKETING READINGS', title: 'Understanding marketing through a holistic lens.', lead: 'Begin by understanding the market, or focus on the area you need.', curatorKicker: 'MEET THE CURATOR', curator: 'Curator: Enes Pehlivan', explore: 'Explore', area: 'AREAS', map: 'Holistic marketing map', stages: 'Four stages of holistic marketing and their subjects', replay: 'Replay the Talkinbio introduction', mute: 'Mute', unmute: 'Unmute' },
+  ru: { reading: 'МАТЕРИАЛЫ О МАРКЕТИНГЕ', title: 'Понимать маркетинг целостно.', lead: 'Начните с понимания рынка или выберите нужную область.', curatorKicker: 'ОБ АВТОРЕ ПОДБОРКИ', curator: 'Автор подборки: Enes Pehlivan', explore: 'Изучить', area: 'ТЕМЫ', map: 'Карта целостного маркетинга', stages: 'Четыре этапа целостного маркетинга и их темы', replay: 'Повторить вступление Talkinbio', mute: 'Выключить звук', unmute: 'Включить звук' },
+} as const;
+
+function getHolisticGroups(locale: 'tr' | 'en' | 'ru'): HolisticGroup[] {
+  if (locale === 'tr') return holisticGroupsTr;
+  const localized = locale === 'en'
+    ? [['Understand the Market', 'Listen to customers and identify meaningful groups in the market.'], ['Design Value', 'Decide whom to serve, why, and with what kind of offer.'], ['Deliver and Express Value', 'Bring designed value to the customer and make it easy to understand.'], ['Grow the Relationship', 'Sustain the relationship, measure results, and grow through learning.']]
+    : [['Поймите рынок', 'Слушайте клиентов и находите значимые группы на рынке.'], ['Создайте ценность', 'Определите, для кого, почему и какое предложение создавать.'], ['Донесите ценность', 'Представьте созданную ценность клиенту и сделайте её понятной.'], ['Развивайте отношения', 'Поддерживайте отношения, измеряйте результат и растите через обучение.']];
+  return holisticGroupsTr.map((group, index) => ({ ...group, title: localized[index][0], description: localized[index][1] }));
+}
+
+function getHolisticGroupTopics(group: HolisticGroup, topics: ReturnType<typeof getEditorialTopics>) {
+  return group.topicSlugs
+    .map((slug) => topics.find((topic) => topic.slug === slug))
+    .filter((topic) => topic !== undefined);
+}
+
+function holisticTopicHref(slug: string): string {
+  return `/topics/${slug}`;
+}
+
+export function HolisticDesktopHero() {
+  const locale = normalizeEditorialLocale(useLocale());
+  const copy = holisticShell[locale];
+  const holisticGroups = getHolisticGroups(locale);
+  const editorialTopics = getEditorialTopics(locale);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
-  const [revealed, setRevealed] = useState(false);
-  const [desktopScene, setDesktopScene] = useState<'intro' | 'create' | 'redesign' | 'potential'>('intro');
+  const revealed = true;
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+
+  const selectedGroup = holisticGroups.find((group) => group.id === selectedGroupId) || null;
+  const selectedTopic = editorialTopics.find((topic) => topic.slug === selectedSlug) || null;
 
   function replayIntro() {
     const video = videoRef.current;
     if (!video) return;
-    setDesktopScene('intro');
-    setRevealed(false);
+    setSelectedGroupId(null);
+    setSelectedSlug(null);
     video.currentTime = 0;
     video.muted = !audioEnabled;
     void video.play();
@@ -81,26 +168,250 @@ export function DesktopConversionHero({
     const nextEnabled = !audioEnabled;
     video.muted = !nextEnabled;
     video.volume = 1;
-    if (!revealed && video.paused) void video.play();
+    if (video.paused) void video.play();
     setAudioEnabled(nextEnabled);
   }
 
-  function selectDesktopIntent(intent: HomepageIntent) {
-    onIntentSelect(intent);
-    setDesktopScene(intent === 'create_page' ? 'create' : intent === 'existing_link_bio' ? 'redesign' : 'potential');
+  return (
+    <section className={styles.desktopConversionHero} data-revealed={revealed} aria-label={copy.map}>
+      <video
+        ref={videoRef}
+        className={styles.desktopConversionMedia}
+        src={IMMERSIVE_VIDEO.opening}
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+      />
+      <div className={styles.desktopConversionScrim} aria-hidden="true" />
+
+      <button type="button" className={styles.desktopConversionLogo} onClick={replayIntro} aria-label={copy.replay}>
+        <span>talkinbio</span>
+        <span aria-hidden="true"><i /><i /><i /></span>
+      </button>
+      <button
+        type="button"
+        className={styles.desktopConversionAudio}
+        onClick={toggleAudio}
+        aria-label={audioEnabled ? copy.mute : copy.unmute}
+      >
+        {audioEnabled ? <Volume2 aria-hidden="true" size={21} /> : <VolumeX aria-hidden="true" size={21} />}
+      </button>
+
+      <div className={styles.desktopAboutReveal} aria-hidden={!revealed}>
+        <div className={styles.desktopAboutCopy}>
+          <span>{copy.reading}</span>
+          <h1>{copy.title}</h1>
+          <p className={styles.desktopAboutLead}>
+            {selectedGroup ? selectedGroup.description : copy.lead}
+          </p>
+          <div className={styles.desktopCurator}>
+            <span>{copy.curatorKicker}</span>
+            <Link href="/hakkimda">{copy.curator}</Link>
+          </div>
+
+          <div className={styles.desktopTouchpointDetail} data-open={Boolean(selectedTopic)} aria-live="polite">
+            {selectedTopic ? (
+              <>
+                <span>{selectedTopic.number} · {selectedTopic.shortTitle.toUpperCase()}</span>
+                <p className={styles.desktopTopicThesis}>{selectedTopic.thesis}</p>
+                <ul>
+                  {selectedTopic.points.map((point) => <li key={point}>{point}</li>)}
+                </ul>
+                <Link href={holisticTopicHref(selectedTopic.slug)} className={styles.desktopTouchpointExplore}>
+                  {copy.explore} <ArrowRight aria-hidden="true" size={15} />
+                </Link>
+              </>
+            ) : null}
+          </div>
+        </div>
+
+        <div className={`${styles.desktopTouchpointField} ${styles.desktopHolisticField}`} aria-label={copy.stages}>
+          <svg className={styles.desktopTouchpointLine} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M-24,9 C8,1 45,1 58,8 C72,16 91,15 98,24 C97,31 88,32 80,33 C62,35 49,40 68,45 C86,50 72,55 45,60 C58,66 92,64 97,73 C101,81 87,85 80,89 C66,94 44,95 18,98" />
+          </svg>
+          <div className={styles.desktopHolisticStages}>
+            {holisticGroups.map((group, groupIndex) => {
+              const open = selectedGroupId === group.id;
+              return (
+                <div key={group.id} className={styles.desktopHolisticStage} data-open={open} data-side={groupIndex % 2 === 0 ? 'left' : 'right'}>
+                  <button
+                    type="button"
+                    className={`${styles.desktopTouchpointCard} ${styles.desktopHolisticGroupCard}`}
+                    data-selected={open}
+                    onClick={() => {
+                      setSelectedGroupId((current) => (current === group.id ? null : group.id));
+                      setSelectedSlug(null);
+                    }}
+                    aria-expanded={open}
+                  >
+                    <small>{group.number} · {group.topicSlugs.length} {copy.area}</small>
+                    <span>{group.title}</span>
+                    <em>{group.description}</em>
+                    <ArrowRight aria-hidden="true" size={15} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          {selectedGroup ? (
+            <div className={styles.desktopHolisticTrail} data-group={selectedGroup.id} aria-label={`${selectedGroup.title} alt alanları`}>
+              {getHolisticGroupTopics(selectedGroup, editorialTopics).map((topic) => (
+                <button
+                  key={topic.slug}
+                  type="button"
+                  className={styles.desktopHolisticChild}
+                  data-selected={selectedSlug === topic.slug}
+                  onClick={() => setSelectedSlug((current) => (current === topic.slug ? null : topic.slug))}
+                  aria-pressed={selectedSlug === topic.slug}
+                >
+                  <small>{topic.number} · {topic.shortTitle.toUpperCase()}</small>
+                  <span>{topic.title}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function HolisticMobileHero() {
+  const locale = normalizeEditorialLocale(useLocale());
+  const copy = holisticShell[locale];
+  const holisticGroups = getHolisticGroups(locale);
+  const editorialTopics = getEditorialTopics(locale);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+
+  const selectedGroup = holisticGroups.find((group) => group.id === selectedGroupId) || null;
+
+  function toggleAudio() {
+    const video = videoRef.current;
+    if (!video) return;
+    const nextEnabled = !audioEnabled;
+    video.muted = !nextEnabled;
+    video.volume = 1;
+    if (video.paused) void video.play();
+    setAudioEnabled(nextEnabled);
   }
+
+  return (
+    <section className={styles.mobileConversionHero} aria-label={copy.map}>
+      <video ref={videoRef} className={styles.mobileConversionMedia} src={IMMERSIVE_VIDEO.opening} autoPlay muted playsInline preload="auto" aria-hidden="true" />
+      <div className={styles.mobileConversionScrim} aria-hidden="true" />
+      <button type="button" className={styles.mobileConversionLogo} onClick={() => { setSelectedGroupId(null); setSelectedSlug(null); }} aria-label="Talkinbio">
+        <span>talkinbio</span><span aria-hidden="true"><i /><i /><i /></span>
+      </button>
+      <button type="button" className={styles.mobileConversionMenu} onClick={toggleAudio} aria-label={audioEnabled ? copy.mute : copy.unmute} data-audio-enabled={audioEnabled}>
+        {audioEnabled ? <Volume2 aria-hidden="true" size={19} /> : <VolumeX aria-hidden="true" size={19} />}
+      </button>
+
+      <div className={styles.mobileConversionContent}>
+        <div className={styles.mobileTouchpointIntro}>
+          <span>{copy.reading}</span>
+          <h1>{copy.title}</h1>
+          <p>{selectedGroup ? selectedGroup.description : copy.lead}</p>
+          <div className={styles.mobileCurator}>
+            <span>{copy.curatorKicker}</span>
+            <Link href="/hakkimda">{copy.curator}</Link>
+          </div>
+        </div>
+        <div className={styles.mobileTouchpointList} aria-label={copy.stages}>
+          {holisticGroups.map((group) => {
+            const groupOpen = selectedGroupId === group.id;
+            const groupTopics = getHolisticGroupTopics(group, editorialTopics);
+            return (
+              <div key={group.id} className={`${styles.mobileTouchpointRow} ${styles.mobileHolisticGroupRow}`} data-open={groupOpen}>
+                <button
+                  type="button"
+                  data-selected={groupOpen}
+                  onClick={() => {
+                    setSelectedGroupId((current) => (current === group.id ? null : group.id));
+                    setSelectedSlug(null);
+                  }}
+                  aria-expanded={groupOpen}
+                >
+                  <span><small>{group.number} · {group.topicSlugs.length} {copy.area}</small>{group.title}</span>
+                  <ArrowRight aria-hidden="true" size={16} />
+                </button>
+                <p>{group.description}</p>
+                {groupOpen ? (
+                  <div className={styles.mobileHolisticChildren} aria-label={`${group.title} alt alanları`}>
+                    {groupTopics.map((topic) => {
+                      const topicOpen = selectedSlug === topic.slug;
+                      return (
+                        <div key={topic.slug} className={styles.mobileHolisticChild} data-open={topicOpen}>
+                          <button
+                            type="button"
+                            data-selected={topicOpen}
+                            onClick={() => setSelectedSlug((current) => (current === topic.slug ? null : topic.slug))}
+                            aria-expanded={topicOpen}
+                          >
+                            <span><small>{topic.number} · {topic.shortTitle.toUpperCase()}</small>{topic.title}</span>
+                            <ArrowRight aria-hidden="true" size={15} />
+                          </button>
+                          {topicOpen ? (
+                            <div className={styles.mobileTopicDetail}>
+                              <p>{topic.thesis}</p>
+                              <ul>{topic.points.map((point) => <li key={point}>{point}</li>)}</ul>
+                              <Link href={holisticTopicHref(topic.slug)} className={styles.mobileTouchpointExplore}>{copy.explore} <ArrowRight aria-hidden="true" size={15} /></Link>
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function DesktopConversionHero() {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const revealed = true;
+  const [selectedTouchpoint, setSelectedTouchpoint] = useState<string | null>(null);
+
+  function replayIntro() {
+    const video = videoRef.current;
+    if (!video) return;
+    setSelectedTouchpoint(null);
+    video.currentTime = 0;
+    video.muted = !audioEnabled;
+    void video.play();
+  }
+
+  function toggleAudio() {
+    const video = videoRef.current;
+    if (!video) return;
+    const nextEnabled = !audioEnabled;
+    video.muted = !nextEnabled;
+    video.volume = 1;
+    if (video.paused) void video.play();
+    setAudioEnabled(nextEnabled);
+  }
+
+  const selectedCategory = touchpointCategories.find((category) => category.id === selectedTouchpoint) || null;
 
   return (
     <section className={styles.desktopConversionHero} data-revealed={revealed} aria-label="Talkinbio desktop discovery">
       <video
         ref={videoRef}
         className={styles.desktopConversionMedia}
-        src="/videos/cicada-hero-mobile.mp4"
+        src={IMMERSIVE_VIDEO.layer}
         autoPlay
         muted
         playsInline
         preload="auto"
-        onEnded={() => setRevealed(true)}
       />
       <div className={styles.desktopConversionScrim} aria-hidden="true" />
 
@@ -117,271 +428,61 @@ export function DesktopConversionHero({
         {audioEnabled ? <Volume2 aria-hidden="true" size={21} /> : <VolumeX aria-hidden="true" size={21} />}
       </button>
 
-      {desktopScene === 'intro' ? <div className={styles.desktopAboutReveal} aria-hidden={!revealed}>
+      <div className={styles.desktopAboutReveal} aria-hidden={!revealed}>
         <div className={styles.desktopAboutCopy}>
-          <span>OPEN WEBSITE</span>
+          <span>İLK TEMAS</span>
           <h1>
-            The web is too quiet.
+            Her hikâye bir ilk temasla başlar.
           </h1>
           <p className={styles.desktopAboutLead}>
-            Pages were made to be visited. We think they should talk back.
+            Şimdi bir ilk temas noktası seç.
           </p>
-          <div className={styles.desktopAboutStatement}>
-            <Image src="/enes-founder-portrait-sketch.png" alt="Enes Pehlivan portrait" width={160} height={160} loading="eager" />
-            <div>
-              <strong>Stop linking. Start talking.</strong>
-              <p>
-                We design interactive, live, voice-enabled and moving websites that listen to intent, guide people in context and turn attention into conversation.
-              </p>
-              <small>Enes Pehlivan · Founder, Talkinbio</small>
-            </div>
+
+          <div className={styles.desktopTouchpointDetail} data-open={Boolean(selectedCategory)} aria-live="polite">
+            {selectedCategory ? (
+              <>
+                <span>{selectedCategory.eyebrow}</span>
+                <ul>
+                  {selectedCategory.items.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+                {touchpointPages[selectedCategory.slug] ? (
+                  <Link href={`/explore/${selectedCategory.slug}`} className={styles.desktopTouchpointExplore}>
+                    Keşfet <ArrowRight aria-hidden="true" size={15} />
+                  </Link>
+                ) : null}
+              </>
+            ) : null}
           </div>
         </div>
 
-        <div className={styles.desktopScatteredActions} aria-label="Choose what brings you here">
-          <button className={styles.desktopIntentCreate} type="button" onClick={() => selectDesktopIntent('create_page')}>
-            <small>PROJECT</small><span>I need a new website</span><ArrowRight aria-hidden="true" size={18} />
-          </button>
-          <button className={styles.desktopIntentRedesign} type="button" onClick={() => selectDesktopIntent('existing_link_bio')}>
-            <small>PROJECT</small><span>My website feels outdated</span><ArrowRight aria-hidden="true" size={18} />
-          </button>
-          <button className={styles.desktopIntentMore} type="button" onClick={() => selectDesktopIntent('curious')}>
-            <small>GOAL</small><span>I want more from my website</span><ArrowRight aria-hidden="true" size={18} />
-          </button>
+        <div className={styles.desktopTouchpointField} aria-label="Marka ile ilk temas noktaları">
+          <svg className={styles.desktopTouchpointLine} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M70,6 C86,1 94,1 96,4 C99,7 85,17 82,24 C79,31 100,26 99,30 C98,35 78,45 76,50 C74,55 100,50 98,55 C96,60 77,74 74,82 C72,88 98,90 96,94" />
+          </svg>
+          {touchpointCategories.map((category) => (
+            <button
+              key={category.id}
+              type="button"
+              className={styles.desktopTouchpointCard}
+              style={touchpointCardPositions[category.id]}
+              data-selected={selectedTouchpoint === category.id}
+              onClick={() => setSelectedTouchpoint((current) => (current === category.id ? null : category.id))}
+              aria-pressed={selectedTouchpoint === category.id}
+            >
+              <small>{category.eyebrow}</small>
+              <span>{category.label}</span>
+            </button>
+          ))}
         </div>
-      </div> : <DesktopIntentScene scene={desktopScene} />}
+      </div>
     </section>
   );
 }
 
-function MobileProjectRequestForm({
-  primaryChoice,
-  secondaryChoice,
-  question,
-}: {
-  primaryChoice: string;
-  secondaryChoice: string;
-  question: string;
-}) {
-  const [form, setForm] = useState({ answer: '', firstName: '', lastName: '', phone: '', email: '', website: '', socialMedia: '' });
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
-  const [message, setMessage] = useState('');
-
-  function updateField(field: keyof typeof form, value: string) {
-    setForm((current) => ({ ...current, [field]: value }));
-    if (status === 'error') {
-      setStatus('idle');
-      setMessage('');
-    }
-  }
-
-  async function submitRequest(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setStatus('submitting');
-    setMessage('');
-    const formData = new FormData(event.currentTarget);
-
-    try {
-      const response = await fetch('/api/website-project-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          company: formData.get('company'),
-          primaryChoice,
-          secondaryChoice,
-          question,
-          locale: document.documentElement.lang,
-        }),
-      });
-      const result = (await response.json().catch(() => ({}))) as { error?: string };
-      if (!response.ok) throw new Error(result.error || 'Your request could not be sent.');
-      setStatus('success');
-    } catch (error) {
-      setStatus('error');
-      setMessage(error instanceof Error ? error.message : 'Your request could not be sent.');
-    }
-  }
-
-  if (status === 'success') {
-    return (
-      <div className={styles.mobileRequestSuccess} role="status">
-        <CheckCircle2 aria-hidden="true" size={24} />
-        <div>
-          <strong>Your request is with us.</strong>
-          <p>We will review what you shared and get in touch.</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <form className={styles.mobileRequestForm} onSubmit={submitRequest}>
-      <label className={styles.mobileRequestAnswer}>
-        <span>YOUR ANSWER</span>
-        <textarea required rows={5} maxLength={3000} value={form.answer} onChange={(event) => updateField('answer', event.target.value)} placeholder="Tell us in your own words..." />
-      </label>
-
-      <div className={styles.mobileRequestIdentity}>
-        <p>How can we reach you?</p>
-        <div className={styles.mobileRequestFields}>
-          <label><span>First name *</span><input required maxLength={80} autoComplete="given-name" value={form.firstName} onChange={(event) => updateField('firstName', event.target.value)} /></label>
-          <label><span>Last name *</span><input required maxLength={80} autoComplete="family-name" value={form.lastName} onChange={(event) => updateField('lastName', event.target.value)} /></label>
-          <label><span>Phone <small>optional</small></span><input type="tel" maxLength={200} autoComplete="tel" value={form.phone} onChange={(event) => updateField('phone', event.target.value)} /></label>
-          <label><span>Email *</span><input required type="email" maxLength={200} autoComplete="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} /></label>
-          <label><span>Website <small>optional</small></span><input type="text" maxLength={200} inputMode="url" autoComplete="url" value={form.website} onChange={(event) => updateField('website', event.target.value)} placeholder="yourwebsite.com" /></label>
-          <label><span>Social media <small>optional</small></span><input type="text" maxLength={200} value={form.socialMedia} onChange={(event) => updateField('socialMedia', event.target.value)} placeholder="@username or profile link" /></label>
-        </div>
-        <p className={styles.mobileRequestContactNote}>We will use your email to respond to this request.</p>
-      </div>
-
-      <label className={styles.mobileRequestHoneypot} aria-hidden="true">Company<input name="company" type="text" tabIndex={-1} autoComplete="off" /></label>
-      {status === 'error' ? <p className={styles.mobileRequestError} role="alert">{message}</p> : null}
-      <button className={styles.mobileRequestSubmit} type="submit" disabled={status === 'submitting'}>
-        {status === 'submitting' ? <Loader2 className={styles.mobileRequestSpinner} aria-hidden="true" size={17} /> : <Send aria-hidden="true" size={17} />}
-        {status === 'submitting' ? 'Sending...' : 'Send request'}
-      </button>
-    </form>
-  );
-}
-
-function DesktopIntentScene({ scene }: { scene: 'create' | 'redesign' | 'potential' }) {
-  const [secondaryChoice, setSecondaryChoice] = useState<string | null>(null);
-
-  const config = scene === 'create'
-    ? {
-        title: 'Create your website.',
-        lead: 'We turn a request into a living website: interactive, voice-enabled, moving, conversational and built to convert.',
-        copy: [
-          'You send the first request. We meet, understand what the website needs to achieve, price the work, build a focused demo, then move through payment and delivery.',
-          'The goal is not just to publish pages. The goal is to create a website that explains, listens, guides and helps the visitor take the right next step.',
-        ],
-        promptLabel: 'START WITH YOU',
-        prompt: 'Who are we building this website around?',
-        options: [
-          { label: 'For myself / my personal brand', question: 'What should people understand about you first?' },
-          { label: 'For my business / brand', question: 'What should the website help your business achieve?' },
-        ],
-        primaryChoice: 'I need a new website',
-      }
-    : scene === 'redesign'
-      ? {
-          title: 'Every page has something to say.',
-          lead: 'Outdated does not always mean old. Sometimes the brand has moved forward while the website is still speaking in its previous voice. Sometimes it looks polished, but gives people nothing to feel, explore or do.',
-          copy: [
-            'We begin with what the page should say and how people should answer. Image, typography, motion, voice and interaction become one living narrative.',
-            'The right move may be a precise evolution or a clean break. Either way, the new experience should feel unmistakably yours and turn attention into conversation, trust and conversion.',
-          ],
-          promptLabel: 'FIRST SIGNAL',
-          prompt: 'What makes you feel most that your website is outdated?',
-          options: [
-            { label: 'The design and visual identity', question: 'Do you want an evolution or a completely new direction?' },
-            { label: 'The way people interact with it', question: 'What should visitors be able to do that they can’t do today?' },
-          ],
-          primaryChoice: 'My website feels outdated',
-        }
-      : {
-          title: 'What can a page do?',
-          lead: 'A website can do more than explain who you are. It can answer at the right moment, guide each visitor, reveal the right offer, connect people to the next step and learn what they actually need.',
-          copy: [
-            'Instead of asking every visitor to search through the same fixed structure, the page can respond to intent and bring the most useful path forward.',
-            'That may mean creating measurable opportunities, or making the website more useful, memorable and satisfying for the people using it.',
-          ],
-          promptLabel: 'NEXT MOVE',
-          prompt: 'What do you want your website to do more of?',
-          options: [
-            { label: 'I want it to generate opportunities', question: 'What matters most: leads, bookings, applications or sales?' },
-            { label: 'I want it to create a better experience', question: 'What should visitors be able to discover, ask or do?' },
-          ],
-          primaryChoice: 'I want more from my website',
-        };
-
-  const selectedOption = config.options.find((option) => option.label === secondaryChoice) || null;
-
-  return (
-    <article className={styles.desktopIntentScene} aria-labelledby="desktop-intent-title">
-      <div className={styles.desktopIntentScroll}>
-        <header className={styles.desktopIntentHeader}>
-          <h2 id="desktop-intent-title">{config.title}</h2>
-          <p>{config.lead}</p>
-        </header>
-
-        <div className={styles.desktopIntentBody}>
-          <div className={styles.desktopIntentNarrative}>
-            {config.copy.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-          </div>
-
-          <div className={styles.desktopIntentVisual} data-scene={scene} aria-hidden="true">
-            {scene === 'create' ? (
-              <>
-                <Image src="/singing-cicada-stage.png" alt="" width={520} height={780} loading="eager" />
-                <div className={styles.desktopProcessTrack}>
-                  {['Request', 'Meet', 'Pricing', 'Demo', 'Payment', 'Delivery'].map((step) => <span key={step}>{step}</span>)}
-                </div>
-              </>
-            ) : scene === 'redesign' ? (
-              <div className={styles.desktopCreativeStrip}>
-                <span className={styles.mobileMarqueeBotanical} />
-                <span className={styles.mobileMarqueeUliana} />
-                <span className={styles.mobileMarqueeDance} />
-                <span className={styles.mobileMarqueeFounder} />
-                <span className={styles.mobileMarqueeInstallation} />
-              </div>
-            ) : (
-              <div className={styles.desktopCapabilityList}>
-                <span><MessageCircle size={21} />Answer</span>
-                <span><Compass size={21} />Guide</span>
-                <span><MonitorUp size={21} />Show</span>
-                <span><Link2 size={21} />Connect</span>
-                <span><BarChart3 size={21} />Learn</span>
-              </div>
-            )}
-          </div>
-
-          <div className={styles.desktopIntentDecision}>
-            <div className={styles.desktopIntentPrompt}>
-              <span>{config.promptLabel}</span>
-              <p>{config.prompt}</p>
-            </div>
-            <div className={styles.desktopIntentChoices}>
-              {config.options.map((option) => (
-                <button key={option.label} type="button" data-selected={secondaryChoice === option.label} onClick={() => setSecondaryChoice(option.label)}>
-                  <span>{option.label}</span><ArrowRight aria-hidden="true" size={17} />
-                </button>
-              ))}
-            </div>
-
-            {selectedOption ? (
-              <div className={styles.desktopIntentAnswer}>
-                <div className={styles.desktopIntentFollowup}>
-                  <span>YOUR TURN</span>
-                  <p>{selectedOption.question}</p>
-                </div>
-                <MobileProjectRequestForm
-                  primaryChoice={config.primaryChoice}
-                  secondaryChoice={selectedOption.label}
-                  question={selectedOption.question}
-                />
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-export function MobileConversionHero({
-  onIntentSelect,
-}: {
-  onIntentSelect: (intent: HomepageIntent) => void;
-}) {
+export function MobileConversionHero() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
-  const [mobileScene, setMobileScene] = useState<'discover' | 'about' | 'createWebsite' | 'redesignWebsite' | 'websitePotential'>('discover');
-  const [websiteAudience, setWebsiteAudience] = useState<'personal' | 'business' | null>(null);
-  const [redesignFocus, setRedesignFocus] = useState<'identity' | 'interaction' | null>(null);
-  const [potentialFocus, setPotentialFocus] = useState<'opportunities' | 'experience' | null>(null);
+  const [selectedTouchpoint, setSelectedTouchpoint] = useState<string | null>(null);
 
   function toggleAudio() {
     const video = videoRef.current;
@@ -393,70 +494,12 @@ export function MobileConversionHero({
     setAudioEnabled(nextEnabled);
   }
 
-  function returnToMobileIntro() {
-    setMobileScene('discover');
-    setWebsiteAudience(null);
-    setRedesignFocus(null);
-    setPotentialFocus(null);
-  }
-
-  function openCreateWebsite() {
-    onIntentSelect('create_page');
-    setWebsiteAudience(null);
-    setRedesignFocus(null);
-    setPotentialFocus(null);
-    setMobileScene('createWebsite');
-  }
-
-  function openRedesignWebsite() {
-    onIntentSelect('existing_link_bio');
-    setWebsiteAudience(null);
-    setRedesignFocus(null);
-    setPotentialFocus(null);
-    setMobileScene('redesignWebsite');
-  }
-
-  function openWebsitePotential() {
-    onIntentSelect('curious');
-    setWebsiteAudience(null);
-    setRedesignFocus(null);
-    setPotentialFocus(null);
-    setMobileScene('websitePotential');
-  }
-
-  const intentActions = (
-    <div className={styles.mobileConversionActions}>
-      <span>DISCOVER.</span>
-      <button type="button" onClick={openCreateWebsite}>
-        <span>
-          <small>PROJECT</small>
-          I need a new website
-        </span>
-        <ArrowRight aria-hidden="true" size={18} />
-      </button>
-      <button type="button" onClick={openRedesignWebsite}>
-        <span>
-          <small>PROJECT</small>
-          My website feels outdated
-        </span>
-        <ArrowRight aria-hidden="true" size={18} />
-      </button>
-      <button type="button" onClick={openWebsitePotential}>
-        <span>
-          <small>GOAL</small>
-          I want more from my website
-        </span>
-        <ArrowRight aria-hidden="true" size={18} />
-      </button>
-    </div>
-  );
-
   return (
     <section className={styles.mobileConversionHero} aria-label="Talkinbio discovery">
       <video
         ref={videoRef}
         className={styles.mobileConversionMedia}
-        src="/videos/cicada-hero-mobile.mp4"
+        src={IMMERSIVE_VIDEO.layer}
         autoPlay
         muted
         playsInline
@@ -464,7 +507,7 @@ export function MobileConversionHero({
         aria-hidden="true"
       />
       <div className={styles.mobileConversionScrim} aria-hidden="true" />
-      <button type="button" className={styles.mobileConversionLogo} onClick={returnToMobileIntro} aria-label="Return to Talkinbio intro">
+      <button type="button" className={styles.mobileConversionLogo} onClick={() => setSelectedTouchpoint(null)} aria-label="Talkinbio">
         <span>talkinbio</span>
         <span aria-hidden="true">
           <i />
@@ -481,263 +524,49 @@ export function MobileConversionHero({
       >
         {audioEnabled ? <Volume2 aria-hidden="true" size={19} /> : <VolumeX aria-hidden="true" size={19} />}
       </button>
-      <div className={styles.mobileConversionContent} data-scene={mobileScene}>
-        {mobileScene === 'discover' ? (
-          <>
-            <button type="button" className={styles.mobileConversionProfile} onClick={() => setMobileScene('about')}>
-              <span>OPEN WEBSITE</span>
-              <h1>
-                The web
-                <br />
-                is too quiet.
-              </h1>
-              <p>
-                Pages were made to be visited.
-                <br />
-                We think they should talk back.
-              </p>
-            </button>
-            {intentActions}
-          </>
-        ) : mobileScene === 'about' ? (
-          <article className={styles.mobileAboutPanel} aria-labelledby="mobile-about-title">
-            <div className={styles.mobileAboutScroll}>
-              <h2 id="mobile-about-title">
-                Stop linking.
-                <br />
-                Start talking.
-              </h2>
-              <p className={styles.mobileAboutLead}>
-                Conversation does not sit on top of the website. Conversation controls the website.
-              </p>
-              <div className={styles.mobileAboutSignal}>
-                <PresenceIndicator state="thinking" />
-                <span>THE INTERFACE IS CHANGING.</span>
-              </div>
-              <figure className={styles.mobileAboutFounder}>
-                <Image src="/enes-founder-portrait-sketch.png" alt="Enes Pehlivan portrait" width={420} height={260} loading="eager" />
-                <figcaption>
-                  <strong>Enes Pehlivan</strong>
-                  <span>Founder, Talkinbio</span>
-                </figcaption>
-              </figure>
-              <div className={styles.mobileAboutCopy}>
-                <p>
-                  We design interactive, live, voice-enabled and moving websites for people and institutions that need more than a static page.
-                </p>
-                <p>
-                  A Talkinbio website can listen to intent, answer in context, guide the visitor, show the right service and move the interface toward conversion.
-                </p>
-                <p>
-                  The point is not to add another link. The point is to turn the page into a conversational experience: creative, alive and built around the next action.
-                </p>
-              </div>
-            </div>
-          </article>
-        ) : mobileScene === 'createWebsite' ? (
-          <article className={styles.mobileAboutPanel} aria-labelledby="mobile-create-title">
-            <div className={styles.mobileAboutScroll}>
-              <h2 id="mobile-create-title">
-                Create your
-                <br />
-                website.
-              </h2>
-              <p className={styles.mobileAboutLead}>
-                We turn a request into a living website: interactive, voice-enabled, moving, conversational and built to convert.
-              </p>
-              <div className={styles.mobileProcessList} aria-label="Website creation process">
-                {['Request', 'Meet', 'Pricing', 'Demo', 'Payment', 'Delivery'].map((step, index) => (
-                  <div key={step}>
-                    <span>{String(index + 1).padStart(2, '0')}</span>
-                    {step}
-                  </div>
-                ))}
-              </div>
-              <div className={styles.mobileAboutCopy}>
-                <p>
-                  You send the first request. We meet, understand what the website needs to achieve, price the work, build a focused demo, then move through payment and delivery.
-                </p>
-                <p>
-                  The goal is not just to publish pages. The goal is to create a website that explains, listens, guides and helps the visitor take the right next step.
-                </p>
-              </div>
-              <div className={styles.mobileCicadaStage} aria-hidden="true">
-                <Image src="/cicada-hero-closeup.jpg" alt="" width={520} height={780} loading="eager" />
-              </div>
-              <div className={styles.mobileIntentQuestion}>
-                <span>START WITH YOU</span>
-                <p>Who are we building this website around?</p>
-              </div>
-              <div className={styles.mobileQuestionChoices}>
-                <button type="button" data-selected={websiteAudience === 'personal'} onClick={() => setWebsiteAudience('personal')}>
-                  <span>For myself / my personal brand</span>
+      <div className={styles.mobileConversionContent}>
+        <div className={styles.mobileTouchpointIntro}>
+          <span>İLK TEMAS</span>
+          <h1>
+            Her hikâye bir ilk
+            <br />
+            temasla başlar.
+          </h1>
+          <p>Şimdi bir ilk temas noktası seç.</p>
+        </div>
+        <div className={styles.mobileTouchpointList} aria-label="Marka ile ilk temas noktaları">
+          {touchpointCategories.map((category) => {
+            const open = selectedTouchpoint === category.id;
+            return (
+              <div key={category.id} className={styles.mobileTouchpointRow} data-open={open}>
+                <button
+                  type="button"
+                  data-selected={open}
+                  onClick={() => setSelectedTouchpoint((current) => (current === category.id ? null : category.id))}
+                  aria-expanded={open}
+                >
+                  <span>
+                    <small>{category.eyebrow}</small>
+                    {category.label}
+                  </span>
                   <ArrowRight aria-hidden="true" size={16} />
                 </button>
-                <button type="button" data-selected={websiteAudience === 'business'} onClick={() => setWebsiteAudience('business')}>
-                  <span>For my business / brand</span>
-                  <ArrowRight aria-hidden="true" size={16} />
-                </button>
+                {open ? (
+                  <>
+                    <ul>
+                      {category.items.map((item) => <li key={item}>{item}</li>)}
+                    </ul>
+                    {touchpointPages[category.slug] ? (
+                      <Link href={`/explore/${category.slug}`} className={styles.mobileTouchpointExplore}>
+                        Keşfet <ArrowRight aria-hidden="true" size={15} />
+                      </Link>
+                    ) : null}
+                  </>
+                ) : null}
               </div>
-              {websiteAudience ? (
-                <>
-                  <div className={styles.mobileQuestionPrompt} aria-live="polite">
-                    <span>{websiteAudience === 'personal' ? 'PERSONAL BRAND' : 'BUSINESS / BRAND'}</span>
-                    <p>{websiteAudience === 'personal' ? 'What should people understand about you first?' : 'What should the website help your business achieve?'}</p>
-                  </div>
-                  <MobileProjectRequestForm
-                    primaryChoice="I need a new website"
-                    secondaryChoice={websiteAudience === 'personal' ? 'For myself / my personal brand' : 'For my business / brand'}
-                    question={websiteAudience === 'personal' ? 'What should people understand about you first?' : 'What should the website help your business achieve?'}
-                  />
-                </>
-              ) : null}
-            </div>
-          </article>
-        ) : mobileScene === 'redesignWebsite' ? (
-          <article className={styles.mobileAboutPanel} aria-labelledby="mobile-redesign-title">
-            <div className={styles.mobileAboutScroll}>
-              <h2 id="mobile-redesign-title">
-                Every page
-                <br />
-                has something
-                <br />
-                to say.
-              </h2>
-              <p className={styles.mobileAboutLead}>
-                Outdated does not always mean old. Sometimes the brand has moved forward while the website is still speaking in its previous voice. Sometimes it looks polished, but gives people nothing to feel, explore or do.
-              </p>
-              <div className={styles.mobileImageMarquee} aria-hidden="true">
-                <div>
-                  <span className={styles.mobileMarqueeBotanical} />
-                  <span className={styles.mobileMarqueeMaterial} />
-                  <span className={styles.mobileMarqueeUliana} />
-                  <span className={styles.mobileMarqueeDance} />
-                  <span className={styles.mobileMarqueeFounder} />
-                  <span className={styles.mobileMarqueeCeramic} />
-                  <span className={styles.mobileMarqueeInstallation} />
-                  <span className={styles.mobileMarqueeBotanical} />
-                  <span className={styles.mobileMarqueeMaterial} />
-                  <span className={styles.mobileMarqueeUliana} />
-                  <span className={styles.mobileMarqueeDance} />
-                  <span className={styles.mobileMarqueeFounder} />
-                  <span className={styles.mobileMarqueeCeramic} />
-                  <span className={styles.mobileMarqueeInstallation} />
-                </div>
-              </div>
-              <div className={styles.mobileAboutCopy}>
-                <p>
-                  We begin with what the page should say and how people should answer. Image, typography, motion, voice and interaction become one living narrative: make the value understood, then make the next action feel natural.
-                </p>
-                <p>
-                  The right move may be a precise evolution or a clean break. Either way, the new experience should feel unmistakably yours and turn attention into conversation, trust and conversion.
-                </p>
-              </div>
-              <div className={styles.mobileIntentQuestion}>
-                <span>FIRST SIGNAL</span>
-                <p>What makes you feel most that your website is outdated?</p>
-              </div>
-              <div className={styles.mobileQuestionChoices}>
-                <button type="button" data-selected={redesignFocus === 'identity'} onClick={() => setRedesignFocus('identity')}>
-                  <span>The design and visual identity</span>
-                  <ArrowRight aria-hidden="true" size={16} />
-                </button>
-                <button type="button" data-selected={redesignFocus === 'interaction'} onClick={() => setRedesignFocus('interaction')}>
-                  <span>The way people interact with it</span>
-                  <ArrowRight aria-hidden="true" size={16} />
-                </button>
-              </div>
-              {redesignFocus ? (
-                <>
-                  <div className={styles.mobileQuestionPrompt} aria-live="polite">
-                    <span>{redesignFocus === 'identity' ? 'DESIGN / IDENTITY' : 'INTERACTION'}</span>
-                    <p>{redesignFocus === 'identity' ? 'Do you want an evolution or a completely new direction?' : 'What should visitors be able to do that they can’t do today?'}</p>
-                  </div>
-                  <MobileProjectRequestForm
-                    primaryChoice="My website feels outdated"
-                    secondaryChoice={redesignFocus === 'identity' ? 'The design and visual identity' : 'The way people interact with it'}
-                    question={redesignFocus === 'identity' ? 'Do you want an evolution or a completely new direction?' : 'What should visitors be able to do that they can’t do today?'}
-                  />
-                </>
-              ) : null}
-            </div>
-          </article>
-        ) : (
-          <article className={styles.mobileAboutPanel} aria-labelledby="mobile-potential-title">
-            <div className={styles.mobileAboutScroll}>
-              <h2 id="mobile-potential-title">
-                What can a
-                <br />
-                page do?
-              </h2>
-              <p className={styles.mobileAboutLead}>
-                A website can do more than explain who you are. It can answer at the right moment, guide each visitor toward what matters, reveal the right work or offer, connect people to the next step and learn what they actually need.
-              </p>
-              <div className={styles.mobileCapabilityGrid} aria-label="What a Talkinbio page can do">
-                <div>
-                  <MessageCircle aria-hidden="true" size={20} />
-                  <strong>Answer</strong>
-                  <span>Questions in context.</span>
-                </div>
-                <div>
-                  <Compass aria-hidden="true" size={20} />
-                  <strong>Guide</strong>
-                  <span>Each visitor forward.</span>
-                </div>
-                <div>
-                  <MonitorUp aria-hidden="true" size={20} />
-                  <strong>Show</strong>
-                  <span>Work, offers and ideas.</span>
-                </div>
-                <div>
-                  <Link2 aria-hidden="true" size={20} />
-                  <strong>Connect</strong>
-                  <span>People to the next step.</span>
-                </div>
-                <div>
-                  <BarChart3 aria-hidden="true" size={20} />
-                  <strong>Learn</strong>
-                  <span>What people really want.</span>
-                </div>
-              </div>
-              <div className={styles.mobileAboutCopy}>
-                <p>
-                  Instead of asking every visitor to search through the same fixed structure, the page can respond to intent and bring the most useful path forward. The experience becomes shorter, clearer and more personal.
-                </p>
-                <p>
-                  That may mean creating measurable opportunities for the business, or simply making the website more useful, memorable and satisfying for the people using it.
-                </p>
-              </div>
-              <div className={styles.mobileIntentQuestion}>
-                <span>NEXT MOVE</span>
-                <p>What do you want your website to do more of?</p>
-              </div>
-              <div className={styles.mobileQuestionChoices}>
-                <button type="button" data-selected={potentialFocus === 'opportunities'} onClick={() => setPotentialFocus('opportunities')}>
-                  <span>I want it to generate opportunities</span>
-                  <ArrowRight aria-hidden="true" size={16} />
-                </button>
-                <button type="button" data-selected={potentialFocus === 'experience'} onClick={() => setPotentialFocus('experience')}>
-                  <span>I want it to create a better experience</span>
-                  <ArrowRight aria-hidden="true" size={16} />
-                </button>
-              </div>
-              {potentialFocus ? (
-                <>
-                  <div className={styles.mobileQuestionPrompt} aria-live="polite">
-                    <span>{potentialFocus === 'opportunities' ? 'OPPORTUNITIES' : 'EXPERIENCE'}</span>
-                    <p>{potentialFocus === 'opportunities' ? 'What matters most: leads, bookings, applications or sales?' : 'What should visitors be able to discover, ask or do?'}</p>
-                  </div>
-                  <MobileProjectRequestForm
-                    primaryChoice="I want more from my website"
-                    secondaryChoice={potentialFocus === 'opportunities' ? 'I want it to generate opportunities' : 'I want it to create a better experience'}
-                    question={potentialFocus === 'opportunities' ? 'What matters most: leads, bookings, applications or sales?' : 'What should visitors be able to discover, ask or do?'}
-                  />
-                </>
-              ) : null}
-            </div>
-          </article>
-        )}
-        {mobileScene === 'about' ? intentActions : null}
+            );
+          })}
+        </div>
       </div>
     </section>
   );

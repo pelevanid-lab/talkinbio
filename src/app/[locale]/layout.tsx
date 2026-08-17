@@ -4,6 +4,7 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { localizedPath, hreflangPaths } from '@/utils/localizedUrl';
+import GlobalLanguageSwitcher from '@/components/GlobalLanguageSwitcher';
 import { Inter, Bricolage_Grotesque, IBM_Plex_Mono } from "next/font/google";
 import "../globals.css";
 
@@ -83,6 +84,7 @@ export default async function LocaleLayout({
     <html lang={locale} className={`${inter.variable} ${bricolage.variable} ${ibmPlexMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[var(--paper)] text-[var(--ink)]">
         <NextIntlClientProvider messages={messages}>
+          <GlobalLanguageSwitcher />
           {children}
         </NextIntlClientProvider>
         <Analytics />

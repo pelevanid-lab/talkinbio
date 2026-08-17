@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Link } from '@/i18n/routing';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 interface MobileMenuProps {
   isLoggedIn: boolean;
@@ -40,12 +39,6 @@ export default function MobileMenu({ isLoggedIn, texts }: MobileMenuProps) {
 
       {isOpen && (
         <div className="absolute top-[80px] left-0 w-full bg-[var(--paper)] border-b border-[var(--border)] shadow-lg z-50 flex flex-col p-4 gap-4 animate-fade-down">
-          <div className="flex justify-between items-center px-2">
-            <span className="text-[var(--ink-soft)] font-medium text-sm">Dil / Language</span>
-            <LanguageSwitcher />
-          </div>
-          <div className="h-[1px] bg-[var(--border)] w-full"></div>
-          
           {texts.pricing && (
             <Link 
               href="/pricing" 

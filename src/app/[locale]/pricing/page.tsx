@@ -2,7 +2,6 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { ChevronLeft, Check, Zap } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { CREDIT_PACKAGES } from '@/config/plans';
@@ -60,7 +59,6 @@ export default function PricingPage() {
           <Link href="/"><LogoSVG /></Link>
           <div className="links" style={{ display: 'none' }}></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <LanguageSwitcher />
             <Link href="/login" className="btn btn-primary nav-cta" style={{ padding: '0.6rem 1rem', fontSize: '0.9rem' }}>
               {tNav('login')}
             </Link>

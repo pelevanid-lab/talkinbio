@@ -120,8 +120,8 @@ export default function AdaptiveHomepage() {
   return (
     <>
       <main className={styles.main} data-adapted={adapted}>
-        <DesktopConversionHero onIntentSelect={handleIntentSelect} />
-        <MobileConversionHero onIntentSelect={handleIntentSelect} />
+        <DesktopConversionHero />
+        <MobileConversionHero />
         <HeroSection
           activeIntent={intent}
           activeResponse={intent ? intentCopy[intent].response : null}

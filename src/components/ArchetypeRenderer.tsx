@@ -15,7 +15,6 @@ import { SauleIcon } from './AgentIcons';
 import { stableItemId } from '@/utils/pageActionTargets';
 import { supabaseThumbnailUrl } from '@/utils/imageTransform';
 import { useOptionalPublicPageRuntime } from './PublicPageRuntime';
-import LanguageSwitcher from './LanguageSwitcher';
 import { resolveInteractiveEntryTargets, type ConversionFlowSettings, type InteractiveEntrySettings, type PublicPageType } from '@/utils/interactiveEntry';
 import { resolveShortcuts, type Shortcut } from '@/utils/shortcuts';
 
@@ -677,12 +676,11 @@ function EntryNavigationMenu({
 
       {open && (
         <div
-          className="absolute left-0 top-full z-[70] mt-2 flex w-56 max-h-[min(420px,calc(100dvh-120px))] flex-col overflow-y-auto rounded-lg border py-1 shadow-[0_18px_50px_rgba(15,23,42,0.18)]"
+          className={`absolute top-full z-[70] mt-2 flex w-56 max-h-[min(420px,calc(100dvh-120px))] flex-col overflow-y-auto rounded-lg border py-1 shadow-[0_18px_50px_rgba(15,23,42,0.18)] ${
+            variant === 'menu' ? 'right-0' : 'left-0'
+          }`}
           style={{ background: c.surface, borderColor: c.border, color: c.text }}
         >
-          <div className="flex justify-center border-b px-4 py-3" style={{ borderColor: c.border }}>
-            <LanguageSwitcher compact />
-          </div>
           {menuBlocks.map((block) => (
             <button
               key={block.id}

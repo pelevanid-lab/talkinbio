@@ -18,7 +18,6 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import CreditBadge from '@/components/CreditBadge';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { FEATURES } from '@/config/features';
 
 export type DashboardSection = 'setup' | 'leads' | 'analytics' | 'billing' | 'creative-studio' | 'front-desk' | 'studio';
@@ -92,9 +91,6 @@ export default function DashboardShell({ business, active, children }: { busines
             </a>
           );
         })}
-        <div className="pt-6 px-3 text-[#8A8880]">
-          <LanguageSwitcher scope="app" />
-        </div>
       </nav>
 
       <div className="px-3 pb-5 pt-3 border-t border-[rgba(20,35,31,0.10)] flex flex-col gap-2">
