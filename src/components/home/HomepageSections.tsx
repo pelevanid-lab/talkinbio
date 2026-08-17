@@ -23,6 +23,7 @@ import styles from './home.module.css';
 import { getEditorialTopics } from '@/components/editorial/editorialData';
 import { normalizeEditorialLocale } from '@/components/editorial/editorialTranslations';
 import { IMMERSIVE_VIDEO } from '@/config/immersiveMedia';
+import { aboutPaths } from '@/components/editorial/aboutContent';
 
 type HomepageGuideResult = {
   answer: string;
@@ -207,7 +208,7 @@ export function HolisticDesktopHero() {
           </p>
           <div className={styles.desktopCurator}>
             <span>{copy.curatorKicker}</span>
-            <Link href="/hakkimda">{copy.curator}</Link>
+            <Link href={aboutPaths[locale]}>{copy.curator}</Link>
           </div>
 
           <div className={styles.desktopTouchpointDetail} data-open={Boolean(selectedTopic)} aria-live="polite">
@@ -317,7 +318,7 @@ export function HolisticMobileHero() {
           <p>{selectedGroup ? selectedGroup.description : copy.lead}</p>
           <div className={styles.mobileCurator}>
             <span>{copy.curatorKicker}</span>
-            <Link href="/hakkimda">{copy.curator}</Link>
+            <Link href={aboutPaths[locale]}>{copy.curator}</Link>
           </div>
         </div>
         <div className={styles.mobileTouchpointList} aria-label={copy.stages}>

@@ -5,8 +5,9 @@ import LanguageSwitcher from './LanguageSwitcher';
 import styles from './globalLanguageSwitcher.module.css';
 
 const RESERVED_ROOT_PATHS = new Set([
-  'admin', 'auth', 'dashboard', 'explore', 'first-contact', 'hakkimda', 'ilk-temas',
-  'kesfet', 'konular', 'legal', 'login', 'onboarding', 'pricing', 'register',
+  'ad-reviews', 'admin', 'about', 'auth', 'case-studies', 'dashboard', 'explore', 'first-contact',
+  'hakkimda', 'holistic-marketing', 'holistik-pazarlama', 'ilk-temas', 'kesfet',
+  'konular', 'legal', 'login', 'onboarding', 'ornek-calismalar', 'pricing', 'reklam-incelemeleri', 'register',
   'request-access', 'stakeholders', 'topics', 'updates', 'yazilar', 'articles',
 ]);
 

@@ -49,18 +49,34 @@ function isPublicProfilePath(pathname: string): boolean {
   if (segments.length !== 1) return false;
 
   const reserved = new Set([
+    'ad-reviews',
+    'about',
     'admin',
+    'articles',
     'api',
     'auth',
+    'case-studies',
     'dashboard',
+    'explore',
+    'first-contact',
+    'hakkimda',
+    'holistic-marketing',
+    'holistik-pazarlama',
+    'ilk-temas',
+    'kesfet',
+    'konular',
     'legal',
     'login',
     'onboarding',
+    'ornek-calismalar',
     'pricing',
+    'reklam-incelemeleri',
     'register',
     'request-access',
     'stakeholders',
+    'topics',
     'updates',
+    'yazilar',
   ]);
 
   return !reserved.has(segments[0]);

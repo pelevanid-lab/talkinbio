@@ -1315,7 +1315,7 @@ function ProfileEntryCard({
         )}
 
         {isConversion && entryDesktopLayout && (
-          <div className="absolute left-5 top-5 z-50 hidden lg:block">
+          <div className="absolute right-5 top-5 z-50 hidden lg:block">
             <EntryNavigationMenu
               blocks={visibleBlocks}
               locale={locale}

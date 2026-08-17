@@ -28,6 +28,59 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: route === '' ? 1 : 0.8,
     alternates: { languages: hreflangUrls(route) }
   }));
+  const aboutRoute = {
+    url: localizedUrl('en', '/about'),
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
+    alternates: {
+      languages: {
+        en: localizedUrl('en', '/about'),
+        tr: localizedUrl('tr', '/hakkimda'),
+        ru: localizedUrl('ru', '/about'),
+        'x-default': localizedUrl('en', '/about'),
+      },
+    },
+  };
+  const sectionRoutes = [
+    {
+      en: '/holistic-marketing',
+      tr: '/holistik-pazarlama',
+      ru: '/holistic-marketing',
+    },
+    {
+      en: '/ad-reviews',
+      tr: '/reklam-incelemeleri',
+      ru: '/ad-reviews',
+    },
+  ].map((paths) => ({
+    url: localizedUrl('en', paths.en),
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.9,
+    alternates: {
+      languages: {
+        en: localizedUrl('en', paths.en),
+        tr: localizedUrl('tr', paths.tr),
+        ru: localizedUrl('ru', paths.ru),
+        'x-default': localizedUrl('en', paths.en),
+      },
+    },
+  }));
+  const adReviewRoutes = ['fuse-tea-budur', 'oppo-tellaktan-tertemiz'].map((slug) => ({
+    url: localizedUrl('en', `/ad-reviews/${slug}`),
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.8,
+    alternates: {
+      languages: {
+        en: localizedUrl('en', `/ad-reviews/${slug}`),
+        tr: localizedUrl('tr', `/reklam-incelemeleri/${slug}`),
+        ru: localizedUrl('ru', `/ad-reviews/${slug}`),
+        'x-default': localizedUrl('en', `/ad-reviews/${slug}`),
+      },
+    },
+  }));
 
   // 2. Dynamic Routes (Published Businesses)
   // The real bug (found by testing live): `businesses` has no `updated_at` column at all
@@ -63,5 +116,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     alternates: { languages: hreflangUrls(`/${business.username}`) }
   }));
 
-  return [...staticRoutes, ...dynamicRoutes];
+  return [...staticRoutes, aboutRoute, ...sectionRoutes, ...adReviewRoutes, ...dynamicRoutes];
 }
