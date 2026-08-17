@@ -677,9 +677,7 @@ function EntryNavigationMenu({
 
       {open && (
         <div
-          className={`absolute top-full z-[70] mt-2 flex w-56 max-h-[min(420px,calc(100dvh-120px))] flex-col overflow-y-auto rounded-lg border py-1 shadow-[0_18px_50px_rgba(15,23,42,0.18)] ${
-            variant === 'menu' ? 'right-0' : 'left-0'
-          }`}
+          className="absolute right-0 top-full z-[70] mt-2 flex w-56 max-w-[calc(100vw-2rem)] max-h-[min(420px,calc(100dvh-120px))] flex-col overflow-y-auto rounded-lg border py-1 shadow-[0_18px_50px_rgba(15,23,42,0.18)]"
           style={{ background: c.surface, borderColor: c.border, color: c.text }}
         >
           <div className="flex justify-center border-b px-4 py-3" style={{ borderColor: c.border }}>
