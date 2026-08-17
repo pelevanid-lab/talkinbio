@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import ArchetypeRenderer from './ArchetypeRenderer';
 import ProfileHeader from './ProfileHeader';
+import LanguageSwitcher from './LanguageSwitcher';
 import { Theme, DEFAULT_THEME, resolveThemeColors } from '@/config/archetypes';
 import { avatarFromBlocks } from '@/utils/avatarFromBlocks';
 import { hasRealContentForLocale } from '@/config/blockTypes';
@@ -43,6 +44,9 @@ function BlockMenu({ blocks, locale, c, onSelect }: { blocks: any[], locale: str
           className="absolute top-full right-0 mt-2 w-48 rounded-xl border shadow-lg overflow-hidden flex flex-col py-1 z-50"
           style={{ backgroundColor: c.surface, borderColor: c.border }}
         >
+          <div className="flex justify-center border-b px-4 py-3" style={{ borderColor: c.border, color: c.text }}>
+            <LanguageSwitcher compact scope="app" labels="codes" />
+          </div>
           {visibleBlocks.map(b => {
             const title = b.content?.[locale]?.title || defaultTitleFor(b.type, locale) || b.title || b.type;
             return (

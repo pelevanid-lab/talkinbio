@@ -15,6 +15,7 @@ import { SauleIcon } from './AgentIcons';
 import { stableItemId } from '@/utils/pageActionTargets';
 import { supabaseThumbnailUrl } from '@/utils/imageTransform';
 import { useOptionalPublicPageRuntime } from './PublicPageRuntime';
+import LanguageSwitcher from './LanguageSwitcher';
 import { resolveInteractiveEntryTargets, type ConversionFlowSettings, type InteractiveEntrySettings, type PublicPageType } from '@/utils/interactiveEntry';
 import { resolveShortcuts, type Shortcut } from '@/utils/shortcuts';
 
@@ -681,6 +682,9 @@ function EntryNavigationMenu({
           }`}
           style={{ background: c.surface, borderColor: c.border, color: c.text }}
         >
+          <div className="flex justify-center border-b px-4 py-3" style={{ borderColor: c.border }}>
+            <LanguageSwitcher compact scope="app" labels="codes" />
+          </div>
           {menuBlocks.map((block) => (
             <button
               key={block.id}
