@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import EditorialGateway from '@/components/editorial/EditorialGateway';
 import { editorialLandingCopy } from '@/components/editorial/editorialLandingData';
 import { isRoutingLocale, type RoutingLocale } from '@/i18n/locales';
+import { localizedPath, hreflangPaths } from '@/utils/localizedUrl';
 
 type HomePageProps = { params: Promise<{ locale: string }> };
 
@@ -13,9 +14,29 @@ export async function generateMetadata({ params }: HomePageProps): Promise<Metad
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
   const copy = editorialLandingCopy[locale];
+  const title = locale === 'tr' ? 'Talkinbio | Pazarlama, çalışmalar ve derleyici' : locale === 'ru' ? 'Talkinbio | Маркетинг, работы и автор' : 'Talkinbio | Marketing, work and curator';
+  const url = localizedPath(locale, '');
+
   return {
-    title: locale === 'tr' ? 'Talkinbio | Pazarlama, çalışmalar ve derleyici' : locale === 'ru' ? 'Talkinbio | Маркетинг, работы и автор' : 'Talkinbio | Marketing, work and curator',
+    title,
     description: copy.title,
+    alternates: {
+      canonical: url,
+      languages: hreflangPaths(''),
+    },
+    openGraph: {
+      title,
+      description: copy.title,
+      url,
+      siteName: 'Talkinbio',
+      locale,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: copy.title,
+    },
   };
 }
 
