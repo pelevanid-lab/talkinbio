@@ -95,7 +95,6 @@
 .logo {
   display: inline-flex;
   align-items: center;
-  gap: 14px;
   font-family: var(--font-bricolage), sans-serif;
   font-size: 22px;
   font-weight: 800;
@@ -148,14 +147,15 @@
 
 .editorialHomeLink {
   position: fixed;
-  top: 78px;
+  top: 82px;
   left: clamp(18px, 3vw, 58px);
   z-index: 80;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
   min-height: 32px;
-  padding: 0 10px;
+  width: 32px;
+  justify-content: center;
+  padding: 0;
   border: 1px solid rgba(246, 239, 228, 0.22);
   border-radius: 999px;
   background: rgba(5, 6, 6, 0.34);
@@ -168,7 +168,7 @@
 
 @media (max-width: 640px) {
   .editorialHomeLink {
-    top: 72px;
+    top: 70px;
     left: 18px;
   }
 }
@@ -251,7 +251,6 @@
     left: clamp(24px, 4vw, 66px);
     display: inline-flex;
     align-items: center;
-    gap: 14px;
     min-height: 44px;
     padding: 0 15px;
     border-radius: 999px;
@@ -601,7 +600,7 @@
 
   .desktopHolisticStage:nth-child(2) {
     right: 1%;
-    top: 15%;
+    top: 23%;
   }
 
   .desktopHolisticStage:nth-child(3) {

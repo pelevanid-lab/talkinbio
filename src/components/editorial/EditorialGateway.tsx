@@ -14,7 +14,7 @@ export default function EditorialGateway({ locale }: { locale: RoutingLocale }) 
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <Link href="/" className={styles.logo} aria-label="Talkinbio home">talkinbio <span aria-hidden="true">•••</span></Link>
+        <Link href="/" className={styles.logo} aria-label="Talkinbio home">talkinbio</Link>
         <div className={styles.intro}>
           <span>{copy.eyebrow}</span>
           <p>{copy.title}</p>

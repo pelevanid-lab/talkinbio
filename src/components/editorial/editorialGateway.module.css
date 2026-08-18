@@ -21,7 +21,6 @@
 .logo {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
   min-height: 40px;
   padding: 0 14px;
   border: 1px solid rgba(246, 239, 228, 0.28);
@@ -34,12 +33,6 @@
   text-decoration: none;
   backdrop-filter: blur(14px);
   pointer-events: auto;
-}
-
-.logo span {
-  color: #d86f1f;
-  font-size: 11px;
-  letter-spacing: 0;
 }
 
 .intro {

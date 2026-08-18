@@ -26,7 +26,7 @@ type TopicSimulation = {
 
 const cardPositions: Record<CardId, CSSProperties> = {
   first: { top: '7%', right: '33%', transform: 'rotate(-2deg)' },
-  second: { top: '6%', right: '4%', transform: 'rotate(1.5deg)' },
+  second: { top: '14%', right: '4%', transform: 'rotate(1.5deg)' },
   third: { top: '28%', right: '20%', transform: 'rotate(-1deg)' },
   pattern: { top: '45%', right: '3%', transform: 'rotate(1deg)' },
   simulation: { top: '58%', right: '31%', transform: 'rotate(-1.6deg)' },

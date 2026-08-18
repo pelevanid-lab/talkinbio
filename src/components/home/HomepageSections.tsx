@@ -57,7 +57,6 @@ export function BrandLogo() {
   return (
     <span className={styles.logo} aria-label="talkinbio">
       <span>talkinbio</span>
-      <PresenceIndicator state="idle" />
     </span>
   );
 }
@@ -188,7 +187,6 @@ export function HolisticDesktopHero() {
 
       <button type="button" className={styles.desktopConversionLogo} onClick={replayIntro} aria-label={copy.replay}>
         <span>talkinbio</span>
-        <span aria-hidden="true"><i /><i /><i /></span>
       </button>
       <button
         type="button"
@@ -305,7 +303,7 @@ export function HolisticMobileHero() {
       <video ref={videoRef} className={styles.mobileConversionMedia} src={IMMERSIVE_VIDEO.opening} autoPlay muted playsInline preload="auto" aria-hidden="true" />
       <div className={styles.mobileConversionScrim} aria-hidden="true" />
       <button type="button" className={styles.mobileConversionLogo} onClick={() => { setSelectedGroupId(null); setSelectedSlug(null); }} aria-label="Talkinbio">
-        <span>talkinbio</span><span aria-hidden="true"><i /><i /><i /></span>
+        <span>talkinbio</span>
       </button>
       <button type="button" className={styles.mobileConversionMenu} onClick={toggleAudio} aria-label={audioEnabled ? copy.mute : copy.unmute} data-audio-enabled={audioEnabled}>
         {audioEnabled ? <Volume2 aria-hidden="true" size={19} /> : <VolumeX aria-hidden="true" size={19} />}
@@ -418,7 +416,6 @@ export function DesktopConversionHero() {
 
       <button type="button" className={styles.desktopConversionLogo} onClick={replayIntro} aria-label="Replay Talkinbio intro">
         <span>talkinbio</span>
-        <span aria-hidden="true"><i /><i /><i /></span>
       </button>
       <button
         type="button"
@@ -510,11 +507,6 @@ export function MobileConversionHero() {
       <div className={styles.mobileConversionScrim} aria-hidden="true" />
       <button type="button" className={styles.mobileConversionLogo} onClick={() => setSelectedTouchpoint(null)} aria-label="Talkinbio">
         <span>talkinbio</span>
-        <span aria-hidden="true">
-          <i />
-          <i />
-          <i />
-        </span>
       </button>
       <button
         type="button"

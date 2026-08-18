@@ -26,7 +26,7 @@ type Lens = { eyebrow: string; title: string; body: string; question: string; de
 
 const cardMeta: Record<CardId, { eyebrow: string; label: string; style: CSSProperties }> = {
   customer: { eyebrow: '01 · AYRI GÖR', label: 'Müşteriyi anla', style: { top: '7%', right: '33%', transform: 'rotate(-2deg)' } },
-  market: { eyebrow: '02 · AYRI GÖR', label: 'Pazarı dinle', style: { top: '6%', right: '4%', transform: 'rotate(1.5deg)' } },
+  market: { eyebrow: '02 · AYRI GÖR', label: 'Pazarı dinle', style: { top: '14%', right: '4%', transform: 'rotate(1.5deg)' } },
   insight: { eyebrow: '03 · AYRI GÖR', label: 'İçgörü üret', style: { top: '28%', right: '20%', transform: 'rotate(-1deg)' } },
   pattern: { eyebrow: 'ÖRÜNTÜ', label: 'İhtiyaçtan karara', style: { top: '45%', right: '3%', transform: 'rotate(1deg)' } },
   simulation: { eyebrow: 'CLAUDE İLE', label: 'Vaka simülasyonu', style: { top: '58%', right: '31%', transform: 'rotate(-1.6deg)' } },
