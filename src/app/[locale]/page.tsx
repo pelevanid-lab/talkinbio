@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: HomePageProps): Promise<Metad
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
   const copy = editorialLandingCopy[locale];
-  const title = locale === 'tr' ? 'Talkinbio | Pazarlama, çalışmalar ve derleyici' : locale === 'ru' ? 'Talkinbio | Маркетинг, работы и автор' : 'Talkinbio | Marketing, work and curator';
+  const title = 'Readings on Holistic Marketing';
   const url = localizedPath(locale, '');
 
   return {

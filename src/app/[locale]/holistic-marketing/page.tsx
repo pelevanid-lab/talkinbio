@@ -9,7 +9,7 @@ const normalize = (locale: string): RoutingLocale => isRoutingLocale(locale) ? l
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const locale = normalize((await params).locale);
   return {
-    title: locale === 'ru' ? 'Целостный маркетинг | Talkinbio' : 'Holistic Marketing | Talkinbio',
+    title: 'Readings on Holistic Marketing',
     description: locale === 'ru' ? 'Целостная карта маркетинга: от понимания рынка до развития отношений.' : 'A holistic marketing map from understanding the market to growing the relationship.',
     alternates: { canonical: locale === 'ru' ? '/ru/holistic-marketing' : '/holistic-marketing', languages: { en: '/holistic-marketing', tr: '/tr/holistik-pazarlama', ru: '/ru/holistic-marketing', 'x-default': '/holistic-marketing' } },
   };

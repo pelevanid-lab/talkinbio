@@ -8,7 +8,7 @@ const normalize = (locale: string): RoutingLocale => isRoutingLocale(locale) ? l
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: 'Holistik Pazarlama | Talkinbio',
+    title: 'Readings on Holistic Marketing',
     description: 'Pazarı anlamaktan ilişkiyi büyütmeye uzanan bütünsel pazarlama haritası.',
     alternates: { canonical: '/tr/holistik-pazarlama', languages: { en: '/holistic-marketing', tr: '/tr/holistik-pazarlama', ru: '/ru/holistic-marketing', 'x-default': '/holistic-marketing' } },
   };
