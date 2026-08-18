@@ -7,8 +7,8 @@ type PageProps = { params: Promise<{ locale: string }> };
 const normalize = (locale: string): RoutingLocale => isRoutingLocale(locale) ? locale : 'en';
 
 export const metadata: Metadata = {
-  title: 'Fuse Tea “Budur” Reklam İncelemesi | Talkinbio',
-  description: 'Fuse Tea şeftali reklamının değer önerisi, Jobs-to-be-Done ve İkna Bilgisi Modeli üzerinden analizi.',
+  title: 'Fusetea “Budur” Reklam İncelemesi | Talkinbio',
+  description: 'Fusetea şeftali reklamının değer önerisi, Jobs-to-be-Done ve İkna Bilgisi Modeli üzerinden analizi.',
   alternates: { canonical: '/tr/reklam-incelemeleri/fuse-tea-budur', languages: { en: '/ad-reviews/fuse-tea-budur', tr: '/tr/reklam-incelemeleri/fuse-tea-budur', ru: '/ru/ad-reviews/fuse-tea-budur', 'x-default': '/ad-reviews/fuse-tea-budur' } },
 };
 

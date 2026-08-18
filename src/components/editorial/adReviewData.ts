@@ -33,9 +33,9 @@ export const adReviewEntries = [
     videoId: '5_4WlEo_W9E',
     path: adReviewPaths.fuseTea,
     copy: {
-      tr: { category: 'İÇECEK · META-REKLAM', duration: '12 DK OKUMA', title: 'Fuse Tea “Budur”: Reklamı Bozarak Ürünü Gerçek Kılmak', lead: 'Değer önerisi, Jobs-to-be-Done ve İkna Bilgisi Modeli üzerinden bir reklam çözümlemesi.', videoTitle: 'Fuse Tea Budur şeftali reklamı' },
-      en: { category: 'BEVERAGE · META-ADVERTISING', duration: '12 MIN READ', title: 'Fuse Tea “Budur”: Making the Product Real by Breaking the Ad', lead: 'An analysis through value proposition, Jobs-to-be-Done, and the Persuasion Knowledge Model.', videoTitle: 'Fuse Tea Budur peach commercial' },
-      ru: { category: 'НАПИТКИ · МЕТА-РЕКЛАМА', duration: '12 МИН ЧТЕНИЯ', title: 'Fuse Tea “Budur”: сделать продукт реальным, разрушив рекламу', lead: 'Анализ через ценностное предложение, Jobs-to-be-Done и модель знания об убеждении.', videoTitle: 'Реклама Fuse Tea Budur со вкусом персика' },
+      tr: { category: 'İÇECEK · META-REKLAM', duration: '12 DK OKUMA', title: 'Fusetea “Budur”: Reklamı Bozarak Ürünü Gerçek Kılmak', lead: 'Değer önerisi, Jobs-to-be-Done ve İkna Bilgisi Modeli üzerinden bir reklam çözümlemesi.', videoTitle: 'Fusetea Budur şeftali reklamı' },
+      en: { category: 'BEVERAGE · META-ADVERTISING', duration: '12 MIN READ', title: 'Fusetea “Budur”: Making the Product Real by Breaking the Ad', lead: 'An analysis through value proposition, Jobs-to-be-Done, and the Persuasion Knowledge Model.', videoTitle: 'Fusetea Budur peach commercial' },
+      ru: { category: 'НАПИТКИ · МЕТА-РЕКЛАМА', duration: '12 МИН ЧТЕНИЯ', title: 'Fusetea “Budur”: сделать продукт реальным, разрушив рекламу', lead: 'Анализ через ценностное предложение, Jobs-to-be-Done и модель знания об убеждении.', videoTitle: 'Реклама Fusetea Budur со вкусом персика' },
     },
   },
   {

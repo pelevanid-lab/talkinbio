@@ -8,8 +8,8 @@ const normalize = (locale: string): RoutingLocale => isRoutingLocale(locale) ? l
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const locale = normalize((await params).locale);
-  const title = locale === 'ru' ? 'Fuse Tea «Budur»: разбор рекламы | Talkinbio' : 'Fuse Tea “Budur” Ad Review | Talkinbio';
-  const description = locale === 'ru' ? 'Разбор рекламы Fuse Tea через ценностное предложение, Jobs-to-be-Done и модель знания об убеждении.' : 'An analysis of the Fuse Tea commercial through value proposition, Jobs-to-be-Done, and the Persuasion Knowledge Model.';
+  const title = locale === 'ru' ? 'Fusetea «Budur»: разбор рекламы | Talkinbio' : 'Fusetea “Budur” Ad Review | Talkinbio';
+  const description = locale === 'ru' ? 'Разбор рекламы Fusetea через ценностное предложение, Jobs-to-be-Done и модель знания об убеждении.' : 'An analysis of the Fusetea commercial through value proposition, Jobs-to-be-Done, and the Persuasion Knowledge Model.';
   return { title, description, alternates: { canonical: locale === 'ru' ? '/ru/ad-reviews/fuse-tea-budur' : '/ad-reviews/fuse-tea-budur', languages: { en: '/ad-reviews/fuse-tea-budur', tr: '/tr/reklam-incelemeleri/fuse-tea-budur', ru: '/ru/ad-reviews/fuse-tea-budur', 'x-default': '/ad-reviews/fuse-tea-budur' } } };
 }
 
