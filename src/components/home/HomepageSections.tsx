@@ -23,7 +23,7 @@ import styles from './home.module.css';
 import { getEditorialTopics } from '@/components/editorial/editorialData';
 import { normalizeEditorialLocale } from '@/components/editorial/editorialTranslations';
 import { IMMERSIVE_VIDEO } from '@/config/immersiveMedia';
-import { aboutPaths } from '@/components/editorial/aboutContent';
+import { editorialLandingPaths } from '@/components/editorial/editorialLandingData';
 
 type HomepageGuideResult = {
   answer: string;
@@ -115,9 +115,9 @@ const holisticGroupsTr: HolisticGroup[] = [
 ];
 
 const holisticShell = {
-  tr: { reading: 'PAZARLAMA OKUMALARI', title: 'Holistik bakış açısıyla pazarlamayı anlamak.', lead: 'Pazarı anlayarak başla ya da ihtiyacın olan bölüme odaklan.', curatorKicker: 'DERLEYİCİYİ TANI', curator: 'Derleyici: Enes Pehlivan', explore: 'Keşfet', area: 'ALAN', map: 'Holistik pazarlama haritası', stages: 'Holistik pazarlamanın dört aşaması ve alt alanları', replay: 'Talkinbio girişini yeniden oynat', mute: 'Sesi kapat', unmute: 'Sesi aç' },
-  en: { reading: 'MARKETING READINGS', title: 'Understanding marketing through a holistic lens.', lead: 'Begin by understanding the market, or focus on the area you need.', curatorKicker: 'MEET THE CURATOR', curator: 'Curator: Enes Pehlivan', explore: 'Explore', area: 'AREAS', map: 'Holistic marketing map', stages: 'Four stages of holistic marketing and their subjects', replay: 'Replay the Talkinbio introduction', mute: 'Mute', unmute: 'Unmute' },
-  ru: { reading: 'МАТЕРИАЛЫ О МАРКЕТИНГЕ', title: 'Понимать маркетинг целостно.', lead: 'Начните с понимания рынка или выберите нужную область.', curatorKicker: 'ОБ АВТОРЕ ПОДБОРКИ', curator: 'Автор подборки: Enes Pehlivan', explore: 'Изучить', area: 'ТЕМЫ', map: 'Карта целостного маркетинга', stages: 'Четыре этапа целостного маркетинга и их темы', replay: 'Повторить вступление Talkinbio', mute: 'Выключить звук', unmute: 'Включить звук' },
+  tr: { reading: 'PAZARLAMA OKUMALARI', title: 'Holistik bakış açısıyla pazarlamayı anlamak.', lead: 'Pazarı anlayarak başla ya da ihtiyacın olan bölüme odaklan.', curatorKicker: 'KÜTÜPHANE', curator: 'Yazılar ve reklam incelemeleri', explore: 'Keşfet', area: 'ALAN', map: 'Holistik pazarlama haritası', stages: 'Holistik pazarlamanın dört aşaması ve alt alanları', replay: 'Talkinbio girişini yeniden oynat', mute: 'Sesi kapat', unmute: 'Sesi aç' },
+  en: { reading: 'MARKETING READINGS', title: 'Understanding marketing through a holistic lens.', lead: 'Begin by understanding the market, or focus on the area you need.', curatorKicker: 'LIBRARY', curator: 'Articles and ad reviews', explore: 'Explore', area: 'AREAS', map: 'Holistic marketing map', stages: 'Four stages of holistic marketing and their subjects', replay: 'Replay the Talkinbio introduction', mute: 'Mute', unmute: 'Unmute' },
+  ru: { reading: 'МАТЕРИАЛЫ О МАРКЕТИНГЕ', title: 'Понимать маркетинг целостно.', lead: 'Начните с понимания рынка или выберите нужную область.', curatorKicker: 'БИБЛИОТЕКА', curator: 'Статьи и разборы рекламы', explore: 'Изучить', area: 'ТЕМЫ', map: 'Карта целостного маркетинга', stages: 'Четыре этапа целостного маркетинга и их темы', replay: 'Повторить вступление Talkinbio', mute: 'Выключить звук', unmute: 'Включить звук' },
 } as const;
 
 function getHolisticGroups(locale: 'tr' | 'en' | 'ru'): HolisticGroup[] {
@@ -206,7 +206,7 @@ export function HolisticDesktopHero() {
           </p>
           <div className={styles.desktopCurator}>
             <span>{copy.curatorKicker}</span>
-            <Link href={aboutPaths[locale]}>{copy.curator}</Link>
+            <Link href={editorialLandingPaths.library[locale]}>{copy.curator}</Link>
           </div>
 
           <div className={styles.desktopTouchpointDetail} data-open={Boolean(selectedTopic)} aria-live="polite">
@@ -316,7 +316,7 @@ export function HolisticMobileHero() {
           <p>{selectedGroup ? selectedGroup.description : copy.lead}</p>
           <div className={styles.mobileCurator}>
             <span>{copy.curatorKicker}</span>
-            <Link href={aboutPaths[locale]}>{copy.curator}</Link>
+            <Link href={editorialLandingPaths.library[locale]}>{copy.curator}</Link>
           </div>
         </div>
         <div className={styles.mobileTouchpointList} aria-label={copy.stages}>

@@ -2,14 +2,13 @@ import Image from 'next/image';
 import { ArrowUpRight } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import type { RoutingLocale } from '@/i18n/locales';
-import { aboutPaths } from './aboutContent';
 import { editorialLandingCopy, editorialLandingPaths } from './editorialLandingData';
 import { IMMERSIVE_VIDEO } from '@/config/immersiveMedia';
 import styles from './editorialGateway.module.css';
 
 export default function EditorialGateway({ locale }: { locale: RoutingLocale }) {
   const copy = editorialLandingCopy[locale];
-  const links = [editorialLandingPaths.holistic[locale], editorialLandingPaths.cases[locale], aboutPaths[locale]];
+  const links = [editorialLandingPaths.holistic[locale], editorialLandingPaths.cases[locale], editorialLandingPaths.library[locale]];
 
   return (
     <main className={styles.page}>
@@ -33,7 +32,7 @@ export default function EditorialGateway({ locale }: { locale: RoutingLocale }) 
             ) : (
               <Image
                 className={styles.media}
-                src="/enes-pehlivan-about.png"
+                src="/conversion-nature-backdrop.png"
                 alt=""
                 fill
                 priority

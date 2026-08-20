@@ -53,6 +53,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       tr: '/reklam-incelemeleri',
       ru: '/ad-reviews',
     },
+    {
+      en: '/library',
+      tr: '/kutuphane',
+      ru: '/library',
+    },
   ].map((paths) => ({
     url: localizedUrl('en', paths.en),
     lastModified: new Date(),

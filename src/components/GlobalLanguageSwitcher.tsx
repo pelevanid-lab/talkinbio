@@ -6,7 +6,7 @@ import styles from './globalLanguageSwitcher.module.css';
 
 const RESERVED_ROOT_PATHS = new Set([
   'ad-reviews', 'admin', 'about', 'auth', 'case-studies', 'dashboard', 'explore', 'first-contact',
-  'hakkimda', 'holistic-marketing', 'holistik-pazarlama', 'ilk-temas', 'kesfet',
+  'hakkimda', 'holistic-marketing', 'holistik-pazarlama', 'ilk-temas', 'kesfet', 'kutuphane', 'library',
   'konular', 'legal', 'login', 'onboarding', 'ornek-calismalar', 'pricing', 'reklam-incelemeleri', 'register',
   'request-access', 'stakeholders', 'topics', 'updates', 'yazilar', 'articles',
 ]);

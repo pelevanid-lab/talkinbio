@@ -11,6 +11,11 @@ export const editorialLandingPaths = {
     tr: '/reklam-incelemeleri',
     ru: '/ad-reviews',
   },
+  library: {
+    en: '/library',
+    tr: '/kutuphane',
+    ru: '/library',
+  },
 } satisfies Record<string, Record<RoutingLocale, string>>;
 
 export const editorialLandingCopy = {
@@ -34,9 +39,9 @@ export const editorialLandingCopy = {
       },
       {
         number: '03',
-        kicker: 'DERLEYİCİYİ TANI',
-        title: 'Enes Pehlivan',
-        description: 'Sahadaki sürtünmeden marka stratejisine uzanan profesyonel yolculuk.',
+        kicker: 'KÜTÜPHANE',
+        title: 'Yazılar ve İncelemeler',
+        description: 'Dört pazarlama yazısı ve iki reklam incelemesini tek rafta oku.',
       },
     ],
   },
@@ -60,9 +65,9 @@ export const editorialLandingCopy = {
       },
       {
         number: '03',
-        kicker: 'MEET THE CURATOR',
-        title: 'Enes Pehlivan',
-        description: 'A professional journey from friction in the field to brand strategy.',
+        kicker: 'LIBRARY',
+        title: 'Articles and Reviews',
+        description: 'Four marketing articles and two ad reviews gathered on one shelf.',
       },
     ],
   },
@@ -86,9 +91,9 @@ export const editorialLandingCopy = {
       },
       {
         number: '03',
-        kicker: 'ОБ АВТОРЕ ПОДБОРКИ',
-        title: 'Энес Пехливан',
-        description: 'Профессиональный путь от реального трения в работе до стратегии бренда.',
+        kicker: 'БИБЛИОТЕКА',
+        title: 'Статьи и разборы',
+        description: 'Четыре статьи о маркетинге и два разбора рекламы на одной странице.',
       },
     ],
   },
