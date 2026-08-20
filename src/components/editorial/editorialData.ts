@@ -23,6 +23,34 @@ export type EditorialArticle = {
   published?: boolean;
 };
 
+export const articleLocalizedSlugs = {
+  'ihtiyaci-gormek': { tr: 'ihtiyaci-gormek', en: 'seeing-the-need', ru: 'seeing-the-need' },
+  'masadaki-urun-sahadaki-gercek': { tr: 'masadaki-urun-sahadaki-gercek', en: 'product-on-the-table-reality-in-the-field', ru: 'product-on-the-table-reality-in-the-field' },
+  'ihtiyac-temelli-segmentasyon': { tr: 'ihtiyac-temelli-segmentasyon', en: 'needs-based-segmentation', ru: 'needs-based-segmentation' },
+  'urunu-segmente-dayatmak': { tr: 'urunu-segmente-dayatmak', en: 'forcing-product-onto-segments', ru: 'forcing-product-onto-segments' },
+  'positioning-is-a-reason-to-choose': { tr: 'konumlandirma-tercih-sebebidir', en: 'positioning-is-a-reason-to-choose', ru: 'positioning-is-a-reason-to-choose' },
+} as const;
+
+const articleSlugAliases = new Map<string, string>(
+  Object.entries(articleLocalizedSlugs).flatMap(([canonicalSlug, localized]) =>
+    Object.values(localized).map((slug) => [slug, canonicalSlug] as const)
+  )
+);
+
+export function resolveEditorialArticleSlug(slug: string) {
+  return articleSlugAliases.get(slug) || slug;
+}
+
+export function getLocalizedArticleSlug(slug: string, locale = 'tr') {
+  const normalized = normalizeEditorialLocale(locale);
+  const canonicalSlug = resolveEditorialArticleSlug(slug);
+  return articleLocalizedSlugs[canonicalSlug as keyof typeof articleLocalizedSlugs]?.[normalized] || canonicalSlug;
+}
+
+export function getEditorialArticlePath(slug: string, locale = 'tr') {
+  return `/articles/${getLocalizedArticleSlug(slug, locale)}`;
+}
+
 export const editorialTopics: EditorialTopic[] = [
   {
     slug: 'customer-and-market-insights',
@@ -441,13 +469,14 @@ export function getEditorialTopic(slug: string, locale = 'tr') {
 }
 
 export function getEditorialArticle(slug: string, locale = 'tr') {
-  const article = editorialArticles.find((item) => item.slug === slug);
+  const canonicalSlug = resolveEditorialArticleSlug(slug);
+  const article = editorialArticles.find((item) => item.slug === canonicalSlug);
   if (!article) return undefined;
   const normalized = normalizeEditorialLocale(locale);
-  if (normalized === 'tr') return article;
+  if (normalized === 'tr') return { ...article, slug: getLocalizedArticleSlug(article.slug, normalized) };
   if (normalized === 'ru') return undefined;
-  const translation = articleTranslationsEn[slug];
-  return translation ? { ...article, ...translation } : undefined;
+  const translation = articleTranslationsEn[canonicalSlug];
+  return translation ? { ...article, ...translation, slug: getLocalizedArticleSlug(article.slug, normalized) } : undefined;
 }
 
 export function getPublishedEditorialArticles(locale = 'tr') {

@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { localizedUrl, hreflangUrls } from '@/utils/localizedUrl';
-import { editorialArticles, editorialTopics } from '@/components/editorial/editorialData';
+import { editorialArticles, editorialTopics, getEditorialArticlePath } from '@/components/editorial/editorialData';
 import { touchpointPages } from '@/components/home/homeData';
 
 // sitemap.ts is a cached Route Handler by default in Next 16 (see node_modules/next/dist/docs/
@@ -18,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const editorialRoutes = [
     '/first-contact',
     ...editorialTopics.map(({ slug }) => `/topics/${slug}`),
-    ...editorialArticles.map(({ slug }) => `/articles/${slug}`),
+    ...editorialArticles.map(({ slug }) => getEditorialArticlePath(slug, 'en')),
     ...Object.keys(touchpointPages).map((slug) => `/explore/${slug}`),
   ];
   const staticRoutes = ['', '/legal', '/stakeholders', '/pricing', ...editorialRoutes].map(route => ({

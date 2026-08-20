@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { Link } from '@/i18n/routing';
-import { editorialArticles, getEditorialArticle, getEditorialTopic, getPublishedEditorialArticles } from '@/components/editorial/editorialData';
+import { articleLocalizedSlugs, editorialArticles, getEditorialArticle, getEditorialArticlePath, getLocalizedArticleSlug, getEditorialTopic, getPublishedEditorialArticles } from '@/components/editorial/editorialData';
 import hubStyles from '@/components/touchpoints/touchpoints.module.css';
 import { IMMERSIVE_VIDEO } from '@/config/immersiveMedia';
 import styles from '@/components/editorial/editorial.module.css';
 
 export function generateStaticParams() {
-  return editorialArticles.map(({ slug }) => ({ slug }));
+  const localizedSlugs = Object.values(articleLocalizedSlugs).flatMap((slugs) => [slugs.en, slugs.tr]);
+  return Array.from(new Set([...editorialArticles.map(({ slug }) => slug), ...localizedSlugs])).map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
@@ -22,6 +23,11 @@ export default async function ArticlePage({ params }: { params: Promise<{ locale
   const { locale, slug } = await params;
   const article = getEditorialArticle(slug, locale);
   if (!article) notFound();
+  const canonicalSlug = getLocalizedArticleSlug(slug, locale);
+  if (slug !== canonicalSlug) {
+    const localizedPrefix = locale === 'en' ? '' : `/${locale}`;
+    redirect(`${localizedPrefix}${getEditorialArticlePath(slug, locale)}`);
+  }
 
   const availableArticles = getPublishedEditorialArticles(locale);
   const currentIndex = availableArticles.findIndex((item) => item.slug === article.slug);
@@ -64,7 +70,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ locale
             </div>
           </div>
 
-          <Link href={`/articles/${nextArticle.slug}`} className={styles.bookNextArticle}>
+          <Link href={getEditorialArticlePath(nextArticle.slug, locale)} className={styles.bookNextArticle}>
             <span>{copy.next}</span>
             <strong>{nextArticle.title}</strong>
             <ArrowRight aria-hidden="true" size={18} />

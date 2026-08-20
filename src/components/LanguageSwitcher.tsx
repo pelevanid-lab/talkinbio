@@ -4,6 +4,7 @@ import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from '@/i18n/routing';
 import { APP_LOCALE_COOKIE, PRODUCT_LOCALES, ROUTING_LOCALE_COOKIE, type ProductLocale, type RoutingLocale } from '@/i18n/locales';
 import { Globe2 } from 'lucide-react';
+import { getLocalizedArticleSlug, resolveEditorialArticleSlug } from './editorial/editorialData';
 
 type LocaleOption = {
   value: RoutingLocale;
@@ -46,12 +47,19 @@ export default function LanguageSwitcher({
   const options = scope === 'app' && labels !== 'codes' ? PRODUCT_OPTIONS : ROUTING_OPTIONS;
   const articleWithoutRussian = /^\/(articles|yazilar)\//.test(pathname);
 
+  function localizedPathFor(nextLocale: RoutingLocale) {
+    const articleMatch = pathname.match(/^\/(?:articles|yazilar)\/([^/?#]+)/);
+    if (!articleMatch) return pathname;
+    const canonicalSlug = resolveEditorialArticleSlug(decodeURIComponent(articleMatch[1]));
+    return `/articles/${getLocalizedArticleSlug(canonicalSlug, nextLocale)}`;
+  }
+
   const handleLanguageChange = (newLocale: RoutingLocale) => {
     persistRoutingLocale(newLocale);
     if (scope === 'app' && (PRODUCT_LOCALES as readonly string[]).includes(newLocale)) {
       persistAppLocale(newLocale as ProductLocale);
     }
-    router.replace(pathname, { locale: newLocale });
+    router.replace(localizedPathFor(newLocale), { locale: newLocale });
     router.refresh();
   };
 

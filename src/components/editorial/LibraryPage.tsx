@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react';
 import { Link } from '@/i18n/routing';
 import type { RoutingLocale } from '@/i18n/locales';
 import { adReviewEntries } from './adReviewData';
-import { getPublishedEditorialArticles } from './editorialData';
+import { getEditorialArticlePath, getPublishedEditorialArticles } from './editorialData';
 import { libraryCopy } from './libraryData';
 import styles from './library.module.css';
 
@@ -47,9 +47,9 @@ export default function LibraryPage({ locale }: { locale: RoutingLocale }) {
               </>
             );
             return locale === 'ru' ? (
-              <a key={article.slug} href={`/articles/${article.slug}`} className={styles.articleCard}>{content}</a>
+              <a key={article.slug} href={getEditorialArticlePath(article.slug, articleLocale)} className={styles.articleCard}>{content}</a>
             ) : (
-              <Link key={article.slug} href={`/articles/${article.slug}`} className={styles.articleCard}>{content}</Link>
+              <Link key={article.slug} href={getEditorialArticlePath(article.slug, articleLocale)} className={styles.articleCard}>{content}</Link>
             );
           })}
         </div>
