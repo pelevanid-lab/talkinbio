@@ -16,7 +16,6 @@ export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 1. Static Routes
   const editorialRoutes = [
-    '/first-contact',
     ...editorialTopics.map(({ slug }) => `/topics/${slug}`),
     ...editorialArticles.map(({ slug }) => getEditorialArticlePath(slug, 'en')),
     ...Object.keys(touchpointPages).map((slug) => `/explore/${slug}`),
@@ -43,11 +42,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   };
   const sectionRoutes = [
-    {
-      en: '/holistic-marketing',
-      tr: '/holistik-pazarlama',
-      ru: '/holistic-marketing',
-    },
     {
       en: '/ad-reviews',
       tr: '/reklam-incelemeleri',
