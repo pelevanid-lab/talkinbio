@@ -13,6 +13,7 @@ export function supabaseThumbnailUrl(
   opts: { width: number; height?: number; quality?: number } = { width: 96 }
 ): string | null {
   if (!url) return url ?? null;
+  if (process.env.NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORM !== 'enabled') return url;
   const marker = '/storage/v1/object/public/';
   const idx = url.indexOf(marker);
   if (idx === -1) return url;
