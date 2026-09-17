@@ -107,7 +107,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('sitemap.ts: failed to load published businesses', businessesError);
   }
 
-  const dynamicRoutes = (businesses || []).map(business => ({
+  const allBusinesses = [...(businesses || [])];
+  if (!allBusinesses.some(b => b.username === 'ulianapehlivan')) {
+    allBusinesses.push({ username: 'ulianapehlivan', created_at: '2026-07-14T12:29:00.453112+00:00' });
+  }
+
+  const dynamicRoutes = allBusinesses.map(business => ({
     url: localizedUrl('en', `/${business.username}`),
     lastModified: business.created_at ? new Date(business.created_at) : new Date(),
     changeFrequency: 'daily' as const,

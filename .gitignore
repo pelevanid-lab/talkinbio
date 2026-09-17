@@ -50,3 +50,4 @@ supabase/.temp/
 # Local scratch files with potential secrets
 scratch/
 tmp/
+backup-uliana/

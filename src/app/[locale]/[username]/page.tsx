@@ -15,6 +15,7 @@ import { getPageActionTargets, withContactPageActionTarget } from '@/utils/pageA
 import { resolvePublishedRuntimeData } from '@/utils/publishedSnapshot';
 import { localizedPath, localizedUrl, hreflangPaths } from '@/utils/localizedUrl';
 import { resolvePublicPageType } from '@/utils/interactiveEntry';
+import { getStaticBusinessByUsername, getStaticBlocksByBusinessId } from '@/data/staticProfiles';
 
 // Her ziyarette taze saule_settings çekilsin
 export const dynamic = 'force-dynamic';
@@ -22,21 +23,36 @@ export const dynamic = 'force-dynamic';
 export async function generateMetadata({ params }: any) {
   const { username, locale } = await params;
 
-  // Use anon client for metadata
-  const { createClient: createAnonClient } = await import('@supabase/supabase-js');
-  const supabase = createAnonClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-  const { data: business } = await supabase.from('businesses').select('*').eq('username', username).single();
+  let business = getStaticBusinessByUsername(username);
+  let blocks: any[] | null = null;
+
+  if (business) {
+    blocks = getStaticBlocksByBusinessId(business.id);
+  } else {
+    try {
+      const { createClient: createAnonClient } = await import('@supabase/supabase-js');
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        const supabase = createAnonClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        );
+        const { data } = await supabase.from('businesses').select('*').eq('username', username).single();
+        business = data;
+        if (business) {
+          const { data: bData } = await supabase
+            .from('blocks')
+            .select('*')
+            .eq('business_id', business.id)
+            .order('order', { ascending: true });
+          blocks = bData;
+        }
+      }
+    } catch (e) {
+      console.warn('generateMetadata fetch fallback:', e);
+    }
+  }
 
   if (!business) return { title: 'Not Found' };
-
-  const { data: blocks } = await supabase
-    .from('blocks')
-    .select('*')
-    .eq('business_id', business.id)
-    .order('order', { ascending: true });
   const { business: pageBusiness } = resolvePublishedRuntimeData(business, blocks || [], false);
 
   const path = `/${username}`;
@@ -82,25 +98,37 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
   const { username, locale } = await params;
   const sp = await searchParams;
   const t = await getTranslations({ locale, namespace: 'PublicPage' });
-  const supabase = await createClient();
+  let business = getStaticBusinessByUsername(username);
+  let staticBlocks: any[] | null = null;
+  let isOwner = false;
+  let isAnonymousOwner = false;
+  let supabase: any = null;
 
-  // 1. Fetch Business
-  const { data: business } = await supabase
-    .from('businesses')
-    .select('*')
-    .eq('username', username)
-    .single();
+  if (business) {
+    staticBlocks = getStaticBlocksByBusinessId(business.id);
+  } else {
+    try {
+      supabase = await createClient();
+      const { data: bData } = await supabase
+        .from('businesses')
+        .select('*')
+        .eq('username', username)
+        .single();
+      business = bData;
+
+      if (business) {
+        const { data: userData } = await supabase.auth.getUser();
+        isOwner = userData?.user?.id === business.owner_id;
+        isAnonymousOwner = isOwner && !!userData?.user?.is_anonymous;
+      }
+    } catch (e) {
+      console.warn('BusinessProfilePage Supabase fetch failed:', e);
+    }
+  }
 
   if (!business) {
     notFound();
   }
-
-  // Check publication status
-  const { data: userData } = await supabase.auth.getUser();
-  const isOwner = userData?.user?.id === business.owner_id;
-  // Anonim demo oturumu (sihirbazı bitirip hesap kapısını henüz geçmemiş) mı, yoksa
-  // kalıcı hesap mı — banner'ın tıklama hedefini belirler (bkz. aşağıda unpublishedBanner).
-  const isAnonymousOwner = isOwner && !!userData?.user?.is_anonymous;
 
   // NOT: yayınlanmamış sayfalar artık linki bilen HERKESE açık (notFound() ile
   // engellenmiyor) — concierge kurulum akışı: kullanıcı adı zaten tahmin
@@ -112,7 +140,7 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
 
   // Faz 3.3: haftalık özet e-postasının ön koşulu — günlük tekilleştirilmiş sayfa
   // görüntülenme sayacı. Sahibin kendi ziyaretleri sayılmaz.
-  if (!isOwner) {
+  if (!isOwner && supabase) {
     try {
       const cookieStore = await cookies();
       const visitorSessionId = cookieStore.get('visitor_session_id')?.value;
@@ -161,11 +189,19 @@ export default async function BusinessProfilePage({ params, searchParams }: any)
   // Note: fetch all blocks (not just is_visible) — the invisible `settings` block carries
   // layoutMode, which ArchetypeRenderer needs to decide website vs. linktree rendering.
   // ArchetypeRenderer itself filters out settings + is_visible:false blocks before display.
-  const { data: blocks } = await supabase
-    .from('blocks')
-    .select('*')
-    .eq('business_id', business.id)
-    .order('order', { ascending: true });
+  let blocks: any[] = staticBlocks || [];
+  if (!staticBlocks && supabase) {
+    try {
+      const { data } = await supabase
+        .from('blocks')
+        .select('*')
+        .eq('business_id', business.id)
+        .order('order', { ascending: true });
+      blocks = data || [];
+    } catch (e) {
+      console.warn('Failed to fetch blocks from Supabase:', e);
+    }
+  }
 
   const { business: pageBusiness, blocks: pageBlocks } = resolvePublishedRuntimeData(business, blocks || [], isOwner);
   const theme = pageBusiness.theme || DEFAULT_THEME;

@@ -454,18 +454,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Query is too long.' }, { status: 400 });
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const hasSupabase = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const supabase = hasSupabase
+      ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+      : null;
 
-    const { data: business, error: businessError } = await supabase
-      .from('businesses')
-      .select('name, page_title, category, contact_method, contact_value, is_published')
-      .eq('id', businessId)
-      .single();
+    const { getStaticBusinessById } = await import('@/data/staticProfiles');
+    let business: any = getStaticBusinessById(businessId);
 
-    if (businessError || !business) {
+    if (!business && supabase) {
+      try {
+        const { data: bData } = await supabase
+          .from('businesses')
+          .select('name, page_title, category, contact_method, contact_value, is_published')
+          .eq('id', businessId)
+          .single();
+        business = bData;
+      } catch (err) {
+        console.warn('Supabase business query failed:', err);
+      }
+    }
+
+    if (!business) {
       return NextResponse.json({ error: 'Business not found.' }, { status: 404 });
     }
 
@@ -474,86 +484,100 @@ export async function POST(request: Request) {
     const isPreview = !!preview;
     const conversationKey = isPreview ? `preview:${businessId}` : (visitorSessionId || `anon_web_${businessId}`);
 
-    let conversationId: string | undefined;
+    let conversationId: string | undefined = `local_${Date.now()}`;
 
-    const { data: previousConversation } = await supabase
-      .from('conversations')
-      .select('id, last_message_at, created_at')
-      .eq('business_id', businessId)
-      .eq('visitor_session_id', conversationKey)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    if (supabase) {
+      try {
+        const { data: previousConversation } = await supabase
+          .from('conversations')
+          .select('id, last_message_at, created_at')
+          .eq('business_id', businessId)
+          .eq('visitor_session_id', conversationKey)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-    if (previousConversation) {
-      const referenceDate = previousConversation.last_message_at
-        ? new Date(previousConversation.last_message_at)
-        : new Date(previousConversation.created_at);
-      const differenceInDays = (Date.now() - referenceDate.getTime()) / (1000 * 60 * 60 * 24);
-      const isActive = differenceInDays <= 7;
+        if (previousConversation) {
+          const referenceDate = previousConversation.last_message_at
+            ? new Date(previousConversation.last_message_at)
+            : new Date(previousConversation.created_at);
+          const differenceInDays = (Date.now() - referenceDate.getTime()) / (1000 * 60 * 60 * 24);
+          const isActive = differenceInDays <= 7;
 
-      if (isActive) {
-        const { count: messageCount } = await supabase
-          .from('messages')
-          .select('id', { count: 'exact', head: true })
-          .eq('conversation_id', previousConversation.id)
-          .eq('role', 'user');
+          if (isActive) {
+            const { count: messageCount } = await supabase
+              .from('messages')
+              .select('id', { count: 'exact', head: true })
+              .eq('conversation_id', previousConversation.id)
+              .eq('role', 'user');
 
-        if ((messageCount || 0) < 20) {
-          conversationId = previousConversation.id;
+            if ((messageCount || 0) < 20) {
+              conversationId = previousConversation.id;
+            }
+          }
         }
+
+        if (!conversationId || conversationId.startsWith('local_')) {
+          const { data: newConversation } = await supabase
+            .from('conversations')
+            .insert({
+              business_id: businessId,
+              visitor_session_id: conversationKey,
+              is_preview: isPreview,
+              channel: 'web',
+            })
+            .select('id')
+            .single();
+
+          if (newConversation?.id) {
+            conversationId = newConversation.id;
+          }
+        }
+      } catch (convErr) {
+        console.warn('Conversation tracking skipped:', convErr);
       }
     }
 
-    if (!conversationId) {
-      const { data: newConversation } = await supabase
-        .from('conversations')
-        .insert({
-          business_id: businessId,
-          visitor_session_id: conversationKey,
-          is_preview: isPreview,
-          channel: 'web',
-        })
-        .select('id')
-        .single();
-
-      conversationId = newConversation?.id;
-    }
-
-    if (!conversationId) {
-      return NextResponse.json({ error: 'Failed to create conversation' }, { status: 500 });
-    }
-
     const persistResponse = async (responseText: string) => {
-      if (!responseText) return;
+      if (!responseText || !supabase || !conversationId || conversationId.startsWith('local_')) return;
 
-      await supabase.from('messages').insert({
-        conversation_id: conversationId,
-        business_id: businessId,
-        role: 'assistant',
-        content: responseText,
-      });
+      try {
+        await supabase.from('messages').insert({
+          conversation_id: conversationId,
+          business_id: businessId,
+          role: 'assistant',
+          content: responseText,
+        });
 
-      await supabase
-        .from('conversations')
-        .update({ last_message_at: new Date().toISOString() })
-        .eq('id', conversationId);
+        await supabase
+          .from('conversations')
+          .update({ last_message_at: new Date().toISOString() })
+          .eq('id', conversationId);
+      } catch (err) {
+        console.warn('Persist response skipped:', err);
+      }
     };
 
-    await supabase.from('messages').insert({
-      conversation_id: conversationId,
-      business_id: businessId,
-      role: 'user',
-      content: query.trim(),
-    });
+    if (supabase && conversationId && !conversationId.startsWith('local_')) {
+      try {
+        await supabase.from('messages').insert({
+          conversation_id: conversationId,
+          business_id: businessId,
+          role: 'user',
+          content: query.trim(),
+        });
 
-    await supabase
-      .from('conversations')
-      .update({
-        last_message_at: new Date().toISOString(),
-        is_read: false,
-      })
-      .eq('id', conversationId);
+        await supabase
+          .from('conversations')
+          .update({
+            last_message_at: new Date().toISOString(),
+            is_read: false,
+          })
+          .eq('id', conversationId);
+      } catch (err) {
+        console.warn('Message record skipped:', err);
+      }
+    }
 
     const contactInfo = checkExplicitContact(query, activeLocale);
     let contactValues: Record<string, string> = {};
@@ -611,9 +635,9 @@ export async function POST(request: Request) {
     }
 
     const publishVersion = preview ? 'draft' : 'published';
-    let entries = await loadSemanticIndex({ supabase, businessId, publishVersion });
+    let entries = await loadSemanticIndex({ supabase: supabase as any, businessId, publishVersion });
 
-    if (entries.length === 0) {
+    if (entries.length === 0 && supabase) {
       try {
         const { buildSemanticIndex } = await import('@/utils/semantic/indexer');
 

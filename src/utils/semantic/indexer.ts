@@ -275,6 +275,19 @@ export async function loadSemanticIndex(params: {
   const { supabase, businessId, publishVersion } = params;
 
   try {
+    const { getStaticBlocksByBusinessId } = await import('@/data/staticProfiles');
+    const staticBlocks = getStaticBlocksByBusinessId(businessId);
+    if (staticBlocks && staticBlocks.length > 0) {
+      const blockType = publishVersion === 'draft' ? 'draft_semantic_index' : 'published_semantic_index';
+      const block = staticBlocks.find((b: any) => b.type === blockType);
+      if (block?.content?.entries) {
+        return block.content.entries.map((ent: any) => ({
+          ...ent,
+          businessId,
+        }));
+      }
+    }
+
     const tableExists = await checkTableExists(supabase);
 
     if (tableExists) {

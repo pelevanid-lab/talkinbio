@@ -14,6 +14,17 @@ const BRAND_MUTED = '#8A9490';
 async function fetchAvatarDataUri(url: string | undefined): Promise<string | undefined> {
   if (!url || url.toLowerCase().endsWith('.svg')) return undefined;
   try {
+    if (url.startsWith('/')) {
+      const fs = await import('fs');
+      const path = await import('path');
+      const localPath = path.join(process.cwd(), 'public', url);
+      if (fs.existsSync(localPath)) {
+        const buf = fs.readFileSync(localPath);
+        const ext = path.extname(url).slice(1);
+        const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
+        return `data:${contentType};base64,${buf.toString('base64')}`;
+      }
+    }
     const res = await fetch(url);
     if (!res.ok) return undefined;
     const contentType = res.headers.get('content-type') || 'image/jpeg';
@@ -25,27 +36,45 @@ async function fetchAvatarDataUri(url: string | undefined): Promise<string | und
 }
 
 export async function renderProfileOgImage(username: string) {
-  const { createClient } = await import('@supabase/supabase-js');
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-  const { data: business } = await supabase
-    .from('businesses')
-    .select('id, name, category, theme')
-    .eq('username', username)
-    .single();
+  const { getStaticBusinessByUsername, getStaticBlocksByBusinessId } = await import('@/data/staticProfiles');
+  let business = getStaticBusinessByUsername(username);
+  let blocks: any[] | null = null;
+
+  if (business) {
+    blocks = getStaticBlocksByBusinessId(business.id);
+  } else {
+    try {
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        );
+        const { data } = await supabase
+          .from('businesses')
+          .select('id, name, category, theme')
+          .eq('username', username)
+          .single();
+        business = data;
+        if (business?.id) {
+          const { data: bData } = await supabase
+            .from('blocks')
+            .select('type, content')
+            .eq('business_id', business.id);
+          blocks = bData;
+        }
+      }
+    } catch (e) {
+      console.warn('OG image fetch fallback:', e);
+    }
+  }
 
   const accent = business?.theme?.colors?.primary || BRAND_ACCENT;
   const name = business?.name || 'Talkinbio';
   const category = business?.category || '';
 
   let avatarDataUri: string | undefined;
-  if (business?.id) {
-    const { data: blocks } = await supabase
-      .from('blocks')
-      .select('type, content')
-      .eq('business_id', business.id);
+  if (blocks) {
     avatarDataUri = await fetchAvatarDataUri(avatarFromBlocks(blocks));
   }
 
